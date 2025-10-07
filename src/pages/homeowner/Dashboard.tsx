@@ -18,6 +18,7 @@ export default function HomeownerDashboard() {
   });
   const [upcomingVisits, setUpcomingVisits] = useState<any[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [needsProfile, setNeedsProfile] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -39,13 +40,15 @@ export default function HomeownerDashboard() {
         .single();
 
       if (!profile) {
-        toast({
-          title: "Profile not found",
-          description: "Please complete your profile setup",
-          variant: "destructive",
-        });
+        setNeedsProfile(true);
+        setStats({ properties: 0, activeSubscriptions: 0, upcomingVisits: 0, monthlySpend: 0 });
+        setUpcomingVisits([]);
+        setLoading(false);
         return;
       }
+
+      // Flag incomplete profiles too
+      setNeedsProfile(!profile.full_name || !profile.phone);
 
       setProfileId(profile.id);
 
@@ -114,6 +117,21 @@ export default function HomeownerDashboard() {
         <h1 className="text-3xl font-bold tracking-tight">Welcome Home</h1>
         <p className="text-muted-foreground">Manage your properties and services</p>
       </div>
+
+      {needsProfile && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Complete Your Profile</CardTitle>
+            <CardDescription>Finish setting up your account to unlock all features.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Button onClick={() => navigate("/homeowner/settings")}>
+              Complete Profile Setup
+            </Button>
+            <p className="text-sm text-muted-foreground">You'll be prompted to add your name and phone number.</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

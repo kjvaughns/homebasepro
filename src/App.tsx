@@ -49,11 +49,12 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
           <Route path="/onboarding/provider" element={<OnboardingProvider />} />
-          <Route path="/dashboard" element={<HomeownerDashboard />} />
+          
           <Route path="/become-provider" element={<BecomeProvider />} />
           
           {/* Homeowner Routes */}
           <Route element={<HomeownerLayout />}>
+            <Route path="/dashboard" element={<HomeownerDashboard />} />
             <Route path="/homeowner/homes" element={<Homes />} />
             <Route path="/homeowner/homes/new" element={<AddHome />} />
             <Route path="/homeowner/homes/:id" element={<HomeDetail />} />

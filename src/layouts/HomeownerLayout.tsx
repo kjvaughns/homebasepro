@@ -39,7 +39,7 @@ export default function HomeownerLayout() {
       </header>
 
       {/* Main Content */}
-      <main className={cn("pb-20 md:pb-0", isMobile && "container py-4")}>
+      <main className={cn("pb-20 md:pb-0", isMobile ? "container py-4" : "pl-64") }>
         <Outlet />
       </main>
 
