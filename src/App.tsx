@@ -21,6 +21,18 @@ import Team from "./pages/provider/Team";
 import Settings from "./pages/provider/Settings";
 import NotFound from "./pages/NotFound";
 import { ProviderLayout } from "./layouts/ProviderLayout";
+import HomeownerLayout from "./layouts/HomeownerLayout";
+import HomeownerDashboard from "./pages/homeowner/Dashboard";
+import Homes from "./pages/homeowner/Homes";
+import AddHome from "./pages/homeowner/AddHome";
+import HomeDetail from "./pages/homeowner/HomeDetail";
+import Browse from "./pages/homeowner/Browse";
+import ProviderDetail from "./pages/homeowner/ProviderDetail";
+import HomeownerSubscriptions from "./pages/homeowner/Subscriptions";
+import SubscriptionDetail from "./pages/homeowner/SubscriptionDetail";
+import Appointments from "./pages/homeowner/Appointments";
+import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
+import HomeownerSettings from "./pages/homeowner/Settings";
 
 const queryClient = new QueryClient();
 
