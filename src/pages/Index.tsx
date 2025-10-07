@@ -1,15 +1,62 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Home, Calendar, Shield, CreditCard, CheckCircle, Users } from "lucide-react";
+import { Home, Calendar, Shield, CreditCard, CheckCircle, Users, Star, TrendingUp, Clock, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const Index = () => {
   const navigate = useNavigate();
 
+  const testimonials = [
+    {
+      quote: "HomeBase has completely transformed how I manage my home maintenance. Everything is in one place!",
+      author: "Sarah Johnson",
+      role: "Homeowner",
+    },
+    {
+      quote: "As a service provider, HomeBase has helped me grow recurring revenue by 300% in just 6 months.",
+      author: "Mike Chen",
+      role: "HVAC Provider",
+    },
+    {
+      quote: "The scheduling and payment features make my life so much easier. Highly recommend!",
+      author: "Emily Rodriguez",
+      role: "Homeowner",
+    },
+  ];
+
+  const faqs = [
+    {
+      question: "How does HomeBase work?",
+      answer: "HomeBase connects homeowners with trusted service providers through subscription-based maintenance plans. Simply browse providers, subscribe to plans that fit your needs, and manage everything through our platform.",
+    },
+    {
+      question: "What types of services are available?",
+      answer: "We offer a wide range of home services including HVAC maintenance, plumbing, electrical, landscaping, pool care, pest control, and more. Service providers create custom maintenance plans for their specific services.",
+    },
+    {
+      question: "Is there a contract or can I cancel anytime?",
+      answer: "Most plans are month-to-month with no long-term contracts required. You can cancel anytime through your account settings.",
+    },
+    {
+      question: "How do payments work?",
+      answer: "All payments are processed securely through our platform. Set up automatic payments and never worry about missing a service payment again.",
+    },
+    {
+      question: "What if I'm not satisfied with a service?",
+      answer: "We work with verified, trusted providers and encourage open communication. If you have any issues, you can message your provider directly through the app or contact our support team.",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border bg-card sticky top-0 z-50 backdrop-blur-sm bg-card/95">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Home className="h-8 w-8 text-primary" />
@@ -22,7 +69,7 @@ const Index = () => {
             <Button onClick={() => navigate("/signup")} variant="outline">
               Sign Up
             </Button>
-            <Button onClick={() => navigate("/auth")} variant="ghost">
+            <Button onClick={() => navigate("/auth")}>
               Sign In
             </Button>
           </div>
@@ -30,16 +77,21 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <div className="container mx-auto text-center max-w-4xl">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground">
+      <section className="relative py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
+        <div className="container mx-auto text-center max-w-4xl relative z-10">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6 animate-fade-in">
+            <Star className="h-4 w-4" />
+            <span className="text-sm font-medium">Trusted by 10,000+ homeowners</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground animate-fade-in">
             Never forget maintenance again
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in">
             HomeBase connects homeowners with trusted service providers through maintenance subscriptions. 
             Manage all your home services in one place.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
             <Button 
               size="lg" 
               onClick={() => navigate("/signup")}
@@ -55,6 +107,90 @@ const Index = () => {
             >
               For Service Providers
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-primary text-primary-foreground">
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 text-center">
+            <div className="animate-fade-in">
+              <div className="flex items-center justify-center mb-2">
+                <Users className="h-8 w-8 mr-2" />
+                <h3 className="text-4xl font-bold">10,000+</h3>
+              </div>
+              <p className="text-primary-foreground/80">Active Homeowners</p>
+            </div>
+            <div className="animate-fade-in">
+              <div className="flex items-center justify-center mb-2">
+                <Award className="h-8 w-8 mr-2" />
+                <h3 className="text-4xl font-bold">500+</h3>
+              </div>
+              <p className="text-primary-foreground/80">Service Providers</p>
+            </div>
+            <div className="animate-fade-in">
+              <div className="flex items-center justify-center mb-2">
+                <CheckCircle className="h-8 w-8 mr-2" />
+                <h3 className="text-4xl font-bold">50,000+</h3>
+              </div>
+              <p className="text-primary-foreground/80">Services Completed</p>
+            </div>
+            <div className="animate-fade-in">
+              <div className="flex items-center justify-center mb-2">
+                <Star className="h-8 w-8 mr-2" />
+                <h3 className="text-4xl font-bold">98%</h3>
+              </div>
+              <p className="text-primary-foreground/80">Satisfaction Rate</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works - Homeowners */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">How It Works for Homeowners</h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Three simple steps to never worry about home maintenance again
+          </p>
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="p-6 text-center border-2 hover:border-primary transition-colors">
+              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Home className="h-8 w-8 text-primary" />
+              </div>
+              <div className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
+                1
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Add Your Home</h3>
+              <p className="text-muted-foreground">
+                Register your property with key details to help providers give you accurate service
+              </p>
+            </Card>
+            <Card className="p-6 text-center border-2 hover:border-primary transition-colors">
+              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+              <div className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
+                2
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Browse Providers</h3>
+              <p className="text-muted-foreground">
+                Find trusted local service providers and compare maintenance plans
+              </p>
+            </Card>
+            <Card className="p-6 text-center border-2 hover:border-primary transition-colors">
+              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-primary" />
+              </div>
+              <div className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
+                3
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Subscribe & Relax</h3>
+              <p className="text-muted-foreground">
+                Subscribe to plans and let your providers handle the rest automatically
+              </p>
+            </Card>
           </div>
         </div>
       </section>
@@ -92,8 +228,56 @@ const Index = () => {
         </div>
       </section>
 
+      {/* How It Works - Providers */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">How It Works for Providers</h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Build recurring revenue and grow your business in three simple steps
+          </p>
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="p-6 text-center border-2 hover:border-primary transition-colors">
+              <div className="bg-accent/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Award className="h-8 w-8 text-accent" />
+              </div>
+              <div className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
+                1
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Create Profile</h3>
+              <p className="text-muted-foreground">
+                Set up your business profile and showcase your services
+              </p>
+            </Card>
+            <Card className="p-6 text-center border-2 hover:border-primary transition-colors">
+              <div className="bg-accent/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="h-8 w-8 text-accent" />
+              </div>
+              <div className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
+                2
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Add Plans</h3>
+              <p className="text-muted-foreground">
+                Create maintenance subscription plans tailored to your services
+              </p>
+            </Card>
+            <Card className="p-6 text-center border-2 hover:border-primary transition-colors">
+              <div className="bg-accent/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-8 w-8 text-accent" />
+              </div>
+              <div className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
+                3
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Get Clients</h3>
+              <p className="text-muted-foreground">
+                Start receiving subscriptions and build predictable revenue
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Features for Providers */}
-      <section className="py-20 px-4 bg-muted/50">
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">For Service Providers</h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
@@ -115,7 +299,7 @@ const Index = () => {
               </p>
             </Card>
             <Card className="p-6 bg-card border-2 hover:border-primary transition-colors">
-              <Calendar className="h-12 w-12 text-primary mb-4" />
+              <Clock className="h-12 w-12 text-primary mb-4" />
               <h3 className="text-xl font-semibold mb-2">Smart Scheduling</h3>
               <p className="text-muted-foreground">
                 Manage appointments, routes, and technician schedules efficiently
@@ -125,8 +309,61 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Testimonials */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">What Our Users Say</h2>
+          <p className="text-center text-muted-foreground mb-12">
+            Trusted by thousands of homeowners and service providers
+          </p>
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="p-6">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-4 italic">"{testimonial.quote}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 w-10 h-10 rounded-full flex items-center justify-center">
+                    <span className="font-semibold text-primary">
+                      {testimonial.author.charAt(0)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">{testimonial.author}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
       <section className="py-20 px-4">
+        <div className="container mx-auto max-w-3xl">
+          <h2 className="text-3xl font-bold text-center mb-4">Frequently Asked Questions</h2>
+          <p className="text-center text-muted-foreground mb-12">
+            Everything you need to know about HomeBase
+          </p>
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <div className="container mx-auto text-center max-w-3xl">
           <h2 className="text-4xl font-bold mb-6">Ready to get started?</h2>
           <p className="text-xl text-muted-foreground mb-8">

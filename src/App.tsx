@@ -9,7 +9,7 @@ import Signup from "./pages/Signup";
 import Pricing from "./pages/Pricing";
 import OnboardingHomeowner from "./pages/OnboardingHomeowner";
 import OnboardingProvider from "./pages/OnboardingProvider";
-import Dashboard from "./pages/Dashboard";
+import HomeownerDashboard from "./pages/homeowner/Dashboard";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import BecomeProvider from "./pages/BecomeProvider";
 import Clients from "./pages/provider/Clients";
@@ -22,7 +22,6 @@ import Settings from "./pages/provider/Settings";
 import NotFound from "./pages/NotFound";
 import { ProviderLayout } from "./layouts/ProviderLayout";
 import HomeownerLayout from "./layouts/HomeownerLayout";
-import HomeownerDashboard from "./pages/homeowner/Dashboard";
 import Homes from "./pages/homeowner/Homes";
 import AddHome from "./pages/homeowner/AddHome";
 import HomeDetail from "./pages/homeowner/HomeDetail";
@@ -33,6 +32,8 @@ import SubscriptionDetail from "./pages/homeowner/SubscriptionDetail";
 import Appointments from "./pages/homeowner/Appointments";
 import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
+import HomeownerMessages from "./pages/homeowner/Messages";
+import ProviderMessages from "./pages/provider/Messages";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/homeowner/appointments" element={<Appointments />} />
             <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
             <Route path="/homeowner/settings" element={<HomeownerSettings />} />
+            <Route path="/homeowner/messages" element={<HomeownerMessages />} />
           </Route>
           
           {/* Provider routes with shared layout */}
@@ -77,6 +79,7 @@ const App = () => (
             <Route path="payments" element={<Payments />} />
             <Route path="team" element={<Team />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="messages" element={<ProviderMessages />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

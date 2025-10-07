@@ -1,20 +1,41 @@
-import { Home, Search, Calendar, Settings, MessageSquare } from "lucide-react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut } from "lucide-react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: Home },
   { name: "Browse", href: "/homeowner/browse", icon: Search },
   { name: "Services", href: "/homeowner/subscriptions", icon: Calendar },
+  { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
   { name: "Settings", href: "/homeowner/settings", icon: Settings },
 ];
 
 export default function HomeownerLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully",
+    });
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,17 +44,31 @@ export default function HomeownerLayout() {
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/dashboard" className="font-semibold text-lg">
-              HouseMate
+              HomeBase
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <MessageSquare className="h-5 w-5" />
-            </Button>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="" />
-              <AvatarFallback>HO</AvatarFallback>
-            </Avatar>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" />
+                    <AvatarFallback>HO</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => navigate("/homeowner/settings")}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

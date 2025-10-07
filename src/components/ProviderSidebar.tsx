@@ -8,6 +8,7 @@ import {
   UserPlus,
   Settings,
   Menu,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +29,7 @@ const navigationItems = [
   { title: "Service Plans", url: "/provider/plans", icon: Package },
   { title: "Subscriptions", url: "/provider/subscriptions", icon: CreditCard },
   { title: "Payments", url: "/provider/payments", icon: DollarSign },
+  { title: "Messages", url: "/provider/messages", icon: MessageSquare },
   { title: "Team", url: "/provider/team", icon: UserPlus },
   { title: "Settings", url: "/provider/settings", icon: Settings },
 ];
