@@ -37,8 +37,22 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
           <Route path="/onboarding/provider" element={<OnboardingProvider />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<HomeownerDashboard />} />
           <Route path="/become-provider" element={<BecomeProvider />} />
+          
+          {/* Homeowner Routes */}
+          <Route element={<HomeownerLayout />}>
+            <Route path="/homeowner/homes" element={<Homes />} />
+            <Route path="/homeowner/homes/new" element={<AddHome />} />
+            <Route path="/homeowner/homes/:id" element={<HomeDetail />} />
+            <Route path="/homeowner/browse" element={<Browse />} />
+            <Route path="/homeowner/browse/:id" element={<ProviderDetail />} />
+            <Route path="/homeowner/subscriptions" element={<HomeownerSubscriptions />} />
+            <Route path="/homeowner/subscriptions/:id" element={<SubscriptionDetail />} />
+            <Route path="/homeowner/appointments" element={<Appointments />} />
+            <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
+            <Route path="/homeowner/settings" element={<HomeownerSettings />} />
+          </Route>
           
           {/* Provider routes with shared layout */}
           <Route path="/provider" element={<ProviderLayout />}>
