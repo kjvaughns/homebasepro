@@ -12,6 +12,12 @@ import OnboardingProvider from "./pages/OnboardingProvider";
 import Dashboard from "./pages/Dashboard";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import BecomeProvider from "./pages/BecomeProvider";
+import Clients from "./pages/provider/Clients";
+import ServicePlans from "./pages/provider/ServicePlans";
+import Subscriptions from "./pages/provider/Subscriptions";
+import Payments from "./pages/provider/Payments";
+import Team from "./pages/provider/Team";
+import Settings from "./pages/provider/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +37,12 @@ const App = () => (
           <Route path="/onboarding/provider" element={<OnboardingProvider />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+          <Route path="/provider/clients" element={<Clients />} />
+          <Route path="/provider/plans" element={<ServicePlans />} />
+          <Route path="/provider/subscriptions" element={<Subscriptions />} />
+          <Route path="/provider/payments" element={<Payments />} />
+          <Route path="/provider/team" element={<Team />} />
+          <Route path="/provider/settings" element={<Settings />} />
           <Route path="/become-provider" element={<BecomeProvider />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
