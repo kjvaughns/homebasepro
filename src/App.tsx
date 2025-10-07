@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
 import Pricing from "./pages/Pricing";
+import Waitlist from "./pages/Waitlist";
 import OnboardingHomeowner from "./pages/OnboardingHomeowner";
 import OnboardingProvider from "./pages/OnboardingProvider";
 import HomeownerDashboard from "./pages/homeowner/Dashboard";
@@ -46,9 +47,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/waitlist" element={<Waitlist />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/pricing" element={<Pricing />} />
           <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
           <Route path="/onboarding/provider" element={<OnboardingProvider />} />
           

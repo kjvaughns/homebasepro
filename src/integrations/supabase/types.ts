@@ -876,6 +876,51 @@ export type Database = {
           },
         ]
       }
+      waitlist: {
+        Row: {
+          account_type: string
+          business_name: string | null
+          converted: boolean | null
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          notified: boolean | null
+          phone: string
+          referral_source: string | null
+          service_type: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          account_type: string
+          business_name?: string | null
+          converted?: boolean | null
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          notified?: boolean | null
+          phone: string
+          referral_source?: string | null
+          service_type?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          account_type?: string
+          business_name?: string | null
+          converted?: boolean | null
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          notified?: boolean | null
+          phone?: string
+          referral_source?: string | null
+          service_type?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

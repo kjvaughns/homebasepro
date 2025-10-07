@@ -62,15 +62,12 @@ const Index = () => {
             <Home className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold text-foreground">HomeBase</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Button onClick={() => navigate("/pricing")} variant="ghost">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button onClick={() => navigate("/pricing")} variant="ghost" size="sm" className="sm:h-10">
               Pricing
             </Button>
-            <Button onClick={() => navigate("/signup")} variant="outline">
-              Sign Up
-            </Button>
-            <Button onClick={() => navigate("/auth")}>
-              Sign In
+            <Button onClick={() => navigate("/waitlist")} size="sm" className="sm:h-10">
+              Join Waitlist
             </Button>
           </div>
         </div>
@@ -80,32 +77,24 @@ const Index = () => {
       <section className="relative py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
         <div className="container mx-auto text-center max-w-4xl relative z-10">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6 animate-fade-in">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in">
             <Star className="h-4 w-4" />
-            <span className="text-sm font-medium">Trusted by 10,000+ homeowners</span>
+            <span className="text-xs sm:text-sm font-medium">🎉 Early Access: Lifetime 25% Discount</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground animate-fade-in">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
             Never forget maintenance again
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in px-4">
             HomeBase connects homeowners with trusted service providers through maintenance subscriptions. 
             Manage all your home services in one place.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in px-4">
             <Button 
               size="lg" 
-              onClick={() => navigate("/signup")}
-              className="text-lg px-8"
+              onClick={() => navigate("/waitlist")}
+              className="text-base sm:text-lg px-6 sm:px-12 py-5 sm:py-6 w-full sm:w-auto"
             >
-              For Homeowners
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => navigate("/signup")}
-              className="text-lg px-8"
-            >
-              For Service Providers
+              Join the Waitlist
             </Button>
           </div>
         </div>
@@ -365,25 +354,25 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <div className="container mx-auto text-center max-w-3xl">
-          <h2 className="text-4xl font-bold mb-6">Ready to get started?</h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Join thousands of homeowners and service providers using HomeBase
+          <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to get started?</h2>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 px-4">
+            Join the waitlist and secure your lifetime 25% discount
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
             <Button 
               size="lg" 
-              onClick={() => navigate("/signup")}
-              className="text-lg px-8"
+              onClick={() => navigate("/waitlist")}
+              className="text-base sm:text-lg px-6 sm:px-8 w-full sm:w-auto"
             >
-              Get Started as Homeowner
+              Join Waitlist Now
             </Button>
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => navigate("/signup")}
-              className="text-lg px-8"
+              onClick={() => navigate("/pricing")}
+              className="text-base sm:text-lg px-6 sm:px-8 w-full sm:w-auto"
             >
-              Get Started as Provider
+              View Pricing
             </Button>
           </div>
         </div>

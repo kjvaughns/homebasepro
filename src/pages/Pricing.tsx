@@ -104,8 +104,8 @@ const Pricing = () => {
             <Home className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold text-foreground">HomeBase</span>
           </div>
-          <Button onClick={() => navigate("/auth")} variant="outline">
-            Sign In
+          <Button onClick={() => navigate("/waitlist")} size="sm" className="sm:h-10">
+            Join Waitlist
           </Button>
         </div>
       </header>
@@ -113,8 +113,11 @@ const Pricing = () => {
       {/* Hero Section */}
       <section className="py-12 px-4">
         <div className="container mx-auto text-center max-w-4xl">
-          <h1 className="text-5xl font-bold mb-4">Simple, Transparent Pricing</h1>
-          <p className="text-xl text-muted-foreground mb-8">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 text-xs sm:text-sm font-medium">
+            🚀 Pre-Launch: Join waitlist for lifetime 25% discount
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">Simple, Transparent Pricing</h1>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 px-4">
             Start free, scale as you grow. No hidden fees, no surprises.
           </p>
           
@@ -226,11 +229,11 @@ const Pricing = () => {
                 </ul>
 
                 <Button
-                  onClick={() => navigate("/signup")}
+                  onClick={() => navigate("/waitlist")}
                   className="w-full"
                   variant={plan.highlighted ? "default" : "outline"}
                 >
-                  {plan.cta}
+                  Join Waitlist
                 </Button>
               </Card>
             ))}
@@ -280,16 +283,16 @@ const Pricing = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center max-w-3xl">
-          <h2 className="text-4xl font-bold mb-6">Ready to grow your business?</h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Start with our free plan today. No credit card required.
+          <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to grow your business?</h2>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 px-4">
+            Join the waitlist and secure your lifetime discount.
           </p>
           <Button 
             size="lg" 
-            onClick={() => navigate("/signup")}
-            className="text-lg px-8"
+            onClick={() => navigate("/waitlist")}
+            className="text-base sm:text-lg px-6 sm:px-8"
           >
-            Get Started Free
+            Join Waitlist Now
           </Button>
         </div>
       </section>
