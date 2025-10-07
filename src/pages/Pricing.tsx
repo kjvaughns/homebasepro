@@ -153,7 +153,7 @@ const Pricing = () => {
       {/* Pricing Cards */}
       <section className="px-4 pb-20">
         <div className="container mx-auto max-w-7xl">
-          <div className="grid lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {plans.map((plan, index) => (
               <Card
                 key={index}
