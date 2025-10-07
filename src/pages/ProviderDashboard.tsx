@@ -3,12 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Home, Users, DollarSign, TrendingUp, LogOut, CreditCard, ArrowUpRight, Plus } from "lucide-react";
+import { Users, DollarSign, TrendingUp, CreditCard, ArrowUpRight, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { RoleSwitcher } from "@/components/RoleSwitcher";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { ProviderSidebar } from "@/components/ProviderSidebar";
 
 const ProviderDashboard = () => {
   const navigate = useNavigate();
@@ -125,18 +122,9 @@ const ProviderDashboard = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully",
-    });
-    navigate("/");
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center p-8">
         <p className="text-muted-foreground">Loading...</p>
       </div>
     );
@@ -153,31 +141,7 @@ const ProviderDashboard = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <ProviderSidebar />
-
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="border-b border-border bg-card">
-            <div className="px-4 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Home className="h-8 w-8 text-primary" />
-                <span className="text-2xl font-bold text-foreground">HomeBase</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <RoleSwitcher />
-                <span className="text-sm text-muted-foreground">{organization?.name}</span>
-                <Button onClick={handleSignOut} variant="outline" size="sm">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <div className="flex-1 p-8 overflow-auto">
+    <div className="p-8">
             {/* Current Plan Banner */}
             {plan && (
               <Card className="p-6 mb-8 border-2 border-primary/20">
@@ -309,18 +273,15 @@ const ProviderDashboard = () => {
               </div>
             </Card>
 
-            {/* Recent Activity */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No recent activity yet</p>
-                <p className="text-sm mt-2">Start adding clients to see activity here</p>
-              </div>
-            </Card>
-          </div>
+      {/* Recent Activity */}
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No recent activity yet</p>
+          <p className="text-sm mt-2">Start adding clients to see activity here</p>
         </div>
-      </div>
-    </SidebarProvider>
+      </Card>
+    </div>
   );
 };
 

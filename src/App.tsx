@@ -19,6 +19,7 @@ import Payments from "./pages/provider/Payments";
 import Team from "./pages/provider/Team";
 import Settings from "./pages/provider/Settings";
 import NotFound from "./pages/NotFound";
+import { ProviderLayout } from "./layouts/ProviderLayout";
 
 const queryClient = new QueryClient();
 
@@ -36,14 +37,19 @@ const App = () => (
           <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
           <Route path="/onboarding/provider" element={<OnboardingProvider />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-          <Route path="/provider/clients" element={<Clients />} />
-          <Route path="/provider/plans" element={<ServicePlans />} />
-          <Route path="/provider/subscriptions" element={<Subscriptions />} />
-          <Route path="/provider/payments" element={<Payments />} />
-          <Route path="/provider/team" element={<Team />} />
-          <Route path="/provider/settings" element={<Settings />} />
           <Route path="/become-provider" element={<BecomeProvider />} />
+          
+          {/* Provider routes with shared layout */}
+          <Route path="/provider" element={<ProviderLayout />}>
+            <Route path="dashboard" element={<ProviderDashboard />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="plans" element={<ServicePlans />} />
+            <Route path="subscriptions" element={<Subscriptions />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="team" element={<Team />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

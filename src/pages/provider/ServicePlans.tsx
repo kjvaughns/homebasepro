@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AddServicePlanDialog } from "@/components/provider/AddServicePlanDialog";
+import { EditServicePlanDialog } from "@/components/provider/EditServicePlanDialog";
 
 interface ServicePlan {
   id: string;
@@ -27,6 +28,8 @@ export default function ServicePlans() {
   const [plans, setPlans] = useState<ServicePlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<ServicePlan | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -97,7 +100,14 @@ export default function ServicePlans() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan) => (
-            <Card key={plan.id}>
+            <Card 
+              key={plan.id} 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => {
+                setSelectedPlan(plan);
+                setShowEditDialog(true);
+              }}
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle>{plan.name}</CardTitle>
@@ -129,6 +139,13 @@ export default function ServicePlans() {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onSuccess={loadPlans}
+      />
+
+      <EditServicePlanDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSuccess={loadPlans}
+        plan={selectedPlan}
       />
     </div>
   );

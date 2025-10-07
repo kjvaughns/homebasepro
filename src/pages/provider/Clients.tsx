@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AddClientDialog } from "@/components/provider/AddClientDialog";
+import { EditClientDialog } from "@/components/provider/EditClientDialog";
 
 interface Client {
   id: string;
@@ -21,6 +22,7 @@ interface Client {
   email: string;
   phone: string | null;
   address: string | null;
+  notes: string | null;
   status: string;
   created_at: string;
 }
@@ -30,6 +32,8 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -138,7 +142,16 @@ export default function Clients() {
                   {new Date(client.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">View</Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedClient(client);
+                      setShowEditDialog(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -150,6 +163,13 @@ export default function Clients() {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onSuccess={loadClients}
+      />
+
+      <EditClientDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSuccess={loadClients}
+        client={selectedClient}
       />
     </div>
   );
