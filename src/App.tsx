@@ -34,6 +34,7 @@ import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
 import HomeownerMessages from "./pages/homeowner/Messages";
 import ProviderMessages from "./pages/provider/Messages";
+import ProviderAnalytics from "./pages/provider/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="team" element={<Team />} />
             <Route path="settings" element={<Settings />} />
             <Route path="messages" element={<ProviderMessages />} />
+            <Route path="analytics" element={<ProviderAnalytics />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
