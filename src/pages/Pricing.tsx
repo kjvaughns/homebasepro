@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Home, Check } from "lucide-react";
@@ -5,13 +6,14 @@ import { useNavigate } from "react-router-dom";
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   const plans = [
     {
       name: "Free Plan",
       subtitle: "Starter",
-      price: "$0",
-      period: "forever",
+      priceMonthly: 0,
+      priceAnnual: 0,
       clients: "Up to 5 clients",
       fee: "8% per transaction",
       target: "Solo techs & new providers",
@@ -21,65 +23,49 @@ const Pricing = () => {
         "Basic Support",
         "Mobile Access",
       ],
-      notIncluded: [
-        "Automated Reminders",
-        "Team Members",
-        "Review Requests",
-        "White-Label Branding",
-        "Analytics Dashboard",
-      ],
       cta: "Start Free",
       highlighted: false,
     },
     {
-      name: "Growth Plan",
-      price: "$49",
-      period: "per month",
+      name: "Growth",
+      priceMonthly: 49,
+      priceAnnual: 39, // ~20% discount
       clients: "Up to 20 clients",
       fee: "2.5% per transaction",
       target: "Small operators building subscriptions",
       features: [
         "Everything in Free",
-        "Up to 20 clients",
         "Automated Reminders",
         "1 Team Member",
         "Review Requests",
         "Basic Analytics",
         "Priority Support",
       ],
-      notIncluded: [
-        "White-Label Branding",
-        "Advanced Analytics",
-      ],
       cta: "Start Growth",
       highlighted: true,
     },
     {
-      name: "Pro Plan",
-      price: "$129",
-      period: "per month",
+      name: "Pro",
+      priceMonthly: 129,
+      priceAnnual: 103, // ~20% discount
       clients: "Up to 50 clients",
       fee: "2.0% per transaction",
       target: "Established providers",
       features: [
         "Everything in Growth",
-        "Up to 50 clients",
         "3 Team Members",
         "White-Label Branding",
         "Advanced Analytics",
         "Custom Domain",
         "Premium Support",
       ],
-      notIncluded: [
-        "API Access",
-      ],
       cta: "Start Pro",
       highlighted: false,
     },
     {
-      name: "Scale Plan",
-      price: "$299",
-      period: "per month",
+      name: "Scale",
+      priceMonthly: 299,
+      priceAnnual: 239, // ~20% discount
       clients: "100+ clients",
       fee: "1.5% per transaction",
       target: "Multi-location & agencies",
@@ -90,13 +76,24 @@ const Pricing = () => {
         "API Access & Integrations",
         "Full Analytics Suite",
         "Dedicated Account Manager",
-        "Custom Onboarding",
       ],
-      notIncluded: [],
       cta: "Start Scale",
       highlighted: false,
     },
   ];
+
+  const getPrice = (plan: typeof plans[0]) => {
+    if (plan.priceMonthly === 0) return "$0";
+    return billingPeriod === "monthly" ? `$${plan.priceMonthly}` : `$${plan.priceAnnual}`;
+  };
+
+  const getSavings = (plan: typeof plans[0]) => {
+    if (plan.priceMonthly === 0) return null;
+    const monthlyCost = plan.priceMonthly * 12;
+    const annualCost = plan.priceAnnual * 12;
+    const savings = monthlyCost - annualCost;
+    return savings > 0 ? `Save $${savings}/year` : null;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -114,76 +111,116 @@ const Pricing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto text-center max-w-3xl">
+      <section className="py-12 px-4">
+        <div className="container mx-auto text-center max-w-4xl">
           <h1 className="text-5xl font-bold mb-4">Simple, Transparent Pricing</h1>
           <p className="text-xl text-muted-foreground mb-8">
             Start free, scale as you grow. No hidden fees, no surprises.
           </p>
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
-            🎉 Free plan includes everything you need to get started
+          
+          {/* Billing Toggle */}
+          <div className="inline-flex items-center gap-4 bg-muted p-2 rounded-lg mb-4">
+            <button
+              onClick={() => setBillingPeriod("monthly")}
+              className={`px-6 py-2 rounded-md font-medium transition-all ${
+                billingPeriod === "monthly"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingPeriod("annual")}
+              className={`px-6 py-2 rounded-md font-medium transition-all ${
+                billingPeriod === "annual"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Annual
+            </button>
           </div>
+          
+          {billingPeriod === "annual" && (
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
+              🎉 Save up to 20% with annual billing
+            </div>
+          )}
         </div>
       </section>
 
       {/* Pricing Cards */}
-      <section className="py-8 px-4 pb-20">
-        <div className="container mx-auto">
-          <div className="grid lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+      <section className="px-4 pb-20">
+        <div className="container mx-auto max-w-7xl">
+          <div className="grid lg:grid-cols-4 gap-4">
             {plans.map((plan, index) => (
               <Card
                 key={index}
-                className={`p-6 flex flex-col ${
+                className={`p-6 flex flex-col relative ${
                   plan.highlighted
-                    ? "border-2 border-primary shadow-lg scale-105 bg-card"
-                    : "border-2 hover:border-primary/50 transition-all"
+                    ? "border-2 border-primary shadow-xl ring-2 ring-primary/20"
+                    : "border hover:border-primary/50 transition-all"
                 }`}
               >
                 {plan.highlighted && (
-                  <div className="bg-primary text-primary-foreground text-sm font-semibold px-3 py-1 rounded-full self-start mb-4">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-4 py-1.5 rounded-full whitespace-nowrap">
                     Most Popular
                   </div>
                 )}
                 
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
+                <div className="text-center mb-6 pb-6 border-b">
+                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
                   {plan.subtitle && (
-                    <p className="text-sm text-muted-foreground">{plan.subtitle}</p>
+                    <p className="text-xs text-muted-foreground mb-4">{plan.subtitle}</p>
                   )}
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground ml-2">/{plan.period}</span>
+                  
+                  <div className="mb-2">
+                    <span className="text-4xl font-bold">{getPrice(plan)}</span>
+                    {plan.priceMonthly > 0 && (
+                      <span className="text-sm text-muted-foreground">
+                        /{billingPeriod === "monthly" ? "mo" : "mo"}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {billingPeriod === "annual" && getSavings(plan) && (
+                    <div className="text-xs font-medium text-primary">
+                      {getSavings(plan)}
+                    </div>
+                  )}
+                  
+                  {plan.priceMonthly === 0 && (
+                    <p className="text-sm text-muted-foreground">Forever free</p>
+                  )}
+                  
+                  {billingPeriod === "annual" && plan.priceMonthly > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      ${plan.priceAnnual * 12}/year
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-3 mb-4 text-sm">
+                  <div className="flex items-center justify-center gap-2 font-medium">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>{plan.clients}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 font-medium text-accent">
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                    <span>{plan.fee}</span>
                   </div>
                 </div>
 
-                <div className="mb-6 space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="font-medium">{plan.clients}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-2 h-2 rounded-full bg-accent" />
-                    <span className="font-medium">{plan.fee}</span>
-                  </div>
-                </div>
-
-                <p className="text-sm text-muted-foreground mb-6 pb-6 border-b">
+                <p className="text-xs text-center text-muted-foreground mb-6 pb-4 border-b">
                   {plan.target}
                 </p>
 
-                <ul className="space-y-3 mb-6 flex-grow">
+                <ul className="space-y-2.5 mb-6 flex-grow text-sm">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                  {plan.notIncluded.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 opacity-40">
-                      <div className="h-5 w-5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <div className="w-3 h-0.5 bg-muted-foreground" />
-                      </div>
-                      <span className="text-sm">{feature}</span>
+                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm leading-tight">{feature}</span>
                     </li>
                   ))}
                 </ul>
