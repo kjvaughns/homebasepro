@@ -81,8 +81,13 @@ export default function Waitlist() {
         .from("waitlist")
         .select("*", { count: "exact", head: true });
 
-      setWaitlistPosition(count || 0);
-      setStep(3); // Success step
+      navigate("/waitlist/thank-you", {
+        state: {
+          full_name: validatedData.full_name,
+          account_type: validatedData.account_type,
+          waitlistPosition: count || 0,
+        },
+      });
 
       toast({
         title: "Welcome to HomeBase! 🎉",

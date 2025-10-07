@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
 import Pricing from "./pages/Pricing";
 import Waitlist from "./pages/Waitlist";
+import WaitlistThankYou from "./pages/WaitlistThankYou";
 import OnboardingHomeowner from "./pages/OnboardingHomeowner";
 import OnboardingProvider from "./pages/OnboardingProvider";
 import HomeownerDashboard from "./pages/homeowner/Dashboard";
@@ -48,6 +49,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/waitlist" element={<Waitlist />} />
+          <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/signup" element={<Signup />} />
