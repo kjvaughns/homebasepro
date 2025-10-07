@@ -14,19 +14,19 @@ const Index = () => {
 
   const testimonials = [
     {
-      quote: "HomeBase has completely transformed how I manage my home maintenance. Everything is in one place!",
-      author: "Sarah Johnson",
-      role: "Homeowner",
+      quote: "This is exactly what I've been looking for to manage my home maintenance subscriptions.",
+      author: "Early Access User",
+      role: "Homeowner (Beta Tester)",
     },
     {
-      quote: "As a service provider, HomeBase has helped me grow recurring revenue by 300% in just 6 months.",
-      author: "Mike Chen",
+      quote: "The subscription model is perfect for my HVAC business. Can't wait to get started.",
+      author: "Beta Participant",
       role: "HVAC Provider",
     },
     {
-      quote: "The scheduling and payment features make my life so much easier. Highly recommend!",
-      author: "Emily Rodriguez",
-      role: "Homeowner",
+      quote: "Finally, a platform that makes recurring billing and scheduling simple.",
+      author: "Early Adopter",
+      role: "Service Provider",
     },
   ];
 
@@ -79,7 +79,7 @@ const Index = () => {
         <div className="container mx-auto text-center max-w-4xl relative z-10">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in">
             <Star className="h-4 w-4" />
-            <span className="text-xs sm:text-sm font-medium">🎉 Early Access: Lifetime 25% Discount</span>
+            <span className="text-xs sm:text-sm font-medium">🎉 Early Access: Lifetime 25% Discount for Beta Users</span>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
             Never forget maintenance again
@@ -100,37 +100,41 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Vision Section */}
       <section className="py-16 bg-primary text-primary-foreground">
-        <div className="container mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div className="animate-fade-in">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-8 w-8 mr-2" />
-                <h3 className="text-4xl font-bold">10,000+</h3>
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              Redefining Home Service Management
+            </h2>
+            <p className="text-base sm:text-lg text-primary-foreground/90 mb-8">
+              Join hundreds of early adopters who are ready to transform how home services work
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+              <div className="animate-fade-in">
+                <div className="flex items-center justify-center mb-2">
+                  <Users className="h-6 sm:h-8 w-6 sm:w-8 mr-2" />
+                </div>
+                <p className="text-sm sm:text-base text-primary-foreground/80">Homeowners Ready</p>
               </div>
-              <p className="text-primary-foreground/80">Active Homeowners</p>
-            </div>
-            <div className="animate-fade-in">
-              <div className="flex items-center justify-center mb-2">
-                <Award className="h-8 w-8 mr-2" />
-                <h3 className="text-4xl font-bold">500+</h3>
+              <div className="animate-fade-in">
+                <div className="flex items-center justify-center mb-2">
+                  <Award className="h-6 sm:h-8 w-6 sm:w-8 mr-2" />
+                </div>
+                <p className="text-sm sm:text-base text-primary-foreground/80">Service Providers</p>
               </div>
-              <p className="text-primary-foreground/80">Service Providers</p>
-            </div>
-            <div className="animate-fade-in">
-              <div className="flex items-center justify-center mb-2">
-                <CheckCircle className="h-8 w-8 mr-2" />
-                <h3 className="text-4xl font-bold">50,000+</h3>
+              <div className="animate-fade-in">
+                <div className="flex items-center justify-center mb-2">
+                  <CheckCircle className="h-6 sm:h-8 w-6 sm:w-8 mr-2" />
+                </div>
+                <p className="text-sm sm:text-base text-primary-foreground/80">Built for Scale</p>
               </div>
-              <p className="text-primary-foreground/80">Services Completed</p>
-            </div>
-            <div className="animate-fade-in">
-              <div className="flex items-center justify-center mb-2">
-                <Star className="h-8 w-8 mr-2" />
-                <h3 className="text-4xl font-bold">98%</h3>
+              <div className="animate-fade-in">
+                <div className="flex items-center justify-center mb-2">
+                  <Star className="h-6 sm:h-8 w-6 sm:w-8 mr-2" />
+                </div>
+                <p className="text-sm sm:text-base text-primary-foreground/80">Early Access Perks</p>
               </div>
-              <p className="text-primary-foreground/80">Satisfaction Rate</p>
             </div>
           </div>
         </div>
@@ -301,9 +305,9 @@ const Index = () => {
       {/* Testimonials */}
       <section className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">What Our Users Say</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">What Early Adopters Are Saying</h2>
           <p className="text-center text-muted-foreground mb-12">
-            Trusted by thousands of homeowners and service providers
+            Feedback from beta testers shaping the future of HomeBase
           </p>
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
