@@ -226,7 +226,7 @@ const Pricing = () => {
                 </ul>
 
                 <Button
-                  onClick={() => navigate("/onboarding/provider")}
+                  onClick={() => navigate("/signup")}
                   className="w-full"
                   variant={plan.highlighted ? "default" : "outline"}
                 >
@@ -280,7 +280,7 @@ const Pricing = () => {
           </p>
           <Button 
             size="lg" 
-            onClick={() => navigate("/onboarding/provider")}
+            onClick={() => navigate("/signup")}
             className="text-lg px-8"
           >
             Get Started Free

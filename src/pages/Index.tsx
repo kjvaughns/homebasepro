@@ -19,7 +19,10 @@ const Index = () => {
             <Button onClick={() => navigate("/pricing")} variant="ghost">
               Pricing
             </Button>
-            <Button onClick={() => navigate("/auth")} variant="outline">
+            <Button onClick={() => navigate("/signup")} variant="outline">
+              Sign Up
+            </Button>
+            <Button onClick={() => navigate("/auth")} variant="ghost">
               Sign In
             </Button>
           </div>
@@ -39,7 +42,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              onClick={() => navigate("/onboarding/homeowner")}
+              onClick={() => navigate("/signup")}
               className="text-lg px-8"
             >
               For Homeowners
@@ -47,7 +50,7 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => navigate("/onboarding/provider")}
+              onClick={() => navigate("/signup")}
               className="text-lg px-8"
             >
               For Service Providers
@@ -132,7 +135,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              onClick={() => navigate("/onboarding/homeowner")}
+              onClick={() => navigate("/signup")}
               className="text-lg px-8"
             >
               Get Started as Homeowner
@@ -140,7 +143,7 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => navigate("/onboarding/provider")}
+              onClick={() => navigate("/signup")}
               className="text-lg px-8"
             >
               Get Started as Provider
