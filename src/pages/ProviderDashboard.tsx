@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Home, Users, DollarSign, TrendingUp, LogOut, CreditCard, ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 
 const ProviderDashboard = () => {
   const navigate = useNavigate();
@@ -112,6 +113,7 @@ const ProviderDashboard = () => {
             <span className="text-2xl font-bold text-foreground">HomeBase</span>
           </div>
           <div className="flex items-center gap-4">
+            <RoleSwitcher />
             <span className="text-sm text-muted-foreground">{organization?.name}</span>
             <Button onClick={handleSignOut} variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />

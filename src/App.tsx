@@ -11,6 +11,7 @@ import OnboardingHomeowner from "./pages/OnboardingHomeowner";
 import OnboardingProvider from "./pages/OnboardingProvider";
 import Dashboard from "./pages/Dashboard";
 import ProviderDashboard from "./pages/ProviderDashboard";
+import BecomeProvider from "./pages/BecomeProvider";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/onboarding/provider" element={<OnboardingProvider />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+          <Route path="/become-provider" element={<BecomeProvider />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
