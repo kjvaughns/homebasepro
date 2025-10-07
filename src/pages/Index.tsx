@@ -15,9 +15,14 @@ const Index = () => {
             <Home className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold text-foreground">HomeBase</span>
           </div>
-          <Button onClick={() => navigate("/auth")} variant="outline">
-            Sign In
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button onClick={() => navigate("/pricing")} variant="ghost">
+              Pricing
+            </Button>
+            <Button onClick={() => navigate("/auth")} variant="outline">
+              Sign In
+            </Button>
+          </div>
         </div>
       </header>
 

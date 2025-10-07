@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Home, Briefcase, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const OnboardingProvider = () => {
   const navigate = useNavigate();
@@ -49,12 +50,82 @@ const OnboardingProvider = () => {
     setStep(step + 1);
   };
 
-  const handleComplete = () => {
-    toast({
-      title: "Success!",
-      description: "Your provider profile has been created. Please sign up to continue.",
-    });
-    navigate("/auth");
+  const handleComplete = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Not authenticated",
+          description: "Please sign up first",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      // Create slug from company name
+      const slug = formData.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      // Create organization
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .insert({
+          owner_id: user.id,
+          name: formData.companyName,
+          slug: slug,
+          description: formData.description,
+          service_type: formData.serviceType,
+          phone: formData.phone,
+          email: formData.email,
+          service_area: formData.serviceArea,
+        })
+        .select()
+        .single();
+
+      if (orgError) {
+        console.error("Error creating organization:", orgError);
+        toast({
+          title: "Error",
+          description: "Failed to create organization. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create subscription on free plan
+      const { error: subError } = await supabase
+        .from("organization_subscriptions")
+        .insert({
+          organization_id: orgData.id,
+          plan_tier: "free",
+          status: "active",
+        });
+
+      if (subError) {
+        console.error("Error creating subscription:", subError);
+        toast({
+          title: "Error",
+          description: "Failed to create subscription. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success!",
+        description: "Your provider account is ready. Welcome to HomeBase!",
+      });
+      
+      navigate("/provider/dashboard");
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -178,8 +249,17 @@ const OnboardingProvider = () => {
             </div>
             <h2 className="text-2xl font-bold">You're ready to grow!</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Your provider profile is set up. Create an account to start managing customers and subscriptions.
+              Your provider profile is set up. You'll start on our <strong>Free Plan</strong> with up to 5 clients and 8% transaction fees. You can upgrade anytime as you grow!
             </p>
+            <div className="bg-muted p-4 rounded-lg text-left max-w-md mx-auto">
+              <p className="text-sm font-semibold mb-2">Free Plan includes:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>✓ Up to 5 clients</li>
+                <li>✓ Client Management</li>
+                <li>✓ Recurring Billing</li>
+                <li>✓ Basic Support</li>
+              </ul>
+            </div>
           </div>
         )}
 
@@ -195,7 +275,7 @@ const OnboardingProvider = () => {
             </Button>
           ) : (
             <Button onClick={handleComplete} className="flex-1">
-              Create Account
+              Complete Setup
             </Button>
           )}
         </div>
