@@ -22,6 +22,8 @@ interface ServicePlan {
   billing_frequency: string;
   service_type: string | null;
   is_active: boolean;
+  is_recurring: boolean;
+  includes_features: string[];
 }
 
 export default function ServicePlans() {
@@ -56,7 +58,11 @@ export default function ServicePlans() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPlans(data || []);
+      const typedData = (data || []).map(plan => ({
+        ...plan,
+        includes_features: Array.isArray(plan.includes_features) ? plan.includes_features : []
+      }));
+      setPlans(typedData as ServicePlan[]);
     } catch (error) {
       console.error("Error loading plans:", error);
       toast({

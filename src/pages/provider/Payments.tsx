@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { RecordPaymentDialog } from "@/components/provider/RecordPaymentDialog";
 
 interface Payment {
   id: string;
@@ -28,6 +31,7 @@ interface Payment {
 export default function Payments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRecordDialog, setShowRecordDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,9 +88,15 @@ export default function Payments() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Payments</h1>
-        <p className="text-muted-foreground">Track your revenue and transactions</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Payments</h1>
+          <p className="text-muted-foreground">Track your revenue and transactions</p>
+        </div>
+        <Button onClick={() => setShowRecordDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Record Payment
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -180,6 +190,12 @@ export default function Payments() {
           </TableBody>
         </Table>
       )}
+
+      <RecordPaymentDialog
+        open={showRecordDialog}
+        onOpenChange={setShowRecordDialog}
+        onSuccess={loadPayments}
+      />
     </div>
   );
 }

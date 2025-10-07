@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -19,8 +21,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Trash2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
+
+const SERVICE_CATEGORIES = [
+  "Lawn Care",
+  "Pool Maintenance",
+  "HVAC Service",
+  "House Cleaning",
+  "Pest Control",
+  "Landscaping",
+  "Plumbing",
+  "Electrical",
+  "Other",
+];
 
 interface ServicePlan {
   id: string;
@@ -30,6 +44,8 @@ interface ServicePlan {
   billing_frequency: string;
   service_type: string | null;
   is_active: boolean;
+  is_recurring: boolean;
+  includes_features: string[];
 }
 
 interface EditServicePlanDialogProps {
@@ -46,6 +62,7 @@ export function EditServicePlanDialog({
   plan,
 }: EditServicePlanDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -53,7 +70,10 @@ export function EditServicePlanDialog({
     billing_frequency: "monthly",
     service_type: "",
     is_active: true,
+    is_recurring: true,
+    includes_features: [] as string[],
   });
+  const [newFeature, setNewFeature] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,10 +81,12 @@ export function EditServicePlanDialog({
       setFormData({
         name: plan.name,
         description: plan.description || "",
-        price: (plan.price / 100).toString(),
+        price: (plan.price / 100).toFixed(2),
         billing_frequency: plan.billing_frequency,
         service_type: plan.service_type || "",
         is_active: plan.is_active,
+        is_recurring: plan.is_recurring ?? true,
+        includes_features: plan.includes_features || [],
       });
     }
   }, [plan]);
@@ -72,21 +94,21 @@ export function EditServicePlanDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!plan) return;
-    
+
     setLoading(true);
 
     try {
-      const priceInCents = Math.round(parseFloat(formData.price) * 100);
-
       const { error } = await supabase
         .from("service_plans")
         .update({
           name: formData.name,
           description: formData.description || null,
-          price: priceInCents,
+          price: Math.round(parseFloat(formData.price) * 100),
           billing_frequency: formData.billing_frequency,
           service_type: formData.service_type || null,
           is_active: formData.is_active,
+          is_recurring: formData.is_recurring,
+          includes_features: formData.includes_features,
         })
         .eq("id", plan.id);
 
@@ -112,10 +134,10 @@ export function EditServicePlanDialog({
   };
 
   const handleDelete = async () => {
-    if (!plan) return;
-    if (!confirm("Are you sure you want to delete this service plan?")) return;
+    if (!plan || !confirm("Delete this service plan? This cannot be undone."))
+      return;
 
-    setLoading(true);
+    setDeleting(true);
 
     try {
       const { error } = await supabase
@@ -140,9 +162,11 @@ export function EditServicePlanDialog({
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setDeleting(false);
     }
   };
+
+  if (!plan) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,52 +175,55 @@ export function EditServicePlanDialog({
           <DialogHeader>
             <DialogTitle>Edit Service Plan</DialogTitle>
             <DialogDescription>
-              Update your service plan details
+              Update your service offering details
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-plan-name">Plan Name *</Label>
+              <Label htmlFor="name">Plan Name *</Label>
               <Input
-                id="edit-plan-name"
-                placeholder="e.g., Lawn Care Monthly"
+                id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-plan-description">Description</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
-                id="edit-plan-description"
-                placeholder="Describe what's included..."
+                id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 rows={3}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-plan-price">Price *</Label>
+              <Label htmlFor="price">Price ($) *</Label>
               <Input
-                id="edit-plan-price"
+                id="price"
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="0.00"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, price: e.target.value })
+                }
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-plan-frequency">Billing Frequency *</Label>
+              <Label htmlFor="billing_frequency">Billing Frequency *</Label>
               <Select
                 value={formData.billing_frequency}
                 onValueChange={(value) =>
                   setFormData({ ...formData, billing_frequency: value })
                 }
               >
-                <SelectTrigger id="edit-plan-frequency">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -208,18 +235,106 @@ export function EditServicePlanDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-plan-type">Service Type</Label>
-              <Input
-                id="edit-plan-type"
-                placeholder="e.g., Lawn Care, HVAC, Plumbing"
+              <Label htmlFor="service_type">Service Category</Label>
+              <Select
                 value={formData.service_type}
-                onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, service_type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SERVICE_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="is_recurring">Recurring Subscription</Label>
+              <Switch
+                id="is_recurring"
+                checked={formData.is_recurring}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, is_recurring: checked })
+                }
               />
             </div>
+
+            <div className="grid gap-2">
+              <Label>Features Included</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newFeature}
+                  onChange={(e) => setNewFeature(e.target.value)}
+                  placeholder="Add a feature"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (newFeature.trim()) {
+                        setFormData({
+                          ...formData,
+                          includes_features: [
+                            ...formData.includes_features,
+                            newFeature.trim(),
+                          ],
+                        });
+                        setNewFeature("");
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (newFeature.trim()) {
+                      setFormData({
+                        ...formData,
+                        includes_features: [
+                          ...formData.includes_features,
+                          newFeature.trim(),
+                        ],
+                      });
+                      setNewFeature("");
+                    }
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+              {formData.includes_features.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.includes_features.map((feature, index) => (
+                    <Badge key={index} variant="secondary">
+                      {feature}
+                      <X
+                        className="ml-1 h-3 w-3 cursor-pointer"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            includes_features:
+                              formData.includes_features.filter(
+                                (_, i) => i !== index
+                              ),
+                          });
+                        }}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-plan-active">Active</Label>
+              <Label htmlFor="is_active">Active Status</Label>
               <Switch
-                id="edit-plan-active"
+                id="is_active"
                 checked={formData.is_active}
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, is_active: checked })
@@ -227,22 +342,28 @@ export function EditServicePlanDialog({
               />
             </div>
           </div>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="flex justify-between">
             <Button
               type="button"
               variant="destructive"
               onClick={handleDelete}
-              disabled={loading}
+              disabled={deleting}
             >
-              Delete
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleting ? "Deleting..." : "Delete"}
             </Button>
-            <div className="flex-1" />
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save Changes"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

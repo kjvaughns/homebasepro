@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ArrowUpRight, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Organization {
@@ -19,7 +23,10 @@ interface Organization {
 }
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -41,6 +48,27 @@ export default function Settings() {
 
       if (error) throw error;
       setOrganization(data);
+
+      // Load subscription
+      const { data: subData } = await supabase
+        .from("organization_subscriptions")
+        .select("*")
+        .eq("organization_id", data.id)
+        .eq("status", "active")
+        .single();
+
+      if (subData) {
+        setSubscription(subData);
+
+        // Load plan details
+        const { data: planData } = await supabase
+          .from("subscription_plans")
+          .select("*")
+          .eq("tier", subData.plan_tier)
+          .single();
+
+        setPlan(planData);
+      }
     } catch (error) {
       console.error("Error loading organization:", error);
       toast({
@@ -96,6 +124,21 @@ export default function Settings() {
     return <div className="p-8">Organization not found</div>;
   }
 
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "free":
+        return "bg-muted";
+      case "growth":
+        return "bg-primary/20 text-primary";
+      case "pro":
+        return "bg-accent/20 text-accent";
+      case "scale":
+        return "bg-primary";
+      default:
+        return "bg-muted";
+    }
+  };
+
   return (
     <div className="p-8 space-y-6">
       <div>
@@ -103,87 +146,153 @@ export default function Settings() {
         <p className="text-muted-foreground">Manage your organization settings</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Organization Profile</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Business Name</Label>
-            <Input
-              id="name"
-              value={organization.name}
-              onChange={(e) =>
-                setOrganization({ ...organization, name: e.target.value })
-              }
-            />
-          </div>
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="profile">Organization Profile</TabsTrigger>
+          <TabsTrigger value="billing">Billing & Subscription</TabsTrigger>
+        </TabsList>
 
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={organization.description || ""}
-              onChange={(e) =>
-                setOrganization({ ...organization, description: e.target.value })
-              }
-              rows={3}
-            />
-          </div>
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Business Name</Label>
+                <Input
+                  id="name"
+                  value={organization.name}
+                  onChange={(e) =>
+                    setOrganization({ ...organization, name: e.target.value })
+                  }
+                />
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="email">Contact Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={organization.email || ""}
-              onChange={(e) =>
-                setOrganization({ ...organization, email: e.target.value })
-              }
-            />
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={organization.description || ""}
+                  onChange={(e) =>
+                    setOrganization({ ...organization, description: e.target.value })
+                  }
+                  rows={3}
+                />
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={organization.phone || ""}
-              onChange={(e) =>
-                setOrganization({ ...organization, phone: e.target.value })
-              }
-            />
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Contact Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={organization.email || ""}
+                  onChange={(e) =>
+                    setOrganization({ ...organization, email: e.target.value })
+                  }
+                />
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="service_type">Service Type</Label>
-            <Input
-              id="service_type"
-              value={organization.service_type || ""}
-              onChange={(e) =>
-                setOrganization({ ...organization, service_type: e.target.value })
-              }
-              placeholder="e.g., Lawn Care, Pool Maintenance"
-            />
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={organization.phone || ""}
+                  onChange={(e) =>
+                    setOrganization({ ...organization, phone: e.target.value })
+                  }
+                />
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="service_area">Service Area</Label>
-            <Input
-              id="service_area"
-              value={organization.service_area || ""}
-              onChange={(e) =>
-                setOrganization({ ...organization, service_area: e.target.value })
-              }
-              placeholder="e.g., Miami, FL"
-            />
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="service_type">Service Type</Label>
+                <Input
+                  id="service_type"
+                  value={organization.service_type || ""}
+                  onChange={(e) =>
+                    setOrganization({
+                      ...organization,
+                      service_type: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., Lawn Care, Pool Maintenance"
+                />
+              </div>
 
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </CardContent>
-      </Card>
+              <div className="grid gap-2">
+                <Label htmlFor="service_area">Service Area</Label>
+                <Input
+                  id="service_area"
+                  value={organization.service_area || ""}
+                  onChange={(e) =>
+                    setOrganization({
+                      ...organization,
+                      service_area: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., Miami, FL"
+                />
+              </div>
+
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="billing">
+          {plan ? (
+            <Card className="p-6 border-2 border-primary/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-2xl font-bold">{plan.name}</h2>
+                    <Badge className={getTierColor(plan.tier)}>
+                      {plan.tier.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    {plan.client_limit
+                      ? `Up to ${plan.client_limit} clients`
+                      : "Unlimited clients"}{" "}
+                    • {plan.transaction_fee_percent}% transaction fee
+                  </p>
+                  <div className="flex gap-4">
+                    {plan.tier !== "scale" && (
+                      <Button
+                        onClick={() => navigate("/pricing")}
+                        variant="default"
+                      >
+                        <ArrowUpRight className="h-4 w-4 mr-2" />
+                        Upgrade Plan
+                      </Button>
+                    )}
+                    <Button variant="outline">
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Manage Billing
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Monthly Price
+                  </p>
+                  <p className="text-3xl font-bold">
+                    ${(plan.price_monthly / 100).toFixed(0)}
+                    <span className="text-lg text-muted-foreground">/mo</span>
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <Card className="p-6">
+              <p className="text-muted-foreground">No active subscription</p>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

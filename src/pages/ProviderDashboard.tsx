@@ -142,48 +142,10 @@ const ProviderDashboard = () => {
 
   return (
     <div className="p-8">
-            {/* Current Plan Banner */}
-            {plan && (
-              <Card className="p-6 mb-8 border-2 border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-bold">{plan.name}</h2>
-                  <Badge className={getTierColor(plan.tier)}>
-                    {plan.tier.toUpperCase()}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground mb-4">
-                  {plan.client_limit ? `Up to ${plan.client_limit} clients` : "Unlimited clients"} • {plan.transaction_fee_percent}% transaction fee
-                </p>
-                <div className="flex gap-4">
-                  {plan.tier !== "scale" && (
-                    <Button onClick={() => navigate("/pricing")} variant="default">
-                      <ArrowUpRight className="h-4 w-4 mr-2" />
-                      Upgrade Plan
-                    </Button>
-                  )}
-                  <Button variant="outline">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Manage Billing
-                  </Button>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground mb-1">Monthly Price</p>
-                <p className="text-3xl font-bold">
-                  ${(plan.price_monthly / 100).toFixed(0)}
-                  <span className="text-lg text-muted-foreground">/mo</span>
-                </p>
-              </div>
-              </div>
-            </Card>
-            )}
-
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-2">Overview</h1>
-              <p className="text-muted-foreground">Welcome back to your dashboard</p>
-            </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Overview</h1>
+        <p className="text-muted-foreground">Welcome back to your dashboard</p>
+      </div>
 
             {/* Stats Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -273,14 +235,24 @@ const ProviderDashboard = () => {
               </div>
             </Card>
 
-      {/* Recent Activity */}
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No recent activity yet</p>
-          <p className="text-sm mt-2">Start adding clients to see activity here</p>
-        </div>
-      </Card>
+      {/* Recent Activity & Upcoming Renewals */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No recent activity yet</p>
+            <p className="text-sm mt-2">Activity will appear as you manage clients</p>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Upcoming Renewals</h2>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No upcoming renewals</p>
+            <p className="text-sm mt-2">Renewal notifications will appear here</p>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

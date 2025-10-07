@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -13,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InviteTeamMemberDialog } from "@/components/provider/InviteTeamMemberDialog";
 
 interface TeamMember {
   id: string;
@@ -23,9 +25,11 @@ interface TeamMember {
 }
 
 export default function Team() {
+  const navigate = useNavigate();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [planTier, setPlanTier] = useState<string>("");
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -78,7 +82,7 @@ export default function Team() {
     }
   };
 
-  const isTeamFeatureAvailable = planTier === "growth";
+  const isTeamFeatureAvailable = ["growth", "pro", "scale"].includes(planTier);
 
   return (
     <div className="p-8 space-y-6">
@@ -88,7 +92,7 @@ export default function Team() {
           <p className="text-muted-foreground">Manage your team members</p>
         </div>
         {isTeamFeatureAvailable && (
-          <Button>
+          <Button onClick={() => setShowInviteDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Invite Member
           </Button>
@@ -98,8 +102,12 @@ export default function Team() {
       {!isTeamFeatureAvailable && (
         <Alert>
           <AlertDescription>
-            Team management is only available on the Growth+ plan.{" "}
-            <Button variant="link" className="p-0 h-auto">
+            Team management is only available on Growth+ plans.{" "}
+            <Button
+              variant="link"
+              className="p-0 h-auto"
+              onClick={() => navigate("/pricing")}
+            >
               Upgrade now
             </Button>
           </AlertDescription>
@@ -121,7 +129,7 @@ export default function Team() {
           <p className="text-muted-foreground mb-4">
             Invite team members to collaborate
           </p>
-          <Button>
+          <Button onClick={() => setShowInviteDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Invite Member
           </Button>
@@ -156,6 +164,12 @@ export default function Team() {
           </TableBody>
         </Table>
       )}
+
+      <InviteTeamMemberDialog
+        open={showInviteDialog}
+        onOpenChange={setShowInviteDialog}
+        onSuccess={loadTeamData}
+      />
     </div>
   );
 }

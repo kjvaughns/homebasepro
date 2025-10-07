@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import BecomeProvider from "./pages/BecomeProvider";
 import Clients from "./pages/provider/Clients";
+import ClientDetail from "./pages/provider/ClientDetail";
 import ServicePlans from "./pages/provider/ServicePlans";
 import Subscriptions from "./pages/provider/Subscriptions";
 import Payments from "./pages/provider/Payments";
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/provider" element={<ProviderLayout />}>
             <Route path="dashboard" element={<ProviderDashboard />} />
             <Route path="clients" element={<Clients />} />
+            <Route path="clients/:id" element={<ClientDetail />} />
             <Route path="plans" element={<ServicePlans />} />
             <Route path="subscriptions" element={<Subscriptions />} />
             <Route path="payments" element={<Payments />} />

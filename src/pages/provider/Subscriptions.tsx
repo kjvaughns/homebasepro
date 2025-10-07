@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { AddSubscriptionDialog } from "@/components/provider/AddSubscriptionDialog";
 
 interface Subscription {
   id: string;
@@ -23,6 +26,7 @@ interface Subscription {
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,11 +72,17 @@ export default function Subscriptions() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Subscriptions</h1>
-        <p className="text-muted-foreground">
-          Manage client service subscriptions
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Subscriptions</h1>
+          <p className="text-muted-foreground">
+            Manage client service subscriptions
+          </p>
+        </div>
+        <Button onClick={() => setShowAddDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Subscription
+        </Button>
       </div>
 
       {loading ? (
@@ -126,6 +136,12 @@ export default function Subscriptions() {
           </TableBody>
         </Table>
       )}
+
+      <AddSubscriptionDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onSuccess={loadSubscriptions}
+      />
     </div>
   );
 }

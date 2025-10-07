@@ -270,7 +270,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          includes_features: Json | null
           is_active: boolean
+          is_recurring: boolean
           name: string
           organization_id: string
           price: number
@@ -282,7 +284,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          includes_features?: Json | null
           is_active?: boolean
+          is_recurring?: boolean
           name: string
           organization_id: string
           price: number
@@ -294,7 +298,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          includes_features?: Json | null
           is_active?: boolean
+          is_recurring?: boolean
           name?: string
           organization_id?: string
           price?: number

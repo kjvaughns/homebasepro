@@ -12,6 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +23,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+
+const SERVICE_CATEGORIES = [
+  "Lawn Care",
+  "Pool Maintenance",
+  "HVAC Service",
+  "House Cleaning",
+  "Pest Control",
+  "Landscaping",
+  "Plumbing",
+  "Electrical",
+  "Other",
+];
 
 interface AddServicePlanDialogProps {
   open: boolean;
@@ -39,7 +54,10 @@ export function AddServicePlanDialog({
     price: "",
     billing_frequency: "monthly",
     service_type: "",
+    is_recurring: true,
+    includes_features: [] as string[],
   });
+  const [newFeature, setNewFeature] = useState("");
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +84,8 @@ export function AddServicePlanDialog({
         billing_frequency: formData.billing_frequency,
         service_type: formData.service_type || null,
         is_active: true,
+        is_recurring: formData.is_recurring,
+        includes_features: formData.includes_features,
       });
 
       if (error) throw error;
@@ -81,7 +101,10 @@ export function AddServicePlanDialog({
         price: "",
         billing_frequency: "monthly",
         service_type: "",
+        is_recurring: true,
+        includes_features: [],
       });
+      setNewFeature("");
       onOpenChange(false);
       onSuccess();
     } catch (error) {
@@ -162,15 +185,100 @@ export function AddServicePlanDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="service_type">Service Type</Label>
-              <Input
-                id="service_type"
+              <Label htmlFor="service_type">Service Category</Label>
+              <Select
                 value={formData.service_type}
-                onChange={(e) =>
-                  setFormData({ ...formData, service_type: e.target.value })
+                onValueChange={(value) =>
+                  setFormData({ ...formData, service_type: value })
                 }
-                placeholder="e.g., Lawn Care, Pool Maintenance"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SERVICE_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="is_recurring">Recurring Subscription</Label>
+              <Switch
+                id="is_recurring"
+                checked={formData.is_recurring}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, is_recurring: checked })
+                }
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Features Included</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newFeature}
+                  onChange={(e) => setNewFeature(e.target.value)}
+                  placeholder="Add a feature"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (newFeature.trim()) {
+                        setFormData({
+                          ...formData,
+                          includes_features: [
+                            ...formData.includes_features,
+                            newFeature.trim(),
+                          ],
+                        });
+                        setNewFeature("");
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (newFeature.trim()) {
+                      setFormData({
+                        ...formData,
+                        includes_features: [
+                          ...formData.includes_features,
+                          newFeature.trim(),
+                        ],
+                      });
+                      setNewFeature("");
+                    }
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+              {formData.includes_features.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.includes_features.map((feature, index) => (
+                    <Badge key={index} variant="secondary">
+                      {feature}
+                      <X
+                        className="ml-1 h-3 w-3 cursor-pointer"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            includes_features:
+                              formData.includes_features.filter(
+                                (_, i) => i !== index
+                              ),
+                          });
+                        }}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
