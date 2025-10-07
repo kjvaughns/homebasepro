@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Home, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import homebaseLogo from "@/assets/homebase-logo.png";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -101,10 +102,10 @@ const Pricing = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-            <Home className="h-8 w-8 text-primary" />
+            <img src={homebaseLogo} alt="HomeBase" className="h-8 w-8" />
             <span className="text-2xl font-bold text-foreground">HomeBase</span>
           </div>
-          <Button onClick={() => navigate("/waitlist")} size="sm" className="sm:h-10">
+          <Button onClick={() => navigate("/waitlist")} size="sm" className="sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
             Join Waitlist
           </Button>
         </div>

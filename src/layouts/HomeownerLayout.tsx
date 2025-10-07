@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import homebaseLogo from "@/assets/homebase-logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +45,8 @@ export default function HomeownerLayout() {
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/dashboard" className="font-semibold text-lg">
+            <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
+              <img src={homebaseLogo} alt="HomeBase" className="h-6 w-6" />
               HomeBase
             </Link>
           </div>

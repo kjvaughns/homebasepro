@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, LogOut, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import homebaseLogo from "@/assets/homebase-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -75,7 +76,7 @@ export function ProviderLayout() {
           <header className="border-b border-border bg-card">
             <div className="px-4 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Home className="h-8 w-8 text-primary" />
+                <img src={homebaseLogo} alt="HomeBase" className="h-8 w-8" />
                 <span className="text-2xl font-bold text-foreground">HomeBase</span>
               </div>
               <div className="flex items-center gap-4">

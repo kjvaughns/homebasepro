@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Home, Briefcase, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import homebaseLogo from "@/assets/homebase-logo.png";
 
 const BecomeProvider = () => {
   const navigate = useNavigate();
@@ -106,7 +107,7 @@ const BecomeProvider = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl p-8">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <Home className="h-8 w-8 text-primary" />
+          <img src={homebaseLogo} alt="HomeBase" className="h-8 w-8" />
           <span className="text-2xl font-bold">HomeBase</span>
         </div>
 
