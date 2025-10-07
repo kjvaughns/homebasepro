@@ -58,10 +58,9 @@ export default function Waitlist() {
         referral_source: validatedData.referral_source || null,
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("waitlist")
-        .insert([dataToInsert])
-        .select();
+        .insert([dataToInsert]);
 
       if (error) {
         if (error.code === '23505') {
@@ -76,16 +75,11 @@ export default function Waitlist() {
         return;
       }
 
-      // Get waitlist position
-      const { count } = await supabase
-        .from("waitlist")
-        .select("*", { count: "exact", head: true });
-
+      // Navigate to thank you without counting (RLS-safe)
       navigate("/waitlist/thank-you", {
         state: {
           full_name: validatedData.full_name,
           account_type: validatedData.account_type,
-          waitlistPosition: count || 0,
         },
       });
 
