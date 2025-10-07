@@ -112,37 +112,90 @@ export default function Waitlist() {
   };
 
   if (step === 3) {
+    // Calculate discounted pricing (25% off)
+    const pricingPlans = [
+      { name: "Free Plan", original: 0, discounted: 0, fee: "8% → 6%" },
+      { name: "Growth", original: 49, discounted: 37, fee: "2.5% → 1.9%" },
+      { name: "Pro", original: 129, discounted: 97, fee: "2.0% → 1.5%" },
+      { name: "Scale", original: 299, discounted: 224, fee: "1.5% → 1.1%" },
+    ];
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg">
+        <Card className="w-full max-w-2xl">
           <CardHeader className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
               <Sparkles className="w-8 h-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl md:text-3xl">You're In! 🎉</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">Welcome to HomeBase! 🎉</CardTitle>
             <CardDescription className="text-base">
-              Welcome to HomeBase Early Access
+              You're officially an early adopter
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 text-center">
-            <div className="bg-primary/5 p-6 rounded-lg space-y-2">
-              <p className="text-sm text-muted-foreground">You're waitlist position</p>
+          <CardContent className="space-y-6">
+            <div className="bg-primary/5 p-6 rounded-lg space-y-2 text-center">
+              <p className="text-sm text-muted-foreground">Your Waitlist Position</p>
               <p className="text-4xl font-bold text-primary">#{waitlistPosition}</p>
             </div>
             
-            <div className="space-y-3 text-sm text-left">
-              <div className="flex items-start gap-3">
-                <span className="text-xl">✅</span>
-                <p><strong>Lifetime 25% discount</strong> on all plans locked in</p>
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Your Early Adopter Perks:</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <span className="text-xl">🎁</span>
+                  <div>
+                    <p className="font-semibold">Lifetime 25% Discount</p>
+                    <p className="text-muted-foreground">Lock in discounted pricing forever on all plans</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <span className="text-xl">⚡</span>
+                  <div>
+                    <p className="font-semibold">Priority Access</p>
+                    <p className="text-muted-foreground">First to access new features and updates</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <span className="text-xl">💬</span>
+                  <div>
+                    <p className="font-semibold">Direct Feedback Line</p>
+                    <p className="text-muted-foreground">Help shape the platform with your input</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <span className="text-xl">📧</span>
+                  <div>
+                    <p className="font-semibold">Launch Notification</p>
+                    <p className="text-muted-foreground">We'll email you as soon as we go live</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">📧</span>
-                <p>Check your email for confirmation</p>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Your Discounted Pricing:</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {pricingPlans.map((plan) => (
+                  <div key={plan.name} className="p-4 border rounded-lg space-y-1">
+                    <p className="font-semibold">{plan.name}</p>
+                    {plan.original === 0 ? (
+                      <p className="text-2xl font-bold text-primary">Free</p>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-2xl font-bold text-primary">${plan.discounted}</p>
+                          <p className="text-sm text-muted-foreground line-through">${plan.original}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">per month</p>
+                      </>
+                    )}
+                    <p className="text-xs text-muted-foreground">Transaction Fee: {plan.fee}</p>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">🚀</span>
-                <p>We'll notify you as soon as we launch</p>
-              </div>
+              <p className="text-xs text-center text-muted-foreground italic">
+                These rates are locked in for life when you sign up at launch
+              </p>
             </div>
 
             <Button onClick={() => navigate("/")} className="w-full" size="lg">
