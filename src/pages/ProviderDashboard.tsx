@@ -147,93 +147,81 @@ const ProviderDashboard = () => {
         <p className="text-muted-foreground">Welcome back to your dashboard</p>
       </div>
 
-            {/* Stats Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Clients</p>
-                    <p className="text-2xl font-bold">{stats.activeClients}</p>
-                    {plan?.client_limit && (
-                      <p className="text-xs text-muted-foreground">of {plan.client_limit} limit</p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="bg-accent/10 p-3 rounded-lg">
-                    <TrendingUp className="h-6 w-6 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                    <p className="text-2xl font-bold">${(stats.monthlyRevenue / 100).toFixed(2)}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <DollarSign className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Transaction Fees</p>
-                    <p className="text-2xl font-bold">{plan?.transaction_fee_percent || 0}%</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="bg-accent/10 p-3 rounded-lg">
-                    <Users className="h-6 w-6 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Team Members</p>
-                    <p className="text-2xl font-bold">{stats.teamMembers}</p>
-                  </div>
-                </div>
-              </Card>
+      {/* Stats Grid */}
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-lg">
+              <Users className="h-6 w-6 text-primary" />
             </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Active Clients</p>
+              <p className="text-2xl font-bold">{stats.activeClients}</p>
+              {plan?.client_limit && (
+                <p className="text-xs text-muted-foreground">of {plan.client_limit} limit</p>
+              )}
+            </div>
+          </div>
+        </Card>
 
-            {/* Quick Actions */}
-            <Card className="p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-6 flex-col items-start"
-                  onClick={() => navigate("/provider/clients")}
-                >
-                  <Plus className="h-6 w-6 mb-2 text-primary" />
-                  <span className="font-semibold">Add Client</span>
-                  <span className="text-xs text-muted-foreground">Register a new customer</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-6 flex-col items-start"
-                  onClick={() => navigate("/provider/plans")}
-                >
-                  <DollarSign className="h-6 w-6 mb-2 text-primary" />
-                  <span className="font-semibold">Create Plan</span>
-                  <span className="text-xs text-muted-foreground">Set up a service plan</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-6 flex-col items-start"
-                  onClick={() => navigate("/provider/payments")}
-                >
-                  <TrendingUp className="h-6 w-6 mb-2 text-primary" />
-                  <span className="font-semibold">View Payments</span>
-                  <span className="text-xs text-muted-foreground">Track your revenue</span>
-                </Button>
-              </div>
-            </Card>
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-accent/10 p-3 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-accent" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+              <p className="text-2xl font-bold">${(stats.monthlyRevenue / 100).toFixed(2)}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-accent/10 p-3 rounded-lg">
+              <Users className="h-6 w-6 text-accent" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Team Members</p>
+              <p className="text-2xl font-bold">{stats.teamMembers}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card className="p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Button 
+            variant="outline" 
+            className="h-auto py-6 flex-col items-start"
+            onClick={() => navigate("/provider/clients")}
+          >
+            <Plus className="h-6 w-6 mb-2 text-primary" />
+            <span className="font-semibold">Add Client</span>
+            <span className="text-xs text-muted-foreground">Register a new customer</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-auto py-6 flex-col items-start"
+            onClick={() => navigate("/provider/plans")}
+          >
+            <DollarSign className="h-6 w-6 mb-2 text-primary" />
+            <span className="font-semibold">Create Plan</span>
+            <span className="text-xs text-muted-foreground">Set up a service plan</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-auto py-6 flex-col items-start"
+            onClick={() => navigate("/provider/payments")}
+          >
+            <TrendingUp className="h-6 w-6 mb-2 text-primary" />
+            <span className="font-semibold">View Payments</span>
+            <span className="text-xs text-muted-foreground">Track your revenue</span>
+          </Button>
+        </div>
+      </Card>
 
       {/* Recent Activity & Upcoming Renewals */}
       <div className="grid md:grid-cols-2 gap-6">

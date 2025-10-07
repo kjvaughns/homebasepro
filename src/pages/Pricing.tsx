@@ -35,10 +35,10 @@ const Pricing = () => {
       target: "Small operators building subscriptions",
       features: [
         "Everything in Free",
+        "Analytics Dashboard",
         "Automated Reminders",
         "1 Team Member",
         "Review Requests",
-        "Basic Analytics",
         "Priority Support",
       ],
       cta: "Start Growth",
@@ -53,9 +53,9 @@ const Pricing = () => {
       target: "Established providers",
       features: [
         "Everything in Growth",
+        "Advanced Analytics & Reports",
         "3 Team Members",
         "White-Label Branding",
-        "Advanced Analytics",
         "Custom Domain",
         "Premium Support",
       ],
@@ -71,10 +71,10 @@ const Pricing = () => {
       target: "Multi-location & agencies",
       features: [
         "Everything in Pro",
+        "Full Analytics Suite",
         "Unlimited clients",
         "Unlimited Team Members",
         "API Access & Integrations",
-        "Full Analytics Suite",
         "Dedicated Account Manager",
       ],
       cta: "Start Scale",
@@ -265,6 +265,12 @@ const Pricing = () => {
               <h3 className="font-semibold mb-2">Are there any setup fees?</h3>
               <p className="text-muted-foreground">
                 No setup fees, ever. The free plan is completely free to get started, and paid plans only charge the monthly subscription.
+              </p>
+            </Card>
+            <Card className="p-6">
+              <h3 className="font-semibold mb-2">Do all paid plans include analytics?</h3>
+              <p className="text-muted-foreground">
+                Yes! All paid plans (Growth, Pro, and Scale) include analytics dashboards. Higher tiers provide more advanced reporting and insights.
               </p>
             </Card>
           </div>
