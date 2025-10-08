@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, LogOut, User } from "lucide-react";
+import { Home, LogOut, User, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import { useToast } from "@/hooks/use-toast";
@@ -16,15 +16,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function ProviderLayout() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [organization, setOrganization] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    loadOrganization();
+    checkAdminAndLoadOrg();
   }, []);
+
+  const checkAdminAndLoadOrg = async () => {
+    // Check if user is admin first
+    const { data: isAdminData, error: adminError } = await supabase.rpc("is_admin");
+    if (!adminError && isAdminData) {
+      setIsAdmin(true);
+      // Admins can view without organization
+      return;
+    }
+    
+    // Non-admins need organization
+    await loadOrganization();
+  };
 
   const loadOrganization = async () => {
     try {
@@ -68,8 +83,19 @@ export function ProviderLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <ProviderSidebar />
+      <div className="min-h-screen flex w-full flex-col">
+        {/* Admin Preview Banner */}
+        {isAdmin && (
+          <Alert className="rounded-none border-x-0 border-t-0 bg-primary/10 border-primary">
+            <Eye className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Admin Preview Mode</strong> - Viewing as Provider
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        <div className="flex flex-1">
+          <ProviderSidebar />
 
         <div className="flex-1 flex flex-col">
           {/* Header */}
@@ -113,6 +139,7 @@ export function ProviderLayout() {
           <div className="flex-1 overflow-auto">
             <Outlet />
           </div>
+        </div>
         </div>
       </div>
     </SidebarProvider>

@@ -1,4 +1,5 @@
-import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut, Eye } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: Home },
@@ -29,6 +31,17 @@ export default function HomeownerLayout() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data, error } = await supabase.rpc("is_admin");
+      if (!error && data) {
+        setIsAdmin(true);
+      }
+    };
+    checkAdminStatus();
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -41,6 +54,16 @@ export default function HomeownerLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Admin Preview Banner */}
+      {isAdmin && (
+        <Alert className="rounded-none border-x-0 border-t-0 bg-primary/10 border-primary">
+          <Eye className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Admin Preview Mode</strong> - Viewing as Homeowner
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Top Bar */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">

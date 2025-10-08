@@ -4,6 +4,8 @@ import StatsCard from "@/components/admin/StatsCard";
 import { Users, DollarSign, TrendingUp, UserPlus, Building2, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { DashboardFilters } from "@/components/admin/DashboardFilters";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
   totalWaitlist: number;
@@ -28,6 +30,11 @@ const Dashboard = () => {
     projectedRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  });
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -92,16 +99,51 @@ const Dashboard = () => {
     { name: "Providers", value: stats.totalProviders, color: "#D946EF" },
   ];
 
+  const handleExport = () => {
+    // Create CSV content
+    const csvContent = [
+      ["Metric", "Value"],
+      ["Total Waitlist", stats.totalWaitlist],
+      ["Total Users", stats.totalUsers],
+      ["Total Homeowners", stats.totalHomeowners],
+      ["Total Providers", stats.totalProviders],
+      ["Active Subscriptions", stats.activeSubscriptions],
+      ["MRR", `$${(stats.mrr / 100).toFixed(2)}`],
+      ["ARR", `$${(stats.arr / 100).toFixed(2)}`],
+      ["Projected Revenue", `$${(stats.projectedRevenue / 100).toFixed(2)}`],
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dashboard-stats-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export successful",
+      description: "Dashboard data has been exported to CSV",
+    });
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to your admin control center</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Welcome to your admin control center</p>
+        </div>
       </div>
+
+      <DashboardFilters onDateRangeChange={setDateRange} onExport={handleExport} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard

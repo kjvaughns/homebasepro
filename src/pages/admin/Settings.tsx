@@ -3,14 +3,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Settings as SettingsIcon } from "lucide-react";
+import { AdminProfileSettings } from "@/components/admin/AdminProfileSettings";
 
 const Settings = () => {
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage platform-wide settings and configurations</p>
+        <p className="text-muted-foreground">Manage your profile and platform settings</p>
       </div>
+
+      <AdminProfileSettings />
 
       <Card>
         <CardHeader>
