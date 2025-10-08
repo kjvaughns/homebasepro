@@ -118,6 +118,8 @@ const ProviderLayout = () => {
       .slice(0, 2);
   };
 
+  const isMessagesRoute = location.pathname.startsWith("/provider/messages");
+
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Preview Banner */}
@@ -168,7 +170,8 @@ const ProviderLayout = () => {
 
       {/* Main Content */}
       <main className={cn(
-        "pb-20 md:pb-0",
+        isMessagesRoute ? "pb-4 md:pb-8 relative overflow-hidden h-[calc(100dvh-3.5rem-4rem)] md:h-[calc(100vh-3.5rem)]" : "pb-20 md:pb-0",
+        "min-h-0",
         isMobile ? "" : "pl-64"
       )}>
         <Outlet />
