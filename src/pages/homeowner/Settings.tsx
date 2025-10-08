@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function HomeownerSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -115,6 +118,19 @@ export default function HomeownerSettings() {
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Manage your account settings and preferences</p>
       </div>
+
+      {/* Role Switcher on Mobile */}
+      {isMobile && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Switch Role</CardTitle>
+            <CardDescription>Toggle between homeowner and provider views</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RoleSwitcher />
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="profile" className="space-y-4">
         <TabsList>

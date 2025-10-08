@@ -339,8 +339,8 @@ export default function ProviderMessages() {
           )}>
             {selectedConversation ? (
               <>
-                {/* Chat Header */}
-                <div className="border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
+                {/* Chat Header - Sticky on mobile */}
+                <div className="sticky top-0 z-10 border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
                   {/* Back button for mobile */}
                   <Button
                     variant="ghost"

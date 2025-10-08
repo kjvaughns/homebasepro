@@ -9,6 +9,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ProviderSidebar } from "@/components/ProviderSidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export function ProviderLayout() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [organization, setOrganization] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -128,7 +130,7 @@ export function ProviderLayout() {
                 <span className="text-2xl font-bold text-foreground">HomeBase</span>
               </div>
               <div className="flex items-center gap-4">
-                <RoleSwitcher />
+                {!isMobile && <RoleSwitcher />}
                 {organization && (
                   <span className="text-sm text-muted-foreground">{organization.name}</span>
                 )}

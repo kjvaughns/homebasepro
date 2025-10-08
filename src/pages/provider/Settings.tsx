@@ -10,6 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpRight, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { CardDescription } from "@/components/ui/card";
 
 interface Organization {
   id: string;
@@ -24,6 +27,7 @@ interface Organization {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [plan, setPlan] = useState<any>(null);
@@ -145,6 +149,19 @@ export default function Settings() {
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground">Manage your organization settings</p>
       </div>
+
+      {/* Role Switcher on Mobile */}
+      {isMobile && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Switch Role</CardTitle>
+            <CardDescription>Toggle between homeowner and provider views</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RoleSwitcher />
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
