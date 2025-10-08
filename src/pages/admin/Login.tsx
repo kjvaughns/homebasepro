@@ -27,6 +27,7 @@ const AdminLogin = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [inviteRole, setInviteRole] = useState<string | null>(null);
+  const [bootstrap, setBootstrap] = useState(false);
 
   useEffect(() => {
     // If already logged in and has role, redirect to dashboard
@@ -75,8 +76,21 @@ const AdminLogin = () => {
         setFullName(invite.full_name || "");
         setPhone(invite.phone || "");
         setInviteRole(invite.role);
+        setBootstrap(false);
         setMode("signup");
         toast({ title: "You're invited!", description: "Create your admin password." });
+        return;
+      }
+
+      // 3) Bootstrap: if no admin exists, allow this email to set up the first admin
+      const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
+      if (adminExistsError) throw adminExistsError;
+
+      if (adminExistsData === false) {
+        setInviteRole("admin");
+        setBootstrap(true);
+        setMode("signup");
+        toast({ title: "Set up admin", description: "Create the initial owner admin account." });
         return;
       }
 
@@ -126,10 +140,9 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (!inviteRole) throw new Error("Invite role missing");
-
-      // Create account
       const redirectUrl = `${window.location.origin}/admin/dashboard`;
+
+      // Create account (works for both bootstrap and invited flows)
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -140,7 +153,21 @@ const AdminLogin = () => {
       const userId = signUpData.user?.id;
       if (!userId) throw new Error("Signup failed");
 
-      // Insert staff record (allowed via invite policy)
+      if (bootstrap) {
+        // Bootstrap path: assign admin role directly (policy allows only when no admins exist)
+        const { error: roleError } = await supabase.from("user_roles").insert([
+          { user_id: userId, role: "admin" as any },
+        ]);
+        if (roleError) throw roleError;
+
+        toast({ title: "Owner admin created", description: "Welcome to the admin portal!" });
+        navigate("/admin/dashboard");
+        return;
+      }
+
+      if (!inviteRole) throw new Error("Invite role missing");
+
+      // Invited flow: create staff record and assign invited role, then mark invite accepted
       const { error: staffError } = await supabase.from("staff").insert([
         {
           user_id: userId,
@@ -151,13 +178,11 @@ const AdminLogin = () => {
       ]);
       if (staffError) throw staffError;
 
-      // Assign role (allowed via invite policy)
       const { error: roleError } = await supabase.from("user_roles").insert([
         { user_id: userId, role: inviteRole as any },
       ]);
       if (roleError) throw roleError;
 
-      // Mark invite accepted
       const { error: inviteError } = await supabase
         .from("staff_invites")
         .update({ status: "accepted", accepted_at: new Date().toISOString() })
