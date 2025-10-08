@@ -288,7 +288,7 @@ export default function HomeownerMessages() {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-background md:h-screen overflow-hidden">
+    <div className="bg-background md:h-[calc(100vh-3.5rem)] md:flex md:flex-col">
       {/* Page Header - Only on desktop */}
       <div className="hidden md:block border-b p-4 bg-card shrink-0">
         <h1 className="text-2xl font-bold">Messages</h1>
@@ -318,7 +318,7 @@ export default function HomeownerMessages() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex overflow-hidden">
+        <div className="fixed inset-x-0 top-14 bottom-16 z-10 bg-background md:static md:flex md:flex-1 md:overflow-hidden">
           {/* Conversations List - Hidden on mobile when conversation selected */}
           <div className={cn(
             "w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden",
@@ -343,10 +343,10 @@ export default function HomeownerMessages() {
           </div>
 
           {/* Messages Area - Full width on mobile, fixed layout */}
-          <div className={cn(
-            "flex-1 flex flex-col overflow-hidden",
-            !selectedConversation && "hidden md:flex"
-          )}>
+                <div className={cn(
+                  "flex-1 relative flex flex-col overflow-hidden",
+                  !selectedConversation && "hidden md:flex"
+                )}>
             {selectedConversation ? (
               <>
                 {/* Fixed Header Section */}
@@ -453,7 +453,7 @@ export default function HomeownerMessages() {
                   )}
 
                   {/* Input Area */}
-                  <div className="border-t p-4 bg-card pb-safe">
+                  <div className="border-t p-4 bg-card pb-[env(safe-area-inset-bottom)]">
                     <div className="flex items-end gap-2">
                       <AttachmentButton
                         onFileSelect={handleFileSelect}

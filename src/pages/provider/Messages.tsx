@@ -283,7 +283,7 @@ export default function ProviderMessages() {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-background md:h-screen overflow-hidden">
+    <div className="bg-background md:h-[calc(100vh-3.5rem)] md:flex md:flex-col">
       {/* Page Header - Only on desktop */}
       <div className="hidden md:block border-b p-4 bg-card shrink-0">
         <h1 className="text-2xl font-bold">Messages</h1>
@@ -334,10 +334,10 @@ export default function ProviderMessages() {
           </div>
 
           {/* Messages Area - Full width on mobile, fixed layout */}
-          <div className={cn(
-            "flex-1 flex flex-col overflow-hidden",
-            !selectedConversation && "hidden md:flex"
-          )}>
+            <div className={cn(
+              "flex-1 relative flex flex-col overflow-hidden",
+              !selectedConversation && "hidden md:flex"
+            )}>
             {selectedConversation ? (
               <>
                 {/* Fixed Header Section */}
@@ -430,7 +430,7 @@ export default function ProviderMessages() {
                   )}
 
                   {/* Input Area */}
-                  <div className="border-t p-4 bg-card pb-safe">
+                  <div className="border-t p-4 bg-card pb-[env(safe-area-inset-bottom)]">
                     <div className="flex items-end gap-2">
                       <AttachmentButton onFileSelect={handleFileSelect} disabled={uploading} />
                       <Textarea
