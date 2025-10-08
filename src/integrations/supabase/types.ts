@@ -880,8 +880,10 @@ export type Database = {
         Row: {
           account_type: string
           business_name: string | null
+          client_count: string | null
           converted: boolean | null
           created_at: string | null
+          current_services: string | null
           email: string
           full_name: string
           id: string
@@ -894,8 +896,10 @@ export type Database = {
         Insert: {
           account_type: string
           business_name?: string | null
+          client_count?: string | null
           converted?: boolean | null
           created_at?: string | null
+          current_services?: string | null
           email: string
           full_name: string
           id?: string
@@ -908,8 +912,10 @@ export type Database = {
         Update: {
           account_type?: string
           business_name?: string | null
+          client_count?: string | null
           converted?: boolean | null
           created_at?: string | null
+          current_services?: string | null
           email?: string
           full_name?: string
           id?: string

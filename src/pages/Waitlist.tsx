@@ -20,6 +20,8 @@ const waitlistSchema = z.object({
   service_type: z.string().optional(),
   zip_code: z.string().trim().regex(/^\d{5}$/, "Invalid ZIP code").optional(),
   referral_source: z.string().trim().max(200).optional(),
+  current_services: z.string().trim().max(500).optional(),
+  client_count: z.string().optional(),
 });
 
 export default function Waitlist() {
@@ -38,7 +40,10 @@ export default function Waitlist() {
     service_type: "",
     zip_code: "",
     referral_source: "",
+    current_services: "",
+    client_count: "",
   });
+  const [customServiceType, setCustomServiceType] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +61,8 @@ export default function Waitlist() {
         service_type: validatedData.service_type || null,
         zip_code: validatedData.zip_code || null,
         referral_source: validatedData.referral_source || null,
+        current_services: validatedData.current_services || null,
+        client_count: validatedData.client_count || null,
       };
 
       const { error } = await supabase
@@ -308,6 +315,19 @@ export default function Waitlist() {
                     />
                   </div>
 
+                  {formData.account_type === "homeowner" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="current_services">What home services do you currently use? *</Label>
+                      <Input
+                        id="current_services"
+                        value={formData.current_services}
+                        onChange={(e) => updateField("current_services", e.target.value)}
+                        required
+                        placeholder="e.g., HVAC, Landscaping, Pool Maintenance"
+                      />
+                    </div>
+                  )}
+
                   {formData.account_type === "provider" && (
                     <>
                       <div className="space-y-2">
@@ -324,8 +344,16 @@ export default function Waitlist() {
                       <div className="space-y-2">
                         <Label htmlFor="service_type">Primary Service Type *</Label>
                         <Select
-                          value={formData.service_type}
-                          onValueChange={(value) => updateField("service_type", value)}
+                          value={formData.service_type === "other" || !["hvac", "plumbing", "electrical", "landscaping", "pool", "cleaning", "pest_control"].includes(formData.service_type) ? "other" : formData.service_type}
+                          onValueChange={(value) => {
+                            if (value === "other") {
+                              updateField("service_type", "");
+                              setCustomServiceType("");
+                            } else {
+                              updateField("service_type", value);
+                              setCustomServiceType("");
+                            }
+                          }}
                           required
                         >
                           <SelectTrigger>
@@ -339,7 +367,42 @@ export default function Waitlist() {
                             <SelectItem value="pool">Pool Maintenance</SelectItem>
                             <SelectItem value="cleaning">Cleaning</SelectItem>
                             <SelectItem value="pest_control">Pest Control</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="other">Other (specify below)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {(formData.service_type === "other" || formData.service_type === "" || !["hvac", "plumbing", "electrical", "landscaping", "pool", "cleaning", "pest_control"].includes(formData.service_type)) && (
+                        <div className="space-y-2">
+                          <Label htmlFor="custom_service_type">Specify Service Type *</Label>
+                          <Input
+                            id="custom_service_type"
+                            value={customServiceType || formData.service_type}
+                            onChange={(e) => {
+                              setCustomServiceType(e.target.value);
+                              updateField("service_type", e.target.value);
+                            }}
+                            required
+                            placeholder="Enter your service type"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="client_count">Current Client Count *</Label>
+                        <Select
+                          value={formData.client_count}
+                          onValueChange={(value) => updateField("client_count", value)}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select client count" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0-5">0-5 clients</SelectItem>
+                            <SelectItem value="6-20">6-20 clients</SelectItem>
+                            <SelectItem value="20-50">20-50 clients</SelectItem>
+                            <SelectItem value="50+">50+ clients</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
