@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -59,9 +61,28 @@ const AdminLayout = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto p-6">
+      {/* Desktop Sidebar - hidden on mobile */}
+      <div className="hidden lg:block">
+        <AdminSidebar />
+      </div>
+
+      {/* Mobile Header with Menu */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 border-b bg-card p-4 flex items-center gap-4">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64">
+            <AdminSidebar />
+          </SheetContent>
+        </Sheet>
+        <h2 className="text-lg font-bold text-primary">Admin Portal</h2>
+      </div>
+
+      <main className="flex-1 overflow-auto w-full">
+        <div className="container mx-auto p-4 md:p-6 pt-20 lg:pt-6">
           <Outlet />
         </div>
       </main>
