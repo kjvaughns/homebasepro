@@ -288,7 +288,7 @@ export default function HomeownerMessages() {
   };
 
   return (
-    <div className="bg-background md:h-[calc(100vh-3.5rem)] md:flex md:flex-col">
+    <div className="h-[calc(100dvh-3.5rem)] md:h-[calc(100vh-3.5rem)] flex flex-col bg-background overflow-hidden">
       {/* Page Header - Only on desktop */}
       <div className="hidden md:block border-b p-4 bg-card shrink-0">
         <h1 className="text-2xl font-bold">Messages</h1>
@@ -318,7 +318,7 @@ export default function HomeownerMessages() {
           </div>
         </div>
       ) : (
-        <div className="fixed inset-x-0 top-14 bottom-16 z-10 bg-background md:static md:flex md:flex-1 md:overflow-hidden">
+        <div className="flex-1 flex overflow-hidden">
           {/* Conversations List - Hidden on mobile when conversation selected */}
           <div className={cn(
             "w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden",
