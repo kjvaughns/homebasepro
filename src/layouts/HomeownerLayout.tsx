@@ -32,6 +32,7 @@ export default function HomeownerLayout() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -45,7 +46,7 @@ export default function HomeownerLayout() {
       // Check user profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("user_type")
+        .select("user_type, full_name")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -69,6 +70,8 @@ export default function HomeownerLayout() {
         return;
       }
 
+      setUserProfile(profile);
+
       // Check if user is admin
       const { data } = await supabase.rpc("is_admin");
       setIsAdmin(data || false);
@@ -83,6 +86,16 @@ export default function HomeownerLayout() {
       description: "You have been signed out successfully",
     });
     navigate("/");
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "HO";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const isMessagesRoute = location.pathname.startsWith("/homeowner/messages");
@@ -115,7 +128,7 @@ export default function HomeownerLayout() {
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="" />
-                    <AvatarFallback>HO</AvatarFallback>
+                    <AvatarFallback>{getInitials(userProfile?.full_name || "")}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
