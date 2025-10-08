@@ -45,15 +45,11 @@ const AdminLogin = () => {
       const normalized = email.trim().toLowerCase();
       if (!normalized) throw new Error("Please enter a valid email");
 
-      // 1) Check if admin exists in system
-      const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
-      if (adminExistsError) throw adminExistsError;
-
-      // 2) If invite exists and pending, go to signup
+      // 1) Check if invite exists and pending FIRST (before other checks)
       const { data: invite } = await supabase
         .from("admin_invites")
         .select("full_name, phone, role, status")
-        .eq("email", normalized)
+        .ilike("email", normalized) // Use ilike for case-insensitive matching
         .maybeSingle();
 
       if (invite && invite.status === "pending") {
@@ -65,6 +61,10 @@ const AdminLogin = () => {
         toast({ title: "Welcome", description: "Complete your registration to join the team." });
         return;
       }
+
+      // 2) Check if admin exists in system
+      const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
+      if (adminExistsError) throw adminExistsError;
 
       // 3) Bootstrap: if no admin exists, allow this email to become the first admin
       if (adminExistsData === false) {
