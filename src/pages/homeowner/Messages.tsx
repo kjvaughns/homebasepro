@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
-import { Send, ArrowDown, X } from "lucide-react";
+import { Send, ArrowDown, X, ArrowLeft } from "lucide-react";
 import { isSameDay } from "date-fns";
 import { MessageBubble } from "@/components/messages/MessageBubble";
 import { DateSeparator } from "@/components/messages/DateSeparator";
@@ -317,8 +318,11 @@ export default function HomeownerMessages() {
         </div>
       ) : (
         <div className="flex-1 flex overflow-hidden">
-          {/* Conversations List */}
-          <div className="w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden">
+          {/* Conversations List - Hidden on mobile when conversation selected */}
+          <div className={cn(
+            "w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden",
+            selectedConversation && "hidden md:flex"
+          )}>
             <div className="border-b p-4 bg-background/95 backdrop-blur">
               <h2 className="font-bold text-xl">Messages</h2>
             </div>
@@ -337,12 +341,25 @@ export default function HomeownerMessages() {
             </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 flex flex-col">
+          {/* Messages Area - Full width on mobile */}
+          <div className={cn(
+            "flex-1 flex flex-col",
+            !selectedConversation && "hidden md:flex"
+          )}>
             {selectedConversation ? (
               <>
                 {/* Chat Header */}
                 <div className="border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
+                  {/* Back button for mobile */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden shrink-0"
+                    onClick={() => setSelectedConversation(null)}
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  
                   <Avatar className="h-11 w-11">
                     <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
                       {selectedConversation.organizations?.name?.charAt(0) || "P"}
