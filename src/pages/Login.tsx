@@ -27,10 +27,12 @@ const Login = () => {
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (profile?.user_type === "provider") {
-          navigate("/provider/dashboard");
-        } else if (profile?.user_type === "homeowner") {
-          navigate("/dashboard");
+        if (profile) {
+          if (profile.user_type === "provider") {
+            navigate("/provider/dashboard");
+          } else {
+            navigate("/dashboard");
+          }
         }
       }
     };
@@ -51,19 +53,30 @@ const Login = () => {
 
       if (data.user) {
         // Check user profile to redirect to correct dashboard
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("user_type")
           .eq("user_id", data.user.id)
           .maybeSingle();
 
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+        }
+
+        // Redirect based on user type
         if (profile?.user_type === "provider") {
           navigate("/provider/dashboard");
         } else if (profile?.user_type === "homeowner") {
           navigate("/dashboard");
         } else {
-          // No profile yet, redirect to appropriate onboarding
-          navigate("/waitlist");
+          // No profile found - this shouldn't happen with the trigger, but fallback to homeowner
+          toast({
+            title: "Profile not found",
+            description: "Please complete your registration.",
+            variant: "destructive",
+          });
+          navigate("/register");
+          return;
         }
 
         toast({

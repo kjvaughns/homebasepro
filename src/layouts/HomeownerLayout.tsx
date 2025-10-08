@@ -34,14 +34,47 @@ export default function HomeownerLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      const { data, error } = await supabase.rpc("is_admin");
-      if (!error && data) {
-        setIsAdmin(true);
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/login");
+        return;
       }
+
+      // Check user profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_type")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        toast({
+          title: "Profile not found",
+          description: "Please complete registration.",
+          variant: "destructive",
+        });
+        navigate("/register");
+        return;
+      }
+
+      if (profile.user_type !== "homeowner") {
+        toast({
+          title: "Access denied",
+          description: "This area is for homeowners only.",
+          variant: "destructive",
+        });
+        navigate("/provider/dashboard");
+        return;
+      }
+
+      // Check if user is admin
+      const { data } = await supabase.rpc("is_admin");
+      setIsAdmin(data || false);
     };
-    checkAdminStatus();
-  }, []);
+    checkUser();
+  }, [navigate]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

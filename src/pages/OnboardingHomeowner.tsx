@@ -52,9 +52,9 @@ const OnboardingHomeowner = () => {
   const handleComplete = () => {
     toast({
       title: "Success!",
-      description: "Your profile has been created. Please sign up to continue.",
+      description: "Your profile is ready. Welcome to HomeBase!",
     });
-    navigate("/auth");
+    navigate("/dashboard");
   };
 
   return (

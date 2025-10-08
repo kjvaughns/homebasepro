@@ -33,7 +33,34 @@ export function ProviderLayout() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        navigate("/auth");
+        navigate("/login");
+        return;
+      }
+
+      // Check user profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_type")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        toast({
+          title: "Profile not found",
+          description: "Please complete registration.",
+          variant: "destructive",
+        });
+        navigate("/register");
+        return;
+      }
+
+      if (profile.user_type !== "provider") {
+        toast({
+          title: "Access denied",
+          description: "This area is for service providers only.",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
         return;
       }
 
