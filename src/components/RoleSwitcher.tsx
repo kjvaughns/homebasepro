@@ -83,7 +83,7 @@ export const RoleSwitcher = () => {
           Homeowner Dashboard
         </DropdownMenuItem>
         
-        {hasProviderRole ? (
+        {hasProviderRole || hasAdminRole ? (
           <DropdownMenuItem
             onClick={() => navigate("/provider/dashboard")}
             className={isProviderView ? "bg-accent" : ""}
