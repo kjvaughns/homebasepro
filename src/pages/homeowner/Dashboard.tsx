@@ -146,10 +146,24 @@ export default function HomeownerDashboard() {
         </div>
 
         {subscriptions.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground mb-4">No active services yet</p>
-            <Button onClick={() => navigate("/homeowner/browse")}>
-              Browse Providers
+          <Card className="p-6 text-center space-y-4">
+            <p className="text-muted-foreground">Get started in 3 easy steps:</p>
+            <div className="space-y-2 text-left max-w-sm mx-auto">
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="shrink-0">1</Badge>
+                <span className="text-sm">Add your property</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="shrink-0">2</Badge>
+                <span className="text-sm">Browse service providers</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="shrink-0">3</Badge>
+                <span className="text-sm">Book your first service</span>
+              </div>
+            </div>
+            <Button onClick={() => navigate("/homeowner/homes/new")} className="mt-4">
+              Add Your First Property
             </Button>
           </Card>
         ) : (

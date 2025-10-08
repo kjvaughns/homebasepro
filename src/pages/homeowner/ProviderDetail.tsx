@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Star, Shield, Share2, Heart, Clock, Check, MessageSquare } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Shield, Share2, Heart, Clock, Check, MessageSquare, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,6 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function ProviderDetail() {
   const { id } = useParams();
@@ -25,6 +30,9 @@ export default function ProviderDetail() {
   const [selectedHome, setSelectedHome] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [startingConversation, setStartingConversation] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [specialInstructions, setSpecialInstructions] = useState("");
 
   useEffect(() => {
     loadProviderDetails();
@@ -173,6 +181,15 @@ export default function ProviderDetail() {
       return;
     }
 
+    if (!selectedDate || !selectedTimeSlot) {
+      toast({
+        title: "Error",
+        description: "Please select a date and time for your first service",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubscribing(true);
 
     try {
@@ -187,29 +204,58 @@ export default function ProviderDetail() {
 
       if (!profile) throw new Error("Profile not found");
 
-      const { error } = await supabase.from("homeowner_subscriptions").insert({
-        homeowner_id: profile.id,
-        provider_org_id: id,
-        home_id: selectedHome,
-        service_plan_id: selectedPlan.id,
-        billing_amount: selectedPlan.price,
-        status: "active",
-      });
+      // Create subscription
+      const { data: subscription, error: subError } = await supabase
+        .from("homeowner_subscriptions")
+        .insert({
+          homeowner_id: profile.id,
+          provider_org_id: id,
+          home_id: selectedHome,
+          service_plan_id: selectedPlan.id,
+          billing_amount: selectedPlan.price,
+          status: "active",
+          next_service_date: selectedDate.toISOString(),
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (subError) throw subError;
+
+      // Create first service visit
+      const scheduledDateTime = new Date(selectedDate);
+      const [hours, minutes] = selectedTimeSlot.split(':');
+      scheduledDateTime.setHours(parseInt(hours), parseInt(minutes));
+
+      const { error: visitError } = await supabase
+        .from("service_visits")
+        .insert({
+          homeowner_id: profile.id,
+          provider_org_id: id,
+          home_id: selectedHome,
+          homeowner_subscription_id: subscription.id,
+          scheduled_date: scheduledDateTime.toISOString(),
+          status: "scheduled",
+          notes: specialInstructions,
+          preferred_time_slot: selectedTimeSlot,
+        });
+
+      if (visitError) throw visitError;
 
       toast({
         title: "Success",
-        description: "Successfully subscribed to plan",
+        description: "Service booked! Your first visit is scheduled.",
       });
 
       setDialogOpen(false);
+      setSelectedDate(undefined);
+      setSelectedTimeSlot("");
+      setSpecialInstructions("");
       navigate("/homeowner/subscriptions");
     } catch (error) {
       console.error("Error subscribing:", error);
       toast({
         title: "Error",
-        description: "Failed to subscribe to plan",
+        description: "Failed to book service",
         variant: "destructive",
       });
     } finally {
@@ -385,53 +431,121 @@ export default function ProviderDetail() {
                             </div>
                           </div>
                           
-                          <Dialog open={dialogOpen && selectedPlan?.id === plan.id} onOpenChange={(open) => {
-                            setDialogOpen(open);
-                            if (!open) setSelectedPlan(null);
-                          }}>
-                            <DialogTrigger asChild>
-                              <Button
-                                size="lg"
-                                className="bg-primary hover:bg-primary/90 px-8"
-                                onClick={() => setSelectedPlan(plan)}
-                                disabled={homes.length === 0}
-                              >
-                                {homes.length === 0 ? "Add Property" : "Book"}
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Subscribe to {plan.name}</DialogTitle>
-                                <DialogDescription>
-                                  Select which property you'd like this service for
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div>
-                                  <Label>Select Property</Label>
-                                  <Select value={selectedHome} onValueChange={setSelectedHome}>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Choose a property" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {homes.map((home) => (
-                                        <SelectItem key={home.id} value={home.id}>
-                                          {home.name} - {home.address}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                          {homes.length === 0 ? (
+                            <Button
+                              size="lg"
+                              className="bg-primary hover:bg-primary/90 px-8"
+                              onClick={() => navigate("/homeowner/homes/new")}
+                            >
+                              Add Property First
+                            </Button>
+                          ) : (
+                            <Dialog open={dialogOpen && selectedPlan?.id === plan.id} onOpenChange={(open) => {
+                              setDialogOpen(open);
+                              if (!open) {
+                                setSelectedPlan(null);
+                                setSelectedDate(undefined);
+                                setSelectedTimeSlot("");
+                                setSpecialInstructions("");
+                              }
+                            }}>
+                              <DialogTrigger asChild>
                                 <Button
-                                  onClick={handleSubscribe}
-                                  disabled={subscribing || !selectedHome}
-                                  className="w-full"
+                                  size="lg"
+                                  className="bg-primary hover:bg-primary/90 px-8"
+                                  onClick={() => setSelectedPlan(plan)}
                                 >
-                                  {subscribing ? "Subscribing..." : "Confirm Subscription"}
+                                  Book
                                 </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                              </DialogTrigger>
+                              <DialogContent className="max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Book {plan.name}</DialogTitle>
+                                  <DialogDescription>
+                                    Schedule your first service visit
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  <div>
+                                    <Label>Select Property</Label>
+                                    <Select value={selectedHome} onValueChange={setSelectedHome}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Choose a property" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {homes.map((home) => (
+                                          <SelectItem key={home.id} value={home.id}>
+                                            {home.name} - {home.address}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div>
+                                    <Label>Select Date</Label>
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          className={cn(
+                                            "w-full justify-start text-left font-normal",
+                                            !selectedDate && "text-muted-foreground"
+                                          )}
+                                        >
+                                          <CalendarIcon className="mr-2 h-4 w-4" />
+                                          {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                          mode="single"
+                                          selected={selectedDate}
+                                          onSelect={setSelectedDate}
+                                          disabled={(date) => date < new Date()}
+                                          initialFocus
+                                          className="pointer-events-auto"
+                                        />
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+
+                                  <div>
+                                    <Label>Select Time Slot</Label>
+                                    <Select value={selectedTimeSlot} onValueChange={setSelectedTimeSlot}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Choose a time" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="08:00">Morning (8:00 AM - 12:00 PM)</SelectItem>
+                                        <SelectItem value="13:00">Afternoon (1:00 PM - 5:00 PM)</SelectItem>
+                                        <SelectItem value="17:00">Evening (5:00 PM - 8:00 PM)</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div>
+                                    <Label>Special Instructions (Optional)</Label>
+                                    <Textarea
+                                      placeholder="Any specific requirements or access instructions..."
+                                      value={specialInstructions}
+                                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                                      className="resize-none"
+                                      rows={3}
+                                    />
+                                  </div>
+
+                                  <Button
+                                    onClick={handleSubscribe}
+                                    disabled={subscribing || !selectedHome || !selectedDate || !selectedTimeSlot}
+                                    className="w-full"
+                                  >
+                                    {subscribing ? "Booking..." : "Confirm Booking"}
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
                         </div>
                       </div>
 

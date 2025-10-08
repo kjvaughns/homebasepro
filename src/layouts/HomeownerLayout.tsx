@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut, Eye } from "lucide-react";
+import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut, Eye, Building2 } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -20,8 +20,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: Home },
+  { name: "Properties", href: "/homeowner/homes", icon: Building2 },
   { name: "Explore", href: "/homeowner/browse", icon: Search },
-  { name: "Services", href: "/homeowner/subscriptions", icon: Calendar },
   { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
   { name: "Settings", href: "/homeowner/settings", icon: Settings },
 ];
