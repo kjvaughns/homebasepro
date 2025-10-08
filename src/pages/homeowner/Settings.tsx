@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 export default function HomeownerSettings() {
   const navigate = useNavigate();
@@ -146,7 +147,17 @@ export default function HomeownerSettings() {
               <CardDescription>Update your personal information</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSaveProfile} className="space-y-4">
+              <form onSubmit={handleSaveProfile} className="space-y-6">
+                {profile && (
+                  <AvatarUpload
+                    avatarUrl={profile.avatar_url}
+                    fullName={profile.full_name}
+                    userId={profile.user_id}
+                    onAvatarUpdate={(url) => setProfile({ ...profile, avatar_url: url })}
+                  />
+                )}
+
+                <div className="space-y-4">
                 <div>
                   <Label htmlFor="full_name">Full Name</Label>
                   <Input
@@ -170,6 +181,7 @@ export default function HomeownerSettings() {
                 <Button type="submit" disabled={loading}>
                   {loading ? "Saving..." : "Save Changes"}
                 </Button>
+                </div>
               </form>
             </CardContent>
           </Card>

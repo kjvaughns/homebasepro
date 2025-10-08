@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "lucide-react";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 export const AdminProfileSettings = () => {
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -24,15 +26,16 @@ export const AdminProfileSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, phone")
+        .select("*")
         .eq("user_id", user.id)
         .single();
 
-      if (profile) {
-        setFullName(profile.full_name || "");
-        setPhone(profile.phone || "");
+      if (profileData) {
+        setProfile(profileData);
+        setFullName(profileData.full_name || "");
+        setPhone(profileData.phone || "");
       }
     } catch (error: any) {
       console.error("Error loading profile:", error);
@@ -113,7 +116,18 @@ export const AdminProfileSettings = () => {
           </CardTitle>
           <CardDescription>Update your admin profile information</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {profile && (
+            <AvatarUpload
+              avatarUrl={profile.avatar_url}
+              fullName={profile.full_name}
+              userId={profile.user_id}
+              onAvatarUpdate={(url) => setProfile({ ...profile, avatar_url: url })}
+              size="md"
+            />
+          )}
+
+          <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input
@@ -135,6 +149,7 @@ export const AdminProfileSettings = () => {
           <Button onClick={handleUpdateProfile} disabled={loading}>
             {loading ? "Saving..." : "Save Profile"}
           </Button>
+          </div>
         </CardContent>
       </Card>
 

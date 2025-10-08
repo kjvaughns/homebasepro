@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,17 @@ const AdminLayout = () => {
           console.error("Access denied: Not an admin/moderator");
           navigate("/");
           return;
+        }
+
+        // Load profile
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+
+        if (profileData) {
+          setUserProfile(profileData);
         }
 
         setIsAdmin(true);

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CardDescription } from "@/components/ui/card";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 interface Organization {
   id: string;
@@ -31,6 +32,7 @@ export default function Settings() {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [plan, setPlan] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -52,6 +54,17 @@ export default function Settings() {
 
       if (error) throw error;
       setOrganization(data);
+
+      // Load profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+      }
 
       // Load subscription
       const { data: subData } = await supabase
@@ -169,7 +182,23 @@ export default function Settings() {
           <TabsTrigger value="billing">Billing & Subscription</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="space-y-6">
+          {profile && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AvatarUpload
+                  avatarUrl={profile.avatar_url}
+                  fullName={profile.full_name}
+                  userId={profile.user_id}
+                  onAvatarUpdate={(url) => setProfile({ ...profile, avatar_url: url })}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Organization Profile</CardTitle>

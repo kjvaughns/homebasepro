@@ -46,7 +46,7 @@ export default function HomeownerLayout() {
       // Check user profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("user_type, full_name")
+        .select("user_type, full_name, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -127,7 +127,7 @@ export default function HomeownerLayout() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="" />
+                    <AvatarImage src={userProfile?.avatar_url || ""} />
                     <AvatarFallback>{getInitials(userProfile?.full_name || "")}</AvatarFallback>
                   </Avatar>
                 </Button>

@@ -25,6 +25,7 @@ export function ProviderLayout() {
   const isMobile = useIsMobile();
   const [organization, setOrganization] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     loadOrganization();
@@ -42,7 +43,7 @@ export function ProviderLayout() {
       // Check user profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("user_type")
+        .select("user_type, full_name, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -65,6 +66,8 @@ export function ProviderLayout() {
         navigate("/dashboard");
         return;
       }
+
+      setUserProfile(profile);
 
       // Check if user is admin first - admins can view without organization
       const { data: isAdminData, error: adminError } = await supabase.rpc("is_admin");
@@ -105,6 +108,16 @@ export function ProviderLayout() {
     navigate("/");
   };
 
+  const getInitials = (name: string) => {
+    if (!name) return "PR";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full flex-col">
@@ -138,8 +151,8 @@ export function ProviderLayout() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="" />
-                        <AvatarFallback>PR</AvatarFallback>
+                        <AvatarImage src={userProfile?.avatar_url || ""} />
+                        <AvatarFallback>{getInitials(userProfile?.full_name || "")}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
