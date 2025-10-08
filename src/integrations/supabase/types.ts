@@ -534,6 +534,7 @@ export type Database = {
           updated_at: string
           user_id: string
           user_type: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -544,6 +545,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           user_type: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -554,6 +556,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           user_type?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -1002,6 +1005,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_user_id_by_email: {
+        Args: { user_email: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
