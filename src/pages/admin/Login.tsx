@@ -100,15 +100,18 @@ const AdminLogin = () => {
       }
       
       if (existingUserId) {
-        // User exists, check if they have an admin/moderator role
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", existingUserId)
-          .in("role", ["admin", "moderator"])
-          .maybeSingle();
+        // Check role via security definer function to bypass RLS before login
+        const [
+          { data: isAdmin, error: adminErr },
+          { data: isMod, error: modErr }
+        ] = await Promise.all([
+          supabase.rpc("has_role", { _user_id: existingUserId, _role: "admin" }),
+          supabase.rpc("has_role", { _user_id: existingUserId, _role: "moderator" }),
+        ]);
+        if (adminErr) console.warn("has_role(admin) error:", adminErr);
+        if (modErr) console.warn("has_role(moderator) error:", modErr);
 
-        if (roleData) {
+        if (isAdmin || isMod) {
           setMode("signin");
           toast({ title: "Welcome back", description: "Enter your password to sign in." });
           return;
