@@ -1049,6 +1049,15 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      check_admin_invite: {
+        Args: { invite_email: string }
+        Returns: {
+          full_name: string
+          phone: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+        }[]
+      }
       get_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string

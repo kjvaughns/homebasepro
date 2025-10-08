@@ -46,11 +46,9 @@ const AdminLogin = () => {
       if (!normalized) throw new Error("Please enter a valid email");
 
       // 1) Check if invite exists and pending FIRST (before other checks)
-      const { data: invite } = await supabase
-        .from("admin_invites")
-        .select("full_name, phone, role, status")
-        .ilike("email", normalized) // Use ilike for case-insensitive matching
-        .maybeSingle();
+      const { data: inviteData, error: inviteErr } = await supabase.rpc("check_admin_invite", { invite_email: normalized });
+      if (inviteErr) throw inviteErr;
+      const invite = Array.isArray(inviteData) ? inviteData[0] : inviteData;
 
       if (invite && invite.status === "pending") {
         setFullName(invite.full_name || "");
