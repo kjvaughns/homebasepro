@@ -20,7 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: Home },
-  { name: "Browse", href: "/homeowner/browse", icon: Search },
+  { name: "Explore", href: "/homeowner/browse", icon: Search },
   { name: "Services", href: "/homeowner/subscriptions", icon: Calendar },
   { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
   { name: "Settings", href: "/homeowner/settings", icon: Settings },
