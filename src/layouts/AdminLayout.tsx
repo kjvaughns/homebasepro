@@ -15,7 +15,7 @@ const AdminLayout = () => {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          navigate("/auth");
+          navigate("/admin/login");
           return;
         }
 

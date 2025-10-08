@@ -38,6 +38,7 @@ import HomeownerMessages from "./pages/homeowner/Messages";
 import ProviderMessages from "./pages/provider/Messages";
 import ProviderAnalytics from "./pages/provider/Analytics";
 import AdminLayout from "./layouts/AdminLayout";
+import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminData from "./pages/admin/DataManagement";
 import AdminAnalytics from "./pages/admin/Analytics";
@@ -94,6 +95,9 @@ const App = () => (
             <Route path="messages" element={<ProviderMessages />} />
             <Route path="analytics" element={<ProviderAnalytics />} />
           </Route>
+
+          {/* Admin login (no layout) */}
+          <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Admin routes with shared layout */}
           <Route path="/admin" element={<AdminLayout />}>
