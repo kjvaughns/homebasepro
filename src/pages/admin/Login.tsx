@@ -93,13 +93,19 @@ const AdminLogin = () => {
         return;
       }
 
-      // 4) Check if user has existing role
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      // 4) Check if user account exists for this email with admin role
+      const { data: existingUserId, error: existingUserErr } = await supabase.rpc("get_user_id_by_email", { user_email: normalized });
+      if (existingUserErr) {
+        console.warn("User existence check failed:", existingUserErr);
+      }
+      
+      if (existingUserId) {
+        // User exists, check if they have an admin/moderator role
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", user.id)
+          .eq("user_id", existingUserId)
+          .in("role", ["admin", "moderator"])
           .maybeSingle();
 
         if (roleData) {
