@@ -57,16 +57,6 @@ export function ProviderLayout() {
         return;
       }
 
-      if (profile.user_type !== "provider") {
-        toast({
-          title: "Access denied",
-          description: "This area is for service providers only.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-        return;
-      }
-
       setUserProfile(profile);
 
       // Check if user is admin first - admins can view without organization
@@ -76,20 +66,20 @@ export function ProviderLayout() {
         return;
       }
 
-      // Non-admins need organization
+      // Check for organization - users need this to access provider area
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("*")
         .eq("owner_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (orgError) {
+      if (!orgData) {
         toast({
           title: "Setup Required",
           description: "Please complete your provider onboarding",
           variant: "destructive",
         });
-        navigate("/onboarding/provider");
+        navigate("/become-provider");
         return;
       }
 

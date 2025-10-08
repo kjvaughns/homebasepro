@@ -19,7 +19,7 @@ export const RoleSwitcher = () => {
 
   useEffect(() => {
     checkRoles();
-  }, []);
+  }, [location.pathname]);
 
   const checkRoles = async () => {
     try {
