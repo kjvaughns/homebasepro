@@ -288,8 +288,9 @@ export default function HomeownerMessages() {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-background md:h-screen">
-      <div className="border-b p-4 bg-card">
+    <div className="h-[100dvh] flex flex-col bg-background md:h-screen overflow-hidden">
+      {/* Page Header - Only on desktop */}
+      <div className="hidden md:block border-b p-4 bg-card shrink-0">
         <h1 className="text-2xl font-bold">Messages</h1>
       </div>
 
@@ -343,37 +344,45 @@ export default function HomeownerMessages() {
 
           {/* Messages Area - Full width on mobile, fixed layout */}
           <div className={cn(
-            "flex-1 flex flex-col h-full md:h-auto",
+            "flex-1 flex flex-col overflow-hidden",
             !selectedConversation && "hidden md:flex"
           )}>
             {selectedConversation ? (
-              <div className="flex flex-col h-full">
-                {/* Chat Header - Fixed at top */}
-                <div className="shrink-0 border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm z-10">
-                  {/* Back button for mobile */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="md:hidden shrink-0"
-                    onClick={() => setSelectedConversation(null)}
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </Button>
+              <>
+                {/* Fixed Header Section */}
+                <div className="shrink-0">
+                  {/* Messages Title - Mobile only */}
+                  <div className="md:hidden border-b p-4 bg-background">
+                    <h1 className="text-2xl font-bold">Messages</h1>
+                  </div>
                   
-                  <Avatar className="h-11 w-11">
-                    <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
-                      {selectedConversation.organizations?.name?.charAt(0) || "P"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="font-semibold text-base truncate">
-                      {selectedConversation.organizations?.name || "Provider"}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">Service Provider</p>
+                  {/* Chat Header with Provider Info */}
+                  <div className="border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
+                    {/* Back button for mobile */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="md:hidden shrink-0"
+                      onClick={() => setSelectedConversation(null)}
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    
+                    <Avatar className="h-11 w-11">
+                      <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
+                        {selectedConversation.organizations?.name?.charAt(0) || "P"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="font-semibold text-base truncate">
+                        {selectedConversation.organizations?.name || "Provider"}
+                      </h2>
+                      <p className="text-xs text-muted-foreground">Service Provider</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Messages */}
+                {/* Scrollable Messages Area */}
                 <div
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
@@ -400,80 +409,83 @@ export default function HomeownerMessages() {
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute bottom-32 right-8 rounded-full shadow-lg"
+                    className="absolute bottom-32 md:bottom-24 right-8 rounded-full shadow-lg z-20"
                     onClick={() => scrollToBottom()}
                   >
                     <ArrowDown className="h-4 w-4" />
                   </Button>
                 )}
 
-                {/* Attachment Preview - Above input */}
-                {attachmentPreview && (
-                  <div className="shrink-0 border-t p-4 bg-card">
-                    <div className="flex items-center gap-3 bg-muted p-3 rounded-lg">
-                      {attachmentPreview.type === 'image' && attachmentPreview.preview ? (
-                        <img
-                          src={attachmentPreview.preview}
-                          alt="Preview"
-                          className="h-16 w-16 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="h-16 w-16 bg-primary/10 rounded flex items-center justify-center">
-                          <span className="text-2xl">📄</span>
+                {/* Fixed Bottom Section */}
+                <div className="shrink-0">
+                  {/* Attachment Preview */}
+                  {attachmentPreview && (
+                    <div className="border-t p-4 bg-card">
+                      <div className="flex items-center gap-3 bg-muted p-3 rounded-lg">
+                        {attachmentPreview.type === 'image' && attachmentPreview.preview ? (
+                          <img
+                            src={attachmentPreview.preview}
+                            alt="Preview"
+                            className="h-16 w-16 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="h-16 w-16 bg-primary/10 rounded flex items-center justify-center">
+                            <span className="text-2xl">📄</span>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {attachmentPreview.file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(attachmentPreview.file.size / 1024).toFixed(1)} KB
+                          </p>
                         </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {attachmentPreview.file.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {(attachmentPreview.file.size / 1024).toFixed(1)} KB
-                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setAttachmentPreview(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Input Area */}
+                  <div className="border-t p-4 bg-card pb-safe">
+                    <div className="flex items-end gap-2">
+                      <AttachmentButton
+                        onFileSelect={handleFileSelect}
+                        disabled={uploading}
+                      />
+                      <Textarea
+                        ref={inputRef}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                          }
+                        }}
+                        placeholder="Type a message..."
+                        className="resize-none min-h-[44px] max-h-32"
+                        rows={1}
+                        disabled={uploading}
+                      />
                       <Button
-                        variant="ghost"
+                        onClick={sendMessage}
                         size="icon"
-                        onClick={() => setAttachmentPreview(null)}
+                        className="shrink-0 h-11 w-11 rounded-full"
+                        disabled={(!newMessage.trim() && !attachmentPreview) || uploading}
                       >
-                        <X className="h-4 w-4" />
+                        <Send className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>
-                )}
-
-                {/* Input Area - Fixed at bottom */}
-                <div className="shrink-0 border-t p-4 bg-card">
-                  <div className="flex items-end gap-2">
-                    <AttachmentButton
-                      onFileSelect={handleFileSelect}
-                      disabled={uploading}
-                    />
-                    <Textarea
-                      ref={inputRef}
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                      placeholder="Type a message..."
-                      className="resize-none min-h-[44px] max-h-32"
-                      rows={1}
-                      disabled={uploading}
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      size="icon"
-                      className="shrink-0 h-11 w-11 rounded-full"
-                      disabled={(!newMessage.trim() && !attachmentPreview) || uploading}
-                    >
-                      <Send className="h-5 w-5" />
-                    </Button>
-                  </div>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
