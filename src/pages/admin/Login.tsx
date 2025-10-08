@@ -46,25 +46,31 @@ const AdminLogin = () => {
       if (!normalized) throw new Error("Please enter a valid email");
 
       // 1) Check if invite exists and pending FIRST (before other checks)
-      console.log("Checking invite for email:", normalized);
       const { data: inviteData, error: inviteErr } = await supabase.rpc("check_admin_invite", { invite_email: normalized });
-      console.log("Invite RPC response:", { inviteData, inviteErr });
       
-      if (inviteErr) {
-        console.error("Invite check error:", inviteErr);
-        throw inviteErr;
-      }
+      if (inviteErr) throw inviteErr;
       
       const invite = Array.isArray(inviteData) && inviteData.length > 0 ? inviteData[0] : null;
-      console.log("Processed invite:", invite);
 
       if (invite) {
         setFullName(invite.full_name || "");
         setPhone(invite.phone || "");
         setInviteRole(invite.role || "moderator");
         setBootstrap(false);
-        setMode("signup");
-        toast({ title: "Welcome", description: "Complete your registration to join the team." });
+        
+        // Check if user already has an auth account
+        const { data: { user } } = await supabase.auth.getUser();
+        const userExists = user && user.email?.toLowerCase() === normalized;
+        
+        if (userExists) {
+          // User exists, prompt for signin to accept invite
+          setMode("signin");
+          toast({ title: "Welcome back", description: "Sign in to accept your admin invite." });
+        } else {
+          // New user, go to signup
+          setMode("signup");
+          toast({ title: "Welcome", description: "Complete your registration to join the team." });
+        }
         return;
       }
 
@@ -130,6 +136,25 @@ const AdminLogin = () => {
         if (roleError) throw roleError;
         
         toast({ title: "Success", description: "You are now the admin!" });
+        navigate("/admin/dashboard");
+        return;
+      }
+
+      // If signing in with a pending invite, assign role and accept invite
+      if (inviteRole) {
+        const { error: roleError } = await supabase.from("user_roles").insert([
+          { user_id: authData.user!.id, role: inviteRole as any },
+        ]);
+        if (roleError && !roleError.message.includes("duplicate")) throw roleError;
+        
+        // Mark invite as accepted
+        const { error: inviteErr } = await supabase
+          .from("admin_invites")
+          .update({ status: "accepted", accepted_at: new Date().toISOString() })
+          .eq("email", email.trim().toLowerCase());
+        if (inviteErr) throw inviteErr;
+
+        toast({ title: "Success", description: "Your admin access has been activated!" });
         navigate("/admin/dashboard");
         return;
       }
