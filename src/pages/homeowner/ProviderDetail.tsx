@@ -133,20 +133,23 @@ export default function ProviderDetail() {
       }
 
       // Create new conversation
-      const { error: convoError } = await supabase
+      const { data: newConvo, error: convoError } = await supabase
         .from("conversations")
         .insert({
           homeowner_profile_id: profile.id,
           provider_org_id: id,
-        });
+        })
+        .select()
+        .single();
 
       if (convoError) throw convoError;
 
       toast({
         title: "Success",
-        description: "Conversation started",
+        description: "Conversation started - you can now send messages",
       });
 
+      // Navigate and the Messages page will auto-select the first conversation
       navigate("/homeowner/messages");
     } catch (error) {
       console.error("Error starting conversation:", error);
