@@ -25,21 +25,8 @@ export function ProviderLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    checkAdminAndLoadOrg();
+    loadOrganization();
   }, []);
-
-  const checkAdminAndLoadOrg = async () => {
-    // Check if user is admin first
-    const { data: isAdminData, error: adminError } = await supabase.rpc("is_admin");
-    if (!adminError && isAdminData) {
-      setIsAdmin(true);
-      // Admins can view without organization
-      return;
-    }
-    
-    // Non-admins need organization
-    await loadOrganization();
-  };
 
   const loadOrganization = async () => {
     try {
@@ -50,6 +37,14 @@ export function ProviderLayout() {
         return;
       }
 
+      // Check if user is admin first - admins can view without organization
+      const { data: isAdminData, error: adminError } = await supabase.rpc("is_admin");
+      if (!adminError && isAdminData) {
+        setIsAdmin(true);
+        return;
+      }
+
+      // Non-admins need organization
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("*")
