@@ -33,7 +33,7 @@ const TeamManagement = () => {
   const fetchAdmins = async () => {
     try {
       const { data: rolesData, error } = await supabase
-        .from("user_roles")
+        .from("staff_invites")
         .select("id, user_id, role, created_at")
         .in("role", ["admin", "moderator"])
         .order("created_at", { ascending: false });
@@ -53,7 +53,7 @@ const TeamManagement = () => {
             ...role,
             profiles: profile || { full_name: "Unknown User" },
           };
-        })
+        }),
       );
 
       setAdmins(enrichedData);
@@ -101,15 +101,19 @@ const TeamManagement = () => {
       }
 
       // Add role
-      const { error: roleError } = await supabase.from("user_roles").insert([{
-        user_id: profiles.user_id,
-        role: selectedRole as "admin" | "moderator",
-      }]);
+      const { error: roleError } = await supabase.from("user_roles").insert([
+        {
+          user_id: profiles.user_id,
+          role: selectedRole as "admin" | "moderator",
+        },
+      ]);
 
       if (roleError) throw roleError;
 
       // Log activity
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       await supabase.from("admin_activity_log").insert({
         admin_user_id: user?.id,
         action: "add_admin",
@@ -143,7 +147,9 @@ const TeamManagement = () => {
       if (error) throw error;
 
       // Log activity
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       await supabase.from("admin_activity_log").insert({
         admin_user_id: user?.id,
         action: "remove_admin",
@@ -237,23 +243,13 @@ const TeamManagement = () => {
               <TableBody>
                 {admins.map((admin) => (
                   <TableRow key={admin.id}>
+                    <TableCell>{admin.profiles?.full_name || "Unknown User"}</TableCell>
                     <TableCell>
-                      {admin.profiles?.full_name || "Unknown User"}
+                      <Badge variant={admin.role === "admin" ? "default" : "secondary"}>{admin.role}</Badge>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={admin.role === "admin" ? "default" : "secondary"}>
-                        {admin.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(admin.created_at).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{new Date(admin.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveAdmin(admin.id)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => handleRemoveAdmin(admin.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
