@@ -85,6 +85,8 @@ export default function HomeownerLayout() {
     navigate("/");
   };
 
+  const isMessagesRoute = location.pathname.startsWith("/homeowner/messages");
+
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Preview Banner */}
@@ -134,7 +136,11 @@ export default function HomeownerLayout() {
       </header>
 
       {/* Main Content */}
-      <main className={cn("pb-20 md:pb-0", isMobile ? "" : "pl-64")}>
+      <main className={cn(
+        "pb-20 md:pb-0 min-h-0",
+        isMobile ? "" : "pl-64",
+        isMessagesRoute && "relative overflow-hidden h-[calc(100dvh-3.5rem-4rem)] md:h-[calc(100vh-3.5rem)]"
+      )}>
         <Outlet />
       </main>
 

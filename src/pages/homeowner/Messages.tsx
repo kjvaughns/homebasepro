@@ -318,7 +318,7 @@ export default function HomeownerMessages() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 min-h-0 flex overflow-hidden">
           {/* Conversations List - Hidden on mobile when conversation selected */}
           <div className={cn(
             "w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden",
@@ -344,7 +344,7 @@ export default function HomeownerMessages() {
 
           {/* Messages Area - Full width on mobile, fixed layout */}
                 <div className={cn(
-                  "flex-1 relative flex flex-col overflow-hidden",
+                  "flex-1 min-h-0 relative flex flex-col overflow-hidden",
                   !selectedConversation && "hidden md:flex"
                 )}>
             {selectedConversation ? (
