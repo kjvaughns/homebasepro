@@ -46,11 +46,19 @@ const AdminLogin = () => {
       if (!normalized) throw new Error("Please enter a valid email");
 
       // 1) Check if invite exists and pending FIRST (before other checks)
+      console.log("Checking invite for email:", normalized);
       const { data: inviteData, error: inviteErr } = await supabase.rpc("check_admin_invite", { invite_email: normalized });
-      if (inviteErr) throw inviteErr;
-      const invite = Array.isArray(inviteData) ? inviteData[0] : inviteData;
+      console.log("Invite RPC response:", { inviteData, inviteErr });
+      
+      if (inviteErr) {
+        console.error("Invite check error:", inviteErr);
+        throw inviteErr;
+      }
+      
+      const invite = Array.isArray(inviteData) && inviteData.length > 0 ? inviteData[0] : null;
+      console.log("Processed invite:", invite);
 
-      if (invite && invite.status === "pending") {
+      if (invite) {
         setFullName(invite.full_name || "");
         setPhone(invite.phone || "");
         setInviteRole(invite.role || "moderator");
