@@ -1041,6 +1041,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_admin_invite: {
+        Args: { invite_email: string }
+        Returns: undefined
+      }
       admin_exists: {
         Args: Record<PropertyKey, never>
         Returns: boolean

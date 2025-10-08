@@ -150,11 +150,10 @@ const AdminLogin = () => {
         ]);
         if (roleError && !roleError.message.includes("duplicate")) throw roleError;
         
-        // Mark invite as accepted
-        const { error: inviteErr } = await supabase
-          .from("admin_invites")
-          .update({ status: "accepted", accepted_at: new Date().toISOString() })
-          .eq("email", email.trim().toLowerCase());
+        // Mark invite as accepted using secure RPC function
+        const { error: inviteErr } = await supabase.rpc("accept_admin_invite", { 
+          invite_email: email.toLowerCase().trim() 
+        });
         if (inviteErr) throw inviteErr;
 
         toast({ title: "Success", description: "Your admin access has been activated!" });
@@ -209,10 +208,9 @@ const AdminLogin = () => {
 
       // 3) mark invite as accepted (if not bootstrap)
       if (!bootstrap) {
-        const { error: inviteErr } = await supabase
-          .from("admin_invites")
-          .update({ status: "accepted", accepted_at: new Date().toISOString() })
-          .eq("email", email.trim().toLowerCase());
+        const { error: inviteErr } = await supabase.rpc("accept_admin_invite", { 
+          invite_email: email.toLowerCase().trim() 
+        });
         if (inviteErr) throw inviteErr;
       }
 
