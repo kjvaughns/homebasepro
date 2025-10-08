@@ -45,62 +45,13 @@ const AdminLogin = () => {
       const normalized = email.trim().toLowerCase();
       if (!normalized) throw new Error("Please enter a valid email");
 
-      // 1) Check if invite exists and pending FIRST (before other checks)
-      const { data: inviteData, error: inviteErr } = await supabase.rpc("check_admin_invite", { invite_email: normalized });
-      
-      if (inviteErr) throw inviteErr;
-      
-      const invite = Array.isArray(inviteData) && inviteData.length > 0 ? inviteData[0] : null;
-
-      if (invite) {
-        setFullName(invite.full_name || "");
-        setPhone(invite.phone || "");
-        setInviteRole(invite.role || "moderator");
-        setBootstrap(false);
-
-        // Check if an auth user already exists for this email (works even if not logged in)
-        const { data: existingUserId, error: existingUserErr } = await supabase.rpc("get_user_id_by_email", { user_email: normalized });
-        if (existingUserErr) {
-          console.warn("User existence check failed:", existingUserErr);
-        }
-        const userExists = !!existingUserId;
-
-        if (userExists) {
-          // User exists, prompt for signin to accept invite
-          setMode("signin");
-          toast({ title: "Welcome back", description: "Sign in to accept your admin invite." });
-        } else {
-          // New user, go to signup
-          setMode("signup");
-          toast({ title: "Welcome", description: "Complete your registration to join the team." });
-        }
-        return;
-      }
-
-      // 2) Check if admin exists in system
-      const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
-      if (adminExistsError) throw adminExistsError;
-
-      // 3) Bootstrap: if no admin exists, allow this email to become the first admin
-      if (adminExistsData === false) {
-        setInviteRole("admin");
-        setBootstrap(true);
-        setMode("signin");
-        toast({ 
-          title: "Bootstrap admin", 
-          description: "Sign in or create an account to become the admin." 
-        });
-        return;
-      }
-
-      // 4) Check if user account exists for this email with admin role
+      // 1) Prefer existing admin/moderator accounts over invites
       const { data: existingUserId, error: existingUserErr } = await supabase.rpc("get_user_id_by_email", { user_email: normalized });
       if (existingUserErr) {
         console.warn("User existence check failed:", existingUserErr);
       }
-      
+
       if (existingUserId) {
-        // Check role via security definer function to bypass RLS before login
         const [
           { data: isAdmin, error: adminErr },
           { data: isMod, error: modErr }
@@ -112,14 +63,54 @@ const AdminLogin = () => {
         if (modErr) console.warn("has_role(moderator) error:", modErr);
 
         if (isAdmin || isMod) {
+          // Known admin/mod - go straight to password entry
+          setInviteRole(null);
+          setBootstrap(false);
           setMode("signin");
           toast({ title: "Welcome back", description: "Enter your password to sign in." });
           return;
         }
       }
 
-      // Otherwise, not invited
-      throw new Error("Email not found in admin invites. Please contact an administrator.");
+      // 2) If not an existing admin/mod, check for a pending invite for this email
+      const { data: inviteData, error: inviteErr } = await supabase.rpc("check_admin_invite", { invite_email: normalized });
+      if (inviteErr) throw inviteErr;
+      const invite = Array.isArray(inviteData) && inviteData.length > 0 ? inviteData[0] : null;
+
+      if (invite) {
+        setFullName(invite.full_name || "");
+        setPhone(invite.phone || "");
+        setInviteRole(invite.role || "moderator");
+        setBootstrap(false);
+
+        const userExists = !!existingUserId;
+        if (userExists) {
+          setMode("signin");
+          toast({ title: "Welcome back", description: "Sign in to accept your admin invite." });
+        } else {
+          setMode("signup");
+          toast({ title: "Welcome", description: "Complete your registration to join the team." });
+        }
+        return;
+      }
+
+      // 3) Bootstrap: if no admins exist at all, allow this email to become the first admin
+      const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
+      if (adminExistsError) throw adminExistsError;
+
+      if (adminExistsData === false) {
+        setInviteRole("admin");
+        setBootstrap(true);
+        setMode("signin");
+        toast({ 
+          title: "Bootstrap admin", 
+          description: "Sign in or create an account to become the admin." 
+        });
+        return;
+      }
+
+      // 4) Final guard: email isn't recognized for admin access
+      throw new Error("Email not recognized for admin access. Please contact an administrator.");
     } catch (error: any) {
       toast({
         title: "Error",
