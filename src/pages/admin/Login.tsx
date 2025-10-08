@@ -52,7 +52,11 @@ const AdminLogin = () => {
       const normalized = email.trim().toLowerCase();
       if (!normalized) throw new Error("Please enter a valid email");
 
-      // 1) If staff exists, go to signin
+      // 1) Check if admin exists in system
+      const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
+      if (adminExistsError) throw adminExistsError;
+
+      // 2) If staff exists, go to signin
       const { data: staff } = await supabase
         .from("staff")
         .select("id, full_name, phone")
@@ -60,12 +64,13 @@ const AdminLogin = () => {
         .maybeSingle();
 
       if (staff) {
+        setBootstrap(false);
         setMode("signin");
         toast({ title: "Welcome", description: "Enter your password to sign in." });
         return;
       }
 
-      // 2) If invite exists and pending, go to signup
+      // 3) If invite exists and pending, go to signup
       const { data: invite } = await supabase
         .from("staff_invites")
         .select("full_name, phone, role, status")
@@ -82,15 +87,17 @@ const AdminLogin = () => {
         return;
       }
 
-      // 3) Bootstrap: if no admin exists, allow this email to set up the first admin
-      const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
-      if (adminExistsError) throw adminExistsError;
-
+      // 4) Bootstrap: if no admin exists, allow this email to become the first admin
       if (adminExistsData === false) {
         setInviteRole("admin");
         setBootstrap(true);
-        setMode("signup");
-        toast({ title: "Set up admin", description: "Create the initial owner admin account." });
+        // Check if auth account exists by attempting to get user data
+        // If account exists, they should sign in; if not, they can sign up
+        setMode("signin"); // Try signin first for existing accounts
+        toast({ 
+          title: "Bootstrap admin", 
+          description: "Sign in or create an account to become the admin." 
+        });
         return;
       }
 
@@ -116,7 +123,19 @@ const AdminLogin = () => {
       });
       if (error) throw error;
 
-      // confirm role
+      // If bootstrap mode (no admins exist), assign admin role
+      if (bootstrap) {
+        const { error: roleError } = await supabase.from("user_roles").insert([
+          { user_id: authData.user!.id, role: "admin" as any },
+        ]);
+        if (roleError) throw roleError;
+        
+        toast({ title: "Success", description: "You are now the admin!" });
+        navigate("/admin/dashboard");
+        return;
+      }
+
+      // confirm role for normal signin
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("role")
@@ -272,9 +291,22 @@ const AdminLogin = () => {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in...
                   </>
                 ) : (
-                  <>Sign In</>
+                  <>Sign In{bootstrap ? " & Bootstrap Admin" : ""}</>
                 )}
               </Button>
+              <Button variant="link" onClick={() => setMode("email")} className="w-full">
+                Use a different email
+              </Button>
+              {bootstrap && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setMode("signup")} 
+                  className="w-full"
+                  type="button"
+                >
+                  Don't have an account? Sign up
+                </Button>
+              )}
               <Button variant="link" onClick={() => setMode("email")} className="w-full">
                 Use a different email
               </Button>
