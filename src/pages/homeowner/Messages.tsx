@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, MessageSquare } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 export default function HomeownerMessages() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -20,6 +22,8 @@ export default function HomeownerMessages() {
   const [newMessage, setNewMessage] = useState("");
   const [profileId, setProfileId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadConversations();
@@ -28,9 +32,15 @@ export default function HomeownerMessages() {
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation.id);
-      subscribeToMessages(selectedConversation.id);
+      const cleanup = subscribeToMessages(selectedConversation.id);
+      return cleanup;
     }
   }, [selectedConversation]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    inputRef.current?.focus();
+  }, [messages, selectedConversation]);
 
   const loadConversations = async () => {
     try {
@@ -69,7 +79,17 @@ export default function HomeownerMessages() {
       if (error) throw error;
 
       setConversations(convos || []);
-      if (convos && convos.length > 0) {
+      
+      // Check if we have a conversationId from navigation state
+      const targetConvoId = location.state?.conversationId;
+      if (targetConvoId && convos) {
+        const targetConvo = convos.find(c => c.id === targetConvoId);
+        if (targetConvo) {
+          setSelectedConversation(targetConvo);
+        } else if (convos.length > 0) {
+          setSelectedConversation(convos[0]);
+        }
+      } else if (convos && convos.length > 0) {
         setSelectedConversation(convos[0]);
       }
     } catch (error) {
@@ -132,31 +152,45 @@ export default function HomeownerMessages() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !profileId || sending) return;
 
+    const messageContent = newMessage.trim();
+    const tempId = `temp-${Date.now()}`;
+    
+    // Optimistically add message to UI
+    const optimisticMessage = {
+      id: tempId,
+      conversation_id: selectedConversation.id,
+      sender_profile_id: profileId,
+      sender_type: "homeowner",
+      content: messageContent,
+      created_at: new Date().toISOString(),
+      read: false,
+    };
+    
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setNewMessage("");
     setSending(true);
+
     try {
       const { error } = await supabase.from("messages").insert({
         conversation_id: selectedConversation.id,
         sender_profile_id: profileId,
         sender_type: "homeowner",
-        content: newMessage.trim(),
+        content: messageContent,
       });
 
       if (error) throw error;
 
-      // Update conversation's last message time
-      await supabase
-        .from("conversations")
-        .update({ last_message_at: new Date().toISOString() })
-        .eq("id", selectedConversation.id);
-
-      setNewMessage("");
+      // Trigger will auto-update conversation timestamp
     } catch (error) {
       console.error("Error sending message:", error);
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter(m => m.id !== tempId));
       toast({
         title: "Error",
         description: "Failed to send message",
         variant: "destructive",
       });
+      setNewMessage(messageContent);
     } finally {
       setSending(false);
     }
@@ -165,7 +199,14 @@ export default function HomeownerMessages() {
   if (loading) {
     return (
       <div className="container py-8">
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="mb-6">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <Skeleton className="h-[600px]" />
+          <Skeleton className="lg:col-span-2 h-[600px]" />
+        </div>
       </div>
     );
   }
@@ -246,34 +287,49 @@ export default function HomeownerMessages() {
                 </CardHeader>
                 <CardContent className="p-0 flex flex-col h-[600px]">
                   <ScrollArea className="flex-1 p-4">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`mb-4 flex ${
-                          msg.sender_type === "homeowner" ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                            msg.sender_type === "homeowner"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                          }`}
-                        >
-                          <p className="text-sm">{msg.content}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {format(new Date(msg.created_at), "h:mm a")}
-                          </p>
-                        </div>
+                    {messages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground text-sm">No messages yet. Start the conversation!</p>
                       </div>
-                    ))}
+                    ) : (
+                      <>
+                        {messages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`mb-4 flex ${
+                              msg.sender_type === "homeowner" ? "justify-end" : "justify-start"
+                            }`}
+                          >
+                            <div
+                              className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                                msg.sender_type === "homeowner"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                              }`}
+                            >
+                              <p className="text-sm">{msg.content}</p>
+                              <p className="text-xs opacity-70 mt-1">
+                                {format(new Date(msg.created_at), "h:mm a")}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </>
+                    )}
                   </ScrollArea>
                   <div className="p-4 border-t">
                     <div className="flex gap-2">
                       <Input
+                        ref={inputRef}
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                          }
+                        }}
                         placeholder="Type a message..."
                         disabled={sending}
                       />

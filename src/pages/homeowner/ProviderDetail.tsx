@@ -149,8 +149,8 @@ export default function ProviderDetail() {
         description: "Conversation started - you can now send messages",
       });
 
-      // Navigate and the Messages page will auto-select the first conversation
-      navigate("/homeowner/messages");
+      // Navigate with conversation ID so Messages page can auto-select it
+      navigate("/homeowner/messages", { state: { conversationId: newConvo.id } });
     } catch (error) {
       console.error("Error starting conversation:", error);
       toast({
