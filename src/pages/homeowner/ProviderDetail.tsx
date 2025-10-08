@@ -164,17 +164,7 @@ export default function ProviderDetail() {
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Hero Image */}
-      <div className="relative h-64 bg-gradient-to-br from-primary to-accent">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/homeowner/browse")}
-          className="absolute top-4 left-4 bg-background/90 hover:bg-background z-10"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        
+      <div className="relative h-64 bg-gradient-to-br from-primary to-accent overflow-hidden">
         {/* Placeholder for provider image - can be customized */}
         <div className="w-full h-full flex items-center justify-center text-8xl opacity-20">
           {provider.service_type === "Lawn Care" ? "🌱" : 
@@ -182,18 +172,31 @@ export default function ProviderDetail() {
         </div>
       </div>
 
+      {/* Fixed Back Button - Outside hero section */}
+      <div className="container max-w-4xl px-4 relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/homeowner/browse")}
+          className="absolute -top-56 left-4 bg-background/95 hover:bg-background z-50 shadow-md"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
+
       <div className="container max-w-4xl px-4 -mt-8">
         {/* Discount Badge & Actions */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 relative z-10">
           <Badge className="bg-primary text-primary-foreground px-6 py-2 text-sm font-semibold rounded-full shadow-lg">
             <Shield className="h-4 w-4 mr-2" />
             SAVE UP TO 20%
           </Badge>
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md">
+            <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md hover:bg-muted">
               <Share2 className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md">
+            <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md hover:bg-muted">
               <Heart className="h-4 w-4" />
             </Button>
           </div>
