@@ -57,11 +57,14 @@ const AdminLogin = () => {
         setPhone(invite.phone || "");
         setInviteRole(invite.role || "moderator");
         setBootstrap(false);
-        
-        // Check if user already has an auth account
-        const { data: { user } } = await supabase.auth.getUser();
-        const userExists = user && user.email?.toLowerCase() === normalized;
-        
+
+        // Check if an auth user already exists for this email (works even if not logged in)
+        const { data: existingUserId, error: existingUserErr } = await supabase.rpc("get_user_id_by_email", { user_email: normalized });
+        if (existingUserErr) {
+          console.warn("User existence check failed:", existingUserErr);
+        }
+        const userExists = !!existingUserId;
+
         if (userExists) {
           // User exists, prompt for signin to accept invite
           setMode("signin");
@@ -189,6 +192,7 @@ const AdminLogin = () => {
         email: email.trim().toLowerCase(),
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: fullName,
             phone: phone || null,
@@ -215,7 +219,13 @@ const AdminLogin = () => {
       toast({ title: "Success", description: "Your account has been created!" });
       navigate("/admin/dashboard");
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      const msg = (error?.message ?? '').toLowerCase();
+      if (msg.includes('registered') || msg.includes('already')) {
+        setMode('signin');
+        toast({ title: 'Account exists', description: 'Please sign in to accept your invite.' });
+      } else {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      }
     } finally {
       setLoading(false);
     }
@@ -371,9 +381,14 @@ const AdminLogin = () => {
                   <>Create Admin Account</>
                 )}
               </Button>
-              <Button variant="link" onClick={() => setMode("email")} className="w-full" type="button">
-                Use a different email
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button variant="link" onClick={() => setMode("email")} className="w-full" type="button">
+                  Use a different email
+                </Button>
+                <Button variant="outline" onClick={() => setMode("signin")} className="w-full" type="button">
+                  Already have an account? Sign in
+                </Button>
+              </div>
             </form>
           )}
 
