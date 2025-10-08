@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_invites: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          full_name: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Relationships: []
+      }
       client_subscriptions: {
         Row: {
           auto_renew: boolean
@@ -778,72 +814,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      staff: {
-        Row: {
-          created_at: string
-          email: string
-          full_name: string
-          id: string
-          phone: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          full_name: string
-          id?: string
-          phone?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          full_name?: string
-          id?: string
-          phone?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      staff_invites: {
-        Row: {
-          accepted_at: string | null
-          email: string
-          full_name: string | null
-          id: string
-          invited_at: string
-          invited_by: string | null
-          phone: string | null
-          role: Database["public"]["Enums"]["app_role"]
-          status: string
-        }
-        Insert: {
-          accepted_at?: string | null
-          email: string
-          full_name?: string | null
-          id?: string
-          invited_at?: string
-          invited_by?: string | null
-          phone?: string | null
-          role?: Database["public"]["Enums"]["app_role"]
-          status?: string
-        }
-        Update: {
-          accepted_at?: string | null
-          email?: string
-          full_name?: string | null
-          id?: string
-          invited_at?: string
-          invited_by?: string | null
-          phone?: string | null
-          role?: Database["public"]["Enums"]["app_role"]
-          status?: string
-        }
-        Relationships: []
       }
       subscription_plans: {
         Row: {

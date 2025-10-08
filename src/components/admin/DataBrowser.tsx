@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Pencil, Trash2, Plus, RefreshCw } from "lucide-react";
+import { Pencil, Trash2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import EditRecordDialog from "./EditRecordDialog";
 
 const TABLES = [
   "waitlist",
@@ -31,6 +32,8 @@ const DataBrowser = () => {
   const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editRecord, setEditRecord] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchTableData = async () => {
@@ -181,7 +184,14 @@ const DataBrowser = () => {
                     ))}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" disabled>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setEditRecord(row);
+                            setEditOpen(true);
+                          }}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -203,6 +213,16 @@ const DataBrowser = () => {
           Showing {filteredData.length} of {data.length} records
         </div>
       </CardContent>
+      {editRecord && (
+        <EditRecordDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          tableName={selectedTable}
+          record={editRecord}
+          columns={columns}
+          onSuccess={fetchTableData}
+        />
+      )}
     </Card>
   );
 };

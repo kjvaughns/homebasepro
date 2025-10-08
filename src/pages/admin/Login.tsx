@@ -8,11 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Shield, Loader2, Mail, Lock, Phone, User2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Modes for the admin login flow
-// email -> ask email only
-// signin -> email + password (staff already exists)
-// signup -> invited email, collect name/phone/password and create account
-
 type Mode = "email" | "signin" | "signup";
 
 const AdminLogin = () => {
@@ -30,7 +25,6 @@ const AdminLogin = () => {
   const [bootstrap, setBootstrap] = useState(false);
 
   useEffect(() => {
-    // If already logged in and has role, redirect to dashboard
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -45,10 +39,9 @@ const AdminLogin = () => {
     init();
   }, [navigate]);
 
-  const handleCheckEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleCheckEmail = async () => {
     try {
+      setLoading(true);
       const normalized = email.trim().toLowerCase();
       if (!normalized) throw new Error("Please enter a valid email");
 
@@ -56,23 +49,9 @@ const AdminLogin = () => {
       const { data: adminExistsData, error: adminExistsError } = await supabase.rpc("admin_exists");
       if (adminExistsError) throw adminExistsError;
 
-      // 2) If staff exists, go to signin
-      const { data: staff } = await supabase
-        .from("staff")
-        .select("id, full_name, phone")
-        .eq("email", normalized)
-        .maybeSingle();
-
-      if (staff) {
-        setBootstrap(false);
-        setMode("signin");
-        toast({ title: "Welcome", description: "Enter your password to sign in." });
-        return;
-      }
-
-      // 3) If invite exists and pending, go to signup
+      // 2) If invite exists and pending, go to signup
       const { data: invite } = await supabase
-        .from("staff_invites")
+        .from("admin_invites")
         .select("full_name, phone, role, status")
         .eq("email", normalized)
         .maybeSingle();
@@ -80,20 +59,18 @@ const AdminLogin = () => {
       if (invite && invite.status === "pending") {
         setFullName(invite.full_name || "");
         setPhone(invite.phone || "");
-        setInviteRole(invite.role);
+        setInviteRole(invite.role || "moderator");
         setBootstrap(false);
         setMode("signup");
-        toast({ title: "You're invited!", description: "Create your admin password." });
+        toast({ title: "Welcome", description: "Complete your registration to join the team." });
         return;
       }
 
-      // 4) Bootstrap: if no admin exists, allow this email to become the first admin
+      // 3) Bootstrap: if no admin exists, allow this email to become the first admin
       if (adminExistsData === false) {
         setInviteRole("admin");
         setBootstrap(true);
-        // Check if auth account exists by attempting to get user data
-        // If account exists, they should sign in; if not, they can sign up
-        setMode("signin"); // Try signin first for existing accounts
+        setMode("signin");
         toast({ 
           title: "Bootstrap admin", 
           description: "Sign in or create an account to become the admin." 
@@ -101,22 +78,38 @@ const AdminLogin = () => {
         return;
       }
 
+      // 4) Check if user has existing role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (roleData) {
+          setMode("signin");
+          toast({ title: "Welcome back", description: "Enter your password to sign in." });
+          return;
+        }
+      }
+
+      // Otherwise, not invited
+      throw new Error("Email not found in admin invites. Please contact an administrator.");
+    } catch (error: any) {
       toast({
-        title: "No access",
-        description: "This email is not invited to the admin portal.",
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSignin = async () => {
     try {
+      setLoading(true);
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -148,70 +141,50 @@ const AdminLogin = () => {
       }
 
       navigate("/admin/dashboard");
-    } catch (err: any) {
-      toast({ title: "Login failed", description: err.message || "Invalid credentials", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSignup = async () => {
     try {
-      const redirectUrl = `${window.location.origin}/admin/dashboard`;
+      setLoading(true);
+      if (!email || !password || !fullName) throw new Error("All fields are required");
 
-      // Create account (works for both bootstrap and invited flows)
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
+      // 1) sign up new user
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
         password,
-        options: { emailRedirectTo: redirectUrl },
+        options: {
+          data: {
+            full_name: fullName,
+            phone: phone || null,
+          },
+        },
       });
-      if (signUpError) throw signUpError;
+      if (error) throw error;
 
-      const userId = signUpData.user?.id;
-      if (!userId) throw new Error("Signup failed");
+      // 2) insert user role
+      const { error: roleErr } = await supabase.from("user_roles").insert([
+        { user_id: authData.user!.id, role: inviteRole as any },
+      ]);
+      if (roleErr) throw roleErr;
 
-      if (bootstrap) {
-        // Bootstrap path: assign admin role directly (policy allows only when no admins exist)
-        const { error: roleError } = await supabase.from("user_roles").insert([
-          { user_id: userId, role: "admin" as any },
-        ]);
-        if (roleError) throw roleError;
-
-        toast({ title: "Owner admin created", description: "Welcome to the admin portal!" });
-        navigate("/admin/dashboard");
-        return;
+      // 3) mark invite as accepted (if not bootstrap)
+      if (!bootstrap) {
+        const { error: inviteErr } = await supabase
+          .from("admin_invites")
+          .update({ status: "accepted", accepted_at: new Date().toISOString() })
+          .eq("email", email.trim().toLowerCase());
+        if (inviteErr) throw inviteErr;
       }
 
-      if (!inviteRole) throw new Error("Invite role missing");
-
-      // Invited flow: create staff record and assign invited role, then mark invite accepted
-      const { error: staffError } = await supabase.from("staff").insert([
-        {
-          user_id: userId,
-          email: email.toLowerCase(),
-          full_name: fullName,
-          phone,
-        },
-      ]);
-      if (staffError) throw staffError;
-
-      const { error: roleError } = await supabase.from("user_roles").insert([
-        { user_id: userId, role: inviteRole as any },
-      ]);
-      if (roleError) throw roleError;
-
-      const { error: inviteError } = await supabase
-        .from("staff_invites")
-        .update({ status: "accepted", accepted_at: new Date().toISOString() })
-        .eq("email", email.toLowerCase());
-      if (inviteError) throw inviteError;
-
-      toast({ title: "Account created", description: "Welcome to the admin portal!" });
+      toast({ title: "Success", description: "Your account has been created!" });
       navigate("/admin/dashboard");
-    } catch (err: any) {
-      toast({ title: "Signup failed", description: err.message, variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -235,7 +208,7 @@ const AdminLogin = () => {
         </CardHeader>
         <CardContent>
           {mode === "email" && (
-            <form onSubmit={handleCheckEmail} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleCheckEmail(); }} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -265,7 +238,7 @@ const AdminLogin = () => {
           )}
 
           {mode === "signin" && (
-            <form onSubmit={handleSignin} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSignin(); }} className="space-y-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input type="email" value={email} disabled />
@@ -294,7 +267,7 @@ const AdminLogin = () => {
                   <>Sign In{bootstrap ? " & Bootstrap Admin" : ""}</>
                 )}
               </Button>
-              <Button variant="link" onClick={() => setMode("email")} className="w-full">
+              <Button variant="link" onClick={() => setMode("email")} className="w-full" type="button">
                 Use a different email
               </Button>
               {bootstrap && (
@@ -307,14 +280,11 @@ const AdminLogin = () => {
                   Don't have an account? Sign up
                 </Button>
               )}
-              <Button variant="link" onClick={() => setMode("email")} className="w-full">
-                Use a different email
-              </Button>
             </form>
           )}
 
           {mode === "signup" && (
-            <form onSubmit={handleSignup} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSignup(); }} className="space-y-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input type="email" value={email} disabled />
@@ -370,7 +340,7 @@ const AdminLogin = () => {
                   <>Create Admin Account</>
                 )}
               </Button>
-              <Button variant="link" onClick={() => setMode("email")} className="w-full">
+              <Button variant="link" onClick={() => setMode("email")} className="w-full" type="button">
                 Use a different email
               </Button>
             </form>

@@ -1,44 +1,48 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserPlus, Trash2, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Trash2, UserPlus } from "lucide-react";
+import InviteAdminDialog from "@/components/admin/InviteAdminDialog";
+import { Badge } from "@/components/ui/badge";
 
 interface AdminUser {
   id: string;
   user_id: string;
   role: string;
   created_at: string;
-  profiles?: {
+  profiles: {
     full_name: string;
-    email?: string;
-  };
+  } | null;
+}
+
+interface AdminInvite {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  status: string;
+  invited_at: string;
 }
 
 const TeamManagement = () => {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchEmail, setSearchEmail] = useState("");
-  const [selectedRole, setSelectedRole] = useState("admin");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const fetchAdmins = async () => {
+  const fetchData = async () => {
     try {
-      const { data: rolesData, error } = await supabase
+      // Fetch active admins
+      const { data: rolesData, error: rolesError } = await supabase
         .from("user_roles")
         .select("id, user_id, role, created_at")
-        .in("role", ["admin", "moderator"])
-        .order("created_at", { ascending: false });
+        .in("role", ["admin", "moderator"]);
 
-      if (error) throw error;
+      if (rolesError) throw rolesError;
 
       // Fetch profile info for each user
       const enrichedData = await Promise.all(
@@ -57,9 +61,19 @@ const TeamManagement = () => {
       );
 
       setAdmins(enrichedData);
+
+      // Fetch pending invites
+      const { data: invitesData, error: invitesError } = await supabase
+        .from("admin_invites")
+        .select("*")
+        .eq("status", "pending")
+        .order("invited_at", { ascending: false });
+
+      if (invitesError) throw invitesError;
+      setInvites(invitesData || []);
     } catch (error: any) {
       toast({
-        title: "Error fetching admins",
+        title: "Error fetching data",
         description: error.message,
         variant: "destructive",
       });
@@ -69,87 +83,18 @@ const TeamManagement = () => {
   };
 
   useEffect(() => {
-    fetchAdmins();
+    fetchData();
   }, []);
-
-  const handleAddAdmin = async () => {
-    if (!searchEmail) {
-      toast({
-        title: "Email required",
-        description: "Please enter a user email",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Find user by name through profiles
-      const { data: profiles, error: profileError } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .ilike("full_name", `%${searchEmail}%`)
-        .limit(1)
-        .single();
-
-      if (profileError || !profiles) {
-        toast({
-          title: "User not found",
-          description: "No user with this name exists",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Add role
-      const { error: roleError } = await supabase.from("user_roles").insert([
-        {
-          user_id: profiles.user_id,
-          role: selectedRole as "admin" | "moderator",
-        },
-      ]);
-
-      if (roleError) throw roleError;
-
-      // Log activity
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      await supabase.from("admin_activity_log").insert({
-        admin_user_id: user?.id,
-        action: "add_admin",
-        table_name: "user_roles",
-        details: { email: searchEmail, role: selectedRole },
-      });
-
-      toast({
-        title: "Admin added",
-        description: `${profiles.full_name} has been granted ${selectedRole} access`,
-      });
-
-      setSearchEmail("");
-      setDialogOpen(false);
-      fetchAdmins();
-    } catch (error: any) {
-      toast({
-        title: "Error adding admin",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleRemoveAdmin = async (roleId: string) => {
     if (!confirm("Are you sure you want to remove this admin?")) return;
 
     try {
       const { error } = await supabase.from("user_roles").delete().eq("id", roleId);
-
       if (error) throw error;
 
       // Log activity
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       await supabase.from("admin_activity_log").insert({
         admin_user_id: user?.id,
         action: "remove_admin",
@@ -162,10 +107,36 @@ const TeamManagement = () => {
         description: "Admin access has been revoked",
       });
 
-      fetchAdmins();
+      fetchData();
     } catch (error: any) {
       toast({
         title: "Error removing admin",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    if (!confirm("Are you sure you want to revoke this invite?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("admin_invites")
+        .update({ status: "revoked" })
+        .eq("id", inviteId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Invite revoked",
+        description: "The invite has been cancelled",
+      });
+
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error revoking invite",
         description: error.message,
         variant: "destructive",
       });
@@ -177,55 +148,17 @@ const TeamManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Team Management</h1>
-          <p className="text-muted-foreground">Manage admin users and their roles</p>
+          <p className="text-muted-foreground">Manage admin users and invites</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Admin
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Admin</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>User Name</Label>
-                <Input
-                  placeholder="Search by full name..."
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">Enter the user's full name to search</p>
-              </div>
-              <div>
-                <Label>Role</Label>
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="moderator">Moderator</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleAddAdmin} className="w-full">
-                Add Admin
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setDialogOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite Admin
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Admin Users
-          </CardTitle>
+          <CardTitle>Active Admins</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -245,7 +178,9 @@ const TeamManagement = () => {
                   <TableRow key={admin.id}>
                     <TableCell>{admin.profiles?.full_name || "Unknown User"}</TableCell>
                     <TableCell>
-                      <Badge variant={admin.role === "admin" ? "default" : "secondary"}>{admin.role}</Badge>
+                      <Badge variant={admin.role === "admin" ? "default" : "secondary"}>
+                        {admin.role}
+                      </Badge>
                     </TableCell>
                     <TableCell>{new Date(admin.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
@@ -260,6 +195,50 @@ const TeamManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {invites.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending Invites</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Invited</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invites.map((invite) => (
+                  <TableRow key={invite.id}>
+                    <TableCell>{invite.full_name}</TableCell>
+                    <TableCell>{invite.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{invite.role}</Badge>
+                    </TableCell>
+                    <TableCell>{new Date(invite.invited_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleRevokeInvite(invite.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <InviteAdminDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={fetchData}
+      />
     </div>
   );
 };
