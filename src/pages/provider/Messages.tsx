@@ -283,7 +283,7 @@ export default function ProviderMessages() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-[100dvh] flex flex-col bg-background md:h-screen">
       <div className="border-b p-4 bg-card">
         <h1 className="text-2xl font-bold">Messages</h1>
       </div>
@@ -332,15 +332,15 @@ export default function ProviderMessages() {
             </div>
           </div>
 
-          {/* Messages Area - Full width on mobile */}
+          {/* Messages Area - Full width on mobile, fixed layout */}
           <div className={cn(
-            "flex-1 flex flex-col",
+            "flex-1 flex flex-col h-full md:h-auto",
             !selectedConversation && "hidden md:flex"
           )}>
             {selectedConversation ? (
-              <>
-                {/* Chat Header - Sticky on mobile */}
-                <div className="sticky top-0 z-10 border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
+              <div className="flex flex-col h-full">
+                {/* Chat Header - Fixed at top */}
+                <div className="shrink-0 border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm z-10">
                   {/* Back button for mobile */}
                   <Button
                     variant="ghost"
@@ -395,8 +395,9 @@ export default function ProviderMessages() {
                   </Button>
                 )}
 
+                {/* Attachment Preview - Above input */}
                 {attachmentPreview && (
-                  <div className="border-t p-4 bg-card">
+                  <div className="shrink-0 border-t p-4 bg-card">
                     <div className="flex items-center gap-3 bg-muted p-3 rounded-lg">
                       {attachmentPreview.type === 'image' && attachmentPreview.preview ? (
                         <img src={attachmentPreview.preview} alt="Preview" className="h-16 w-16 object-cover rounded" />
@@ -416,7 +417,8 @@ export default function ProviderMessages() {
                   </div>
                 )}
 
-                <div className="border-t p-4 bg-card">
+                {/* Input Area - Fixed at bottom */}
+                <div className="shrink-0 border-t p-4 bg-card">
                   <div className="flex items-end gap-2">
                     <AttachmentButton onFileSelect={handleFileSelect} disabled={uploading} />
                     <Textarea
@@ -444,7 +446,7 @@ export default function ProviderMessages() {
                     </Button>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="flex-1 flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
