@@ -1,26 +1,55 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Send, ArrowDown, X } from "lucide-react";
+import { isSameDay } from "date-fns";
+import { MessageBubble } from "@/components/messages/MessageBubble";
+import { DateSeparator } from "@/components/messages/DateSeparator";
+import { AttachmentButton } from "@/components/messages/AttachmentButton";
+import { ConversationListItem } from "@/components/messages/ConversationListItem";
+import { uploadMessageAttachment } from "@/utils/fileUpload";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, MessageSquare } from "lucide-react";
-import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 export default function ProviderMessages() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [attachmentPreview, setAttachmentPreview] = useState<{
+    file: File;
+    type: 'image' | 'file';
+    preview?: string;
+  } | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollButton(!isNearBottom);
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom("auto");
+    inputRef.current?.focus();
+  }, [messages, selectedConversation]);
 
   useEffect(() => {
     loadConversations();
@@ -29,7 +58,8 @@ export default function ProviderMessages() {
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation.id);
-      subscribeToMessages(selectedConversation.id);
+      const cleanup = subscribeToMessages(selectedConversation.id);
+      return cleanup;
     }
   }, [selectedConversation]);
 
@@ -48,15 +78,11 @@ export default function ProviderMessages() {
         .single();
 
       if (!profile) {
-        toast({
-          title: "Profile not found",
-          description: "Please complete your profile setup",
-          variant: "destructive",
-        });
+        setLoading(false);
         return;
       }
 
-      setProfileId(profile.id);
+      setUserProfile(profile);
 
       const { data: org } = await supabase
         .from("organizations")
@@ -65,16 +91,9 @@ export default function ProviderMessages() {
         .single();
 
       if (!org) {
-        toast({
-          title: "Organization not found",
-          description: "Please complete your provider setup",
-          variant: "destructive",
-        });
-        navigate("/onboarding/provider");
+        setLoading(false);
         return;
       }
-
-      setOrganizationId(org.id);
 
       const { data: convos, error } = await supabase
         .from("conversations")
@@ -93,37 +112,30 @@ export default function ProviderMessages() {
       }
     } catch (error) {
       console.error("Error loading conversations:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load conversations",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   };
 
   const loadMessages = async (conversationId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+    const { data: messagesData } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
 
-      if (error) throw error;
+    setMessages(messagesData || []);
 
-      setMessages(data || []);
+    await supabase
+      .from("messages")
+      .update({ read: true })
+      .eq("conversation_id", conversationId)
+      .eq("sender_type", "homeowner");
 
-      // Mark messages as read
-      await supabase
-        .from("messages")
-        .update({ read: true })
-        .eq("conversation_id", conversationId)
-        .eq("sender_type", "homeowner");
-    } catch (error) {
-      console.error("Error loading messages:", error);
-    }
+    await supabase.rpc("reset_unread_count", {
+      conv_id: conversationId,
+      user_type: "provider",
+    });
   };
 
   const subscribeToMessages = (conversationId: string) => {
@@ -148,164 +160,279 @@ export default function ProviderMessages() {
     };
   };
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !profileId || sending) return;
-
-    setSending(true);
-    try {
-      const { error } = await supabase.from("messages").insert({
-        conversation_id: selectedConversation.id,
-        sender_profile_id: profileId,
-        sender_type: "provider",
-        content: newMessage.trim(),
-      });
-
-      if (error) throw error;
-
-      // Update conversation's last message time
-      await supabase
-        .from("conversations")
-        .update({ last_message_at: new Date().toISOString() })
-        .eq("id", selectedConversation.id);
-
-      setNewMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
-    } finally {
-      setSending(false);
+  const handleFileSelect = (file: File, type: 'image' | 'file') => {
+    if (type === 'image') {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachmentPreview({
+          file,
+          type,
+          preview: reader.result as string,
+        });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAttachmentPreview({ file, type });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container py-8">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
+  const sendMessage = async () => {
+    if ((!newMessage.trim() && !attachmentPreview) || !selectedConversation || uploading || !userProfile) return;
+
+    try {
+      setUploading(true);
+      let attachmentUrl = null;
+      let attachmentMetadata = null;
+      let messageType = 'text';
+
+      if (attachmentPreview) {
+        const uploaded = await uploadMessageAttachment(
+          attachmentPreview.file,
+          selectedConversation.id
+        );
+        attachmentUrl = uploaded.path;
+        attachmentMetadata = uploaded.metadata;
+        messageType = attachmentPreview.type;
+      }
+
+      const optimisticMessage = {
+        id: `temp-${Date.now()}`,
+        conversation_id: selectedConversation.id,
+        sender_profile_id: userProfile.id,
+        sender_type: "provider",
+        content: newMessage,
+        message_type: messageType,
+        attachment_url: attachmentUrl,
+        attachment_metadata: attachmentMetadata,
+        read: false,
+        created_at: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, optimisticMessage]);
+      setNewMessage("");
+      setAttachmentPreview(null);
+      scrollToBottom();
+
+      const { error } = await supabase.from("messages").insert({
+        conversation_id: selectedConversation.id,
+        sender_profile_id: userProfile.id,
+        sender_type: "provider",
+        content: newMessage || "",
+        message_type: messageType,
+        attachment_url: attachmentUrl,
+        attachment_metadata: attachmentMetadata,
+      });
+
+      if (error) {
+        console.error("Error sending message:", error);
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+        toast({
+          title: "Error",
+          description: "Failed to send message",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload attachment",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const renderMessages = () => {
+    const groupedMessages: JSX.Element[] = [];
+    let lastDate: Date | null = null;
+    let lastSender: string | null = null;
+
+    messages.forEach((message) => {
+      const messageDate = new Date(message.created_at);
+      
+      if (!lastDate || !isSameDay(lastDate, messageDate)) {
+        groupedMessages.push(
+          <DateSeparator key={`date-${message.id}`} date={messageDate} />
+        );
+        lastDate = messageDate;
+        lastSender = null;
+      }
+
+      const showAvatar = message.sender_type !== lastSender;
+      lastSender = message.sender_type;
+
+      groupedMessages.push(
+        <MessageBubble
+          key={message.id}
+          message={message}
+          isOwn={message.sender_type === "provider"}
+          showAvatar={showAvatar}
+          senderName={
+            message.sender_type === "homeowner"
+              ? selectedConversation?.profiles?.full_name
+              : userProfile?.full_name
+          }
+        />
+      );
+    });
+
+    return groupedMessages;
+  };
 
   return (
-    <div className="container py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
-        <p className="text-muted-foreground">Chat with your clients</p>
+    <div className="h-screen flex flex-col bg-background">
+      <div className="border-b p-4 bg-card">
+        <h1 className="text-2xl font-bold">Messages</h1>
       </div>
 
-      {conversations.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              No Messages Yet
-            </CardTitle>
-            <CardDescription>
-              You don't have any conversations yet. Once clients subscribe to your services, you'll be able to chat with them here.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="space-y-4 w-full max-w-md p-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        </div>
+      ) : conversations.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Send className="h-10 w-10 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No Messages Yet</h3>
+            <p className="text-muted-foreground">
+              Clients will appear here when they contact you.
+            </p>
+          </div>
+        </div>
       ) : (
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Conversations List */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Conversations</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[600px]">
-                {conversations.map((convo) => (
-                  <div
-                    key={convo.id}
-                    onClick={() => setSelectedConversation(convo)}
-                    className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
-                      selectedConversation?.id === convo.id ? "bg-muted" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback>
-                          {convo.profiles?.full_name?.charAt(0).toUpperCase() || "H"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {convo.profiles?.full_name || "Homeowner"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(convo.last_message_at), "MMM d, h:mm a")}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+        <div className="flex-1 flex overflow-hidden">
+          <div className="w-full md:w-96 border-r flex flex-col bg-card">
+            <div className="border-b p-3">
+              <h2 className="font-semibold">Chats</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {conversations.map((conv) => (
+                <ConversationListItem
+                  key={conv.id}
+                  name={conv.profiles?.full_name || "Homeowner"}
+                  lastMessage={conv.last_message_preview}
+                  lastMessageAt={conv.last_message_at}
+                  unreadCount={conv.unread_count_provider}
+                  isSelected={selectedConversation?.id === conv.id}
+                  onClick={() => setSelectedConversation(conv)}
+                />
+              ))}
+            </div>
+          </div>
 
-          {/* Messages */}
-          <Card className="lg:col-span-2">
+          <div className="flex-1 flex flex-col">
             {selectedConversation ? (
               <>
-                <CardHeader className="border-b">
-                  <CardTitle className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback>
-                        {selectedConversation.profiles?.full_name?.charAt(0).toUpperCase() || "H"}
-                      </AvatarFallback>
-                    </Avatar>
-                    {selectedConversation.profiles?.full_name || "Homeowner"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 flex flex-col h-[600px]">
-                  <ScrollArea className="flex-1 p-4">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`mb-4 flex ${
-                          msg.sender_type === "provider" ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                            msg.sender_type === "provider"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                          }`}
-                        >
-                          <p className="text-sm">{msg.content}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {format(new Date(msg.created_at), "h:mm a")}
-                          </p>
-                        </div>
+                <div className="border-b p-4 bg-card flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {selectedConversation.profiles?.full_name?.charAt(0) || "H"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="font-semibold">
+                      {selectedConversation.profiles?.full_name || "Homeowner"}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">Homeowner</p>
+                  </div>
+                </div>
+
+                <div
+                  ref={messagesContainerRef}
+                  onScroll={handleScroll}
+                  className="flex-1 overflow-y-auto p-4 space-y-1 bg-muted/20"
+                >
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center text-muted-foreground">
+                        <p>No messages yet</p>
                       </div>
-                    ))}
-                  </ScrollArea>
-                  <div className="p-4 border-t">
-                    <div className="flex gap-2">
-                      <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                        placeholder="Type a message..."
-                        disabled={sending}
-                      />
-                      <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
-                        <Send className="h-4 w-4" />
+                    </div>
+                  ) : (
+                    renderMessages()
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {showScrollButton && (
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute bottom-32 right-8 rounded-full shadow-lg"
+                    onClick={() => scrollToBottom()}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                )}
+
+                {attachmentPreview && (
+                  <div className="border-t p-4 bg-card">
+                    <div className="flex items-center gap-3 bg-muted p-3 rounded-lg">
+                      {attachmentPreview.type === 'image' && attachmentPreview.preview ? (
+                        <img src={attachmentPreview.preview} alt="Preview" className="h-16 w-16 object-cover rounded" />
+                      ) : (
+                        <div className="h-16 w-16 bg-primary/10 rounded flex items-center justify-center">
+                          <span className="text-2xl">📄</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{attachmentPreview.file.name}</p>
+                        <p className="text-xs text-muted-foreground">{(attachmentPreview.file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => setAttachmentPreview(null)}>
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                </CardContent>
+                )}
+
+                <div className="border-t p-4 bg-card">
+                  <div className="flex items-end gap-2">
+                    <AttachmentButton onFileSelect={handleFileSelect} disabled={uploading} />
+                    <Textarea
+                      ref={inputRef}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      placeholder="Type a message..."
+                      className="resize-none min-h-[44px] max-h-32"
+                      rows={1}
+                      disabled={uploading}
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      size="icon"
+                      className="shrink-0 h-11 w-11 rounded-full"
+                      disabled={(!newMessage.trim() && !attachmentPreview) || uploading}
+                    >
+                      <Send className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
               </>
             ) : (
-              <CardContent className="flex items-center justify-center h-[600px]">
-                <p className="text-muted-foreground">Select a conversation to view messages</p>
-              </CardContent>
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <div className="bg-muted w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Send className="h-10 w-10" />
+                  </div>
+                  <p>Select a conversation to start messaging</p>
+                </div>
+              </div>
             )}
-          </Card>
+          </div>
         </div>
       )}
     </div>

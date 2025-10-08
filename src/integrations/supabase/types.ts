@@ -200,7 +200,10 @@ export type Database = {
           homeowner_profile_id: string
           id: string
           last_message_at: string | null
+          last_message_preview: string | null
           provider_org_id: string
+          unread_count_homeowner: number | null
+          unread_count_provider: number | null
           updated_at: string
         }
         Insert: {
@@ -208,7 +211,10 @@ export type Database = {
           homeowner_profile_id: string
           id?: string
           last_message_at?: string | null
+          last_message_preview?: string | null
           provider_org_id: string
+          unread_count_homeowner?: number | null
+          unread_count_provider?: number | null
           updated_at?: string
         }
         Update: {
@@ -216,7 +222,10 @@ export type Database = {
           homeowner_profile_id?: string
           id?: string
           last_message_at?: string | null
+          last_message_preview?: string | null
           provider_org_id?: string
+          unread_count_homeowner?: number | null
+          unread_count_provider?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -371,28 +380,37 @@ export type Database = {
       }
       messages: {
         Row: {
+          attachment_metadata: Json | null
+          attachment_url: string | null
           content: string
           conversation_id: string
           created_at: string
           id: string
+          message_type: string | null
           read: boolean
           sender_profile_id: string
           sender_type: string
         }
         Insert: {
+          attachment_metadata?: Json | null
+          attachment_url?: string | null
           content: string
           conversation_id: string
           created_at?: string
           id?: string
+          message_type?: string | null
           read?: boolean
           sender_profile_id: string
           sender_type: string
         }
         Update: {
+          attachment_metadata?: Json | null
+          attachment_url?: string | null
           content?: string
           conversation_id?: string
           created_at?: string
           id?: string
+          message_type?: string | null
           read?: boolean
           sender_profile_id?: string
           sender_type?: string
@@ -1080,6 +1098,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reset_unread_count: {
+        Args: { conv_id: string; user_type: string }
+        Returns: undefined
       }
     }
     Enums: {
