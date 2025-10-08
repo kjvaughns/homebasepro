@@ -26,35 +26,37 @@ export const ConversationListItem = ({
     <div
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 p-4 cursor-pointer transition-colors border-b",
-        isSelected ? "bg-primary/5" : "hover:bg-muted/50"
+        "mx-3 my-2 p-4 cursor-pointer transition-all rounded-xl bg-card border shadow-sm hover:shadow-md",
+        isSelected && "ring-2 ring-primary/20 bg-primary/5"
       )}
     >
-      <Avatar className="h-12 w-12 shrink-0">
-        <AvatarImage src={avatarUrl} />
-        <AvatarFallback className="bg-primary/10 text-primary">
-          {name?.charAt(0) || "U"}
-        </AvatarFallback>
-      </Avatar>
+      <div className="flex items-center gap-4">
+        <Avatar className="h-14 w-14 shrink-0">
+          <AvatarImage src={avatarUrl} />
+          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+            {name?.charAt(0) || "U"}
+          </AvatarFallback>
+        </Avatar>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-base truncate">{name}</h3>
-          {lastMessageAt && (
-            <span className="text-xs text-muted-foreground shrink-0 ml-2">
-              {formatDistanceToNow(new Date(lastMessageAt), { addSuffix: false })}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground truncate flex-1">
-            {lastMessage || "No messages yet"}
-          </p>
-          {unreadCount && unreadCount > 0 && (
-            <Badge className="h-5 min-w-[20px] px-1.5 shrink-0 rounded-full">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </Badge>
-          )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h3 className="font-bold text-lg truncate">{name}</h3>
+            {lastMessageAt && (
+              <span className="text-sm text-muted-foreground shrink-0">
+                {formatDistanceToNow(new Date(lastMessageAt), { addSuffix: false })}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground truncate flex-1">
+              {lastMessage || "No messages yet"}
+            </p>
+            {unreadCount && unreadCount > 0 && (
+              <Badge className="h-5 min-w-[20px] px-1.5 shrink-0 rounded-full bg-primary">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
     </div>

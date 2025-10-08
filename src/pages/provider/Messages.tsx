@@ -308,11 +308,11 @@ export default function ProviderMessages() {
         </div>
       ) : (
         <div className="flex-1 flex overflow-hidden">
-          <div className="w-full md:w-80 lg:w-96 border-r flex flex-col bg-card overflow-hidden">
-            <div className="border-b p-4 bg-card/95 backdrop-blur">
-              <h2 className="font-semibold text-lg">Chats</h2>
+          <div className="w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden">
+            <div className="border-b p-4 bg-background/95 backdrop-blur">
+              <h2 className="font-bold text-xl">Messages</h2>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto py-2">
               {conversations.map((conv) => (
                 <ConversationListItem
                   key={conv.id}
