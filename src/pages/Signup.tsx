@@ -5,7 +5,7 @@ export default function Signup() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate("/waitlist");
+    navigate("/register");
   }, [navigate]);
 
   return null;

@@ -5,7 +5,7 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate("/waitlist");
+    navigate("/login");
   }, [navigate]);
 
   return null;

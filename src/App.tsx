@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
 import Waitlist from "./pages/Waitlist";
 import WaitlistThankYou from "./pages/WaitlistThankYou";
@@ -61,6 +63,8 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
           <Route path="/onboarding/provider" element={<OnboardingProvider />} />
           
