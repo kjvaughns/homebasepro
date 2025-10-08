@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Star, Shield, Share2, Heart, Clock, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Shield, Share2, Heart, Clock, Check, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -24,6 +24,7 @@ export default function ProviderDetail() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [selectedHome, setSelectedHome] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [startingConversation, setStartingConversation] = useState(false);
 
   useEffect(() => {
     loadProviderDetails();
@@ -84,6 +85,78 @@ export default function ProviderDetail() {
       setHomes(homesData || []);
     } catch (error) {
       console.error("Error loading homes:", error);
+    }
+  };
+
+  const handleStartConversation = async () => {
+    setStartingConversation(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to send messages",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) {
+        toast({
+          title: "Profile not found",
+          description: "Please complete your profile setup",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for existing conversation
+      const { data: existingConvo } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("homeowner_profile_id", profile.id)
+        .eq("provider_org_id", id)
+        .single();
+
+      if (existingConvo) {
+        // Navigate to existing conversation
+        navigate("/homeowner/messages");
+        return;
+      }
+
+      // Create new conversation
+      const { error: convoError } = await supabase
+        .from("conversations")
+        .insert({
+          homeowner_profile_id: profile.id,
+          provider_org_id: id,
+        });
+
+      if (convoError) throw convoError;
+
+      toast({
+        title: "Success",
+        description: "Conversation started",
+      });
+
+      navigate("/homeowner/messages");
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation",
+        variant: "destructive",
+      });
+    } finally {
+      setStartingConversation(false);
     }
   };
 
@@ -193,6 +266,15 @@ export default function ProviderDetail() {
             SAVE UP TO 20%
           </Badge>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full bg-background shadow-md hover:bg-muted"
+              onClick={handleStartConversation}
+              disabled={startingConversation}
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
             <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md hover:bg-muted">
               <Share2 className="h-4 w-4" />
             </Button>
