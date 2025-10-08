@@ -336,6 +336,40 @@ const Index = () => {
         </div>
       </section>
 
+      {/* App Preview Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">Modern, Mobile-First Interface</h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Beautiful, intuitive apps designed for homeowners and service providers
+          </p>
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            <Card className="p-6 overflow-hidden">
+              <img 
+                src="/src/assets/homeowner-mobile-mockup.png" 
+                alt="Homeowner Mobile App" 
+                className="w-full h-auto rounded-lg shadow-lg mb-4"
+              />
+              <h3 className="text-xl font-semibold mb-2">Homeowner App</h3>
+              <p className="text-muted-foreground">
+                Manage your home services, schedule appointments, and track maintenance history - all from your phone
+              </p>
+            </Card>
+            <Card className="p-6 overflow-hidden">
+              <img 
+                src="/src/assets/provider-dashboard-mockup.png" 
+                alt="Provider Dashboard" 
+                className="w-full h-auto rounded-lg shadow-lg mb-4"
+              />
+              <h3 className="text-xl font-semibold mb-2">Provider Dashboard</h3>
+              <p className="text-muted-foreground">
+                Professional dashboard to manage clients, track appointments, and grow your recurring revenue
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-3xl">

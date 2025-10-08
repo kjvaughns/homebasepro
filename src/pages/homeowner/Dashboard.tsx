@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Home, Calendar, DollarSign, Plus, Search, Clock } from "lucide-react";
+import { Calendar, ChevronRight, Plus, Clock, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 export default function HomeownerDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    properties: 0,
-    activeSubscriptions: 0,
-    upcomingVisits: 0,
-    monthlySpend: 0,
-  });
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [upcomingVisits, setUpcomingVisits] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
 
@@ -32,7 +30,6 @@ export default function HomeownerDashboard() {
         return;
       }
 
-      // Get profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
@@ -41,35 +38,30 @@ export default function HomeownerDashboard() {
 
       if (!profile) {
         setNeedsProfile(true);
-        setStats({ properties: 0, activeSubscriptions: 0, upcomingVisits: 0, monthlySpend: 0 });
-        setUpcomingVisits([]);
         setLoading(false);
         return;
       }
 
-      // Flag incomplete profiles too
       setNeedsProfile(!profile.full_name || !profile.phone);
-
       setProfileId(profile.id);
 
-      // Get properties count
-      const { count: propertiesCount } = await supabase
-        .from("homes")
-        .select("*", { count: "exact", head: true })
-        .eq("owner_id", profile.id);
-
-      // Get active subscriptions count
-      const { count: subscriptionsCount } = await supabase
+      // Load active subscriptions with details
+      const { data: subs } = await supabase
         .from("homeowner_subscriptions")
-        .select("*", { count: "exact", head: true })
+        .select(`
+          *,
+          service_plans(name, service_type),
+          organizations(name),
+          homes(name, address)
+        `)
         .eq("homeowner_id", profile.id)
-        .eq("status", "active");
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
 
-      // Get upcoming visits (next 7 days)
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+      setSubscriptions(subs || []);
 
-      const { data: visits, count: visitsCount } = await supabase
+      // Load upcoming visits
+      const { data: visits } = await supabase
         .from("service_visits")
         .select(`
           *,
@@ -78,18 +70,26 @@ export default function HomeownerDashboard() {
         `)
         .eq("homeowner_id", profile.id)
         .eq("status", "scheduled")
-        .lte("scheduled_date", sevenDaysFromNow.toISOString())
+        .gte("scheduled_date", new Date().toISOString())
         .order("scheduled_date", { ascending: true })
-        .limit(5);
-
-      setStats({
-        properties: propertiesCount || 0,
-        activeSubscriptions: subscriptionsCount || 0,
-        upcomingVisits: visitsCount || 0,
-        monthlySpend: 0, // TODO: Calculate from payments
-      });
+        .limit(3);
 
       setUpcomingVisits(visits || []);
+
+      // Load recent completed visits
+      const { data: completed } = await supabase
+        .from("service_visits")
+        .select(`
+          *,
+          organizations(name),
+          service_plans:service_request_id(name)
+        `)
+        .eq("homeowner_id", profile.id)
+        .eq("status", "completed")
+        .order("completion_time", { ascending: false })
+        .limit(3);
+
+      setRecentActivity(completed || []);
     } catch (error) {
       console.error("Error loading dashboard:", error);
       toast({
@@ -104,157 +104,156 @@ export default function HomeownerDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container max-w-2xl py-6 space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
       </div>
     );
   }
 
   return (
-    <div className="container max-w-6xl py-6 space-y-6">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome Home</h1>
-        <p className="text-muted-foreground">Manage your properties and services</p>
+    <div className="container max-w-2xl py-6 space-y-6 px-4">
+      {/* Header */}
+      <div className="mb-2">
+        <h1 className="text-2xl font-bold">My Home</h1>
+        <p className="text-muted-foreground text-sm">Manage your services</p>
       </div>
 
       {needsProfile && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Complete Your Profile</CardTitle>
-            <CardDescription>Finish setting up your account to unlock all features.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <Button onClick={() => navigate("/homeowner/settings")}>
-              Complete Profile Setup
-            </Button>
-            <p className="text-sm text-muted-foreground">You'll be prompted to add your name and phone number.</p>
-          </CardContent>
+        <Card className="p-4 border-primary bg-primary/5">
+          <p className="font-medium mb-2">Complete Your Profile</p>
+          <Button 
+            onClick={() => navigate("/homeowner/settings")}
+            size="sm"
+            className="w-full sm:w-auto"
+          >
+            Complete Setup
+          </Button>
         </Card>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Properties</CardTitle>
-            <Home className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.properties}</div>
-            <p className="text-xs text-muted-foreground">Registered homes</p>
-          </CardContent>
-        </Card>
+      {/* Active Services */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Active Services</h2>
+          {subscriptions.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => navigate("/homeowner/subscriptions")}>
+              View all
+            </Button>
+          )}
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Services</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeSubscriptions}</div>
-            <p className="text-xs text-muted-foreground">Ongoing subscriptions</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Visits</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.upcomingVisits}</div>
-            <p className="text-xs text-muted-foreground">Next 7 days</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Spend</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${(stats.monthlySpend / 100).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">This month</p>
-          </CardContent>
-        </Card>
+        {subscriptions.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground mb-4">No active services yet</p>
+            <Button onClick={() => navigate("/homeowner/browse")}>
+              Browse Providers
+            </Button>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {subscriptions.map((sub) => (
+              <Card
+                key={sub.id}
+                className="p-4 cursor-pointer hover:bg-muted/50 transition-colors active:scale-[0.98]"
+                onClick={() => navigate(`/homeowner/subscriptions/${sub.id}`)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="bg-primary/10 p-3 rounded-lg flex-shrink-0">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{sub.service_plans?.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {sub.organizations?.name}
+                      </p>
+                      {sub.next_service_date && (
+                        <Badge variant="outline" className="mt-1 bg-primary/10 text-primary border-primary/20">
+                          Next: {new Date(sub.next_service_date).toLocaleDateString()}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks and shortcuts</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <Button onClick={() => navigate("/homeowner/homes/new")} className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Home
-          </Button>
-          <Button onClick={() => navigate("/homeowner/browse")} variant="outline" className="w-full">
-            <Search className="mr-2 h-4 w-4" />
-            Find Providers
-          </Button>
-          <Button onClick={() => navigate("/homeowner/appointments")} variant="outline" className="w-full">
-            <Calendar className="mr-2 h-4 w-4" />
-            Schedule Service
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Schedule Now CTA */}
+      <Button
+        onClick={() => navigate("/homeowner/browse")}
+        className="w-full h-14 text-base"
+        size="lg"
+      >
+        <Plus className="mr-2 h-5 w-5" />
+        Schedule New Service
+      </Button>
 
-      {/* Upcoming Visits */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Visits</CardTitle>
-          <CardDescription>Your scheduled service appointments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {upcomingVisits.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No upcoming visits scheduled
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {upcomingVisits.map((visit) => (
-                <div
-                  key={visit.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/homeowner/appointments/${visit.id}`)}
-                >
-                  <div className="space-y-1">
-                    <p className="font-medium">{visit.organizations?.name}</p>
-                    <p className="text-sm text-muted-foreground">{visit.homes?.name}</p>
+      {/* Upcoming Appointments */}
+      {upcomingVisits.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Upcoming Appointments</h2>
+          <div className="space-y-2">
+            {upcomingVisits.map((visit) => (
+              <Card
+                key={visit.id}
+                className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => navigate(`/homeowner/appointments/${visit.id}`)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-accent/10 p-2 rounded-lg">
+                      <Clock className="h-4 w-4 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{visit.organizations?.name}</p>
+                      <p className="text-xs text-muted-foreground">{visit.homes?.name}</p>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">
-                      {new Date(visit.scheduled_date).toLocaleDateString()}
+                    <p className="text-sm font-medium text-primary">
+                      {new Date(visit.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(visit.scheduled_date).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(visit.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Your latest updates and actions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No recent activity to display
-          </p>
-        </CardContent>
-      </Card>
+      {recentActivity.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Recent Activity</h2>
+          <div className="space-y-2">
+            {recentActivity.map((activity) => (
+              <Card key={activity.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{activity.organizations?.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Completed {new Date(activity.completion_time).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
