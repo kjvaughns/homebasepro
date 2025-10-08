@@ -19,16 +19,16 @@ const AdminLayout = () => {
           return;
         }
 
-        // Check if user has admin role
-        const { data: roles, error } = await supabase
+        // Check if user has admin or moderator role
+        const { data: roleRow } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
-          .eq("role", "admin")
-          .single();
+          .in("role", ["admin", "moderator"]) 
+          .maybeSingle();
 
-        if (error || !roles) {
-          console.error("Access denied: Not an admin");
+        if (!roleRow) {
+          console.error("Access denied: Not an admin/moderator");
           navigate("/");
           return;
         }
