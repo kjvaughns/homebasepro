@@ -49,10 +49,10 @@ export const MessageBubble = ({
       <div className={cn("flex flex-col max-w-[70%]", isOwn && "items-end")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-2 shadow-sm",
+            "rounded-2xl px-3 py-2 shadow-sm max-w-full",
             isOwn
-              ? "bg-primary text-primary-foreground rounded-br-sm"
-              : "bg-muted rounded-bl-sm"
+              ? "bg-primary text-primary-foreground rounded-br-md"
+              : "bg-card border rounded-bl-md"
           )}
         >
           {isImage && (
@@ -84,7 +84,7 @@ export const MessageBubble = ({
           )}
           
           {message.content && (
-            <p className="text-sm whitespace-pre-wrap break-words">
+            <p className="text-base whitespace-pre-wrap break-words leading-relaxed">
               {message.content}
             </p>
           )}

@@ -318,9 +318,9 @@ export default function HomeownerMessages() {
       ) : (
         <div className="flex-1 flex overflow-hidden">
           {/* Conversations List */}
-          <div className="w-full md:w-96 border-r flex flex-col bg-card">
-            <div className="border-b p-3">
-              <h2 className="font-semibold">Chats</h2>
+          <div className="w-full md:w-80 lg:w-96 border-r flex flex-col bg-card overflow-hidden">
+            <div className="border-b p-4 bg-card/95 backdrop-blur">
+              <h2 className="font-semibold text-lg">Chats</h2>
             </div>
             <div className="flex-1 overflow-y-auto">
               {conversations.map((conv) => (
@@ -342,14 +342,14 @@ export default function HomeownerMessages() {
             {selectedConversation ? (
               <>
                 {/* Chat Header */}
-                <div className="border-b p-4 bg-card flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                <div className="border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
+                  <Avatar className="h-11 w-11">
+                    <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
                       {selectedConversation.organizations?.name?.charAt(0) || "P"}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <h2 className="font-semibold">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-semibold text-base truncate">
                       {selectedConversation.organizations?.name || "Provider"}
                     </h2>
                     <p className="text-xs text-muted-foreground">Service Provider</p>
@@ -360,7 +360,10 @@ export default function HomeownerMessages() {
                 <div
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
-                  className="flex-1 overflow-y-auto p-4 space-y-1 bg-muted/20"
+                  className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/10"
+                  style={{ 
+                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)'
+                  }}
                 >
                   {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full">
