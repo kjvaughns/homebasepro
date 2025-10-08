@@ -33,7 +33,7 @@ const TeamManagement = () => {
   const fetchAdmins = async () => {
     try {
       const { data: rolesData, error } = await supabase
-        .from("staff_invites")
+        .from("user_roles")
         .select("id, user_id, role, created_at")
         .in("role", ["admin", "moderator"])
         .order("created_at", { ascending: false });
