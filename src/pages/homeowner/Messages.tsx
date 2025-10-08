@@ -453,7 +453,7 @@ export default function HomeownerMessages() {
                   )}
 
                   {/* Input Area */}
-                  <div className="border-t p-4 bg-card pb-20 md:pb-[env(safe-area-inset-bottom)]">
+                  <div className="border-t p-4 bg-card pb-2 md:pb-0">
                     <div className="flex items-end gap-2">
                       <AttachmentButton
                         onFileSelect={handleFileSelect}
