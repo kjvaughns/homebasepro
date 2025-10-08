@@ -1049,6 +1049,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      get_user_email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_id_by_email: {
         Args: { user_email: string }
         Returns: string
