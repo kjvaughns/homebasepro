@@ -288,7 +288,7 @@ export default function HomeownerMessages() {
   };
 
   return (
-    <div className="h-[calc(100dvh-3.5rem-4rem)] md:h-[calc(100vh-3.5rem)] flex flex-col bg-background overflow-hidden">
+    <div className="flex flex-col bg-background overflow-hidden h-full">
       {/* Page Header - Only on desktop */}
       <div className="hidden md:block border-b p-4 bg-card shrink-0">
         <h1 className="text-2xl font-bold">Messages</h1>
@@ -382,11 +382,11 @@ export default function HomeownerMessages() {
                   </div>
                 </div>
 
-                {/* Scrollable Messages Area */}
+                {/* Scrollable Messages Area - ONLY THIS SCROLLS */}
                 <div
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
-                  className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/10"
+                  className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-2 bg-muted/10"
                   style={{ 
                     backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)'
                   }}
