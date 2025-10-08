@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          record_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          record_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
       client_subscriptions: {
         Row: {
           auto_renew: boolean
@@ -876,6 +906,30 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           account_type: string
@@ -929,12 +983,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_revenue_summary: {
+        Row: {
+          arr: number | null
+          month: string | null
+          mrr: number | null
+          subscription_count: number | null
+        }
+        Relationships: []
+      }
+      admin_user_stats: {
+        Row: {
+          count: number | null
+          date: string | null
+          user_type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       subscription_tier: "free" | "growth" | "pro" | "scale"
     }
     CompositeTypes: {
@@ -1063,6 +1140,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       subscription_tier: ["free", "growth", "pro", "scale"],
     },
   },

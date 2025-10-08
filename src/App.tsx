@@ -37,6 +37,13 @@ import HomeownerSettings from "./pages/homeowner/Settings";
 import HomeownerMessages from "./pages/homeowner/Messages";
 import ProviderMessages from "./pages/provider/Messages";
 import ProviderAnalytics from "./pages/provider/Analytics";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminData from "./pages/admin/DataManagement";
+import AdminAnalytics from "./pages/admin/Analytics";
+import AdminTeam from "./pages/admin/TeamManagement";
+import AdminUsers from "./pages/admin/UserManagement";
+import AdminSettings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +93,16 @@ const App = () => (
             <Route path="settings" element={<Settings />} />
             <Route path="messages" element={<ProviderMessages />} />
             <Route path="analytics" element={<ProviderAnalytics />} />
+          </Route>
+
+          {/* Admin routes with shared layout */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="data" element={<AdminData />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="team" element={<AdminTeam />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
