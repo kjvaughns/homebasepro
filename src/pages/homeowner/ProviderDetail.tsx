@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Phone, Mail, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Shield, Share2, Heart, Clock, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 export default function ProviderDetail() {
   const { id } = useParams();
@@ -160,146 +162,249 @@ export default function ProviderDetail() {
   }
 
   return (
-    <div className="container max-w-6xl py-6 space-y-6">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate("/homeowner/browse")}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Browse
-      </Button>
+    <div className="min-h-screen bg-background pb-8">
+      {/* Hero Image */}
+      <div className="relative h-64 bg-gradient-to-br from-primary to-accent">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/homeowner/browse")}
+          className="absolute top-4 left-4 bg-background/90 hover:bg-background z-10"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        
+        {/* Placeholder for provider image - can be customized */}
+        <div className="w-full h-full flex items-center justify-center text-8xl opacity-20">
+          {provider.service_type === "Lawn Care" ? "🌱" : 
+           provider.service_type === "Plumbing" ? "🔧" : "⚡"}
+        </div>
+      </div>
 
-      {/* Provider Info */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <CardTitle className="text-3xl">{provider.name}</CardTitle>
-              {provider.service_type && (
-                <Badge variant="secondary">{provider.service_type}</Badge>
-              )}
-              {provider.description && (
-                <CardDescription className="text-base mt-2">
-                  {provider.description}
-                </CardDescription>
-              )}
-            </div>
+      <div className="container max-w-4xl px-4 -mt-8">
+        {/* Discount Badge & Actions */}
+        <div className="flex items-center justify-between mb-6">
+          <Badge className="bg-primary text-primary-foreground px-6 py-2 text-sm font-semibold rounded-full shadow-lg">
+            <Shield className="h-4 w-4 mr-2" />
+            SAVE UP TO 20%
+          </Badge>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md">
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md">
+              <Heart className="h-4 w-4" />
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        </div>
+
+        {/* Provider Info */}
+        <div className="space-y-3 mb-6">
+          <h1 className="text-4xl font-bold">{provider.name}</h1>
+          {provider.description && (
+            <p className="text-xl text-muted-foreground">{provider.description}</p>
+          )}
           {provider.service_area && (
-            <div className="flex items-center text-sm">
-              <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>Service Area: {provider.service_area}</span>
-            </div>
+            <p className="text-base text-muted-foreground flex items-center">
+              <MapPin className="h-4 w-4 mr-1" />
+              {provider.service_area}
+            </p>
           )}
-          {provider.phone && (
-            <div className="flex items-center text-sm">
-              <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>{provider.phone}</span>
+          
+          {/* Rating */}
+          <div className="flex items-center gap-2">
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star key={star} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              ))}
             </div>
-          )}
-          {provider.email && (
-            <div className="flex items-center text-sm">
-              <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>{provider.email}</span>
+            <span className="text-muted-foreground">(150 reviews)</span>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="services" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="services">Services</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            <TabsTrigger value="about">About</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="services" className="space-y-4">
+            {/* Verified Badge */}
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="h-5 w-5 text-primary" />
+              <span className="text-primary font-semibold text-lg">Verified</span>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Service Plans */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Available Plans</h2>
-        {plans.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No plans available at the moment</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {plans.map((plan) => (
-              <Card key={plan.id} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle>{plan.name}</CardTitle>
-                  {plan.description && (
-                    <CardDescription>{plan.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="flex-1 space-y-4">
-                  <div>
-                    <div className="text-3xl font-bold">
-                      ${(plan.price / 100).toFixed(2)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      per {plan.billing_frequency}
-                    </div>
-                  </div>
-
-                  {plan.includes_features && Array.isArray(plan.includes_features) && plan.includes_features.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Includes:</p>
-                      <ul className="space-y-1">
-                        {plan.includes_features.map((feature: string, index: number) => (
-                          <li key={index} className="flex items-start text-sm">
-                            <Check className="h-4 w-4 mr-2 text-primary flex-shrink-0 mt-0.5" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        className="w-full"
-                        onClick={() => setSelectedPlan(plan)}
-                        disabled={homes.length === 0}
-                      >
-                        {homes.length === 0 ? "Add a Property First" : "Subscribe Now"}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Subscribe to {plan.name}</DialogTitle>
-                        <DialogDescription>
-                          Select which property you'd like this service for
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div>
-                          <Label>Select Property</Label>
-                          <Select value={selectedHome} onValueChange={setSelectedHome}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose a property" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {homes.map((home) => (
-                                <SelectItem key={home.id} value={home.id}>
-                                  {home.name} - {home.address}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button
-                          onClick={handleSubscribe}
-                          disabled={subscribing || !selectedHome}
-                          className="w-full"
-                        >
-                          {subscribing ? "Subscribing..." : "Confirm Subscription"}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+            <h2 className="text-2xl font-bold mb-4">Popular Services</h2>
+            
+            {plans.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">No services available at the moment</p>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="space-y-4">
+                {plans.map((plan, index) => (
+                  <Card key={plan.id} className="overflow-hidden border-0 shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <h3 className="text-xl font-bold">{plan.name}</h3>
+                            {plan.description && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Benefits: {plan.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {plan.includes_features && Array.isArray(plan.includes_features) && plan.includes_features.length > 0 && (
+                            <ul className="space-y-1">
+                              {plan.includes_features.slice(0, 3).map((feature: string, idx: number) => (
+                                <li key={idx} className="flex items-start text-sm text-muted-foreground">
+                                  <Check className="h-4 w-4 mr-2 text-primary flex-shrink-0 mt-0.5" />
+                                  <span>{feature}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          <div className="text-sm text-muted-foreground">
+                            Lowest price in 30 days, before discount: ${(plan.price / 100).toFixed(2)}
+                          </div>
+
+                          {index === 0 && (
+                            <Badge variant="secondary" className="bg-secondary/50 text-primary">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Save up to 20%
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-right">
+                            <div className="text-3xl font-bold">
+                              ${(plan.price / 100).toFixed(2)}
+                            </div>
+                            <div className="text-sm text-muted-foreground flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {plan.billing_frequency}
+                            </div>
+                          </div>
+                          
+                          <Dialog open={dialogOpen && selectedPlan?.id === plan.id} onOpenChange={(open) => {
+                            setDialogOpen(open);
+                            if (!open) setSelectedPlan(null);
+                          }}>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="lg"
+                                className="bg-primary hover:bg-primary/90 px-8"
+                                onClick={() => setSelectedPlan(plan)}
+                                disabled={homes.length === 0}
+                              >
+                                {homes.length === 0 ? "Add Property" : "Book"}
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Subscribe to {plan.name}</DialogTitle>
+                                <DialogDescription>
+                                  Select which property you'd like this service for
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div>
+                                  <Label>Select Property</Label>
+                                  <Select value={selectedHome} onValueChange={setSelectedHome}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Choose a property" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {homes.map((home) => (
+                                        <SelectItem key={home.id} value={home.id}>
+                                          {home.name} - {home.address}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <Button
+                                  onClick={handleSubscribe}
+                                  disabled={subscribing || !selectedHome}
+                                  className="w-full"
+                                >
+                                  {subscribing ? "Subscribing..." : "Confirm Subscription"}
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+
+                      {index < plans.length - 1 && <Separator className="mt-4" />}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">Reviews coming soon</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="portfolio">
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">Portfolio coming soon</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="about">
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                {provider.service_type && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Service Type</h3>
+                    <Badge variant="secondary">{provider.service_type}</Badge>
+                  </div>
+                )}
+                {provider.service_area && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Service Area</h3>
+                    <p className="text-muted-foreground flex items-center">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      {provider.service_area}
+                    </p>
+                  </div>
+                )}
+                {provider.phone && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Contact</h3>
+                    <p className="text-muted-foreground">{provider.phone}</p>
+                  </div>
+                )}
+                {provider.email && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Email</h3>
+                    <p className="text-muted-foreground">{provider.email}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
