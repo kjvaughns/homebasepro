@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Home, LogOut, User, Eye } from "lucide-react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import homebaseLogo from "@/assets/homebase-logo.png";
-import { useToast } from "@/hooks/use-toast";
-import { RoleSwitcher } from "@/components/RoleSwitcher";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { ProviderSidebar } from "@/components/ProviderSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,10 +13,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LogOut, User, Eye, LayoutDashboard, Users, Package, MessageSquare, Settings } from "lucide-react";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
+import homebaseLogo from "@/assets/homebase-logo.png";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
-export function ProviderLayout() {
+const mobileNavigation = [
+  { name: "Overview", href: "/provider/dashboard", icon: LayoutDashboard },
+  { name: "Clients", href: "/provider/clients", icon: Users },
+  { name: "Plans", href: "/provider/plans", icon: Package },
+  { name: "Messages", href: "/provider/messages", icon: MessageSquare },
+  { name: "Settings", href: "/provider/settings", icon: Settings },
+];
+
+const ProviderLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [organization, setOrganization] = useState<any>(null);
@@ -109,66 +119,97 @@ export function ProviderLayout() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full flex-col">
-        {/* Admin Preview Banner */}
-        {isAdmin && (
-          <Alert className="rounded-none border-x-0 border-t-0 bg-primary/10 border-primary">
-            <Eye className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Admin Preview Mode</strong> - Viewing as Provider
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="flex flex-1">
-          <ProviderSidebar />
+    <div className="min-h-screen bg-background">
+      {/* Admin Preview Banner */}
+      {isAdmin && (
+        <Alert className="rounded-none border-x-0 border-t-0 bg-primary/10 border-primary">
+          <Eye className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Admin Preview Mode</strong> - Viewing as Provider
+          </AlertDescription>
+        </Alert>
+      )}
 
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="border-b border-border bg-card">
-            <div className="px-4 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <img src={homebaseLogo} alt="HomeBase" className="h-8 w-8" />
-                <span className="text-2xl font-bold text-foreground">HomeBase</span>
-              </div>
-              <div className="flex items-center gap-4">
-                {!isMobile && <RoleSwitcher />}
-                {organization && (
-                  <span className="text-sm text-muted-foreground">{organization.name}</span>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={userProfile?.avatar_url || ""} />
-                        <AvatarFallback>{getInitials(userProfile?.full_name || "")}</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Account Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sign Out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <div className="flex-1 overflow-auto">
-            <Outlet />
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link to="/provider/dashboard" className="flex items-center gap-2 font-semibold text-lg">
+              <img src={homebaseLogo} alt="HomeBase" className="h-6 w-6" />
+              <span className="hidden md:block">{organization?.name || "Provider"}</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4">
+            {!isMobile && <RoleSwitcher />}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={userProfile?.avatar_url || ""} />
+                    <AvatarFallback>{getInitials(userProfile?.full_name || "")}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-        </div>
-      </div>
-    </SidebarProvider>
+      </header>
+
+      {/* Main Content */}
+      <main className={cn(
+        "pb-20 md:pb-0",
+        isMobile ? "" : "pl-64"
+      )}>
+        <Outlet />
+      </main>
+
+      {/* Bottom Navigation (Mobile) */}
+      {isMobile && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
+          <div className="flex items-center justify-around h-16">
+            {mobileNavigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-xs">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+
+      {/* Sidebar (Desktop) */}
+      {!isMobile && (
+        <SidebarProvider>
+          <div className="fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)]">
+            <ProviderSidebar />
+          </div>
+        </SidebarProvider>
+      )}
+    </div>
   );
-}
+};
+
+export default ProviderLayout;

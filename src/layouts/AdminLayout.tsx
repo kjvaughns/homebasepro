@@ -1,13 +1,34 @@
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { Loader2, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Loader2, LayoutDashboard, Database, TrendingUp, Shield, Users, Settings, LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
+import homebaseLogo from "@/assets/homebase-logo.png";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+
+const mobileNavigation = [
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Data", href: "/admin/data", icon: Database },
+  { name: "Analytics", href: "/admin/analytics", icon: TrendingUp },
+  { name: "Team", href: "/admin/team", icon: Shield },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
+];
 
 const AdminLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useIsMobile();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +80,21 @@ const AdminLayout = () => {
     checkAdminStatus();
   }, [navigate]);
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "AD";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -72,32 +108,85 @@ const AdminLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden lg:block">
-        <AdminSidebar />
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link to="/admin/dashboard" className="flex items-center gap-2 font-semibold text-lg">
+              <img src={homebaseLogo} alt="HomeBase" className="h-6 w-6" />
+              <span className="hidden md:block">Admin Portal</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4">
+            {!isMobile && <RoleSwitcher />}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={userProfile?.avatar_url || ""} />
+                    <AvatarFallback>{getInitials(userProfile?.full_name || "")}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </header>
 
-      {/* Mobile Header with Menu */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 border-b bg-card p-4 flex items-center gap-4">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
-            <AdminSidebar />
-          </SheetContent>
-        </Sheet>
-        <h2 className="text-lg font-bold text-primary">Admin Portal</h2>
-      </div>
-
-      <main className="flex-1 overflow-auto w-full">
-        <div className="container mx-auto p-4 md:p-6 pt-20 lg:pt-6">
+      {/* Main Content */}
+      <main className={cn(
+        "pb-20 md:pb-0",
+        isMobile ? "" : "pl-64"
+      )}>
+        <div className="container mx-auto p-4 md:p-6">
           <Outlet />
         </div>
       </main>
+
+      {/* Bottom Navigation (Mobile) */}
+      {isMobile && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
+          <div className="flex items-center justify-around h-16">
+            {mobileNavigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-xs">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+
+      {/* Sidebar (Desktop) */}
+      {!isMobile && (
+        <aside className="fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)]">
+          <AdminSidebar />
+        </aside>
+      )}
     </div>
   );
 };

@@ -8,13 +8,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { User, Briefcase, ChevronDown, Plus } from "lucide-react";
+import { User, Briefcase, ChevronDown, Plus, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RoleSwitcher = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [hasProviderRole, setHasProviderRole] = useState(false);
+  const [hasAdminRole, setHasAdminRole] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +35,10 @@ export const RoleSwitcher = () => {
         .maybeSingle();
 
       setHasProviderRole(!!orgData);
+
+      // Check if user has admin role
+      const { data: isAdmin } = await supabase.rpc("is_admin");
+      setHasAdminRole(isAdmin || false);
     } catch (error) {
       console.error("Error checking roles:", error);
     } finally {
@@ -42,6 +47,7 @@ export const RoleSwitcher = () => {
   };
 
   const isProviderView = location.pathname.startsWith("/provider");
+  const isAdminView = location.pathname.startsWith("/admin");
 
   if (loading) return null;
 
@@ -49,7 +55,12 @@ export const RoleSwitcher = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="gap-2">
-          {isProviderView ? (
+          {isAdminView ? (
+            <>
+              <Shield className="h-4 w-4" />
+              <span>Admin</span>
+            </>
+          ) : isProviderView ? (
             <>
               <Briefcase className="h-4 w-4" />
               <span>Provider</span>
@@ -66,7 +77,7 @@ export const RoleSwitcher = () => {
       <DropdownMenuContent align="end" className="w-56 bg-card z-50">
         <DropdownMenuItem
           onClick={() => navigate("/dashboard")}
-          className={!isProviderView ? "bg-accent" : ""}
+          className={!isProviderView && !isAdminView ? "bg-accent" : ""}
         >
           <User className="h-4 w-4 mr-2" />
           Homeowner Dashboard
@@ -89,6 +100,19 @@ export const RoleSwitcher = () => {
             >
               <Plus className="h-4 w-4 mr-2" />
               Become a Provider
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {hasAdminRole && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => navigate("/admin/dashboard")}
+              className={isAdminView ? "bg-accent" : ""}
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Admin Portal
             </DropdownMenuItem>
           </>
         )}
