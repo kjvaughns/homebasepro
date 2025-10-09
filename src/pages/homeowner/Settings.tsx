@@ -108,50 +108,60 @@ export default function HomeownerSettings() {
       )}
 
       <Tabs defaultValue="profile" className="space-y-4">
-        {/* === FIXED: turn the tabs list into a responsive grid with equal-height pills === */}
-        <TabsList
-          className="
-            w-full grid grid-cols-2 md:grid-cols-4 gap-3 p-0
-            bg-transparent border-0
-          "
-        >
-          <TabsTrigger
-            value="profile"
-            className="
-              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
-              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-            "
-          >
-            Profile
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="
-              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
-              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-            "
-          >
-            Notifs
-          </TabsTrigger>
-          <TabsTrigger
-            value="security"
-            className="
-              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
-              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-            "
-          >
-            Security
-          </TabsTrigger>
-          <TabsTrigger
-            value="pwa"
-            className="
-              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
-              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-            "
-          >
-            App
-          </TabsTrigger>
-        </TabsList>
+  <TabsList
+    className="
+      w-full grid grid-cols-2 md:grid-cols-4 gap-3 p-0
+      bg-transparent border-0
+    "
+  >
+    <TabsTrigger
+      value="profile"
+      className="
+        w-full min-w-0 min-h-[44px] justify-center truncate
+        rounded-lg border bg-card hover:bg-accent transition-colors
+        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+      "
+    >
+      Profile
+    </TabsTrigger>
+
+    <TabsTrigger
+      value="notifications"
+      className="
+        w-full min-w-0 min-h-[44px] justify-center truncate
+        rounded-lg border bg-card hover:bg-accent transition-colors
+        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+      "
+    >
+      Notifs
+    </TabsTrigger>
+
+    <TabsTrigger
+      value="security"
+      className="
+        w-full min-w-0 min-h-[44px] justify-center truncate
+        rounded-lg border bg-card hover:bg-accent transition-colors
+        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+      "
+    >
+      Security
+    </TabsTrigger>
+
+    <TabsTrigger
+      value="pwa"
+      className="
+        w-full min-w-0 min-h-[44px] justify-center truncate
+        rounded-lg border bg-card hover:bg-accent transition-colors
+        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+      "
+    >
+      App
+    </TabsTrigger>
+  </TabsList>
+
+  {/* ...your TabsContent blocks unchanged ... */}
+</Tabs>
+
 
         <TabsContent value="profile">
           <Card>
