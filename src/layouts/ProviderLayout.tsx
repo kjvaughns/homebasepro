@@ -127,10 +127,116 @@ const ProviderLayout = () => {
     }
   }, [location.pathname, isMessagesRoute]);
 
+  // Lock body scroll on mount, unlock on unmount
+  useEffect(() => {
+    document.body.classList.add('provider-lock');
+    return () => {
+      document.body.classList.remove('provider-lock');
+    };
+  }, []);
+
+  // Measure header height dynamically
+  useEffect(() => {
+    const measureTopbar = () => {
+      const topbar = document.getElementById('provider-topbar');
+      if (topbar) {
+        const height = topbar.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--topbar-h', `${height}px`);
+      }
+    };
+    
+    measureTopbar();
+    window.addEventListener('resize', measureTopbar);
+    const timeout = setTimeout(measureTopbar, 300);
+    
+    return () => {
+      window.removeEventListener('resize', measureTopbar);
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  if (isMobile) {
+    // Mobile layout - unchanged
+    return (
+      <div className="h-[100dvh] overflow-hidden bg-background flex flex-col">
+        {/* Header */}
+        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
+          <div className="container flex h-full items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Link to="/provider/dashboard" className="flex items-center gap-2 font-semibold text-lg">
+                <img src={homebaseLogo} alt="HomeBase" className="h-6 w-6" />
+                <span className="hidden md:block">{organization?.name || "Provider"}</span>
+              </Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={userProfile?.avatar_url || ""} />
+                      <AvatarFallback>{getInitials(userProfile?.full_name || "")}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main
+          ref={mainRef}
+          className={cn(
+            "h-[calc(100dvh-3.5rem)]",
+            isMessagesRoute ? "overflow-hidden" : "overflow-y-auto"
+          )}
+        >
+          <Outlet />
+        </main>
+
+        {/* Bottom Navigation (Mobile) */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
+          <div className="flex items-center justify-around h-16">
+            {mobileNavigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-xs">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
+    );
+  }
+
+  // Desktop layout - new fixed viewport structure
   return (
-    <div className="h-[100dvh] overflow-hidden bg-background flex flex-col">
+    <>
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
+      <header id="provider-topbar" className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/provider/dashboard" className="flex items-center gap-2 font-semibold text-lg">
@@ -139,7 +245,7 @@ const ProviderLayout = () => {
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            {!isMobile && <RoleSwitcher />}
+            <RoleSwitcher />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
@@ -165,53 +271,25 @@ const ProviderLayout = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main
-        ref={mainRef}
-        className={cn(
-          "h-[calc(100dvh-3.5rem)]",
-          isMessagesRoute ? "overflow-hidden" : "overflow-y-auto",
-          isMobile ? "" : "pl-64"
-        )}
-      >
-        <Outlet />
-      </main>
-
-      {/* Bottom Navigation (Mobile) */}
-      {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
-          <div className="flex items-center justify-around h-16">
-            {mobileNavigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-                    isActive
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="text-xs">{item.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      )}
-
-      {/* Sidebar (Desktop) */}
-      {!isMobile && (
+      {/* Fixed Layout Container */}
+      <div id="provider-layout">
+        {/* Sidebar */}
         <SidebarProvider>
-          <div className="fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)]">
+          <aside id="provider-sidebar">
             <ProviderSidebar />
-          </div>
+          </aside>
         </SidebarProvider>
-      )}
-    </div>
+
+        {/* Main Content */}
+        <main
+          id="provider-main"
+          ref={mainRef}
+          className={isMessagesRoute ? "overflow-hidden" : ""}
+        >
+          <Outlet />
+        </main>
+      </div>
+    </>
   );
 };
 

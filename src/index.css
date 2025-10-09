@@ -87,4 +87,55 @@ All colors MUST be HSL.
     font-family: 'Inter', sans-serif;
     font-weight: 600;
   }
+
+  /* Provider Layout Viewport Lock */
+  :root {
+    --topbar-h: 56px;
+    --provider-sidebar-w: 15rem;
+  }
+
+  body.provider-lock {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #provider-layout {
+    position: fixed;
+    inset: var(--topbar-h) 0 0 0;
+    display: block;
+    background: hsl(var(--background));
+  }
+
+  #provider-sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    bottom: 0;
+    left: 0;
+    width: var(--provider-sidebar-w);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+    z-index: 30;
+  }
+
+  #provider-main {
+    position: fixed;
+    top: var(--topbar-h);
+    bottom: 0;
+    left: var(--provider-sidebar-w);
+    right: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    background: hsl(var(--background));
+  }
+
+  /* Safety: prevent phantom horizontal overflow */
+  img, svg, video, table {
+    max-width: 100%;
+    height: auto;
+  }
 }
