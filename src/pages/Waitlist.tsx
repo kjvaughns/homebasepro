@@ -145,6 +145,36 @@ export default function Waitlist() {
       localStorage.setItem('homebase_email', validatedData.email);
       localStorage.setItem('homebase_full_name', validatedData.full_name);
 
+      // Send data to Zapier webhook
+      try {
+        await fetch('https://hooks.zapier.com/hooks/catch/16944064/u52o9h3/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          mode: 'no-cors',
+          body: JSON.stringify({
+            email: validatedData.email,
+            full_name: validatedData.full_name,
+            phone: validatedData.phone,
+            account_type: validatedData.account_type,
+            business_name: validatedData.business_name || '',
+            service_type: validatedData.service_type || '',
+            zip_code: validatedData.zip_code || '',
+            referral_source: validatedData.referral_source || '',
+            current_services: validatedData.current_services || '',
+            client_count: validatedData.client_count || '',
+            referral_code: userReferralCode || '',
+            total_referred: referralData?.total_referred || 0,
+            waitlist_id: waitlistData.id,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      } catch (error) {
+        console.error('Zapier webhook error:', error);
+        // Don't block the user flow if webhook fails
+      }
+
       // Navigate to thank you page with all data
       navigate("/waitlist/thank-you", {
         state: {
