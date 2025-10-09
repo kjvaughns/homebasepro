@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Smartphone, Bell, Download, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,21 @@ export function PWASettingsCard() {
   const { permission, isSubscribed, loading, subscribe, unsubscribe } = usePushNotifications();
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const [showPushDialog, setShowPushDialog] = useState(false);
+  const [vapidAvailable, setVapidAvailable] = useState(false);
   const { toast } = useToast();
+
+  // Check if VAPID keys are configured
+  useEffect(() => {
+    const checkVapid = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('get-vapid-public-key');
+        setVapidAvailable(!!data?.publicKey);
+      } catch {
+        setVapidAvailable(false);
+      }
+    };
+    checkVapid();
+  }, []);
 
   const handleInstall = async () => {
     if (isIOS) {
@@ -121,72 +135,76 @@ export function PWASettingsCard() {
             )}
           </div>
 
-          <Separator />
+          {vapidAvailable && (
+            <>
+              <Separator />
 
-          {/* Push Notifications */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
-                  Push Notifications
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Receive updates about your services
-                </p>
-              </div>
-              {getPermissionBadge()}
-            </div>
+              {/* Push Notifications */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      Push Notifications
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Receive updates about your services
+                    </p>
+                  </div>
+                  {getPermissionBadge()}
+                </div>
 
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Subscription status:</span>
-              {isSubscribed ? (
-                <span className="font-medium text-primary">Active</span>
-              ) : (
-                <span className="font-medium">Not subscribed</span>
-              )}
-            </div>
-
-            {isIOS && !isInstalled && (
-              <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground mb-1">iOS Note:</p>
-                Push notifications work only when HomeBase is installed to your home screen.
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              {!isSubscribed ? (
-                <Button 
-                  onClick={handleEnablePush} 
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  Enable Notifications
-                </Button>
-              ) : (
-                <>
-                  <Button 
-                    onClick={unsubscribe} 
-                    disabled={loading}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Disable Notifications
-                  </Button>
-                  {import.meta.env.DEV && (
-                    <Button 
-                      onClick={handleTestNotification}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      Test
-                    </Button>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Subscription status:</span>
+                  {isSubscribed ? (
+                    <span className="font-medium text-primary">Active</span>
+                  ) : (
+                    <span className="font-medium">Not subscribed</span>
                   )}
-                </>
-              )}
-            </div>
-          </div>
+                </div>
+
+                {isIOS && !isInstalled && (
+                  <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">iOS Note:</p>
+                    Push notifications work only when HomeBase is installed to your home screen.
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  {!isSubscribed ? (
+                    <Button 
+                      onClick={handleEnablePush} 
+                      disabled={loading}
+                      className="flex-1"
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Enable Notifications
+                    </Button>
+                  ) : (
+                    <>
+                      <Button 
+                        onClick={unsubscribe} 
+                        disabled={loading}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        Disable Notifications
+                      </Button>
+                      {import.meta.env.DEV && (
+                        <Button 
+                          onClick={handleTestNotification}
+                          variant="secondary"
+                          size="sm"
+                        >
+                          Test
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
