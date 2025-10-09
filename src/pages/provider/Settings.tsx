@@ -163,22 +163,10 @@ export default function Settings() {
         <p className="text-sm sm:text-base text-muted-foreground">Manage your organization settings</p>
       </div>
       
+      {/* Role Switcher on Mobile */}
       <div className="lg:hidden">
         <RoleSwitcher />
       </div>
-
-      {/* Role Switcher on Mobile */}
-      {isMobile && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Switch Role</CardTitle>
-            <CardDescription>Toggle between homeowner and provider views</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RoleSwitcher />
-          </CardContent>
-        </Card>
-      )}
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
