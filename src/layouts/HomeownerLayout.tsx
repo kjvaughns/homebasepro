@@ -101,19 +101,9 @@ export default function HomeownerLayout() {
   const isMessagesRoute = location.pathname.startsWith("/homeowner/messages");
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Admin Preview Banner */}
-      {isAdmin && (
-        <Alert className="rounded-none border-x-0 border-t-0 bg-primary/10 border-primary">
-          <Eye className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Admin Preview Mode</strong> - Viewing as Homeowner
-          </AlertDescription>
-        </Alert>
-      )}
-      
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Top Bar */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
@@ -150,8 +140,8 @@ export default function HomeownerLayout() {
 
       {/* Main Content */}
       <main className={cn(
-        isMessagesRoute ? "pb-4 md:pb-8 relative overflow-hidden h-[calc(100dvh-3.5rem-4rem)] md:h-[calc(100vh-3.5rem)]" : "pb-20 md:pb-0",
-        "min-h-0",
+        isMessagesRoute ? "pb-0 md:pb-0 overflow-hidden h-[calc(100vh-3.5rem)]" : "pb-20 md:pb-0 overflow-y-auto",
+        "flex-1 min-h-0",
         isMobile ? "" : "pl-64"
       )}>
         <Outlet />
