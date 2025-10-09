@@ -389,7 +389,7 @@ export default function HomeownerMessages() {
                   className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-1 bg-muted/10"
                   style={{ 
                     backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)',
-                    paddingBottom: 'calc(140px + env(safe-area-inset-bottom))'
+                    paddingBottom: 'calc(130px + env(safe-area-inset-bottom))'
                   }}
                 >
                   {messages.length === 0 ? (
@@ -410,7 +410,7 @@ export default function HomeownerMessages() {
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute bottom-24 md:bottom-20 right-8 rounded-full shadow-lg z-20"
+                    className="absolute bottom-20 md:bottom-20 right-8 rounded-full shadow-lg z-20"
                     onClick={() => scrollToBottom()}
                   >
                     <ArrowDown className="h-4 w-4" />
@@ -418,7 +418,7 @@ export default function HomeownerMessages() {
                 )}
 
                 {/* Fixed Bottom Section */}
-                <div className="absolute bottom-12 md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
+                <div className="absolute bottom-11 md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
                     <div className="border-b px-4 py-2 bg-card/50">

@@ -9,7 +9,7 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Layout Variables */
-    --bottom-nav-height: 48px;
+    --bottom-nav-height: 44px;
     
     --background: 0 0% 100%;
     --foreground: 220 13% 13%;

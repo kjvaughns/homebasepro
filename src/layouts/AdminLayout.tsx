@@ -168,7 +168,7 @@ const AdminLayout = () => {
 
       {/* Main Content */}
       <main className={cn(
-        isMobile ? "h-[calc(100dvh-6rem)]" : "h-[calc(100dvh-3.5rem)] pl-64",
+        isMobile ? "h-[calc(100dvh-5.5rem)]" : "h-[calc(100dvh-3.5rem)] pl-64",
         "overflow-y-auto pb-safe"
       )}>
         <div className="container mx-auto p-4 md:p-6">
@@ -179,7 +179,7 @@ const AdminLayout = () => {
       {/* Bottom Navigation (Mobile) */}
       {isMobile && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
-          <div className="flex items-center justify-around h-12">
+          <div className="flex items-center justify-around h-11">
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
