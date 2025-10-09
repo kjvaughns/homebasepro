@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { PWASettingsCard } from "@/components/pwa/PWASettingsCard";
 
 export default function HomeownerSettings() {
   const navigate = useNavigate();
@@ -138,6 +139,7 @@ export default function HomeownerSettings() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="pwa">App & Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -223,6 +225,10 @@ export default function HomeownerSettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="pwa">
+          <PWASettingsCard />
         </TabsContent>
       </Tabs>
     </div>

@@ -14,6 +14,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CardDescription } from "@/components/ui/card";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { PWASettingsCard } from "@/components/pwa/PWASettingsCard";
 
 interface Organization {
   id: string;
@@ -172,6 +173,7 @@ export default function Settings() {
         <TabsList>
           <TabsTrigger value="profile">Organization Profile</TabsTrigger>
           <TabsTrigger value="billing">Billing & Subscription</TabsTrigger>
+          <TabsTrigger value="pwa">App & Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -330,6 +332,10 @@ export default function Settings() {
               <p className="text-muted-foreground">No active subscription</p>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="pwa">
+          <PWASettingsCard />
         </TabsContent>
       </Tabs>
     </div>

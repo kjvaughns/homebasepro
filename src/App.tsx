@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { registerServiceWorker } from "@/utils/serviceWorker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
@@ -53,12 +55,18 @@ import AdminSettings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+const App = () => {
+  useEffect(() => {
+    // Register service worker for PWA functionality
+    registerServiceWorker();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/waitlist" element={<Waitlist />} />
@@ -125,6 +133,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
