@@ -171,17 +171,23 @@ export default function HomeownerLayout() {
       <main
         ref={mainRef}
         className={cn(
-          isMobile ? "h-[calc(100dvh-5.5rem)]" : "h-[calc(100dvh-3.5rem)] pl-64",
+          isMobile ? "h-[calc(100dvh-67px)]" : "h-[calc(100dvh-3.5rem)] pl-64",
           isMessagesRoute ? "overflow-hidden" : "overflow-y-auto pb-safe"
         )}
       >
         <Outlet />
       </main>
 
-      {/* Bottom Navigation (Mobile) */}
+      {/* Bottom Navigation (Mobile) - Outlook Style */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
-          <div className="flex items-center justify-around h-11">
+        <nav 
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-card pb-safe" 
+          style={{ 
+            borderTop: '1px solid hsl(0 0% 93%)',
+            boxShadow: '0 -2px 8px rgba(0,0,0,0.04)'
+          }}
+        >
+          <div className="flex items-start justify-around pt-2.5 pb-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -189,14 +195,14 @@ export default function HomeownerLayout() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                    "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1",
                     isActive
                       ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-[hsl(0_0%_70%)] hover:text-foreground"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span className="text-xs">{item.name}</span>
+                  <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                  <span className="text-[11.5px] font-medium leading-tight">{item.name}</span>
                 </Link>
               );
             })}
