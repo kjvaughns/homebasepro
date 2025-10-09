@@ -26,7 +26,7 @@ export default function HomeownerMessages() {
   const [uploading, setUploading] = useState(false);
   const [attachmentPreview, setAttachmentPreview] = useState<{
     file: File;
-    type: 'image' | 'file';
+    type: "image" | "file";
     preview?: string;
   } | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -68,17 +68,15 @@ export default function HomeownerMessages() {
 
   const loadConversations = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         navigate("/auth");
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
+      const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
 
       if (!profile) {
         setLoading(false);
@@ -89,20 +87,22 @@ export default function HomeownerMessages() {
 
       const { data: convos, error } = await supabase
         .from("conversations")
-        .select(`
+        .select(
+          `
           *,
           organizations:provider_org_id(name)
-        `)
+        `,
+        )
         .eq("homeowner_profile_id", profile.id)
         .order("last_message_at", { ascending: false });
 
       if (error) throw error;
 
       setConversations(convos || []);
-      
+
       const targetConvoId = location.state?.conversationId;
       if (targetConvoId && convos) {
-        const targetConvo = convos.find(c => c.id === targetConvoId);
+        const targetConvo = convos.find((c) => c.id === targetConvoId);
         if (targetConvo) {
           setSelectedConversation(targetConvo);
         } else if (convos.length > 0) {
@@ -157,7 +157,7 @@ export default function HomeownerMessages() {
         },
         (payload) => {
           setMessages((prev) => [...prev, payload.new]);
-        }
+        },
       )
       .subscribe();
 
@@ -166,8 +166,8 @@ export default function HomeownerMessages() {
     };
   };
 
-  const handleFileSelect = (file: File, type: 'image' | 'file') => {
-    if (type === 'image') {
+  const handleFileSelect = (file: File, type: "image" | "file") => {
+    if (type === "image") {
       const reader = new FileReader();
       reader.onloadend = () => {
         setAttachmentPreview({
@@ -189,13 +189,10 @@ export default function HomeownerMessages() {
       setUploading(true);
       let attachmentUrl = null;
       let attachmentMetadata = null;
-      let messageType = 'text';
+      let messageType = "text";
 
       if (attachmentPreview) {
-        const uploaded = await uploadMessageAttachment(
-          attachmentPreview.file,
-          selectedConversation.id
-        );
+        const uploaded = await uploadMessageAttachment(attachmentPreview.file, selectedConversation.id);
         attachmentUrl = uploaded.path;
         attachmentMetadata = uploaded.metadata;
         messageType = attachmentPreview.type;
@@ -257,11 +254,9 @@ export default function HomeownerMessages() {
 
     messages.forEach((message) => {
       const messageDate = new Date(message.created_at);
-      
+
       if (!lastDate || !isSameDay(lastDate, messageDate)) {
-        groupedMessages.push(
-          <DateSeparator key={`date-${message.id}`} date={messageDate} />
-        );
+        groupedMessages.push(<DateSeparator key={`date-${message.id}`} date={messageDate} />);
         lastDate = messageDate;
         lastSender = null;
       }
@@ -276,11 +271,9 @@ export default function HomeownerMessages() {
           isOwn={message.sender_type === "homeowner"}
           showAvatar={showAvatar}
           senderName={
-            message.sender_type === "provider"
-              ? selectedConversation?.organizations?.name
-              : userProfile?.full_name
+            message.sender_type === "provider" ? selectedConversation?.organizations?.name : userProfile?.full_name
           }
-        />
+        />,
       );
     });
 
@@ -320,10 +313,12 @@ export default function HomeownerMessages() {
       ) : (
         <div className="flex-1 min-h-0 flex overflow-hidden">
           {/* Conversations List - Hidden on mobile when conversation selected */}
-          <div className={cn(
-            "w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden",
-            selectedConversation && "hidden md:flex"
-          )}>
+          <div
+            className={cn(
+              "w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30 overflow-hidden",
+              selectedConversation && "hidden md:flex",
+            )}
+          >
             <div className="border-b p-4 bg-background/95 backdrop-blur">
               <h2 className="font-bold text-xl">Messages</h2>
             </div>
@@ -343,10 +338,12 @@ export default function HomeownerMessages() {
           </div>
 
           {/* Messages Area - Full width on mobile, fixed layout */}
-                <div className={cn(
-                  "flex-1 min-h-0 relative flex flex-col overflow-hidden",
-                  !selectedConversation && "hidden md:flex"
-                )}>
+          <div
+            className={cn(
+              "flex-1 min-h-0 relative flex flex-col overflow-hidden",
+              !selectedConversation && "hidden md:flex",
+            )}
+          >
             {selectedConversation ? (
               <>
                 {/* Fixed Header Section */}
@@ -355,7 +352,7 @@ export default function HomeownerMessages() {
                   <div className="md:hidden border-b p-4 bg-background">
                     <h1 className="text-2xl font-bold">Messages</h1>
                   </div>
-                  
+
                   {/* Chat Header with Provider Info */}
                   <div className="border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
                     {/* Back button for mobile */}
@@ -367,7 +364,7 @@ export default function HomeownerMessages() {
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    
+
                     <Avatar className="h-11 w-11">
                       <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
                         {selectedConversation.organizations?.name?.charAt(0) || "P"}
@@ -387,9 +384,10 @@ export default function HomeownerMessages() {
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                   className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-1 bg-muted/10"
-                  style={{ 
-                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)',
-                    paddingBottom: 'calc(120px + env(safe-area-inset-bottom))'
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)",
+                    paddingBottom: "calc(120px + env(safe-area-inset-bottom))",
                   }}
                 >
                   {messages.length === 0 ? (
@@ -418,12 +416,12 @@ export default function HomeownerMessages() {
                 )}
 
                 {/* Fixed Bottom Section */}
-                <div className="absolute bottom-[67px] md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
+                <div className="absolute bottom-[80px] md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
                     <div className="border-b px-4 py-2 bg-card/50">
                       <div className="flex items-center gap-3 bg-muted p-3 rounded-lg">
-                        {attachmentPreview.type === 'image' && attachmentPreview.preview ? (
+                        {attachmentPreview.type === "image" && attachmentPreview.preview ? (
                           <img
                             src={attachmentPreview.preview}
                             alt="Preview"
@@ -435,18 +433,12 @@ export default function HomeownerMessages() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {attachmentPreview.file.name}
-                          </p>
+                          <p className="text-sm font-medium truncate">{attachmentPreview.file.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {(attachmentPreview.file.size / 1024).toFixed(1)} KB
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setAttachmentPreview(null)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => setAttachmentPreview(null)}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -456,10 +448,7 @@ export default function HomeownerMessages() {
                   {/* Input Area */}
                   <div className="px-4 py-2 pb-2">
                     <div className="flex items-end gap-2">
-                      <AttachmentButton
-                        onFileSelect={handleFileSelect}
-                        disabled={uploading}
-                      />
+                      <AttachmentButton onFileSelect={handleFileSelect} disabled={uploading} />
                       <Textarea
                         ref={inputRef}
                         value={newMessage}
