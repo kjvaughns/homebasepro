@@ -175,11 +175,18 @@ const AdminLayout = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main
-        className={cn(isMobile ? "h-[calc(100dvh-67px)]" : "h-[calc(100dvh-3.5rem)] pl-64", "overflow-y-auto pb-safe")}
-                  // reserve space for the 80px tab bar + safe area
-          paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+        className={cn(isMobile ? "" : "h-[calc(100dvh-3.5rem)] pl-64", "overflow-y-auto")}
+        style={
+          isMobile
+            ? {
+                // header is 56px (h-14); use svh for mobile
+                height: "calc(100svh - 56px)",
+                // reserve space for the 80px tab bar + safe area
+                paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+              }
+            : undefined
+        }
       >
         <div className="container mx-auto p-4 md:p-6">
           <Outlet />
