@@ -22,6 +22,7 @@ export default function HomeownerSettings() {
 
   useEffect(() => {
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadProfile = async () => {
@@ -35,14 +36,18 @@ export default function HomeownerSettings() {
       }
 
       const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
-      if (error && error.code !== "PGRST116") throw error;
+
+      if (error && (error as any).code !== "PGRST116") throw error;
 
       if (data) {
         setProfile(data);
-        setFormData({ full_name: data.full_name || "", phone: data.phone || "" });
+        setFormData({
+          full_name: data.full_name || "",
+          phone: data.phone || "",
+        });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error loading profile:", err);
       toast({ title: "Error", description: "Failed to load profile", variant: "destructive" });
     }
   };
@@ -75,7 +80,7 @@ export default function HomeownerSettings() {
       toast({ title: "Success", description: "Profile updated successfully" });
       loadProfile();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving profile:", err);
       toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
     } finally {
       setLoading(false);
@@ -107,62 +112,34 @@ export default function HomeownerSettings() {
         </Card>
       )}
 
-  <Tabs defaultValue="profile" className="space-y-4">
-  <TabsList
-    className="
-      w-full grid grid-cols-2 md:grid-cols-4 gap-3 p-0
-      bg-transparent border-0
-    "
-  >
-    <TabsTrigger
-      value="profile"
-      className="
-        w-full min-w-0 min-h-[44px] justify-center truncate
-        rounded-lg border bg-card hover:bg-accent transition-colors
-        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-      "
-    >
-      Profile
-    </TabsTrigger>
-
-    <TabsTrigger
-      value="notifications"
-      className="
-        w-full min-w-0 min-h-[44px] justify-center truncate
-        rounded-lg border bg-card hover:bg-accent transition-colors
-        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-      "
-    >
-      Notifs
-    </TabsTrigger>
-
-    <TabsTrigger
-      value="security"
-      className="
-        w-full min-w-0 min-h-[44px] justify-center truncate
-        rounded-lg border bg-card hover:bg-accent transition-colors
-        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-      "
-    >
-      Security
-    </TabsTrigger>
-
-    <TabsTrigger
-      value="pwa"
-      className="
-        w-full min-w-0 min-h-[44px] justify-center truncate
-        rounded-lg border bg-card hover:bg-accent transition-colors
-        data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-      "
-    >
-      App
-    </TabsTrigger>
-  </TabsList>
-
-  {/* ...your TabsContent blocks unchanged ... */}
-</Tabs>
-
-
+      <Tabs defaultValue="profile" className="space-y-4">
+        {/* Tabs list fixed: responsive grid, equal tiles, no wrapping */}
+        <TabsList className="w-full !grid grid-cols-2 md:grid-cols-4 gap-3 p-0 bg-transparent border-0">
+          <TabsTrigger
+            value="profile"
+            className="w-full min-w-0 min-h-[44px] justify-center truncate rounded-lg border bg-card hover:bg-accent transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+          >
+            Profile
+          </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="w-full min-w-0 min-h-[44px] justify-center truncate rounded-lg border bg-card hover:bg-accent transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+          >
+            Notifs
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="w-full min-w-0 min-h-[44px] justify-center truncate rounded-lg border bg-card hover:bg-accent transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+          >
+            Security
+          </TabsTrigger>
+          <TabsTrigger
+            value="pwa"
+            className="w-full min-w-0 min-h-[44px] justify-center truncate rounded-lg border bg-card hover:bg-accent transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+          >
+            App
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="profile">
           <Card>
