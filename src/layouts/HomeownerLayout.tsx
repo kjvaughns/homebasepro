@@ -36,8 +36,8 @@ const navigation = [
   { name: "Settings", href: "/homeowner/settings", icon: Settings },
 ];
 
-// === Single knob to tune the bottom bar content height (icons + labels) ===
-const TABBAR_H = 80; // try 52 (tighter) or 60–64 (roomier)
+// bottom tab bar content height (icons + label)
+const TABBAR_H = 80;
 
 export default function HomeownerLayout() {
   const location = useLocation();
@@ -56,6 +56,7 @@ export default function HomeownerLayout() {
         navigate("/login");
         return;
       }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("user_type, full_name, avatar_url")
@@ -67,7 +68,6 @@ export default function HomeownerLayout() {
         navigate("/register");
         return;
       }
-
       if (profile.user_type !== "homeowner") {
         toast({ title: "Access denied", description: "This area is for homeowners only.", variant: "destructive" });
         navigate("/provider/dashboard");
@@ -107,8 +107,8 @@ export default function HomeownerLayout() {
   }, [location.pathname, isMessagesRoute]);
 
   return (
-    <div className="h-[100svh] overflow-hidden bg-background flex flex-col">
-      {/* Top Bar (h-14 = 56px) */}
+    <div className="min-h-[100svh] overflow-hidden bg-background flex flex-col">
+      {/* Header (56px) */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
@@ -167,20 +167,19 @@ export default function HomeownerLayout() {
         </div>
       </header>
 
-      {/* Main Content — reserves space for the bottom bar on mobile */}
+      {/* Main — scroller bounded between header and tab bar */}
       <main
         ref={mainRef}
         className={cn(
-          isMobile ? "" : "h-[calc(100svh-3.5rem)] pl-64",
-          isMessagesRoute ? "overflow-hidden" : "overflow-y-auto",
+          isMobile ? "overflow-y-auto" : "overflow-y-auto h-[calc(100svh-3.5rem)] pl-64",
+          isMessagesRoute ? "overflow-hidden" : "",
         )}
         style={
           isMobile
             ? {
-                // 56px = header; remainder is scroll area height
-                height: `calc(100svh - 56px)`,
-                // reserve the tab bar (content height + safe area)
-                paddingBottom: `calc(${TABBAR_H}px + env(safe-area-inset-bottom))`,
+                // viewport minus header minus (tabbar + safe area)
+                height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)))`,
+                paddingBottom: 12, // tiny breathing room for last item
               }
             : undefined
         }
@@ -188,7 +187,7 @@ export default function HomeownerLayout() {
         <Outlet />
       </main>
 
-      {/* Bottom Navigation (Mobile) — Outlook style with safe-area */}
+      {/* Bottom Navigation (Mobile) */}
       {isMobile && (
         <nav
           className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-card"
@@ -199,7 +198,7 @@ export default function HomeownerLayout() {
             paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
-          <div className="flex items-start justify-around pt-2.5">
+          <div className="flex items-center justify-around" style={{ height: `${TABBAR_H}px` }}>
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
