@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, MessageSquare } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,14 +20,16 @@ interface Subscription {
   status: string;
   start_date: string;
   next_billing_date: string | null;
-  clients: { name: string };
+  clients: { name: string; homeowner_profile_id: string | null };
   service_plans: { name: string; price: number; billing_frequency: string };
 }
 
 export default function Subscriptions() {
+  const navigate = useNavigate();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,12 +48,13 @@ export default function Subscriptions() {
         .single();
 
       if (!organization) return;
+      setOrgId(organization.id);
 
       const { data, error } = await supabase
         .from("client_subscriptions")
         .select(`
           *,
-          clients!inner (name, organization_id),
+          clients!inner (name, organization_id, homeowner_profile_id),
           service_plans (name, price, billing_frequency)
         `)
         .eq("clients.organization_id", organization.id)
@@ -67,6 +71,44 @@ export default function Subscriptions() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMessageClient = async (subscription: Subscription) => {
+    if (!subscription.clients.homeowner_profile_id || !orgId) return;
+
+    try {
+      // Check if conversation exists
+      const { data: existingConv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("homeowner_profile_id", subscription.clients.homeowner_profile_id)
+        .eq("provider_org_id", orgId)
+        .maybeSingle();
+
+      if (existingConv) {
+        navigate("/provider/messages");
+        return;
+      }
+
+      // Create new conversation
+      const { error } = await supabase
+        .from("conversations")
+        .insert({
+          homeowner_profile_id: subscription.clients.homeowner_profile_id,
+          provider_org_id: orgId,
+        });
+
+      if (error) throw error;
+
+      navigate("/provider/messages");
+    } catch (error) {
+      console.error("Error opening conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open conversation",
+        variant: "destructive",
+      });
     }
   };
 
@@ -104,6 +146,7 @@ export default function Subscriptions() {
               <TableHead>Frequency</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Next Billing</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -130,6 +173,16 @@ export default function Subscriptions() {
                   {sub.next_billing_date
                     ? new Date(sub.next_billing_date).toLocaleDateString()
                     : "—"}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleMessageClient(sub)}
+                    disabled={!sub.clients.homeowner_profile_id}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

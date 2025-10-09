@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, DollarSign, Home, Phone, Mail, Pause, X } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, Home, Phone, Mail, Pause, X, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -116,6 +116,53 @@ export default function SubscriptionDetail() {
     }
   };
 
+  const handleMessageProvider = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) return;
+
+      // Check if conversation exists
+      const { data: existingConv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("homeowner_profile_id", profile.id)
+        .eq("provider_org_id", subscription.provider_org_id)
+        .maybeSingle();
+
+      if (existingConv) {
+        navigate("/homeowner/messages");
+        return;
+      }
+
+      // Create new conversation
+      const { error } = await supabase
+        .from("conversations")
+        .insert({
+          homeowner_profile_id: profile.id,
+          provider_org_id: subscription.provider_org_id,
+        });
+
+      if (error) throw error;
+
+      navigate("/homeowner/messages");
+    } catch (error) {
+      console.error("Error opening conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open conversation",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -148,6 +195,10 @@ export default function SubscriptionDetail() {
           Back to Subscriptions
         </Button>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleMessageProvider}>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Message Provider
+          </Button>
           {subscription.status === "active" && (
             <>
               <AlertDialog>

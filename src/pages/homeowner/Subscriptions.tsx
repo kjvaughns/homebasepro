@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Home, MapPin } from "lucide-react";
+import { Calendar, DollarSign, Home, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
@@ -56,6 +56,54 @@ export default function Subscriptions() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMessageProvider = async (subscription: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) return;
+
+      // Check if conversation exists
+      const { data: existingConv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("homeowner_profile_id", profile.id)
+        .eq("provider_org_id", subscription.provider_org_id)
+        .maybeSingle();
+
+      if (existingConv) {
+        navigate("/homeowner/messages");
+        return;
+      }
+
+      // Create new conversation
+      const { error } = await supabase
+        .from("conversations")
+        .insert({
+          homeowner_profile_id: profile.id,
+          provider_org_id: subscription.provider_org_id,
+        });
+
+      if (error) throw error;
+
+      navigate("/homeowner/messages");
+    } catch (error) {
+      console.error("Error opening conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open conversation",
+        variant: "destructive",
+      });
     }
   };
 
@@ -115,7 +163,7 @@ export default function Subscriptions() {
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <CardTitle className="text-xl">
                       {subscription.organizations?.name}
                     </CardTitle>
@@ -123,9 +171,19 @@ export default function Subscriptions() {
                       {subscription.service_plans?.name}
                     </CardDescription>
                   </div>
-                  <Badge variant={getStatusColor(subscription.status)}>
-                    {subscription.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => handleMessageProvider(subscription, e)}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Message
+                    </Button>
+                    <Badge variant={getStatusColor(subscription.status)}>
+                      {subscription.status}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
