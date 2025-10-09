@@ -416,7 +416,7 @@ export default function HomeownerMessages() {
                 )}
 
                 {/* Fixed Bottom Section */}
-                <div className="absolute bottom-[4px] md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
+                <div className="absolute bottom-[1px] md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
                     <div className="border-b px-4 py-2 bg-card/50">
