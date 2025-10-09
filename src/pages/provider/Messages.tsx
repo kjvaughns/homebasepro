@@ -431,7 +431,7 @@ export default function ProviderMessages() {
                   )}
 
                   {/* Input Area */}
-                  <div className="border-t p-4 bg-card pb-1 md:pb-4">
+                  <div className="border-t p-4 bg-card pb-4">
                     <div className="flex items-end gap-2">
                       <AttachmentButton
                         onFileSelect={handleFileSelect}
