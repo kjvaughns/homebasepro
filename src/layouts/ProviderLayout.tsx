@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProviderSidebar } from "@/components/ProviderSidebar";
@@ -120,6 +120,13 @@ const ProviderLayout = () => {
 
   const isMessagesRoute = location.pathname.startsWith("/provider/messages");
 
+  const mainRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isMessagesRoute && mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [location.pathname, isMessagesRoute]);
+
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
@@ -159,11 +166,14 @@ const ProviderLayout = () => {
       </header>
 
       {/* Main Content */}
-      <main className={cn(
-        isMessagesRoute ? "pb-0 md:pb-0 overflow-hidden h-[calc(100vh-3.5rem)]" : "pb-20 md:pb-0 overflow-y-auto",
-        "flex-1 min-h-0",
-        isMobile ? "" : "pl-64"
-      )}>
+      <main
+        ref={mainRef}
+        className={cn(
+          isMessagesRoute ? "pb-0 md:pb-0 overflow-hidden h-[calc(100vh-3.5rem)]" : "overflow-y-auto h-[calc(100vh-3.5rem)]",
+          "flex-1 min-h-0",
+          isMobile ? "" : "pl-64"
+        )}
+      >
         <Outlet />
       </main>
 

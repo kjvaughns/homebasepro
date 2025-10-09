@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut, Eye, Building2 } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -99,6 +99,12 @@ export default function HomeownerLayout() {
   };
 
   const isMessagesRoute = location.pathname.startsWith("/homeowner/messages");
+  const mainRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isMessagesRoute && mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [location.pathname, isMessagesRoute]);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
@@ -139,11 +145,14 @@ export default function HomeownerLayout() {
       </header>
 
       {/* Main Content */}
-      <main className={cn(
-        isMessagesRoute ? "pb-0 md:pb-0 overflow-hidden h-[calc(100vh-3.5rem)]" : "pb-20 md:pb-0 overflow-y-auto",
-        "flex-1 min-h-0",
-        isMobile ? "" : "pl-64"
-      )}>
+      <main
+        ref={mainRef}
+        className={cn(
+          isMessagesRoute ? "pb-0 md:pb-0 overflow-hidden h-[calc(100vh-3.5rem)]" : "overflow-y-auto h-[calc(100vh-3.5rem)]",
+          "flex-1 min-h-0",
+          isMobile ? "" : "pl-64"
+        )}
+      >
         <Outlet />
       </main>
 
