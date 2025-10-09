@@ -123,12 +123,19 @@ export default function Waitlist() {
         console.error('Referral error:', referralError);
       }
 
+      // Save referral code immediately to localStorage
+      const userReferralCode = referralData?.referral_code;
+      if (userReferralCode) {
+        localStorage.setItem('homebase_referral_code', userReferralCode);
+        sessionStorage.setItem('homebase_referral_code', userReferralCode);
+      }
+
       // Navigate to thank you page with referral data
       navigate("/waitlist/thank-you", {
         state: {
           full_name: validatedData.full_name,
           account_type: validatedData.account_type,
-          referral_code: referralData?.referral_code,
+          referral_code: userReferralCode,
           total_referred: referralData?.total_referred || 0,
         },
       });

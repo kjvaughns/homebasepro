@@ -1,28 +1,53 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ReferralCard } from '@/components/referral/ReferralCard';
 import { ProgressBar } from '@/components/referral/ProgressBar';
 import { RoleBanner } from '@/components/referral/RoleBanner';
 import { RewardsList } from '@/components/referral/RewardsList';
 import { AntiFraudNotice } from '@/components/referral/AntiFraudNotice';
 import { ShareButtons } from '@/components/referral/ShareButtons';
-import { Loader2, Home, Users, Gift } from 'lucide-react';
+import { Loader2, Home, Users, Gift, Lock, Unlock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 export default function ClubPortal() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
 
-  // Load referral code from localStorage or fetch from DB
+  // Load referral code from URL, localStorage, or prompt for manual entry
   useEffect(() => {
+    // Priority: URL params > localStorage > sessionStorage
+    const urlCode = searchParams.get('code') || searchParams.get('ref');
     const storedCode = localStorage.getItem('homebase_referral_code');
-    if (storedCode) {
-      setReferralCode(storedCode);
+    const sessionCode = sessionStorage.getItem('homebase_referral_code');
+    
+    const finalCode = urlCode || storedCode || sessionCode;
+    
+    if (finalCode) {
+      setReferralCode(finalCode);
+      // Normalize: save to localStorage for future visits
+      localStorage.setItem('homebase_referral_code', finalCode);
+    } else {
+      setShowManualInput(true);
     }
-  }, []);
+  }, [searchParams]);
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedCode = manualCode.trim().toUpperCase();
+    if (trimmedCode) {
+      setReferralCode(trimmedCode);
+      localStorage.setItem('homebase_referral_code', trimmedCode);
+      setShowManualInput(false);
+    }
+  };
 
   // Fetch user's referral profile and stats
   const { data: profile, isLoading } = useQuery({
@@ -59,17 +84,40 @@ export default function ClubPortal() {
     enabled: !!referralCode
   });
 
-  if (!referralCode) {
+  if (!referralCode || showManualInput) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center space-y-4">
-            <p className="text-muted-foreground">
-              No referral code found. Please join the waitlist first.
+          <CardHeader>
+            <CardTitle className="text-center">Access Referral Portal</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Enter your referral code to view your dashboard
             </p>
-            <Button onClick={() => navigate('/waitlist')}>
-              Join Waitlist
-            </Button>
+            
+            <form onSubmit={handleManualSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Referral Code</Label>
+                <Input
+                  id="code"
+                  placeholder="ABC123"
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Access Portal
+              </Button>
+            </form>
+
+            <div className="text-center text-sm text-muted-foreground space-y-2">
+              <p>Don't have a code yet?</p>
+              <Button variant="outline" onClick={() => navigate('/waitlist')}>
+                Join Waitlist
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -212,13 +260,30 @@ export default function ClubPortal() {
                 />
               )}
 
-              {totalReferred >= 5 && (
-                <div className="p-4 bg-primary/10 rounded-lg text-center">
-                  <p className="font-semibold text-primary">
-                    🎉 Milestone Reached! {isProvider ? 'Discount unlocked!' : 'Keep going for more credits!'}
+              {/* Unlock Status */}
+              <div className={`p-4 rounded-lg text-center ${totalReferred >= 5 ? 'bg-primary/10' : 'bg-muted'}`}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  {totalReferred >= 5 ? (
+                    <Unlock className="h-5 w-5 text-primary" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <p className={`font-semibold ${totalReferred >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {totalReferred >= 5 
+                      ? isProvider ? '🎉 Discount Unlocked!' : '🎉 Rewards Active!'
+                      : isProvider ? '🔒 Discount Locked' : '🔒 Rewards Locked'
+                    }
                   </p>
                 </div>
-              )}
+                <p className="text-sm text-muted-foreground">
+                  {totalReferred >= 5
+                    ? isProvider 
+                      ? '25% lifetime discount is now active'
+                      : 'Keep inviting to earn more $50 credits'
+                    : `${5 - totalReferred} more referral${5 - totalReferred !== 1 ? 's' : ''} needed to unlock`
+                  }
+                </p>
+              </div>
             </CardContent>
           </Card>
 

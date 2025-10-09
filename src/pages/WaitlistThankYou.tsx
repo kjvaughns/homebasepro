@@ -34,10 +34,11 @@ export default function WaitlistThankYou() {
     const existing = document.querySelector('meta[name="description"]');
     if (existing) existing.setAttribute("content", "You're on the HomeBase early access list. Early adopter perks secured.");
 
-    // Store referral code in localStorage and generate link
-    if (state.referral_code) {
-      localStorage.setItem('homebase_referral_code', state.referral_code);
-      setReferralLink(`${window.location.origin}/waitlist?ref=${state.referral_code}`);
+    // Get referral code from state or fallback to localStorage
+    const code = state.referral_code || localStorage.getItem('homebase_referral_code');
+    if (code) {
+      localStorage.setItem('homebase_referral_code', code);
+      setReferralLink(`${window.location.origin}/waitlist?ref=${code}`);
     }
   }, [state.referral_code]);
 
@@ -61,17 +62,50 @@ export default function WaitlistThankYou() {
           {/* Referral Section */}
           {referralLink && (
             <>
+              {/* Unlock Your Perks Section */}
+              <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-6 space-y-4">
+                <div className="text-center space-y-2">
+                  <h3 className="font-bold text-xl">
+                    {totalReferred >= 5 ? '🎉 Perks Unlocked!' : '🔒 Unlock Your Perks'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isHomeowner 
+                      ? totalReferred >= 5 
+                        ? 'Keep inviting friends to earn more $50 credits!' 
+                        : 'Invite 5 friends to start earning $50 credits'
+                      : totalReferred >= 5
+                        ? "You've unlocked your 25% lifetime discount!"
+                        : 'Invite 5 homeowners to unlock your 25% lifetime discount'
+                    }
+                  </p>
+                </div>
+
+                <ProgressBar current={totalReferred} target={5} label="Progress to unlock" />
+
+                {totalReferred >= 5 && (
+                  <div className="bg-card rounded-lg p-4 text-center space-y-2">
+                    <p className="font-semibold text-primary text-lg">
+                      {isHomeowner ? '💰 Rewards Active!' : '✨ Discount Active!'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isHomeowner 
+                        ? 'Check your portal for earned credits'
+                        : 'Your 25% discount is locked in for life'
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <RoleBanner role={state.account_type || 'homeowner'} />
               
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="font-semibold text-lg">Invite & Earn</h3>
+                  <h3 className="font-semibold text-lg">Share Your Link</h3>
                   <p className="text-sm text-muted-foreground">
-                    Share your unique link and track your progress
+                    Track your progress and earn rewards
                   </p>
                 </div>
-
-                <ProgressBar current={totalReferred} target={5} label="Progress to rewards" />
                 
                 <ReferralCard referralLink={referralLink} />
                 
@@ -80,21 +114,24 @@ export default function WaitlistThankYou() {
                   shareText={`Join me on HomeBase and ${isHomeowner ? 'get amazing home services' : 'grow your business'}!`}
                 />
 
-                <div className="text-center">
+                <div className="text-center pt-4">
                   <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/club')}
+                    onClick={() => navigate(`/club?code=${state.referral_code || localStorage.getItem('homebase_referral_code')}`)}
                     className="w-full"
+                    size="lg"
                   >
-                    View Full Dashboard
+                    Open Referral Portal
                   </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Bookmark this page or save your link to access later
+                  </p>
                 </div>
               </div>
 
               <div className="border-t pt-6">
                 <h3 className="font-semibold text-lg mb-3">What's Next?</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  We'll notify you when HomeBase launches. In the meantime, invite friends to unlock your rewards!
+                  We'll notify you when HomeBase launches. Start inviting now to unlock your {isHomeowner ? 'credits' : 'discount'}!
                 </p>
               </div>
             </>
