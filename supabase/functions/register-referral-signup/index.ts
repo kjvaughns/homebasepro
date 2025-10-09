@@ -13,7 +13,7 @@ interface SignupPayload {
   role: 'provider' | 'homeowner';
   ref?: string;
   device_fingerprint?: string;
-  waitlist_id: string;
+  waitlist_id?: string;
 }
 
 serve(async (req) => {
@@ -33,9 +33,21 @@ serve(async (req) => {
 
     console.log('Processing referral signup:', { email: payload.email, ref: payload.ref, role: payload.role });
 
+    // Resolve waitlist_id by email if not provided
+    if (!payload.waitlist_id && payload.email) {
+      const { data: wl } = await supabase
+        .from('waitlist')
+        .select('id')
+        .eq('email', payload.email)
+        .maybeSingle();
+      if (wl?.id) {
+        payload.waitlist_id = wl.id;
+      }
+    }
+
     // Anti-fraud checks
     const fraudChecks = await performFraudChecks(supabase, payload, clientIp);
-    
+
     if (fraudChecks.blocked) {
       console.log('Signup blocked:', fraudChecks.reason);
       await logFraudCheck(supabase, payload, clientIp, 'block', fraudChecks.reason);
@@ -51,12 +63,15 @@ serve(async (req) => {
       await logFraudCheck(supabase, payload, clientIp, 'flag', fraudChecks.reason);
     }
 
-    // Check if profile already exists for this waitlist_id
-    const { data: existingProfile } = await supabase
-      .from('referral_profiles')
-      .select('*')
-      .eq('waitlist_id', payload.waitlist_id)
-      .single();
+    let existingProfile = null as any;
+    if (payload.waitlist_id) {
+      const { data: prof } = await supabase
+        .from('referral_profiles')
+        .select('*')
+        .eq('waitlist_id', payload.waitlist_id)
+        .maybeSingle();
+      existingProfile = prof;
+    }
 
     if (existingProfile) {
       console.log('Referral profile already exists:', existingProfile.referral_code);
@@ -86,7 +101,7 @@ serve(async (req) => {
     const { data: referralProfile, error: profileError } = await supabase
       .from('referral_profiles')
       .insert({
-        waitlist_id: payload.waitlist_id,
+        waitlist_id: payload.waitlist_id || null,
         referral_code: referralCode,
         referred_by_code: payload.ref || null,
         ip_created: clientIp,

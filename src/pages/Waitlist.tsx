@@ -90,11 +90,9 @@ export default function Waitlist() {
         client_count: validatedData.client_count || null,
       };
 
-      const { data: waitlistData, error } = await supabase
+      const { error } = await supabase
         .from("waitlist")
-        .insert([dataToInsert])
-        .select()
-        .single();
+        .insert([dataToInsert]);
 
       if (error) {
         if (error.code === '23505') {
@@ -120,8 +118,7 @@ export default function Waitlist() {
             full_name: validatedData.full_name,
             role: validatedData.account_type,
             ref: refCode || undefined,
-            device_fingerprint: deviceFingerprint,
-            waitlist_id: waitlistData.id
+            device_fingerprint: deviceFingerprint
           }
         }
       );
@@ -135,11 +132,6 @@ export default function Waitlist() {
       if (userReferralCode) {
         localStorage.setItem('homebase_referral_code', userReferralCode);
         sessionStorage.setItem('homebase_referral_code', userReferralCode);
-      }
-      
-      if (waitlistData.id) {
-        localStorage.setItem('homebase_waitlist_id', waitlistData.id);
-        sessionStorage.setItem('homebase_waitlist_id', waitlistData.id);
       }
       
       localStorage.setItem('homebase_email', validatedData.email);
@@ -166,7 +158,6 @@ export default function Waitlist() {
             client_count: validatedData.client_count || '',
             referral_code: userReferralCode || '',
             total_referred: referralData?.total_referred || 0,
-            waitlist_id: waitlistData.id,
             timestamp: new Date().toISOString(),
           }),
         });
@@ -181,9 +172,6 @@ export default function Waitlist() {
           full_name: validatedData.full_name,
           account_type: validatedData.account_type,
           referral_code: userReferralCode,
-          total_referred: referralData?.total_referred || 0,
-          waitlist_id: waitlistData.id,
-          email: validatedData.email,
         },
       });
 
