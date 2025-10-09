@@ -177,16 +177,20 @@ const AdminLayout = () => {
 
       <main
         className={cn(
-          "flex-1 min-h-0 overflow-y-auto", // ← main is the scroller
+          "overflow-y-auto", // main is the scroller
           isMobile ? "" : "pl-64",
         )}
         style={
           isMobile
             ? {
-                // reserve space for the 80px tab bar + safe area
-                paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+                // mobile: viewport minus header (56px) minus tab bar (80px + safe area)
+                height: "calc(100svh - 56px - (80px + env(safe-area-inset-bottom)))",
+                paddingBottom: 16, // tiny breathing room so last item isn't jammed
               }
-            : undefined
+            : {
+                // desktop: viewport minus header (no bottom bar on desktop)
+                height: "calc(100vh - 56px)",
+              }
         }
       >
         <div className="container mx-auto p-4 md:p-6">
