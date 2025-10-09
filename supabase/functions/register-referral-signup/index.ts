@@ -51,8 +51,36 @@ serve(async (req) => {
       await logFraudCheck(supabase, payload, clientIp, 'flag', fraudChecks.reason);
     }
 
-    // Generate unique referral code
-    const referralCode = await generateReferralCode(supabase);
+    // Check if profile already exists for this waitlist_id
+    const { data: existingProfile } = await supabase
+      .from('referral_profiles')
+      .select('*')
+      .eq('waitlist_id', payload.waitlist_id)
+      .single();
+
+    if (existingProfile) {
+      console.log('Referral profile already exists:', existingProfile.referral_code);
+      
+      // Fetch current stats
+      const { data: stats } = await supabase
+        .from('referral_stats')
+        .select('*')
+        .eq('referrer_code', existingProfile.referral_code)
+        .single();
+      
+      return new Response(
+        JSON.stringify({
+          referral_code: existingProfile.referral_code,
+          total_referred: stats?.total_referred || 0,
+          eligible_referred: stats?.eligible_referred || 0,
+          flagged: false
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Generate unique human-readable referral code
+    const referralCode = await generateReferralCode(supabase, payload.full_name);
 
     // Create referral profile
     const { data: referralProfile, error: profileError } = await supabase
@@ -240,7 +268,34 @@ async function logFraudCheck(supabase: any, payload: SignupPayload, ip: string, 
     });
 }
 
-async function generateReferralCode(supabase: any): Promise<string> {
+async function generateReferralCode(supabase: any, fullName: string): Promise<string> {
+  // Generate human-readable code: FirstInitial + LastName + 4 random digits
+  const nameParts = fullName.trim().split(/\s+/);
+  const firstInitial = (nameParts[0]?.[0] || 'A').toUpperCase();
+  const lastName = (nameParts[nameParts.length - 1] || 'User').replace(/[^a-zA-Z]/g, '').toUpperCase();
+  
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (attempts < maxAttempts) {
+    const randomDigits = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+    const code = `${firstInitial}${lastName}${randomDigits}`;
+    
+    // Check if code exists
+    const { data: existing } = await supabase
+      .from('referral_profiles')
+      .select('id')
+      .eq('referral_code', code)
+      .single();
+    
+    if (!existing) {
+      return code;
+    }
+    
+    attempts++;
+  }
+  
+  // Fallback to random code if can't generate unique human-readable one
   const { data, error } = await supabase.rpc('generate_referral_code');
   if (error) throw error;
   return data;

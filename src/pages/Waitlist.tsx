@@ -123,20 +123,30 @@ export default function Waitlist() {
         console.error('Referral error:', referralError);
       }
 
-      // Save referral code immediately to localStorage
+      // Save critical data to localStorage for recovery
       const userReferralCode = referralData?.referral_code;
       if (userReferralCode) {
         localStorage.setItem('homebase_referral_code', userReferralCode);
         sessionStorage.setItem('homebase_referral_code', userReferralCode);
       }
+      
+      if (waitlistData.id) {
+        localStorage.setItem('homebase_waitlist_id', waitlistData.id);
+        sessionStorage.setItem('homebase_waitlist_id', waitlistData.id);
+      }
+      
+      localStorage.setItem('homebase_email', validatedData.email);
+      localStorage.setItem('homebase_full_name', validatedData.full_name);
 
-      // Navigate to thank you page with referral data
+      // Navigate to thank you page with all data
       navigate("/waitlist/thank-you", {
         state: {
           full_name: validatedData.full_name,
           account_type: validatedData.account_type,
           referral_code: userReferralCode,
           total_referred: referralData?.total_referred || 0,
+          waitlist_id: waitlistData.id,
+          email: validatedData.email,
         },
       });
 

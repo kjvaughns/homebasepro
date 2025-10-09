@@ -1,1 +1,22 @@
 project_id = "mqaplaplgfcbaaafylpf"
+
+[functions.get-or-create-referral-profile]
+verify_jwt = false
+
+[functions.register-referral-signup]
+verify_jwt = false
+
+[functions.get-vapid-public-key]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = true
+
+[functions.subscribe-push]
+verify_jwt = true
+
+[functions.unsubscribe-push]
+verify_jwt = true
+
+[functions.purchase-webhook]
+verify_jwt = false
