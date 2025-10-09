@@ -1,5 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut, Eye, Building2, DollarSign } from "lucide-react";
+import {
+  Home,
+  Search,
+  Calendar,
+  Settings,
+  MessageSquare,
+  User,
+  LogOut,
+  Eye,
+  Building2,
+  DollarSign,
+} from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -16,7 +27,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: Home },
@@ -25,6 +35,9 @@ const navigation = [
   { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
   { name: "Settings", href: "/homeowner/settings", icon: Settings },
 ];
+
+// === Single knob to tune the bottom bar content height (icons + labels) ===
+const TABBAR_H = 56; // try 52 (tighter) or 60–64 (roomier)
 
 export default function HomeownerLayout() {
   const location = useLocation();
@@ -36,14 +49,13 @@ export default function HomeownerLayout() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         navigate("/login");
         return;
       }
-
-      // Check user profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("user_type, full_name, avatar_url")
@@ -51,55 +63,43 @@ export default function HomeownerLayout() {
         .maybeSingle();
 
       if (!profile) {
-        toast({
-          title: "Profile not found",
-          description: "Please complete registration.",
-          variant: "destructive",
-        });
+        toast({ title: "Profile not found", description: "Please complete registration.", variant: "destructive" });
         navigate("/register");
         return;
       }
 
       if (profile.user_type !== "homeowner") {
-        toast({
-          title: "Access denied",
-          description: "This area is for homeowners only.",
-          variant: "destructive",
-        });
+        toast({ title: "Access denied", description: "This area is for homeowners only.", variant: "destructive" });
         navigate("/provider/dashboard");
         return;
       }
 
       setUserProfile(profile);
-
-      // Check if user is admin
       const { data } = await supabase.rpc("is_admin");
       setIsAdmin(data || false);
     };
     checkUser();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully",
-    });
+    toast({ title: "Signed out", description: "You have been signed out successfully" });
     navigate("/");
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return "HO";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name: string) =>
+    !name
+      ? "HO"
+      : name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2);
 
   const isMessagesRoute = location.pathname.startsWith("/homeowner/messages");
   const mainRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!isMessagesRoute && mainRef.current) {
       mainRef.current.scrollTo({ top: 0, behavior: "auto" });
@@ -107,8 +107,8 @@ export default function HomeownerLayout() {
   }, [location.pathname, isMessagesRoute]);
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-background flex flex-col">
-      {/* Top Bar */}
+    <div className="h-[100svh] overflow-hidden bg-background flex flex-col">
+      {/* Top Bar (h-14 = 56px) */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
@@ -167,27 +167,39 @@ export default function HomeownerLayout() {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content — reserves space for the bottom bar on mobile */}
       <main
         ref={mainRef}
         className={cn(
-          isMobile ? "h-[calc(100dvh-67px)]" : "h-[calc(100dvh-3.5rem)] pl-64",
-          isMessagesRoute ? "overflow-hidden" : "overflow-y-auto pb-safe"
+          isMobile ? "" : "h-[calc(100svh-3.5rem)] pl-64",
+          isMessagesRoute ? "overflow-hidden" : "overflow-y-auto",
         )}
+        style={
+          isMobile
+            ? {
+                // 56px = header; remainder is scroll area height
+                height: `calc(100svh - 56px)`,
+                // reserve the tab bar (content height + safe area)
+                paddingBottom: `calc(${TABBAR_H}px + env(safe-area-inset-bottom))`,
+              }
+            : undefined
+        }
       >
         <Outlet />
       </main>
 
-      {/* Bottom Navigation (Mobile) - Outlook Style */}
+      {/* Bottom Navigation (Mobile) — Outlook style with safe-area */}
       {isMobile && (
-        <nav 
-          className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-card pb-safe" 
-          style={{ 
-            borderTop: '1px solid hsl(0 0% 93%)',
-            boxShadow: '0 -2px 8px rgba(0,0,0,0.04)'
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-card"
+          style={{
+            height: `calc(${TABBAR_H}px + env(safe-area-inset-bottom))`,
+            borderTop: "1px solid hsl(0 0% 93%)",
+            boxShadow: "0 -2px 8px rgba(0,0,0,0.04)",
+            paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
-          <div className="flex items-start justify-around pt-2.5 pb-1">
+          <div className="flex items-start justify-around pt-2.5">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -196,9 +208,7 @@ export default function HomeownerLayout() {
                   to={item.href}
                   className={cn(
                     "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1",
-                    isActive
-                      ? "text-primary"
-                      : "text-[hsl(0_0%_70%)] hover:text-foreground"
+                    isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
                   )}
                 >
                   <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
@@ -222,9 +232,7 @@ export default function HomeownerLayout() {
                   to={item.href}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
+                    isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                   )}
                 >
                   <item.icon className="h-4 w-4" />
