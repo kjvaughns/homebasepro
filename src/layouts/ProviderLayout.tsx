@@ -128,10 +128,10 @@ const ProviderLayout = () => {
   }, [location.pathname, isMessagesRoute]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-[100dvh] overflow-hidden bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
-        <div className="container flex h-14 items-center justify-between">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
+        <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/provider/dashboard" className="flex items-center gap-2 font-semibold text-lg">
               <img src={homebaseLogo} alt="HomeBase" className="h-6 w-6" />
@@ -169,8 +169,8 @@ const ProviderLayout = () => {
       <main
         ref={mainRef}
         className={cn(
-          isMessagesRoute ? "pb-0 md:pb-0 overflow-hidden h-[calc(100vh-3.5rem)]" : "overflow-y-auto h-[calc(100vh-3.5rem)]",
           "flex-1 min-h-0",
+          isMessagesRoute ? "overflow-hidden" : "overflow-y-auto",
           isMobile ? "" : "pl-64"
         )}
       >

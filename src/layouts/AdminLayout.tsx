@@ -108,10 +108,10 @@ const AdminLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-[100dvh] overflow-hidden bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
+        <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/admin/dashboard" className="flex items-center gap-2 font-semibold text-lg">
               <img src={homebaseLogo} alt="HomeBase" className="h-6 w-6" />
@@ -147,7 +147,7 @@ const AdminLayout = () => {
 
       {/* Main Content */}
       <main className={cn(
-        "pb-20 md:pb-0",
+        "flex-1 min-h-0 overflow-y-auto",
         isMobile ? "" : "pl-64"
       )}>
         <div className="container mx-auto p-4 md:p-6">
