@@ -223,7 +223,8 @@ export default function HomeDetail() {
               {subscriptions.map((sub) => (
                 <div
                   key={sub.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/homeowner/subscriptions/${sub.id}`)}
                 >
                   <div>
                     <p className="font-medium">{sub.organizations?.name}</p>

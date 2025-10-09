@@ -2,34 +2,43 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Plus, Laptop, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InviteTeamMemberDialog } from "@/components/provider/InviteTeamMemberDialog";
+import { TeamMemberCard } from "@/components/provider/TeamMemberCard";
+import { ManageCompensationDialog } from "@/components/provider/ManageCompensationDialog";
 
 interface TeamMember {
   id: string;
   invited_email: string;
   role: string;
+  team_role: string;
   status: string;
   invited_at: string;
+  permissions: any;
+}
+
+interface Compensation {
+  id: string;
+  team_member_id: string;
+  pay_type: string;
+  pay_rate: number;
+  direct_deposit_enabled: boolean;
+  bank_account_last4: string;
 }
 
 export default function Team() {
   const navigate = useNavigate();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [compensations, setCompensations] = useState<{ [key: string]: Compensation }>({});
   const [loading, setLoading] = useState(true);
   const [planTier, setPlanTier] = useState<string>("");
+  const [organizationId, setOrganizationId] = useState<string>("");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showCompensationDialog, setShowCompensationDialog] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,6 +57,7 @@ export default function Team() {
         .single();
 
       if (!organization) return;
+      setOrganizationId(organization.id);
 
       // Load subscription tier
       const { data: subscription } = await supabase
@@ -70,6 +80,18 @@ export default function Team() {
 
       if (error) throw error;
       setTeamMembers(data || []);
+
+      // Load compensations for all team members
+      const { data: compensationData } = await supabase
+        .from("team_member_compensation")
+        .select("*")
+        .eq("organization_id", organization.id);
+
+      const compensationMap: { [key: string]: Compensation } = {};
+      compensationData?.forEach(comp => {
+        compensationMap[comp.team_member_id] = comp;
+      });
+      setCompensations(compensationMap);
     } catch (error) {
       console.error("Error loading team:", error);
       toast({
@@ -85,18 +107,41 @@ export default function Team() {
   const isTeamFeatureAvailable = ["growth", "pro", "scale"].includes(planTier);
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 sm:p-8 space-y-6">
+      {/* Desktop Feature Notice */}
+      <Alert className="bg-primary/5 border-primary/20 lg:hidden">
+        <Laptop className="h-4 w-4" />
+        <AlertDescription>
+          Full team management features including compensation and payroll are best accessed on desktop or tablet.
+        </AlertDescription>
+      </Alert>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Team</h1>
-          <p className="text-muted-foreground">Manage your team members</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Team Management</h1>
+          <p className="text-sm text-muted-foreground">Manage team members, compensation, and payroll</p>
         </div>
-        {isTeamFeatureAvailable && (
-          <Button onClick={() => setShowInviteDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Invite Member
-          </Button>
-        )}
+        <div className="flex gap-2 w-full sm:w-auto">
+          {isTeamFeatureAvailable && (
+            <>
+              <Button 
+                variant="outline" 
+                className="flex-1 sm:flex-none"
+                onClick={() => navigate("/provider/payroll")}
+              >
+                <DollarSign className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Payroll</span>
+              </Button>
+              <Button 
+                className="flex-1 sm:flex-none"
+                onClick={() => setShowInviteDialog(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Invite
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {!isTeamFeatureAvailable && (
@@ -119,9 +164,16 @@ export default function Team() {
       ) : !isTeamFeatureAvailable ? (
         <div className="text-center py-12 border rounded-lg opacity-50">
           <h3 className="text-lg font-semibold mb-2">Team feature locked</h3>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-2">
             Upgrade to Growth+ to invite team members
           </p>
+          <Button
+            variant="link"
+            className="p-0 h-auto"
+            onClick={() => navigate("/pricing")}
+          >
+            View Plans
+          </Button>
         </div>
       ) : teamMembers.length === 0 ? (
         <div className="text-center py-12 border rounded-lg">
@@ -135,34 +187,25 @@ export default function Team() {
           </Button>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Invited</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {teamMembers.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell className="font-medium">{member.invited_email}</TableCell>
-                <TableCell>{member.role}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={member.status === "active" ? "default" : "secondary"}
-                  >
-                    {member.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {new Date(member.invited_at).toLocaleDateString()}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {teamMembers.map((member) => (
+            <TeamMemberCard
+              key={member.id}
+              member={member}
+              compensation={compensations[member.id]}
+              onManageCompensation={() => {
+                setSelectedMember(member);
+                setShowCompensationDialog(true);
+              }}
+              onManagePermissions={() => {
+                toast({
+                  title: "Coming Soon",
+                  description: "Permission management available on desktop",
+                });
+              }}
+            />
+          ))}
+        </div>
       )}
 
       <InviteTeamMemberDialog
@@ -170,6 +213,17 @@ export default function Team() {
         onOpenChange={setShowInviteDialog}
         onSuccess={loadTeamData}
       />
+
+      {selectedMember && (
+        <ManageCompensationDialog
+          open={showCompensationDialog}
+          onOpenChange={setShowCompensationDialog}
+          teamMemberId={selectedMember.id}
+          organizationId={organizationId}
+          currentCompensation={compensations[selectedMember.id]}
+          onSuccess={loadTeamData}
+        />
+      )}
     </div>
   );
 }

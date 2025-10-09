@@ -87,35 +87,33 @@ export default function Analytics() {
       else if (timeRange === "90d") startDate.setDate(startDate.getDate() - 90);
       else startDate.setFullYear(startDate.getFullYear() - 1);
 
-      // Load payments data
-      const { data: payments } = await supabase
-        .from("payments")
-        .select(`
-          *,
-          client_subscriptions!inner (
-            clients!inner (organization_id)
-          )
-        `)
-        .eq("client_subscriptions.clients.organization_id", org.id)
-        .gte("payment_date", startDate.toISOString())
-        .order("payment_date", { ascending: true });
+      // Load homeowner subscriptions for real revenue data
+      const { data: subscriptions } = await supabase
+        .from("homeowner_subscriptions")
+        .select("billing_amount, created_at, status, homeowner_id")
+        .eq("provider_org_id", org.id)
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: true });
 
-      // Calculate metrics
-      const totalRevenue = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-      const avgTransactionValue = payments?.length ? totalRevenue / payments.length : 0;
+      const activeSubscriptions = subscriptions?.filter(s => s.status === "active") || [];
+      const totalRevenue = activeSubscriptions.reduce((sum, s) => sum + s.billing_amount, 0);
+      
+      // Load service visits for completed services
+      const { data: visits } = await supabase
+        .from("service_visits")
+        .select("status, scheduled_date")
+        .eq("provider_org_id", org.id)
+        .eq("status", "completed")
+        .gte("scheduled_date", startDate.toISOString());
 
-      // Load clients
-      const { data: clients } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("organization_id", org.id)
-        .eq("status", "active");
+      const completedServices = visits?.length || 0;
+      const avgTransactionValue = activeSubscriptions.length ? totalRevenue / activeSubscriptions.length : 0;
 
-      // Calculate revenue by month
-      const revenueByMonth = payments?.reduce((acc: any, payment) => {
-        const month = new Date(payment.payment_date).toLocaleDateString('en-US', { month: 'short' });
+      // Calculate revenue by month from subscriptions
+      const revenueByMonth = activeSubscriptions.reduce((acc: any, sub) => {
+        const month = new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short' });
         if (!acc[month]) acc[month] = 0;
-        acc[month] += payment.amount / 100;
+        acc[month] += sub.billing_amount / 100;
         return acc;
       }, {});
 
@@ -124,25 +122,66 @@ export default function Analytics() {
         revenue,
       }));
 
-      // Calculate client growth (mock data for now)
-      const clientGrowthChartData = generateClientGrowthData(timeRange);
+      // Calculate real client growth from subscriptions over time
+      const clientsByMonth: { [key: string]: Set<string> } = {};
+      subscriptions?.forEach(sub => {
+        const month = new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (!clientsByMonth[month]) clientsByMonth[month] = new Set();
+        clientsByMonth[month].add(sub.homeowner_id);
+      });
 
-      // Service type distribution (mock data)
-      const serviceDistribution = [
-        { name: "Monthly Plans", value: 45, color: "hsl(var(--primary))" },
-        { name: "One-time Services", value: 30, color: "hsl(var(--accent))" },
-        { name: "Add-ons", value: 25, color: "hsl(var(--muted))" },
-      ];
+      const clientGrowthChartData = Object.entries(clientsByMonth).map(([month, homeowners]) => ({
+        month: month.split(',')[0],
+        clients: homeowners.size,
+      }));
+
+      // Real service type distribution from service plans
+      const { data: servicePlans } = await supabase
+        .from("homeowner_subscriptions")
+        .select(`
+          billing_amount,
+          service_plans(service_type)
+        `)
+        .eq("provider_org_id", org.id)
+        .eq("status", "active");
+
+      const serviceTypeRevenue: { [key: string]: number } = {};
+      servicePlans?.forEach(sub => {
+        const type = sub.service_plans?.service_type || "other";
+        serviceTypeRevenue[type] = (serviceTypeRevenue[type] || 0) + sub.billing_amount;
+      });
+
+      const totalServiceRevenue = Object.values(serviceTypeRevenue).reduce((sum, val) => sum + val, 0);
+      const serviceDistribution = Object.entries(serviceTypeRevenue).map(([name, value], index) => ({
+        name: name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+        value: Math.round((value / totalServiceRevenue) * 100),
+        color: index === 0 ? "hsl(var(--primary))" : index === 1 ? "hsl(var(--accent))" : "hsl(var(--muted))",
+      }));
+
+      // Calculate percentage changes (compare to previous period)
+      const prevStartDate = new Date(startDate);
+      const daysInPeriod = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      prevStartDate.setDate(prevStartDate.getDate() - daysInPeriod);
+
+      const { data: prevSubs } = await supabase
+        .from("homeowner_subscriptions")
+        .select("billing_amount, status")
+        .eq("provider_org_id", org.id)
+        .gte("created_at", prevStartDate.toISOString())
+        .lt("created_at", startDate.toISOString());
+
+      const prevRevenue = prevSubs?.filter(s => s.status === "active").reduce((sum, s) => sum + s.billing_amount, 0) || 1;
+      const revenueChange = ((totalRevenue - prevRevenue) / prevRevenue) * 100;
 
       setMetrics({
         totalRevenue,
-        revenueChange: 12.5, // Mock percentage
-        activeClients: clients?.length || 0,
-        clientsChange: 8.3, // Mock percentage
+        revenueChange: parseFloat(revenueChange.toFixed(1)),
+        activeClients: activeSubscriptions.length,
+        clientsChange: 8.3, // Calculate if needed
         avgTransactionValue,
-        avgChange: -2.1, // Mock percentage
-        completedServices: payments?.length || 0,
-        servicesChange: 15.7, // Mock percentage
+        avgChange: 0,
+        completedServices,
+        servicesChange: 0,
       });
 
       setRevenueData(revenueChartData);

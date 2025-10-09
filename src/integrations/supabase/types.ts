@@ -578,6 +578,119 @@ export type Database = {
           },
         ]
       }
+      payroll_items: {
+        Row: {
+          created_at: string
+          deductions: number | null
+          gross_pay: number
+          id: string
+          net_pay: number
+          overtime_hours: number | null
+          payment_date: string | null
+          payment_method: string | null
+          payroll_run_id: string
+          regular_hours: number | null
+          status: string
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deductions?: number | null
+          gross_pay: number
+          id?: string
+          net_pay: number
+          overtime_hours?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payroll_run_id: string
+          regular_hours?: number | null
+          status?: string
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deductions?: number | null
+          gross_pay?: number
+          id?: string
+          net_pay?: number
+          overtime_hours?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payroll_run_id?: string
+          regular_hours?: number | null
+          status?: string
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_items_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_items_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_runs: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -869,6 +982,66 @@ export type Database = {
         }
         Relationships: []
       }
+      team_member_compensation: {
+        Row: {
+          account_number_encrypted: string | null
+          bank_account_last4: string | null
+          created_at: string
+          direct_deposit_enabled: boolean | null
+          effective_date: string
+          id: string
+          organization_id: string
+          pay_rate: number
+          pay_type: string
+          routing_number_encrypted: string | null
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_number_encrypted?: string | null
+          bank_account_last4?: string | null
+          created_at?: string
+          direct_deposit_enabled?: boolean | null
+          effective_date?: string
+          id?: string
+          organization_id: string
+          pay_rate: number
+          pay_type: string
+          routing_number_encrypted?: string | null
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_number_encrypted?: string | null
+          bank_account_last4?: string | null
+          created_at?: string
+          direct_deposit_enabled?: boolean | null
+          effective_date?: string
+          id?: string
+          organization_id?: string
+          pay_rate?: number
+          pay_type?: string
+          routing_number_encrypted?: string | null
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_compensation_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_member_compensation_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           accepted_at: string | null
@@ -877,8 +1050,10 @@ export type Database = {
           invited_at: string
           invited_email: string
           organization_id: string
+          permissions: Json | null
           role: string
           status: string
+          team_role: Database["public"]["Enums"]["team_role"] | null
           updated_at: string
           user_id: string | null
         }
@@ -889,8 +1064,10 @@ export type Database = {
           invited_at?: string
           invited_email: string
           organization_id: string
+          permissions?: Json | null
           role?: string
           status?: string
+          team_role?: Database["public"]["Enums"]["team_role"] | null
           updated_at?: string
           user_id?: string | null
         }
@@ -901,8 +1078,10 @@ export type Database = {
           invited_at?: string
           invited_email?: string
           organization_id?: string
+          permissions?: Json | null
           role?: string
           status?: string
+          team_role?: Database["public"]["Enums"]["team_role"] | null
           updated_at?: string
           user_id?: string | null
         }
@@ -912,6 +1091,79 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timesheets: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          break_minutes: number | null
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          service_visit_id: string | null
+          status: string
+          team_member_id: string
+          total_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_minutes?: number | null
+          clock_in: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          service_visit_id?: string | null
+          status?: string
+          team_member_id: string
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_minutes?: number | null
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          service_visit_id?: string | null
+          status?: string
+          team_member_id?: string
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheets_service_visit_id_fkey"
+            columns: ["service_visit_id"]
+            isOneToOne: false
+            referencedRelation: "service_visits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheets_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1107,6 +1359,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       subscription_tier: "free" | "growth" | "pro" | "scale"
+      team_role: "owner" | "manager" | "technician" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1236,6 +1489,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       subscription_tier: ["free", "growth", "pro", "scale"],
+      team_role: ["owner", "manager", "technician", "admin"],
     },
   },
 } as const

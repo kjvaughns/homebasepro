@@ -14,8 +14,9 @@ const ProviderDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState<any>(null);
   const [stats, setStats] = useState({
-    activeClients: 0,
+    activeSubscribers: 0,
     monthlyRevenue: 0,
+    projectedRevenue: 0,
     teamMembers: 1,
   });
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
@@ -23,6 +24,33 @@ const ProviderDashboard = () => {
 
   useEffect(() => {
     loadProviderData();
+
+    // Set up real-time listeners
+    const channel = supabase
+      .channel('provider-dashboard-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'homeowner_subscriptions',
+        },
+        () => loadProviderData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'service_visits',
+        },
+        () => loadProviderData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadProviderData = async () => {
@@ -52,30 +80,26 @@ const ProviderDashboard = () => {
 
       setOrganization(orgData);
 
-      // Load stats
-      const { count: clientCount } = await supabase
-        .from("clients")
+      // Load stats - use homeowner_subscriptions for B2C revenue
+      const { count: activeSubscribers } = await supabase
+        .from("homeowner_subscriptions")
         .select("*", { count: "exact", head: true })
-        .eq("organization_id", orgData.id)
+        .eq("provider_org_id", orgData.id)
         .eq("status", "active");
 
       const thisMonth = new Date();
       thisMonth.setDate(1);
       thisMonth.setHours(0, 0, 0, 0);
 
-      const { data: paymentsData } = await supabase
-        .from("payments")
-        .select(`
-          amount,
-          client_subscriptions!inner (
-            clients!inner (organization_id)
-          )
-        `)
-        .eq("client_subscriptions.clients.organization_id", orgData.id)
-        .eq("status", "completed")
-        .gte("payment_date", thisMonth.toISOString());
+      // Calculate MRR from active homeowner subscriptions
+      const { data: subscriptionsData } = await supabase
+        .from("homeowner_subscriptions")
+        .select("billing_amount")
+        .eq("provider_org_id", orgData.id)
+        .eq("status", "active");
 
-      const monthlyRevenue = paymentsData?.reduce((sum, p) => sum + p.amount, 0) || 0;
+      const monthlyRevenue = subscriptionsData?.reduce((sum, sub) => sum + sub.billing_amount, 0) || 0;
+      const projectedRevenue = Math.floor(monthlyRevenue * 3 * 0.95); // 3 months ahead with 5% churn
 
       const { count: teamCount } = await supabase
         .from("team_members")
@@ -84,8 +108,9 @@ const ProviderDashboard = () => {
         .eq("status", "active");
 
       setStats({
-        activeClients: clientCount || 0,
+        activeSubscribers: activeSubscribers || 0,
         monthlyRevenue,
+        projectedRevenue,
         teamMembers: (teamCount || 0) + 1,
       });
 
@@ -166,13 +191,13 @@ const ProviderDashboard = () => {
               <Users className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-1">Active Clients</p>
-              <p className="text-3xl font-bold">{stats.activeClients}</p>
+              <p className="text-sm text-muted-foreground mb-1">Active Subscribers</p>
+              <p className="text-3xl font-bold">{stats.activeSubscribers}</p>
               <Button 
                 variant="link" 
                 size="sm" 
                 className="h-auto p-0 text-xs text-primary"
-                onClick={() => navigate("/provider/clients")}
+                onClick={() => navigate("/provider/subscriptions")}
               >
                 View all <ChevronRight className="h-3 w-3 ml-1" />
               </Button>
@@ -186,16 +211,11 @@ const ProviderDashboard = () => {
               <DollarSign className="h-6 w-6 text-accent" />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-1">Monthly Revenue</p>
+              <p className="text-sm text-muted-foreground mb-1">Monthly Revenue (MRR)</p>
               <p className="text-3xl font-bold">${(stats.monthlyRevenue / 100).toFixed(0)}</p>
-              <Button 
-                variant="link" 
-                size="sm" 
-                className="h-auto p-0 text-xs text-primary"
-                onClick={() => navigate("/provider/payments")}
-              >
-                View all <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                Projected: ${(stats.projectedRevenue / 100).toFixed(0)} (3mo)
+              </p>
             </div>
           </div>
         </Card>
