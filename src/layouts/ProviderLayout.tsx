@@ -121,7 +121,7 @@ const ProviderLayout = () => {
   const isMessagesRoute = location.pathname.startsWith("/provider/messages");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Admin Preview Banner */}
       {isAdmin && (
         <Alert className="rounded-none border-x-0 border-t-0 bg-primary/10 border-primary">
