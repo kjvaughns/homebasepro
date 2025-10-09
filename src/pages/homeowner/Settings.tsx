@@ -107,7 +107,7 @@ export default function HomeownerSettings() {
         </Card>
       )}
 
-      <Tabs defaultValue="profile" className="space-y-4">
+  <Tabs defaultValue="profile" className="space-y-4">
   <TabsList
     className="
       w-full grid grid-cols-2 md:grid-cols-4 gap-3 p-0
@@ -161,6 +161,7 @@ export default function HomeownerSettings() {
 
   {/* ...your TabsContent blocks unchanged ... */}
 </Tabs>
+
 
 
         <TabsContent value="profile">
