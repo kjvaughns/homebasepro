@@ -37,7 +37,7 @@ const navigation = [
 ];
 
 // === Single knob to tune the bottom bar content height (icons + labels) ===
-const TABBAR_H = 62; // try 52 (tighter) or 60–64 (roomier)
+const TABBAR_H = 80; // try 52 (tighter) or 60–64 (roomier)
 
 export default function HomeownerLayout() {
   const location = useLocation();
