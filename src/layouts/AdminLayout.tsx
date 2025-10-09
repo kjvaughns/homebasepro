@@ -2,7 +2,18 @@ import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { Loader2, LayoutDashboard, Database, TrendingUp, Shield, Users, Settings, LogOut, User as UserIcon, DollarSign } from "lucide-react";
+import {
+  Loader2,
+  LayoutDashboard,
+  Database,
+  TrendingUp,
+  Shield,
+  Users,
+  Settings,
+  LogOut,
+  User as UserIcon,
+  DollarSign,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -36,8 +47,10 @@ const AdminLayout = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
         if (!user) {
           navigate("/admin/login");
           return;
@@ -48,7 +61,7 @@ const AdminLayout = () => {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
-          .in("role", ["admin", "moderator"]) 
+          .in("role", ["admin", "moderator"])
           .maybeSingle();
 
         if (!roleRow) {
@@ -58,11 +71,7 @@ const AdminLayout = () => {
         }
 
         // Load profile
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", user.id)
-          .single();
+        const { data: profileData } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
 
         if (profileData) {
           setUserProfile(profileData);
@@ -167,10 +176,9 @@ const AdminLayout = () => {
       </header>
 
       {/* Main Content */}
-      <main className={cn(
-        isMobile ? "h-[calc(100dvh-67px)]" : "h-[calc(100dvh-3.5rem)] pl-64",
-        "overflow-y-auto pb-safe"
-      )}>
+      <main
+        className={cn(isMobile ? "h-[calc(100dvh-67px)]" : "h-[calc(100dvh-3.5rem)] pl-64", "overflow-y-auto pb-safe")}
+      >
         <div className="container mx-auto p-4 md:p-6">
           <Outlet />
         </div>
@@ -178,11 +186,11 @@ const AdminLayout = () => {
 
       {/* Bottom Navigation (Mobile) - Outlook Style */}
       {isMobile && (
-        <nav 
-          className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-card pb-safe" 
-          style={{ 
-            borderTop: '1px solid hsl(0 0% 93%)',
-            boxShadow: '0 -2px 8px rgba(0,0,0,0.04)'
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-80 bg-white dark:bg-card pb-safe"
+          style={{
+            borderTop: "1px solid hsl(0 0% 93%)",
+            boxShadow: "0 -2px 8px rgba(0,0,0,0.04)",
           }}
         >
           <div className="flex items-start justify-around pt-2.5 pb-1">
@@ -194,9 +202,7 @@ const AdminLayout = () => {
                   to={item.href}
                   className={cn(
                     "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1",
-                    isActive
-                      ? "text-primary"
-                      : "text-[hsl(0_0%_70%)] hover:text-foreground"
+                    isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
                   )}
                 >
                   <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
