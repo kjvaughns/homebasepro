@@ -18,10 +18,7 @@ export default function HomeownerSettings() {
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    full_name: "",
-    phone: "",
-  });
+  const [formData, setFormData] = useState({ full_name: "", phone: "" });
 
   useEffect(() => {
     loadProfile();
@@ -29,81 +26,57 @@ export default function HomeownerSettings() {
 
   const loadProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         navigate("/auth");
         return;
       }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
+      const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
       if (error && error.code !== "PGRST116") throw error;
 
       if (data) {
         setProfile(data);
-        setFormData({
-          full_name: data.full_name || "",
-          phone: data.phone || "",
-        });
+        setFormData({ full_name: data.full_name || "", phone: data.phone || "" });
       }
-    } catch (error) {
-      console.error("Error loading profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive",
-      });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to load profile", variant: "destructive" });
     }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       if (profile) {
-        // Update existing profile
         const { error } = await supabase
           .from("profiles")
-          .update({
-            full_name: formData.full_name,
-            phone: formData.phone,
-          })
+          .update({ full_name: formData.full_name, phone: formData.phone })
           .eq("user_id", user.id);
-
         if (error) throw error;
       } else {
-        // Create new profile
         const { error } = await supabase.from("profiles").insert({
           user_id: user.id,
           full_name: formData.full_name,
           phone: formData.phone,
           user_type: "homeowner",
         });
-
         if (error) throw error;
       }
 
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
-
+      toast({ title: "Success", description: "Profile updated successfully" });
       loadProfile();
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile",
-        variant: "destructive",
-      });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -135,11 +108,49 @@ export default function HomeownerSettings() {
       )}
 
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="notifications">Notifs</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="pwa">App</TabsTrigger>
+        {/* === FIXED: turn the tabs list into a responsive grid with equal-height pills === */}
+        <TabsList
+          className="
+            w-full grid grid-cols-2 md:grid-cols-4 gap-3 p-0
+            bg-transparent border-0
+          "
+        >
+          <TabsTrigger
+            value="profile"
+            className="
+              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
+              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+            "
+          >
+            Profile
+          </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="
+              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
+              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+            "
+          >
+            Notifs
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="
+              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
+              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+            "
+          >
+            Security
+          </TabsTrigger>
+          <TabsTrigger
+            value="pwa"
+            className="
+              h-11 rounded-lg border bg-card hover:bg-accent transition-colors
+              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
+            "
+          >
+            App
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -160,29 +171,29 @@ export default function HomeownerSettings() {
                 )}
 
                 <div className="space-y-4">
-                <div>
-                  <Label htmlFor="full_name">Full Name</Label>
-                  <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    required
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
 
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save Changes"}
-                </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Saving..." : "Save Changes"}
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -196,9 +207,7 @@ export default function HomeownerSettings() {
               <CardDescription>Manage how you receive notifications</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Notification preferences coming soon
-              </p>
+              <p className="text-sm text-muted-foreground">Notification preferences coming soon</p>
             </CardContent>
           </Card>
         </TabsContent>
