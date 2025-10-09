@@ -128,12 +128,34 @@ export default function Waitlist() {
       }
 
       // Save critical data to localStorage for recovery
-      const userReferralCode = referralData?.referral_code;
+      let userReferralCode = referralData?.referral_code as string | undefined;
+      
+      // Fallback: ensure a referral profile/code exists even if signup was flagged/blocked
+      if (!userReferralCode) {
+        try {
+          const { data: ensureProfile } = await supabase.functions.invoke(
+            'get-or-create-referral-profile',
+            {
+              body: {
+                email: validatedData.email,
+                full_name: validatedData.full_name,
+                role: validatedData.account_type,
+              }
+            }
+          );
+          if (ensureProfile?.referral_code) {
+            userReferralCode = ensureProfile.referral_code as string;
+          }
+        } catch (e) {
+          console.error('Failed to ensure referral profile:', e);
+        }
+      }
+
       if (userReferralCode) {
         localStorage.setItem('homebase_referral_code', userReferralCode);
         sessionStorage.setItem('homebase_referral_code', userReferralCode);
       }
-      
+
       localStorage.setItem('homebase_email', validatedData.email);
       localStorage.setItem('homebase_full_name', validatedData.full_name);
 
