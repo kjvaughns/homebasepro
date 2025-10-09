@@ -8,8 +8,6 @@ import { DashboardFilters } from "@/components/admin/DashboardFilters";
 import { useToast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
-import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
 
 interface DashboardStats {
   totalWaitlist: number;
@@ -171,46 +169,6 @@ const Dashboard = () => {
     { name: "Providers", value: stats.totalProviders, color: "#D946EF" },
   ];
 
-  const handleUploadLogo = async () => {
-    try {
-      toast({
-        title: "Uploading logo...",
-        description: "Please wait while we upload the logo to storage",
-      });
-
-      // Fetch the logo from public folder
-      const response = await fetch('/homebase-email-logo.png');
-      const blob = await response.blob();
-      
-      // Upload to avatars bucket
-      const { error } = await supabase.storage
-        .from('avatars')
-        .upload('homebase-email-logo.png', blob, {
-          contentType: 'image/png',
-          upsert: true
-        });
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl('homebase-email-logo.png');
-
-      toast({
-        title: "Logo uploaded successfully!",
-        description: `Use this URL in your emails: ${publicUrl}`,
-      });
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast({
-        title: "Upload failed",
-        description: "There was an error uploading the logo",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleExport = () => {
     // Create CSV content
     const csvContent = [
@@ -253,10 +211,6 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">Welcome to your admin control center</p>
         </div>
-        <Button onClick={handleUploadLogo} variant="outline" size="sm">
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Logo to Storage
-        </Button>
       </div>
 
       <DashboardFilters onDateRangeChange={setDateRange} onExport={handleExport} />

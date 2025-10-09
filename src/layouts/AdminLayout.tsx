@@ -129,7 +129,28 @@ const AdminLayout = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/data")}>
+                  <Database className="mr-2 h-4 w-4" />
+                  <span>Data Management</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/analytics")}>
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  <span>Analytics</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/revenue")}>
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  <span>Revenue</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>User Management</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Account Settings</span>
@@ -147,8 +168,8 @@ const AdminLayout = () => {
 
       {/* Main Content */}
       <main className={cn(
-        "h-[calc(100dvh-3.5rem)] overflow-y-auto",
-        isMobile ? "" : "pl-64"
+        isMobile ? "h-[calc(100dvh-7rem)]" : "h-[calc(100dvh-3.5rem)] pl-64",
+        "overflow-y-auto pb-safe"
       )}>
         <div className="container mx-auto p-4 md:p-6">
           <Outlet />
@@ -157,8 +178,8 @@ const AdminLayout = () => {
 
       {/* Bottom Navigation (Mobile) */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
-          <div className="flex items-center justify-around h-16">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
+          <div className="flex items-center justify-around h-14">
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (

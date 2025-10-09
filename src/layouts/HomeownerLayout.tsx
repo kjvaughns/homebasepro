@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut, Eye, Building2 } from "lucide-react";
+import { Home, Search, Calendar, Settings, MessageSquare, User, LogOut, Eye, Building2, DollarSign } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -128,11 +128,34 @@ export default function HomeownerLayout() {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                  <Home className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/homeowner/appointments")}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <span>Appointments</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/homeowner/homes")}>
+                  <Building2 className="mr-2 h-4 w-4" />
+                  <span>Properties</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/homeowner/subscriptions")}>
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  <span>Subscriptions</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/homeowner/settings")}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    <span>Admin Portal</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -148,9 +171,8 @@ export default function HomeownerLayout() {
       <main
         ref={mainRef}
         className={cn(
-          "h-[calc(100dvh-3.5rem)]",
-          isMessagesRoute ? "overflow-hidden" : "overflow-y-auto",
-          isMobile ? "" : "pl-64"
+          isMobile ? "h-[calc(100dvh-7rem)]" : "h-[calc(100dvh-3.5rem)] pl-64",
+          isMessagesRoute ? "overflow-hidden" : "overflow-y-auto pb-safe"
         )}
       >
         <Outlet />
@@ -158,8 +180,8 @@ export default function HomeownerLayout() {
 
       {/* Bottom Navigation (Mobile) */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
-          <div className="flex items-center justify-around h-16">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
+          <div className="flex items-center justify-around h-14">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (

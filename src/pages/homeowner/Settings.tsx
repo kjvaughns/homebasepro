@@ -115,7 +115,7 @@ export default function HomeownerSettings() {
   };
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6">
+    <div className="container max-w-4xl py-6 space-y-6 pb-20 md:pb-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Manage your account settings and preferences</p>
@@ -135,11 +135,11 @@ export default function HomeownerSettings() {
       )}
 
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="notifications">Notifs</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="pwa">App & Notifications</TabsTrigger>
+          <TabsTrigger value="pwa">App</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">

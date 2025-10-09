@@ -184,26 +184,27 @@ export default function SubscriptionDetail() {
   }
 
   return (
-    <div className="container max-w-6xl py-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container max-w-6xl py-6 space-y-6 pb-20 md:pb-6">
+      <div className="flex flex-col gap-3">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate("/homeowner/subscriptions")}
+          className="w-fit"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Subscriptions
+          Back
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleMessageProvider}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" size="sm" onClick={handleMessageProvider} className="w-full sm:w-auto">
             <MessageSquare className="mr-2 h-4 w-4" />
-            Message Provider
+            Message
           </Button>
           {subscription.status === "active" && (
             <>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Pause className="mr-2 h-4 w-4" />
                     Pause
                   </Button>
@@ -224,7 +225,7 @@ export default function SubscriptionDetail() {
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
+                  <Button variant="destructive" size="sm" className="w-full sm:w-auto">
                     <X className="mr-2 h-4 w-4" />
                     Cancel
                   </Button>

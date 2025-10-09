@@ -158,7 +158,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+    <div className="p-4 sm:p-8 space-y-4 sm:space-y-6 pb-20 md:pb-6 max-w-full overflow-x-hidden">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold break-words">{organization.name}</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Manage your organization settings</p>
@@ -170,10 +170,10 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">Organization Profile</TabsTrigger>
-          <TabsTrigger value="billing">Billing & Subscription</TabsTrigger>
-          <TabsTrigger value="pwa">App & Notifications</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 max-w-full">
+          <TabsTrigger value="profile" className="text-xs sm:text-sm">Profile</TabsTrigger>
+          <TabsTrigger value="billing" className="text-xs sm:text-sm">Billing</TabsTrigger>
+          <TabsTrigger value="pwa" className="text-xs sm:text-sm">App</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -285,44 +285,46 @@ export default function Settings() {
 
         <TabsContent value="billing">
           {plan ? (
-            <Card className="p-6 border-2 border-primary/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold">{plan.name}</h2>
+            <Card className="p-4 sm:p-6 border-2 border-primary/20 max-w-full">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="w-full md:flex-1">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                    <h2 className="text-xl sm:text-2xl font-bold">{plan.name}</h2>
                     <Badge className={getTierColor(plan.tier)}>
                       {plan.tier.toUpperCase()}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     {plan.client_limit
                       ? `Up to ${plan.client_limit} clients`
                       : "Unlimited clients"}{" "}
-                    • {plan.transaction_fee_percent}% transaction fee
+                    • {plan.transaction_fee_percent}% fee
                   </p>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                     {plan.tier !== "scale" && (
                       <Button
                         onClick={() => navigate("/pricing")}
                         variant="default"
+                        size="sm"
+                        className="w-full sm:w-auto"
                       >
                         <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Upgrade Plan
+                        Upgrade
                       </Button>
                     )}
-                    <Button variant="outline">
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Manage Billing
+                      Billing
                     </Button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground mb-1">
+                <div className="text-left md:text-right w-full md:w-auto">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                     Monthly Price
                   </p>
-                  <p className="text-3xl font-bold">
+                  <p className="text-2xl sm:text-3xl font-bold">
                     ${(plan.price_monthly / 100).toFixed(0)}
-                    <span className="text-lg text-muted-foreground">/mo</span>
+                    <span className="text-base sm:text-lg text-muted-foreground">/mo</span>
                   </p>
                 </div>
               </div>

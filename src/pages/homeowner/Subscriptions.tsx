@@ -129,13 +129,13 @@ export default function Subscriptions() {
   }
 
   return (
-    <div className="container max-w-6xl py-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container max-w-6xl py-6 space-y-6 pb-20 md:pb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Services</h1>
-          <p className="text-muted-foreground">Manage your active service subscriptions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Services</h1>
+          <p className="text-sm text-muted-foreground">Manage your active service subscriptions</p>
         </div>
-        <Button onClick={() => navigate("/homeowner/browse")}>
+        <Button onClick={() => navigate("/homeowner/browse")} size="sm">
           Browse Providers
         </Button>
       </div>
@@ -162,28 +162,29 @@ export default function Subscriptions() {
               onClick={() => navigate(`/homeowner/subscriptions/${subscription.id}`)}
             >
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <CardTitle className="text-xl">
-                      {subscription.organizations?.name}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      {subscription.service_plans?.name}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => handleMessageProvider(subscription, e)}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Message
-                    </Button>
-                    <Badge variant={getStatusColor(subscription.status)}>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <CardTitle className="text-lg sm:text-xl truncate">
+                        {subscription.organizations?.name}
+                      </CardTitle>
+                      <CardDescription className="text-sm">
+                        {subscription.service_plans?.name}
+                      </CardDescription>
+                    </div>
+                    <Badge variant={getStatusColor(subscription.status)} className="shrink-0">
                       {subscription.status}
                     </Badge>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => handleMessageProvider(subscription, e)}
+                    className="w-full sm:w-auto"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Message
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

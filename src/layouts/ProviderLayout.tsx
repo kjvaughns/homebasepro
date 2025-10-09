@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Eye, LayoutDashboard, Users, Package, MessageSquare, Settings } from "lucide-react";
+import { LogOut, User, Eye, LayoutDashboard, Users, Package, MessageSquare, Settings, DollarSign, BarChart3, Receipt, UserPlus } from "lucide-react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -178,11 +178,38 @@ const ProviderLayout = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                  <DropdownMenuItem onClick={() => navigate("/provider/dashboard")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/analytics")}>
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    <span>Analytics</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/accounting")}>
+                    <Receipt className="mr-2 h-4 w-4" />
+                    <span>Accounting</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/payroll")}>
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    <span>Payroll</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/team")}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>Team</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
                     <User className="mr-2 h-4 w-4" />
                     <span>Account Settings</span>
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      <span>Admin Portal</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -198,16 +225,16 @@ const ProviderLayout = () => {
         <main
           ref={mainRef}
           className={cn(
-            "h-[calc(100dvh-3.5rem)]",
-            isMessagesRoute ? "overflow-hidden" : "overflow-y-auto"
+            "h-[calc(100dvh-7rem)]",
+            isMessagesRoute ? "overflow-hidden" : "overflow-y-auto pb-safe"
           )}
         >
           <Outlet />
         </main>
 
         {/* Bottom Navigation (Mobile) */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background">
-          <div className="flex items-center justify-around h-16">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
+          <div className="flex items-center justify-around h-14">
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -255,17 +282,44 @@ const ProviderLayout = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Account Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+               <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                  <DropdownMenuItem onClick={() => navigate("/provider/dashboard")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/analytics")}>
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    <span>Analytics</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/accounting")}>
+                    <Receipt className="mr-2 h-4 w-4" />
+                    <span>Accounting</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/payroll")}>
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    <span>Payroll</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/provider/team")}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>Team</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      <span>Admin Portal</span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
