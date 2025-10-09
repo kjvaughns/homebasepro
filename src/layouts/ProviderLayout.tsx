@@ -170,7 +170,7 @@ const ProviderLayout = () => {
 
       {/* Main Content */}
       <main className={cn(
-        isMessagesRoute ? "pb-0 md:pb-0 relative overflow-hidden h-[calc(100dvh-3.5rem-4rem)] md:h-[calc(100vh-3.5rem)]" : "pb-20 md:pb-0",
+        isMessagesRoute ? "pb-0 md:pb-0 overflow-hidden h-[calc(100dvh-3.5rem-1px)] md:h-[calc(100vh-3.5rem-1px)]" : "pb-20 md:pb-0",
         "min-h-0",
         isMobile ? "" : "pl-64"
       )}>
