@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { Loader2, LayoutDashboard, Database, TrendingUp, Shield, Users, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { Loader2, LayoutDashboard, Database, TrendingUp, Shield, Users, Settings, LogOut, User as UserIcon, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -19,8 +19,8 @@ import { cn } from "@/lib/utils";
 
 const mobileNavigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Revenue", href: "/admin/revenue", icon: DollarSign },
   { name: "Data", href: "/admin/data", icon: Database },
-  { name: "Analytics", href: "/admin/analytics", icon: TrendingUp },
   { name: "Team", href: "/admin/team", icon: Shield },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];

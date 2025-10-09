@@ -42,6 +42,7 @@ import ProviderAnalytics from "./pages/provider/Analytics";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
+import AdminRevenue from "./pages/admin/Revenue";
 import AdminData from "./pages/admin/DataManagement";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminTeam from "./pages/admin/TeamManagement";
@@ -106,6 +107,7 @@ const App = () => (
           {/* Admin routes with shared layout */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="revenue" element={<AdminRevenue />} />
             <Route path="data" element={<AdminData />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="team" element={<AdminTeam />} />

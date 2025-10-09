@@ -16,6 +16,9 @@ interface DashboardStats {
   mrr: number;
   arr: number;
   projectedRevenue: number;
+  providerSubscriptionMRR: number;
+  transactionFeeMRR: number;
+  freeProviderCount: number;
 }
 
 const Dashboard = () => {
@@ -28,6 +31,9 @@ const Dashboard = () => {
     mrr: 0,
     arr: 0,
     projectedRevenue: 0,
+    providerSubscriptionMRR: 0,
+    transactionFeeMRR: 0,
+    freeProviderCount: 0,
   });
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -49,28 +55,77 @@ const Dashboard = () => {
         const homeowners = profiles?.filter((p) => p.user_type === "homeowner").length || 0;
         const providers = profiles?.filter((p) => p.user_type === "provider").length || 0;
 
-        // Fetch subscription data
-        const { data: subscriptions } = await supabase
-          .from("homeowner_subscriptions")
-          .select("billing_amount, status");
+        // Revenue Stream #1: Provider Subscription Fees (MRR from providers)
+        const { data: orgSubs } = await supabase
+          .from("organization_subscriptions")
+          .select(`
+            plan_tier,
+            subscription_plans!inner(price_monthly)
+          `)
+          .eq("status", "active");
 
-        const activeSubscriptions = subscriptions?.filter((s) => s.status === "active") || [];
-        const mrr = activeSubscriptions.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0);
-        const arr = mrr * 12;
+        const providerSubscriptionMRR = orgSubs?.reduce(
+          (sum, sub) => sum + (sub.subscription_plans?.price_monthly || 0),
+          0
+        ) || 0;
 
-        // Calculate projected revenue (assuming 10% waitlist conversion rate)
-        const avgSubscriptionValue = activeSubscriptions.length > 0 ? mrr / activeSubscriptions.length : 0;
-        const projectedRevenue = (waitlistCount || 0) * avgSubscriptionValue * 0.1;
+        // Revenue Stream #2: Transaction Fees from Client Payments (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const { data: payments } = await supabase
+          .from("payments")
+          .select("fee_amount, payment_date")
+          .eq("status", "completed")
+          .gte("payment_date", thirtyDaysAgo.toISOString());
+
+        const transactionFeeMRR = payments?.reduce(
+          (sum, payment) => sum + (payment.fee_amount || 0),
+          0
+        ) || 0;
+
+        // Total Platform MRR = Provider Subscriptions + Transaction Fees
+        const totalMRR = providerSubscriptionMRR + transactionFeeMRR;
+        const totalARR = totalMRR * 12;
+
+        // Count free providers
+        const { count: freeProviderCount } = await supabase
+          .from("organization_subscriptions")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "active")
+          .eq("plan_tier", "free");
+
+        // For projections: Estimate based on providers on free plan potentially upgrading
+        // Assume 30% of free providers upgrade to Growth ($49/mo = 4900 cents)
+        const projectedUpgradeRevenue = (freeProviderCount || 0) * 4900 * 0.3;
+
+        // Assume active client subscriptions grow by 20%
+        const { data: activeClientSubs } = await supabase
+          .from("client_subscriptions")
+          .select("service_plans!inner(price)")
+          .eq("status", "active");
+
+        const currentClientVolume = activeClientSubs?.reduce(
+          (sum, sub) => sum + (sub.service_plans?.price || 0),
+          0
+        ) || 0;
+
+        // Project 20% growth in transaction volume at avg 3% fee
+        const projectedTransactionGrowth = currentClientVolume * 0.2 * 0.03;
+        const projectedRevenue = projectedUpgradeRevenue + projectedTransactionGrowth;
 
         setStats({
           totalWaitlist: waitlistCount || 0,
-          totalUsers: (profiles?.length || 0),
+          totalUsers: profiles?.length || 0,
           totalHomeowners: homeowners,
           totalProviders: providers,
-          activeSubscriptions: activeSubscriptions.length,
-          mrr,
-          arr,
+          activeSubscriptions: orgSubs?.length || 0,
+          mrr: totalMRR,
+          arr: totalARR,
           projectedRevenue,
+          providerSubscriptionMRR,
+          transactionFeeMRR,
+          freeProviderCount: freeProviderCount || 0,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -86,7 +141,8 @@ const Dashboard = () => {
       .channel("admin-dashboard")
       .on("postgres_changes", { event: "*", schema: "public", table: "waitlist" }, fetchStats)
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, fetchStats)
-      .on("postgres_changes", { event: "*", schema: "public", table: "homeowner_subscriptions" }, fetchStats)
+      .on("postgres_changes", { event: "*", schema: "public", table: "organization_subscriptions" }, fetchStats)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, fetchStats)
       .subscribe();
 
     return () => {
@@ -159,9 +215,9 @@ const Dashboard = () => {
           icon={Users}
         />
         <StatsCard
-          title="Active Subscriptions"
+          title="Active Provider Plans"
           value={stats.activeSubscriptions}
-          description="Currently paying customers"
+          description="Providers with paid/free plans"
           icon={Calendar}
         />
         <StatsCard
@@ -182,7 +238,7 @@ const Dashboard = () => {
         <StatsCard
           title="Projected Revenue"
           value={`$${(stats.projectedRevenue / 100).toFixed(2)}`}
-          description="Based on 10% waitlist conversion"
+          description="30% free upgrade + 20% volume growth"
           icon={DollarSign}
         />
         <StatsCard
@@ -193,7 +249,7 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>User Distribution</CardTitle>
@@ -225,28 +281,66 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
+            <CardTitle>Revenue Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <span className="text-sm text-muted-foreground">Provider Subscriptions</span>
+              <span className="font-semibold">
+                ${(stats.providerSubscriptionMRR / 100).toFixed(2)}/mo
+              </span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b">
+              <span className="text-sm text-muted-foreground">Transaction Fees</span>
+              <span className="font-semibold">
+                ${(stats.transactionFeeMRR / 100).toFixed(2)}/mo
+              </span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b">
+              <span className="text-sm text-muted-foreground">Avg Transaction Fee %</span>
+              <span className="font-semibold">
+                {stats.transactionFeeMRR > 0 && stats.activeSubscriptions > 0
+                  ? '3.5%'
+                  : '0%'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center font-bold text-lg pt-2 border-t">
+              <span>Total Platform MRR</span>
+              <span className="text-primary">${(stats.mrr / 100).toFixed(2)}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Quick Stats</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-sm text-muted-foreground">Avg. Subscription Value</span>
+              <span className="text-sm text-muted-foreground">Avg. Provider Revenue</span>
               <span className="font-semibold">
-                ${stats.activeSubscriptions > 0 ? ((stats.mrr / stats.activeSubscriptions) / 100).toFixed(2) : '0.00'}
+                ${stats.totalProviders > 0 
+                  ? ((stats.mrr / stats.totalProviders) / 100).toFixed(2) 
+                  : '0.00'}/mo
               </span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-sm text-muted-foreground">Conversion Rate Estimate</span>
-              <span className="font-semibold">10%</span>
+              <span className="text-sm text-muted-foreground">Providers on Free Plan</span>
+              <span className="font-semibold">{stats.freeProviderCount}</span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b">
+              <span className="text-sm text-muted-foreground">Transaction Fee Revenue %</span>
+              <span className="font-semibold">
+                {stats.mrr > 0 
+                  ? ((stats.transactionFeeMRR / stats.mrr) * 100).toFixed(0)
+                  : '0'}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">User to Provider Ratio</span>
               <span className="font-semibold">
                 {stats.totalProviders > 0 ? (stats.totalHomeowners / stats.totalProviders).toFixed(1) : '0'}:1
               </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Total Platform Revenue</span>
-              <span className="font-semibold text-primary">${(stats.mrr / 100).toFixed(2)}/mo</span>
             </div>
           </CardContent>
         </Card>
