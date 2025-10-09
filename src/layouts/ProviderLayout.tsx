@@ -128,7 +128,7 @@ const ProviderLayout = () => {
   }, [location.pathname, isMessagesRoute]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
         <div className="container flex h-14 items-center justify-between">
