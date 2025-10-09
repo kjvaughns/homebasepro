@@ -51,11 +51,11 @@ const TeamManagement = () => {
             .from("profiles")
             .select("full_name")
             .eq("user_id", role.user_id)
-            .single();
+            .maybeSingle();
 
           return {
             ...role,
-            profiles: profile || { full_name: "Unknown User" },
+            profiles: profile?.full_name ? profile : { full_name: "Unknown User" },
           };
         }),
       );
