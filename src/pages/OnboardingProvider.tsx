@@ -76,7 +76,7 @@ const OnboardingProvider = () => {
           name: formData.companyName,
           slug: slug,
           description: formData.description,
-          service_type: formData.serviceType,
+          service_type: formData.serviceType ? [formData.serviceType] : [],
           phone: formData.phone,
           email: formData.email,
           service_area: formData.serviceArea,
@@ -209,14 +209,17 @@ const OnboardingProvider = () => {
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="serviceType">Primary Service Type *</Label>
+                <Label htmlFor="serviceType">Service Types *</Label>
                 <Input
                   id="serviceType"
                   name="serviceType"
                   value={formData.serviceType}
                   onChange={handleInputChange}
-                  placeholder="e.g., HVAC, Plumbing, Landscaping"
+                  placeholder="e.g., HVAC, Plumbing, Electrical (comma-separated)"
                 />
+                <p className="text-xs text-muted-foreground">
+                  You can add multiple services separated by commas
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Service Description *</Label>

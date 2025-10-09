@@ -140,15 +140,23 @@ export default function Analytics() {
         .from("homeowner_subscriptions")
         .select(`
           billing_amount,
-          service_plans(service_type)
+          service_plans!service_plan_id(service_type)
         `)
         .eq("provider_org_id", org.id)
         .eq("status", "active");
 
       const serviceTypeRevenue: { [key: string]: number } = {};
       servicePlans?.forEach(sub => {
-        const type = sub.service_plans?.service_type || "other";
-        serviceTypeRevenue[type] = (serviceTypeRevenue[type] || 0) + sub.billing_amount;
+        const types = sub.service_plans?.service_type;
+        if (Array.isArray(types)) {
+          types.forEach(type => {
+            serviceTypeRevenue[type] = (serviceTypeRevenue[type] || 0) + (sub.billing_amount / types.length);
+          });
+        } else if (types) {
+          serviceTypeRevenue[types] = (serviceTypeRevenue[types] || 0) + sub.billing_amount;
+        } else {
+          serviceTypeRevenue["other"] = (serviceTypeRevenue["other"] || 0) + sub.billing_amount;
+        }
       });
 
       const totalServiceRevenue = Object.values(serviceTypeRevenue).reduce((sum, val) => sum + val, 0);

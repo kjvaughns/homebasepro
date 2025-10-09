@@ -23,7 +23,7 @@ interface Organization {
   email: string | null;
   phone: string | null;
   service_area: string | null;
-  service_type: string | null;
+  service_type: string[] | null;
 }
 
 export default function Settings() {
@@ -157,10 +157,14 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your organization settings</p>
+        <h1 className="text-2xl sm:text-3xl font-bold break-words">{organization.name}</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Manage your organization settings</p>
+      </div>
+      
+      <div className="lg:hidden">
+        <RoleSwitcher />
       </div>
 
       {/* Role Switcher on Mobile */}
@@ -252,18 +256,19 @@ export default function Settings() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="service_type">Service Type</Label>
+                <Label htmlFor="service_type">Service Types (comma-separated)</Label>
                 <Input
                   id="service_type"
-                  value={organization.service_type || ""}
+                  value={Array.isArray(organization.service_type) ? organization.service_type.join(", ") : ""}
                   onChange={(e) =>
                     setOrganization({
                       ...organization,
-                      service_type: e.target.value,
+                      service_type: e.target.value.split(",").map(s => s.trim()).filter(Boolean),
                     })
                   }
-                  placeholder="e.g., Lawn Care, Pool Maintenance"
+                  placeholder="e.g., HVAC, Plumbing, Electrical"
                 />
+                <p className="text-xs text-muted-foreground">Separate multiple services with commas</p>
               </div>
 
               <div className="grid gap-2">

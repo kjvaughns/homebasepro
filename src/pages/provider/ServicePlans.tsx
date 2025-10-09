@@ -20,7 +20,7 @@ interface ServicePlan {
   description: string | null;
   price: number;
   billing_frequency: string;
-  service_type: string | null;
+  service_type: string[] | null;
   is_active: boolean;
   is_recurring: boolean;
   includes_features: string[];
@@ -131,8 +131,12 @@ export default function ServicePlans() {
                   <div className="text-sm text-muted-foreground">
                     per {plan.billing_frequency}
                   </div>
-                  {plan.service_type && (
-                    <Badge variant="outline">{plan.service_type}</Badge>
+                  {plan.service_type && Array.isArray(plan.service_type) && (
+                    <div className="flex flex-wrap gap-1">
+                      {plan.service_type.map((type) => (
+                        <Badge key={type} variant="outline">{type}</Badge>
+                      ))}
+                    </div>
                   )}
                 </div>
               </CardContent>

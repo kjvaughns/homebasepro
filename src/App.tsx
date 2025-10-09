@@ -40,6 +40,7 @@ import HomeownerMessages from "./pages/homeowner/Messages";
 import ProviderMessages from "./pages/provider/Messages";
 import ProviderAnalytics from "./pages/provider/Analytics";
 import ProviderPayroll from "./pages/provider/Payroll";
+import ProviderAccounting from "./pages/provider/Accounting";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -100,6 +101,7 @@ const App = () => (
             <Route path="settings" element={<Settings />} />
             <Route path="messages" element={<ProviderMessages />} />
             <Route path="analytics" element={<ProviderAnalytics />} />
+            <Route path="accounting" element={<ProviderAccounting />} />
             <Route path="payroll" element={<ProviderPayroll />} />
           </Route>
 

@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          organization_id: string
+          receipt_id: string | null
+          tax_deductible: boolean | null
+          transaction_date: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id: string
+          receipt_id?: string | null
+          tax_deductible?: boolean | null
+          transaction_date: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string
+          receipt_id?: string | null
+          tax_deductible?: boolean | null
+          transaction_date?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_transactions_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_activity_log: {
         Row: {
           action: string
@@ -500,7 +557,7 @@ export type Database = {
           owner_id: string
           phone: string | null
           service_area: string | null
-          service_type: string | null
+          service_type: string[] | null
           slug: string
           updated_at: string
         }
@@ -514,7 +571,7 @@ export type Database = {
           owner_id: string
           phone?: string | null
           service_area?: string | null
-          service_type?: string | null
+          service_type?: string[] | null
           slug: string
           updated_at?: string
         }
@@ -528,7 +585,7 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           service_area?: string | null
-          service_type?: string | null
+          service_type?: string[] | null
           slug?: string
           updated_at?: string
         }
@@ -727,6 +784,53 @@ export type Database = {
         }
         Relationships: []
       }
+      receipts: {
+        Row: {
+          amount: number | null
+          category: string | null
+          created_at: string | null
+          file_name: string
+          file_url: string
+          id: string
+          organization_id: string
+          receipt_date: string | null
+          updated_at: string | null
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          organization_id: string
+          receipt_date?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          organization_id?: string
+          receipt_date?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_plans: {
         Row: {
           billing_frequency: string
@@ -739,7 +843,7 @@ export type Database = {
           name: string
           organization_id: string
           price: number
-          service_type: string | null
+          service_type: string[] | null
           updated_at: string
         }
         Insert: {
@@ -753,7 +857,7 @@ export type Database = {
           name: string
           organization_id: string
           price: number
-          service_type?: string | null
+          service_type?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -767,7 +871,7 @@ export type Database = {
           name?: string
           organization_id?: string
           price?: number
-          service_type?: string | null
+          service_type?: string[] | null
           updated_at?: string
         }
         Relationships: [

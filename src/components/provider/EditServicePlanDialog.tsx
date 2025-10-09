@@ -42,7 +42,7 @@ interface ServicePlan {
   description: string | null;
   price: number;
   billing_frequency: string;
-  service_type: string | null;
+  service_type: string[] | null;
   is_active: boolean;
   is_recurring: boolean;
   includes_features: string[];
@@ -68,7 +68,7 @@ export function EditServicePlanDialog({
     description: "",
     price: "",
     billing_frequency: "monthly",
-    service_type: "",
+    service_type: [] as string[],
     is_active: true,
     is_recurring: true,
     includes_features: [] as string[],
@@ -83,7 +83,7 @@ export function EditServicePlanDialog({
         description: plan.description || "",
         price: (plan.price / 100).toFixed(2),
         billing_frequency: plan.billing_frequency,
-        service_type: plan.service_type || "",
+        service_type: plan.service_type || [],
         is_active: plan.is_active,
         is_recurring: plan.is_recurring ?? true,
         includes_features: plan.includes_features || [],
@@ -235,24 +235,18 @@ export function EditServicePlanDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="service_type">Service Category</Label>
-              <Select
-                value={formData.service_type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, service_type: value })
+              <Label htmlFor="service_type">Service Categories (comma-separated)</Label>
+              <Input
+                id="service_type"
+                value={formData.service_type.join(", ")}
+                onChange={(e) =>
+                  setFormData({ 
+                    ...formData, 
+                    service_type: e.target.value.split(",").map(s => s.trim()).filter(Boolean)
+                  })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SERVICE_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="e.g., HVAC, Plumbing"
+              />
             </div>
 
             <div className="flex items-center justify-between">

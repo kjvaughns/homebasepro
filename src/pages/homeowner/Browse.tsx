@@ -48,12 +48,16 @@ export default function Browse() {
   };
 
   const filteredProviders = providers.filter((provider) => {
+    const serviceTypes = Array.isArray(provider.service_type) 
+      ? provider.service_type 
+      : provider.service_type ? [provider.service_type] : [];
+    
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      provider.service_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      serviceTypes.some(type => type.toLowerCase().includes(searchTerm.toLowerCase())) ||
       provider.service_area?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = !selectedCategory || 
-      provider.service_type?.toLowerCase() === selectedCategory.toLowerCase();
+      serviceTypes.some(type => type.toLowerCase() === selectedCategory.toLowerCase());
     
     return matchesSearch && matchesCategory;
   });
@@ -185,12 +189,19 @@ export default function Browse() {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2">
-                    {provider.service_type && (
-                      <Badge variant="secondary" className="text-sm">
-                        {provider.service_type}
-                      </Badge>
-                    )}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {Array.isArray(provider.service_type) 
+                      ? provider.service_type.map((type: string) => (
+                          <Badge key={type} variant="secondary" className="text-sm">
+                            {type}
+                          </Badge>
+                        ))
+                      : provider.service_type && (
+                          <Badge variant="secondary" className="text-sm">
+                            {provider.service_type}
+                          </Badge>
+                        )
+                    }
                   </div>
                 </CardContent>
               </Card>

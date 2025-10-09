@@ -53,7 +53,7 @@ export function AddServicePlanDialog({
     description: "",
     price: "",
     billing_frequency: "monthly",
-    service_type: "",
+    service_type: [] as string[],
     is_recurring: true,
     includes_features: [] as string[],
   });
@@ -82,7 +82,7 @@ export function AddServicePlanDialog({
         description: formData.description || null,
         price: Math.round(parseFloat(formData.price) * 100),
         billing_frequency: formData.billing_frequency,
-        service_type: formData.service_type || null,
+        service_type: formData.service_type.length > 0 ? formData.service_type : null,
         is_active: true,
         is_recurring: formData.is_recurring,
         includes_features: formData.includes_features,
@@ -100,7 +100,7 @@ export function AddServicePlanDialog({
         description: "",
         price: "",
         billing_frequency: "monthly",
-        service_type: "",
+        service_type: [],
         is_recurring: true,
         includes_features: [],
       });
@@ -185,24 +185,18 @@ export function AddServicePlanDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="service_type">Service Category</Label>
-              <Select
-                value={formData.service_type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, service_type: value })
+              <Label htmlFor="service_type">Service Categories (comma-separated)</Label>
+              <Input
+                id="service_type"
+                value={formData.service_type.join(", ")}
+                onChange={(e) =>
+                  setFormData({ 
+                    ...formData, 
+                    service_type: e.target.value.split(",").map(s => s.trim()).filter(Boolean)
+                  })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SERVICE_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="e.g., HVAC, Plumbing, Electrical"
+              />
             </div>
 
             <div className="flex items-center justify-between">

@@ -59,16 +59,16 @@ const BecomeProvider = () => {
 
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
-        .insert({
+        .insert([{
           owner_id: user.id,
           name: providerData.companyName,
           slug: slug,
           description: providerData.description,
-          service_type: providerData.serviceType,
+          service_type: providerData.serviceType ? [providerData.serviceType] : [],
           phone: providerData.phone,
           email: user.email,
           service_area: providerData.serviceArea,
-        })
+        }])
         .select()
         .single();
 
