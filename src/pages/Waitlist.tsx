@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { z } from "zod";
+import { generateDeviceFingerprint } from "@/utils/deviceFingerprint";
 
 const waitlistSchema = z.object({
   email: z.string().trim().email("Invalid email address"),
@@ -27,9 +28,12 @@ const waitlistSchema = z.object({
 export default function Waitlist() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState<number | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [deviceFingerprint, setDeviceFingerprint] = useState<string>("");
   
   const [formData, setFormData] = useState({
     account_type: "homeowner" as "homeowner" | "provider",
@@ -44,6 +48,20 @@ export default function Waitlist() {
     client_count: "",
   });
   const [customServiceType, setCustomServiceType] = useState("");
+
+  // Extract referral code from URL and generate device fingerprint
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferralCode(ref);
+      localStorage.setItem('homebase_ref', ref);
+    }
+
+    // Generate device fingerprint
+    generateDeviceFingerprint().then(fp => {
+      setDeviceFingerprint(fp);
+    });
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,9 +83,11 @@ export default function Waitlist() {
         client_count: validatedData.client_count || null,
       };
 
-      const { error } = await supabase
+      const { data: waitlistData, error } = await supabase
         .from("waitlist")
-        .insert([dataToInsert]);
+        .insert([dataToInsert])
+        .select()
+        .single();
 
       if (error) {
         if (error.code === '23505') {
@@ -82,11 +102,34 @@ export default function Waitlist() {
         return;
       }
 
-      // Navigate to thank you without counting (RLS-safe)
+      // Register referral signup via edge function
+      const refCode = referralCode || localStorage.getItem('homebase_ref');
+      const { data: referralData, error: referralError } = await supabase.functions.invoke(
+        'register-referral-signup',
+        {
+          body: {
+            email: validatedData.email,
+            phone: validatedData.phone,
+            full_name: validatedData.full_name,
+            role: validatedData.account_type,
+            ref: refCode || undefined,
+            device_fingerprint: deviceFingerprint,
+            waitlist_id: waitlistData.id
+          }
+        }
+      );
+
+      if (referralError) {
+        console.error('Referral error:', referralError);
+      }
+
+      // Navigate to thank you page with referral data
       navigate("/waitlist/thank-you", {
         state: {
           full_name: validatedData.full_name,
           account_type: validatedData.account_type,
+          referral_code: referralData?.referral_code,
+          total_referred: referralData?.total_referred || 0,
         },
       });
 

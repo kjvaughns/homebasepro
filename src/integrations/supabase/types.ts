@@ -302,6 +302,42 @@ export type Database = {
           },
         ]
       }
+      fraud_checks: {
+        Row: {
+          check_result: string
+          created_at: string | null
+          device_fingerprint: string | null
+          email: string | null
+          id: string
+          ip: unknown | null
+          phone: string | null
+          reason: string | null
+          referrer_code: string | null
+        }
+        Insert: {
+          check_result: string
+          created_at?: string | null
+          device_fingerprint?: string | null
+          email?: string | null
+          id?: string
+          ip?: unknown | null
+          phone?: string | null
+          reason?: string | null
+          referrer_code?: string | null
+        }
+        Update: {
+          check_result?: string
+          created_at?: string | null
+          device_fingerprint?: string | null
+          email?: string | null
+          id?: string
+          ip?: unknown | null
+          phone?: string | null
+          reason?: string | null
+          referrer_code?: string | null
+        }
+        Relationships: []
+      }
       homeowner_subscriptions: {
         Row: {
           auto_renew: boolean
@@ -860,6 +896,147 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_events: {
+        Row: {
+          created_at: string | null
+          device_fingerprint: string | null
+          id: string
+          ip: unknown | null
+          referred_profile_id: string
+          referrer_code: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip?: unknown | null
+          referred_profile_id: string
+          referrer_code: string
+        }
+        Update: {
+          created_at?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip?: unknown | null
+          referred_profile_id?: string
+          referrer_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_events_referred_profile_id_fkey"
+            columns: ["referred_profile_id"]
+            isOneToOne: false
+            referencedRelation: "referral_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_profiles: {
+        Row: {
+          created_at: string | null
+          device_fingerprint: string | null
+          id: string
+          ip_created: unknown | null
+          referral_code: string
+          referred_by_code: string | null
+          rewards_meta: Json | null
+          role: string
+          updated_at: string | null
+          waitlist_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip_created?: unknown | null
+          referral_code: string
+          referred_by_code?: string | null
+          rewards_meta?: Json | null
+          role: string
+          updated_at?: string | null
+          waitlist_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip_created?: unknown | null
+          referral_code?: string
+          referred_by_code?: string | null
+          rewards_meta?: Json | null
+          role?: string
+          updated_at?: string | null
+          waitlist_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_profiles_waitlist_id_fkey"
+            columns: ["waitlist_id"]
+            isOneToOne: false
+            referencedRelation: "waitlist"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_stats: {
+        Row: {
+          eligible_referred: number | null
+          last_updated: string | null
+          referrer_code: string
+          total_referred: number | null
+        }
+        Insert: {
+          eligible_referred?: number | null
+          last_updated?: string | null
+          referrer_code: string
+          total_referred?: number | null
+        }
+        Update: {
+          eligible_referred?: number | null
+          last_updated?: string | null
+          referrer_code?: string
+          total_referred?: number | null
+        }
+        Relationships: []
+      }
+      rewards_ledger: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string
+          meta: Json | null
+          profile_id: string
+          reward_type: string
+          role: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          profile_id: string
+          reward_type: string
+          role: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          profile_id?: string
+          reward_type?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_ledger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "referral_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1469,6 +1646,10 @@ export type Database = {
           status: string
         }[]
       }
+      generate_referral_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1483,6 +1664,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_referral_count: {
+        Args: { ref_code: string }
+        Returns: undefined
       }
       is_admin: {
         Args: Record<PropertyKey, never>

@@ -1,12 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReferralCard } from "@/components/referral/ReferralCard";
+import { ProgressBar } from "@/components/referral/ProgressBar";
+import { RoleBanner } from "@/components/referral/RoleBanner";
+import { ShareButtons } from "@/components/referral/ShareButtons";
 
 interface ThankYouState {
   full_name?: string;
   account_type?: "homeowner" | "provider";
   waitlistPosition?: number;
+  referral_code?: string;
+  total_referred?: number;
 }
 
 const pricingPlans = [
@@ -21,22 +27,29 @@ export default function WaitlistThankYou() {
   const location = useLocation();
   const state = (location.state || {}) as ThankYouState;
   const firstName = (state.full_name || "").split(" ")[0] || undefined;
+  const [referralLink, setReferralLink] = useState<string>("");
 
   useEffect(() => {
     document.title = "HomeBase – Waitlist Confirmed";
-    // meta description (simple, no external deps)
     const existing = document.querySelector('meta[name="description"]');
     if (existing) existing.setAttribute("content", "You're on the HomeBase early access list. Early adopter perks secured.");
-  }, []);
+
+    // Store referral code in localStorage and generate link
+    if (state.referral_code) {
+      localStorage.setItem('homebase_referral_code', state.referral_code);
+      setReferralLink(`${window.location.origin}/waitlist?ref=${state.referral_code}`);
+    }
+  }, [state.referral_code]);
 
   const isHomeowner = state.account_type === "homeowner";
+  const totalReferred = state.total_referred || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl md:text-3xl">
-            Thank you{firstName ? `, ${firstName}` : ""}! 🎉
+            Welcome to the HomeBase Club{firstName ? `, ${firstName}` : ""}! 🎉
           </CardTitle>
           <CardDescription>
             {isHomeowner
@@ -45,6 +58,47 @@ export default function WaitlistThankYou() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Referral Section */}
+          {referralLink && (
+            <>
+              <RoleBanner role={state.account_type || 'homeowner'} />
+              
+              <div className="space-y-4">
+                <div className="text-center space-y-2">
+                  <h3 className="font-semibold text-lg">Invite & Earn</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Share your unique link and track your progress
+                  </p>
+                </div>
+
+                <ProgressBar current={totalReferred} target={5} label="Progress to rewards" />
+                
+                <ReferralCard referralLink={referralLink} />
+                
+                <ShareButtons 
+                  referralLink={referralLink}
+                  shareText={`Join me on HomeBase and ${isHomeowner ? 'get amazing home services' : 'grow your business'}!`}
+                />
+
+                <div className="text-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/club')}
+                    className="w-full"
+                  >
+                    View Full Dashboard
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h3 className="font-semibold text-lg mb-3">What's Next?</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  We'll notify you when HomeBase launches. In the meantime, invite friends to unlock your rewards!
+                </p>
+              </div>
+            </>
+          )}
           {typeof state.waitlistPosition === "number" && (
             <div className="bg-primary/5 p-6 rounded-lg text-center">
               <p className="text-sm text-muted-foreground">Your Waitlist Position</p>
