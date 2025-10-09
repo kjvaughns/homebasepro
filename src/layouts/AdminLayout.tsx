@@ -117,7 +117,7 @@ const AdminLayout = () => {
   }
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-background flex flex-col">
+    <div className="min-h-[100dvh] overflow-hidden bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
@@ -176,12 +176,13 @@ const AdminLayout = () => {
       </header>
 
       <main
-        className={cn(isMobile ? "" : "h-[calc(100dvh-3.5rem)] pl-64", "overflow-y-auto")}
+        className={cn(
+          "flex-1 min-h-0 overflow-y-auto", // ← main is the scroller
+          isMobile ? "" : "pl-64",
+        )}
         style={
           isMobile
             ? {
-                // header is 56px (h-14); use svh for mobile
-                height: "calc(100svh - 56px)",
                 // reserve space for the 80px tab bar + safe area
                 paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
               }
@@ -196,13 +197,15 @@ const AdminLayout = () => {
       {/* Bottom Navigation (Mobile) - Outlook Style */}
       {isMobile && (
         <nav
-          className="fixed bottom-0 left-0 right-0 z-80 bg-white dark:bg-card pb-safe"
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-card"
           style={{
             borderTop: "1px solid hsl(0 0% 93%)",
             boxShadow: "0 -2px 8px rgba(0,0,0,0.04)",
+            height: "calc(80px + env(safe-area-inset-bottom))",
+            paddingBottom: "env(safe-area-inset-bottom)", // safe area only once
           }}
         >
-          <div className="flex items-start justify-around pt-2.5 pb-1 h-[80px]">
+          <div className="flex items-center justify-around" style={{ height: "80px" }}>
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
