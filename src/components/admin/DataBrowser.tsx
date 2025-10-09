@@ -12,7 +12,10 @@ import { RefreshCw, Trash2, Edit, Eye, EyeOff, Search, Filter } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { TABLE_METADATA, TABLE_CATEGORIES, formatColumnName } from "@/constants/tableMetadata";
 import EditRecordDialog from "./EditRecordDialog";
+import RecordCard from "./RecordCard";
+import RecordDetailDialog from "./RecordDetailDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const DataBrowser = () => {
   const [selectedTable, setSelectedTable] = useState<string>("waitlist");
@@ -25,7 +28,10 @@ const DataBrowser = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editRecord, setEditRecord] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [detailRecord, setDetailRecord] = useState<any>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const availableTables = Object.keys(TABLE_METADATA);
   const filteredTables = selectedCategory === "All Tables"
@@ -198,7 +204,7 @@ const DataBrowser = () => {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
                 <Filter className="h-4 w-4" />
@@ -258,7 +264,23 @@ const DataBrowser = () => {
               <p className="text-lg font-medium">No data found</p>
               <p className="text-sm mt-1">Try adjusting your search or select a different table</p>
             </div>
+          ) : isMobile ? (
+            // Mobile Card View
+            <div className="space-y-3">
+              {filteredData.map((row) => (
+                <RecordCard
+                  key={row.id}
+                  record={row}
+                  essentialColumns={displayColumns}
+                  onClick={() => {
+                    setDetailRecord(row);
+                    setDetailOpen(true);
+                  }}
+                />
+              ))}
+            </div>
           ) : (
+            // Desktop Table View
             <div className="rounded-md border">
               <ScrollArea className="w-full">
                 <div className="min-w-full overflow-x-auto">
@@ -358,6 +380,23 @@ const DataBrowser = () => {
             setEditOpen(false);
             setEditRecord(null);
           }}
+        />
+      )}
+
+      {/* Mobile Detail Dialog */}
+      {detailRecord && (
+        <RecordDetailDialog
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          record={detailRecord}
+          tableName={selectedTable}
+          columns={columns}
+          onSuccess={() => {
+            fetchTableData();
+            setDetailOpen(false);
+            setDetailRecord(null);
+          }}
+          onDelete={fetchTableData}
         />
       )}
     </>

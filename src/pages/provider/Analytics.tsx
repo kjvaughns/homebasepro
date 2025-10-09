@@ -238,10 +238,19 @@ export default function Analytics() {
           <p className="text-muted-foreground">Track your business performance and insights</p>
         </div>
         <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as any)}>
-          <TabsList>
-            <TabsTrigger value="30d">30 Days</TabsTrigger>
-            <TabsTrigger value="90d">90 Days</TabsTrigger>
-            <TabsTrigger value="1y">1 Year</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="30d" className="text-xs sm:text-sm px-2">
+              <span className="sm:hidden">30D</span>
+              <span className="hidden sm:inline">30 Days</span>
+            </TabsTrigger>
+            <TabsTrigger value="90d" className="text-xs sm:text-sm px-2">
+              <span className="sm:hidden">90D</span>
+              <span className="hidden sm:inline">90 Days</span>
+            </TabsTrigger>
+            <TabsTrigger value="1y" className="text-xs sm:text-sm px-2">
+              <span className="sm:hidden">1Y</span>
+              <span className="hidden sm:inline">1 Year</span>
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

@@ -104,9 +104,11 @@ export default function ProviderMessages() {
       if (error) throw error;
 
       setConversations(convos || []);
-      if (convos && convos.length > 0) {
+      // Only auto-select on desktop
+      if (convos && convos.length > 0 && window.innerWidth >= 768) {
         setSelectedConversation(convos[0]);
       }
+      // On mobile, start with inbox view (null selection)
     } catch (error) {
       console.error("Error loading conversations:", error);
     } finally {

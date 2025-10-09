@@ -101,16 +101,17 @@ export default function HomeownerMessages() {
       setConversations(convos || []);
 
       const targetConvoId = location.state?.conversationId;
-      if (targetConvoId && convos) {
+      // Only auto-select on desktop OR if explicitly navigating to a specific conversation
+      if (targetConvoId && convos && window.innerWidth >= 768) {
         const targetConvo = convos.find((c) => c.id === targetConvoId);
         if (targetConvo) {
           setSelectedConversation(targetConvo);
-        } else if (convos.length > 0) {
-          setSelectedConversation(convos[0]);
         }
-      } else if (convos && convos.length > 0) {
+      } else if (convos && convos.length > 0 && window.innerWidth >= 768) {
+        // Auto-select first conversation only on desktop
         setSelectedConversation(convos[0]);
       }
+      // On mobile, selectedConversation remains null, showing inbox list
     } catch (error) {
       console.error("Error loading conversations:", error);
       toast({
