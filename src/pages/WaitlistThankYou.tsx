@@ -149,6 +149,18 @@ export default function WaitlistThankYou() {
               ? "You're on the homeowner early access list."
               : "You're on the provider early access list."}
           </CardDescription>
+          {referralCode && (
+            <div className="pt-2">
+              <Button 
+                onClick={() => navigate(`/club?code=${referralCode}`)}
+                className="w-full max-w-sm mx-auto"
+                size="lg"
+                variant="default"
+              >
+                🎁 Access Your Referral Portal
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Always show referral section */}

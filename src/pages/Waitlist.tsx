@@ -48,6 +48,8 @@ export default function Waitlist() {
     client_count: "",
   });
   const [customServiceType, setCustomServiceType] = useState("");
+  const [referralSourceType, setReferralSourceType] = useState<"select" | "referral_code">("select");
+  const [customReferralSource, setCustomReferralSource] = useState("");
 
   // Extract referral code from URL and generate device fingerprint
   useEffect(() => {
@@ -55,6 +57,11 @@ export default function Waitlist() {
     if (ref) {
       setReferralCode(ref);
       localStorage.setItem('homebase_ref', ref);
+      
+      // Auto-fill referral source when coming via referral link
+      setReferralSourceType("referral_code");
+      setCustomReferralSource(ref);
+      updateField("referral_source", `Referral: ${ref}`);
     }
 
     // Generate device fingerprint
@@ -482,14 +489,77 @@ export default function Waitlist() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="referral_source">How did you hear about us? (Optional)</Label>
-                    <Input
-                      id="referral_source"
-                      value={formData.referral_source}
-                      onChange={(e) => updateField("referral_source", e.target.value)}
-                      placeholder="Google, Friend, Social Media, etc."
-                    />
+                    <Label htmlFor="referral_source_type">How did you hear about us? (Optional)</Label>
+                    <Select
+                      value={referralSourceType}
+                      onValueChange={(value: "select" | "referral_code") => {
+                        setReferralSourceType(value);
+                        if (value === "select") {
+                          setCustomReferralSource("");
+                          updateField("referral_source", "");
+                        } else {
+                          updateField("referral_source", "");
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select or enter referral code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="select">Select from list</SelectItem>
+                        <SelectItem value="referral_code">I have a referral code</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  {referralSourceType === "select" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="referral_source">Source</Label>
+                      <Select
+                        value={formData.referral_source}
+                        onValueChange={(value) => updateField("referral_source", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select how you found us" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="google">Google</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
+                          <SelectItem value="instagram">Instagram</SelectItem>
+                          <SelectItem value="facebook">Facebook</SelectItem>
+                          <SelectItem value="twitter">Twitter/X</SelectItem>
+                          <SelectItem value="friend">Friend</SelectItem>
+                          <SelectItem value="social_media">Other Social Media</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {referralSourceType === "referral_code" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="custom_referral_code">Enter Referral Code</Label>
+                      <Input
+                        id="custom_referral_code"
+                        value={customReferralSource}
+                        onChange={(e) => {
+                          const code = e.target.value.toUpperCase();
+                          setCustomReferralSource(code);
+                          updateField("referral_source", code ? `Referral: ${code}` : "");
+                          // Also set this as the referral code for tracking
+                          if (code) {
+                            setReferralCode(code);
+                            localStorage.setItem('homebase_ref', code);
+                          }
+                        }}
+                        placeholder="Enter code (e.g., JSMITH1234)"
+                        className="uppercase"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Have a friend's referral code? Enter it here to give them credit!
+                      </p>
+                    </div>
+                  )}
 
                   <Button type="submit" className="w-full" size="lg" disabled={loading}>
                     {loading ? "Joining..." : "Join Waitlist"}
