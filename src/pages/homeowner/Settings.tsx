@@ -111,10 +111,10 @@ export default function HomeownerSettings() {
         {/* 🔧 FIXED TAB GRID LAYOUT */}
         <TabsList
           className="
-            !grid w-full grid-cols-2 md:grid-cols-4 gap-2
-            p-0 bg-transparent border-0 
-            data-[orientation=horizontal]:!flex-none
-          "
+    !grid h-auto w-full grid-cols-2 md:grid-cols-4 gap-2 mb-3
+    p-0 bg-transparent border-0
+    data-[orientation=horizontal]:!flex-none
+  "
         >
           {[
             { value: "profile", label: "Profile" },
