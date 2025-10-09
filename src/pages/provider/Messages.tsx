@@ -407,7 +407,7 @@ export default function ProviderMessages() {
                 )}
 
                 {/* Fixed Bottom Section */}
-                <div className="sticky bottom-0 z-50">
+                <div className="sticky bottom-16 md:bottom-0 z-50">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
                     <div className="border-t p-4 bg-card">
@@ -431,7 +431,7 @@ export default function ProviderMessages() {
                   )}
 
                   {/* Input Area */}
-                  <div className="border-t p-4 bg-card pb-18">
+                  <div className="border-t p-4 bg-card pb-16">
                     <div className="flex items-end gap-2">
                       <AttachmentButton
                         onFileSelect={handleFileSelect}
