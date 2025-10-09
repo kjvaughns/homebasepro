@@ -193,7 +193,7 @@ const AdminLayout = () => {
             boxShadow: "0 -2px 8px rgba(0,0,0,0.04)",
           }}
         >
-          <div className="flex items-start justify-around pt-2.5 pb-1">
+          <div className="flex items-start justify-around pt-2.5 pb-1 h-[80px]">
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
