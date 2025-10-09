@@ -36,7 +36,7 @@ export const MessageBubble = ({
   const isFile = message.message_type === 'file' && message.attachment_url;
 
   return (
-    <div className={cn("flex gap-2 mb-1", isOwn ? "justify-end" : "justify-start")}>
+    <div className={cn("flex gap-2 mb-0.5", isOwn ? "justify-end" : "justify-start")}>
       {!isOwn && (
         <Avatar className={cn("h-8 w-8 shrink-0", !showAvatar && "invisible")}>
           <AvatarImage src={avatarUrl} />
@@ -46,7 +46,7 @@ export const MessageBubble = ({
         </Avatar>
       )}
       
-      <div className={cn("flex flex-col max-w-[70%]", isOwn && "items-end")}>
+      <div className={cn("flex flex-col max-w-[70%] sm:max-w-[65%]", isOwn && "items-end")}>
         <div
           className={cn(
             "rounded-2xl px-3 py-2 shadow-sm max-w-full",

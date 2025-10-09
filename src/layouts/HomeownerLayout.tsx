@@ -171,7 +171,7 @@ export default function HomeownerLayout() {
       <main
         ref={mainRef}
         className={cn(
-          isMobile ? "h-[calc(100dvh-7rem)]" : "h-[calc(100dvh-3.5rem)] pl-64",
+          isMobile ? "h-[calc(100dvh-6rem)]" : "h-[calc(100dvh-3.5rem)] pl-64",
           isMessagesRoute ? "overflow-hidden" : "overflow-y-auto pb-safe"
         )}
       >
@@ -181,7 +181,7 @@ export default function HomeownerLayout() {
       {/* Bottom Navigation (Mobile) */}
       {isMobile && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
-          <div className="flex items-center justify-around h-14">
+          <div className="flex items-center justify-around h-12">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (

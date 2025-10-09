@@ -225,7 +225,7 @@ const ProviderLayout = () => {
         <main
           ref={mainRef}
           className={cn(
-            "h-[calc(100dvh-7rem)]",
+            "h-[calc(100dvh-6rem)]",
             isMessagesRoute ? "overflow-hidden" : "overflow-y-auto pb-safe"
           )}
         >
@@ -234,7 +234,7 @@ const ProviderLayout = () => {
 
         {/* Bottom Navigation (Mobile) */}
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-safe">
-          <div className="flex items-center justify-around h-14">
+          <div className="flex items-center justify-around h-12">
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (

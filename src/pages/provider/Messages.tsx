@@ -377,9 +377,10 @@ export default function ProviderMessages() {
                 <div
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
-                  className="flex-1 overflow-y-auto overscroll-contain p-4 pb-40 md:pb-32 space-y-2 bg-muted/10"
+                  className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-1 bg-muted/10"
                   style={{ 
-                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)'
+                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)',
+                    paddingBottom: 'calc(140px + env(safe-area-inset-bottom))'
                   }}
                 >
                   {messages.length === 0 ? (
@@ -399,7 +400,7 @@ export default function ProviderMessages() {
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute bottom-32 md:bottom-24 right-8 rounded-full shadow-lg z-20"
+                    className="absolute bottom-24 md:bottom-20 right-8 rounded-full shadow-lg z-20"
                     onClick={() => scrollToBottom()}
                   >
                     <ArrowDown className="h-4 w-4" />
@@ -407,10 +408,10 @@ export default function ProviderMessages() {
                 )}
 
                 {/* Fixed Bottom Section */}
-                <div className="sticky bottom-16 md:bottom-0 z-50">
+                <div className="absolute bottom-12 md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
-                    <div className="border-t p-4 bg-card">
+                    <div className="border-b px-4 py-2 bg-card/50">
                       <div className="flex items-center gap-3 bg-muted p-3 rounded-lg">
                         {attachmentPreview.type === 'image' && attachmentPreview.preview ? (
                           <img src={attachmentPreview.preview} alt="Preview" className="h-16 w-16 object-cover rounded" />
@@ -431,7 +432,7 @@ export default function ProviderMessages() {
                   )}
 
                   {/* Input Area */}
-                  <div className="border-t p-4 bg-card pb-16">
+                  <div className="px-4 py-2 pb-2">
                     <div className="flex items-end gap-2">
                       <AttachmentButton
                         onFileSelect={handleFileSelect}
