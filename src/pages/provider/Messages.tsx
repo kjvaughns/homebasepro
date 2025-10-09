@@ -377,7 +377,7 @@ export default function ProviderMessages() {
                 <div
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
-                  className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-2 bg-muted/10"
+                  className="flex-1 overflow-y-auto overscroll-contain p-4 pb-40 md:pb-32 space-y-2 bg-muted/10"
                   style={{ 
                     backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)'
                   }}
@@ -407,7 +407,7 @@ export default function ProviderMessages() {
                 )}
 
                 {/* Fixed Bottom Section */}
-                <div className="shrink-0">
+                <div className="sticky bottom-0 z-50">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
                     <div className="border-t p-4 bg-card">
