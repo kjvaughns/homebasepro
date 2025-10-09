@@ -147,7 +147,7 @@ const AdminLayout = () => {
 
       {/* Main Content */}
       <main className={cn(
-        "flex-1 min-h-0 overflow-y-auto",
+        "h-[calc(100dvh-3.5rem)] overflow-y-auto",
         isMobile ? "" : "pl-64"
       )}>
         <div className="container mx-auto p-4 md:p-6">

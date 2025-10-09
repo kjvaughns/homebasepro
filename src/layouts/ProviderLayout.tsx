@@ -169,7 +169,7 @@ const ProviderLayout = () => {
       <main
         ref={mainRef}
         className={cn(
-          "flex-1 min-h-0",
+          "h-[calc(100dvh-3.5rem)]",
           isMessagesRoute ? "overflow-hidden" : "overflow-y-auto",
           isMobile ? "" : "pl-64"
         )}
