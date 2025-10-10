@@ -1060,30 +1060,42 @@ export type Database = {
       rewards_ledger: {
         Row: {
           amount: number | null
+          applied_at: string | null
           created_at: string | null
+          expires_at: string | null
           id: string
           meta: Json | null
+          notes: string | null
           profile_id: string
           reward_type: string
           role: string
+          status: string | null
         }
         Insert: {
           amount?: number | null
+          applied_at?: string | null
           created_at?: string | null
+          expires_at?: string | null
           id?: string
           meta?: Json | null
+          notes?: string | null
           profile_id: string
           reward_type: string
           role: string
+          status?: string | null
         }
         Update: {
           amount?: number | null
+          applied_at?: string | null
           created_at?: string | null
+          expires_at?: string | null
           id?: string
           meta?: Json | null
+          notes?: string | null
           profile_id?: string
           reward_type?: string
           role?: string
+          status?: string | null
         }
         Relationships: [
           {
@@ -1660,6 +1672,29 @@ export type Database = {
       }
     }
     Views: {
+      admin_credit_expenses: {
+        Row: {
+          credits_issued: number | null
+          credits_redeemed: number | null
+          expense_realized: number | null
+          month: string | null
+          outstanding_liability: number | null
+          total_expense: number | null
+        }
+        Relationships: []
+      }
+      admin_referral_stats: {
+        Row: {
+          credits_issued: number | null
+          discounts_issued: number | null
+          total_credit_value: number | null
+          total_eligible: number | null
+          total_events: number | null
+          total_profiles: number | null
+          total_referrals: number | null
+        }
+        Relationships: []
+      }
       admin_revenue_summary: {
         Row: {
           arr: number | null
@@ -1686,6 +1721,10 @@ export type Database = {
       admin_exists: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      apply_service_credit: {
+        Args: { subscription_id: string; user_profile_id: string }
+        Returns: Json
       }
       can_accept_invite: {
         Args: { _user_id: string }

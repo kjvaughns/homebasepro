@@ -54,6 +54,8 @@ import AdminTeam from "./pages/admin/TeamManagement";
 import AdminUsers from "./pages/admin/UserManagement";
 import AdminSettings from "./pages/admin/Settings";
 import AdminBetaAccess from "./pages/admin/BetaAccess";
+import AdminReferrals from "./pages/admin/Referrals";
+import PWALaunch from "./pages/PWALaunch";
 
 const queryClient = new QueryClient();
 
@@ -70,8 +72,9 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/home" element={<Index />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/pwa-launch" element={<PWALaunch />} />
+        <Route path="/home" element={<Index />} />
             <Route path="/waitlist" element={<Waitlist />} />
             <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
             <Route path="/club" element={<Club />} />
@@ -123,11 +126,12 @@ const App = () => {
             {/* Admin routes with shared layout */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
               <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="referrals" element={<AdminReferrals />} />
               <Route path="data" element={<AdminData />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="team" element={<AdminTeam />} />
-              <Route path="users" element={<AdminUsers />} />
               <Route path="beta-access" element={<AdminBetaAccess />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>

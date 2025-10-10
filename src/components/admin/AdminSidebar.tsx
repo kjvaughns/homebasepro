@@ -1,11 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Database, Users, TrendingUp, Settings, Shield, Home, UserCircle, DollarSign } from "lucide-react";
+import { LayoutDashboard, Database, Users, TrendingUp, Settings, Shield, Home, UserCircle, DollarSign, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AdminSidebar = () => {
   const navItems = [
     { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/admin/revenue", icon: DollarSign, label: "Revenue" },
+    { to: "/admin/referrals", icon: Gift, label: "Referrals" },
     { to: "/admin/data", icon: Database, label: "Data Browser" },
     { to: "/admin/analytics", icon: TrendingUp, label: "Analytics" },
     { to: "/admin/team", icon: Shield, label: "Team & Roles" },

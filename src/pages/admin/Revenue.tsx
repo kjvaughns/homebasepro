@@ -44,6 +44,9 @@ const Revenue = () => {
     avgTransactionFee: 0,
     topProviders: [],
   });
+  const [creditExpenses, setCreditExpenses] = useState<any[]>([]);
+  const [outstandingLiability, setOutstandingLiability] = useState(0);
+  const [currentMonthExpense, setCurrentMonthExpense] = useState<any>(null);
 
   useEffect(() => {
     const fetchRevenueData = async () => {
@@ -137,6 +140,22 @@ const Revenue = () => {
           avgTransactionFee,
           topProviders,
         });
+
+        // Fetch credit expenses
+        const { data: expensesData } = await supabase
+          .from("admin_credit_expenses")
+          .select("*")
+          .order("month", { ascending: false })
+          .limit(12);
+
+        setCreditExpenses(expensesData || []);
+        setCurrentMonthExpense(expensesData?.[0] || null);
+        
+        const outstanding = expensesData?.reduce(
+          (sum, month) => sum + (Number(month.outstanding_liability) || 0),
+          0
+        ) || 0;
+        setOutstandingLiability(outstanding);
       } catch (error) {
         console.error("Error fetching revenue data:", error);
       } finally {
@@ -329,6 +348,42 @@ const Revenue = () => {
               </div>
               <p className="text-xs text-muted-foreground">$299/mo + 1.5% transaction fee</p>
               <p className="text-lg font-bold">${((data.scaleProviders * 29900) / 100).toFixed(0)}/mo</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Credit Liabilities Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base md:text-lg">Referral Credit Liabilities</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Outstanding Credits</p>
+              <p className="text-2xl font-bold text-destructive">
+                ${(outstandingLiability / 100).toFixed(0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Unredeemed service credits</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Redeemed This Month</p>
+              <p className="text-2xl font-bold text-primary">
+                ${currentMonthExpense ? (Number(currentMonthExpense.expense_realized) / 100).toFixed(0) : '0'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {currentMonthExpense?.credits_redeemed || 0} credits applied
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Total Issued (Lifetime)</p>
+              <p className="text-2xl font-bold">
+                ${creditExpenses.reduce((sum, m) => sum + (Number(m.total_expense) / 100), 0).toFixed(0)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {creditExpenses.reduce((sum, m) => sum + Number(m.credits_issued || 0), 0)} total credits
+              </p>
             </div>
           </div>
         </CardContent>

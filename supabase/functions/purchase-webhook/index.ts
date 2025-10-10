@@ -117,6 +117,9 @@ serve(async (req) => {
         .single();
 
       if (referrerProfile && referrerProfile.role === 'homeowner') {
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
         // Grant $50 credit for each block of 5
         for (let i = 0; i < blocksToReward; i++) {
           await supabase
@@ -124,12 +127,15 @@ serve(async (req) => {
             .insert({
               profile_id: referrerProfile.id,
               role: 'homeowner',
-              reward_type: 'homeowner_credit',
-              amount: 50.00,
+              reward_type: 'service_credit',
+              amount: 5000, // $50 in cents
+              status: 'issued',
+              expires_at: oneYearFromNow.toISOString(),
               meta: {
                 order_id: payload.order_id,
                 milestone: newEligible,
-                buyer_email: payload.buyer_email
+                buyer_email: payload.buyer_email,
+                auto_issued: true
               }
             });
         }

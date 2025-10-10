@@ -2,7 +2,7 @@
   "name": "HomeBase - Home Service Management",
   "short_name": "HomeBase",
   "description": "Manage all your home services, subscriptions, and maintenance in one place",
-  "start_url": "/",
+  "start_url": "/pwa-launch",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#22c55e",

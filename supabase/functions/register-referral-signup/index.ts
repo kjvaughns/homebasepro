@@ -156,6 +156,9 @@ serve(async (req) => {
 
         // Evaluate provider rewards
         await evaluateProviderRewards(supabase, payload.ref);
+        
+        // Evaluate homeowner rewards
+        await evaluateHomeownerRewards(supabase, payload.ref);
       }
     }
 
@@ -366,4 +369,64 @@ async function evaluateProviderRewards(supabase: any, referrerCode: string) {
     });
 
   console.log(`Provider discount granted: ${discountPercent}% for ${referrerCode}`);
+}
+
+async function evaluateHomeownerRewards(supabase: any, referrerCode: string) {
+  // Get referrer profile
+  const { data: referrerProfile } = await supabase
+    .from('referral_profiles')
+    .select('*')
+    .eq('referral_code', referrerCode)
+    .single();
+
+  if (!referrerProfile || referrerProfile.role !== 'homeowner') {
+    return;
+  }
+
+  // Get stats
+  const { data: stats } = await supabase
+    .from('referral_stats')
+    .select('*')
+    .eq('referrer_code', referrerCode)
+    .single();
+
+  // Check if eligible for credit (every 5 qualified referrals)
+  const eligibleReferred = stats?.eligible_referred || 0;
+  const milestoneReached = Math.floor(eligibleReferred / 5);
+  
+  if (milestoneReached === 0) return;
+
+  // Check how many credits already issued
+  const { count: creditsIssued } = await supabase
+    .from('rewards_ledger')
+    .select('id', { count: 'exact' })
+    .eq('profile_id', referrerProfile.id)
+    .eq('reward_type', 'service_credit');
+
+  const creditsOwed = milestoneReached - (creditsIssued || 0);
+
+  if (creditsOwed > 0) {
+    // Issue pending credits
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+    for (let i = 0; i < creditsOwed; i++) {
+      await supabase
+        .from('rewards_ledger')
+        .insert({
+          profile_id: referrerProfile.id,
+          role: 'homeowner',
+          reward_type: 'service_credit',
+          amount: 5000, // $50 in cents
+          status: 'issued',
+          expires_at: oneYearFromNow.toISOString(),
+          meta: { 
+            milestone: (creditsIssued || 0 + i + 1) * 5,
+            auto_issued: true 
+          }
+        });
+    }
+    
+    console.log(`Issued ${creditsOwed} x $50 credits to ${referrerCode}`);
+  }
 }
