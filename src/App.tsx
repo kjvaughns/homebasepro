@@ -69,7 +69,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<home />} />
+            <Route path="/" element={<Index />} />
             <Route path="/home" element={<Index />} />
             <Route path="/waitlist" element={<Waitlist />} />
             <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
