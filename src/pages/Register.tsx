@@ -28,6 +28,24 @@ const Register = () => {
         throw new Error("Please fill in all required fields");
       }
 
+      // Check beta access before allowing registration
+      const { data: hasAccess, error: accessError } = await supabase.rpc(
+        'check_beta_access',
+        { user_email: email.trim().toLowerCase(), account_type: userType }
+      );
+
+      if (accessError) throw accessError;
+
+      if (!hasAccess) {
+        toast({
+          title: "Registration Closed",
+          description: "Registration is currently invite-only. Please join our waitlist!",
+          variant: "destructive",
+        });
+        navigate('/waitlist');
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -44,6 +62,13 @@ const Register = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Mark beta invite as accepted if it exists
+        await supabase
+          .from('beta_access')
+          .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+          .eq('email', email.trim().toLowerCase())
+          .eq('status', 'pending');
+
         toast({
           title: "Account created!",
           description: "Please check your email to verify your account.",

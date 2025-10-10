@@ -10,6 +10,7 @@ const AdminSidebar = () => {
     { to: "/admin/analytics", icon: TrendingUp, label: "Analytics" },
     { to: "/admin/team", icon: Shield, label: "Team & Roles" },
     { to: "/admin/users", icon: Users, label: "User Management" },
+    { to: "/admin/beta-access", icon: Shield, label: "Beta Access" },
     { to: "/admin/settings", icon: Settings, label: "Settings" },
   ];
 

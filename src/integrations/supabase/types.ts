@@ -137,6 +137,60 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      beta_access: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          notes: string | null
+          status: string
+          user_type: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          notes?: string | null
+          status?: string
+          user_type: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          notes?: string | null
+          status?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
       client_subscriptions: {
         Row: {
           auto_renew: boolean
@@ -1645,6 +1699,10 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           status: string
         }[]
+      }
+      check_beta_access: {
+        Args: { account_type: string; user_email: string }
+        Returns: boolean
       }
       generate_referral_code: {
         Args: Record<PropertyKey, never>

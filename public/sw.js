@@ -1,8 +1,6 @@
 // HomeBase Service Worker
-const CACHE_NAME = 'homebase-v1';
+const CACHE_NAME = 'homebase-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/homebase-logo.png',
   '/manifest.json'
 ];
@@ -42,6 +40,20 @@ self.addEventListener('fetch', (event) => {
       url.pathname.startsWith('/functions/')) {
     event.respondWith(
       fetch(request)
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Network-first for navigation requests (HTML pages)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const clonedResponse = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, clonedResponse));
+          return response;
+        })
         .catch(() => caches.match(request))
     );
     return;

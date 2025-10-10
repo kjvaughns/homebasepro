@@ -53,6 +53,7 @@ import AdminAnalytics from "./pages/admin/Analytics";
 import AdminTeam from "./pages/admin/TeamManagement";
 import AdminUsers from "./pages/admin/UserManagement";
 import AdminSettings from "./pages/admin/Settings";
+import AdminBetaAccess from "./pages/admin/BetaAccess";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +128,7 @@ const App = () => {
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="team" element={<AdminTeam />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="beta-access" element={<AdminBetaAccess />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
 
