@@ -68,74 +68,74 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/home" element={<Index />} />
-          <Route path="/waitlist" element={<Waitlist />} />
-          <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
-          <Route path="/club" element={<Club />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
-          <Route path="/onboarding/provider" element={<OnboardingProvider />} />
-          
-          <Route path="/become-provider" element={<BecomeProvider />} />
-          
-          {/* Homeowner Routes */}
-          <Route element={<HomeownerLayout />}>
-            <Route path="/dashboard" element={<HomeownerDashboard />} />
-            <Route path="/homeowner/homes" element={<Homes />} />
-            <Route path="/homeowner/homes/new" element={<AddHome />} />
-            <Route path="/homeowner/homes/:id" element={<HomeDetail />} />
-            <Route path="/homeowner/browse" element={<Browse />} />
-            <Route path="/homeowner/browse/:id" element={<ProviderDetail />} />
-            <Route path="/homeowner/subscriptions" element={<HomeownerSubscriptions />} />
-            <Route path="/homeowner/subscriptions/:id" element={<SubscriptionDetail />} />
-            <Route path="/homeowner/appointments" element={<Appointments />} />
-            <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
-            <Route path="/homeowner/settings" element={<HomeownerSettings />} />
-            <Route path="/homeowner/messages" element={<HomeownerMessages />} />
-          </Route>
-          
-          {/* Provider routes with shared layout */}
-          <Route path="/provider" element={<ProviderLayout />}>
-            <Route path="dashboard" element={<ProviderDashboard />} />
-            <Route path="clients" element={<Clients />} />
-            <Route path="clients/:id" element={<ClientDetail />} />
-            <Route path="plans" element={<ServicePlans />} />
-            <Route path="subscriptions" element={<Subscriptions />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="team" element={<Team />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="messages" element={<ProviderMessages />} />
-            <Route path="analytics" element={<ProviderAnalytics />} />
-            <Route path="accounting" element={<ProviderAccounting />} />
-            <Route path="payroll" element={<ProviderPayroll />} />
-          </Route>
+          <Routes>
+            <Route path="/" element={<home />} />
+            <Route path="/home" element={<Index />} />
+            <Route path="/waitlist" element={<Waitlist />} />
+            <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
+            <Route path="/club" element={<Club />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
+            <Route path="/onboarding/provider" element={<OnboardingProvider />} />
 
-          {/* Admin login (no layout) */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/become-provider" element={<BecomeProvider />} />
 
-          {/* Admin routes with shared layout */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="revenue" element={<AdminRevenue />} />
-            <Route path="data" element={<AdminData />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="team" element={<AdminTeam />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="settings" element={<AdminSettings />} />
-          </Route>
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+            {/* Homeowner Routes */}
+            <Route element={<HomeownerLayout />}>
+              <Route path="/dashboard" element={<HomeownerDashboard />} />
+              <Route path="/homeowner/homes" element={<Homes />} />
+              <Route path="/homeowner/homes/new" element={<AddHome />} />
+              <Route path="/homeowner/homes/:id" element={<HomeDetail />} />
+              <Route path="/homeowner/browse" element={<Browse />} />
+              <Route path="/homeowner/browse/:id" element={<ProviderDetail />} />
+              <Route path="/homeowner/subscriptions" element={<HomeownerSubscriptions />} />
+              <Route path="/homeowner/subscriptions/:id" element={<SubscriptionDetail />} />
+              <Route path="/homeowner/appointments" element={<Appointments />} />
+              <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
+              <Route path="/homeowner/settings" element={<HomeownerSettings />} />
+              <Route path="/homeowner/messages" element={<HomeownerMessages />} />
+            </Route>
+
+            {/* Provider routes with shared layout */}
+            <Route path="/provider" element={<ProviderLayout />}>
+              <Route path="dashboard" element={<ProviderDashboard />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="clients/:id" element={<ClientDetail />} />
+              <Route path="plans" element={<ServicePlans />} />
+              <Route path="subscriptions" element={<Subscriptions />} />
+              <Route path="payments" element={<Payments />} />
+              <Route path="team" element={<Team />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="messages" element={<ProviderMessages />} />
+              <Route path="analytics" element={<ProviderAnalytics />} />
+              <Route path="accounting" element={<ProviderAccounting />} />
+              <Route path="payroll" element={<ProviderPayroll />} />
+            </Route>
+
+            {/* Admin login (no layout) */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+
+            {/* Admin routes with shared layout */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="data" element={<AdminData />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="team" element={<AdminTeam />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
+
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 
