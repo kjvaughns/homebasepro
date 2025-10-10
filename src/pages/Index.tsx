@@ -67,6 +67,9 @@ const Index = () => {
             <Button onClick={() => navigate("/pricing")} variant="ghost" size="sm" className="sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
               Pricing
             </Button>
+            <Button onClick={() => navigate("/club")} variant="ghost" size="sm" className="sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
+              Referrals
+            </Button>
             <Button onClick={() => navigate("/waitlist")} size="sm" className="sm:h-10 text-xs sm:text-sm px-3 sm:px-4">
               Join Waitlist
             </Button>

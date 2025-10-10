@@ -56,6 +56,8 @@ import AdminSettings from "./pages/admin/Settings";
 import AdminBetaAccess from "./pages/admin/BetaAccess";
 import AdminReferrals from "./pages/admin/Referrals";
 import PWALaunch from "./pages/PWALaunch";
+import AdminCommerce from "./pages/admin/Commerce";
+import AdminUsersAccess from "./pages/admin/UsersAccess";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +65,17 @@ const App = () => {
   useEffect(() => {
     // Register service worker for PWA functionality
     registerServiceWorker();
+  }, []);
+
+  useEffect(() => {
+    // Force PWA launches to route through /pwa-launch (auth-aware)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    if (isStandalone) {
+      const path = window.location.pathname;
+      if (!['/pwa-launch', '/login', '/auth'].includes(path)) {
+        window.location.replace('/pwa-launch');
+      }
+    }
   }, []);
 
   return (
@@ -126,14 +139,17 @@ const App = () => {
             {/* Admin routes with shared layout */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="revenue" element={<AdminRevenue />} />
-              <Route path="referrals" element={<AdminReferrals />} />
-              <Route path="data" element={<AdminData />} />
               <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="commerce" element={<AdminCommerce />} />
+              <Route path="users-access" element={<AdminUsersAccess />} />
+              <Route path="data" element={<AdminData />} />
+              <Route path="settings" element={<AdminSettings />} />
+              {/* Legacy routes for backward compatibility */}
+              <Route path="users" element={<AdminUsers />} />
               <Route path="team" element={<AdminTeam />} />
               <Route path="beta-access" element={<AdminBetaAccess />} />
-              <Route path="settings" element={<AdminSettings />} />
+              <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="referrals" element={<AdminReferrals />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

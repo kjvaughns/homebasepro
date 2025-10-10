@@ -5,13 +5,10 @@ import { cn } from "@/lib/utils";
 const AdminSidebar = () => {
   const navItems = [
     { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/admin/revenue", icon: DollarSign, label: "Revenue" },
-    { to: "/admin/referrals", icon: Gift, label: "Referrals" },
+    { to: "/admin/analytics", icon: TrendingUp, label: "Analytics & Revenue" },
+    { to: "/admin/commerce", icon: DollarSign, label: "Commerce" },
+    { to: "/admin/users-access", icon: Users, label: "Users & Access" },
     { to: "/admin/data", icon: Database, label: "Data Browser" },
-    { to: "/admin/analytics", icon: TrendingUp, label: "Analytics" },
-    { to: "/admin/team", icon: Shield, label: "Team & Roles" },
-    { to: "/admin/users", icon: Users, label: "User Management" },
-    { to: "/admin/beta-access", icon: Shield, label: "Beta Access" },
     { to: "/admin/settings", icon: Settings, label: "Settings" },
   ];
 

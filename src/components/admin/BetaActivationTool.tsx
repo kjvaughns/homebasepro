@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { UserCheck, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,6 +25,7 @@ const BetaActivationTool = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [activating, setActivating] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -65,8 +68,10 @@ const BetaActivationTool = () => {
         has_beta_access: betaEmails.has(user.email),
       }));
 
-      // Filter to only show users without beta access who came via referral
-      setUsers(formatted.filter((u) => !u.has_beta_access && u.referral_code));
+      // Filter to only show users without beta access (referral-only unless showAll)
+      setUsers(
+        formatted.filter((u) => !u.has_beta_access && (showAll ? true : !!u.referral_code))
+      );
     } catch (error) {
       console.error("Error fetching waitlist users:", error);
     } finally {
@@ -76,7 +81,7 @@ const BetaActivationTool = () => {
 
   useEffect(() => {
     fetchWaitlistUsers();
-  }, []);
+  }, [showAll]);
 
   const toggleSelection = (userId: string) => {
     const newSelected = new Set(selected);
@@ -153,11 +158,16 @@ const BetaActivationTool = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <CardTitle className="text-base md:text-lg">
-            Referred Waitlist Users ({users.length})
+            Waitlist Users ({users.length})
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="show-all" className="text-xs md:text-sm text-muted-foreground">Show all</Label>
+              <Switch id="show-all" checked={showAll} onCheckedChange={(v) => setShowAll(Boolean(v))} />
+            </div>
+            <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={selectAll}>
               {selected.size === users.length ? "Deselect All" : "Select All"}
             </Button>
@@ -178,6 +188,7 @@ const BetaActivationTool = () => {
                 </>
               )}
             </Button>
+            </div>
           </div>
         </div>
       </CardHeader>

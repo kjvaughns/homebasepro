@@ -1,8 +1,9 @@
 // HomeBase Service Worker
-const CACHE_NAME = 'homebase-v2';
+const CACHE_NAME = 'homebase-v3';
 const urlsToCache = [
   '/homebase-logo.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/pwa-launch'
 ];
 
 // Install event - cache core assets
@@ -45,19 +46,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first for navigation requests (HTML pages)
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
+// Network-first for navigation requests (HTML pages)
+if (request.mode === 'navigate') {
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        const path = url.pathname;
+        // Avoid caching auth routing pages to prevent stale redirects
+        const shouldCache = !['/pwa-launch', '/login', '/auth', '/home'].includes(path);
+        if (shouldCache) {
           const clonedResponse = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, clonedResponse));
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
+  );
+  return;
+}
 
   // Cache-first for static assets
   event.respondWith(
