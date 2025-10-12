@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { z } from "zod";
@@ -23,6 +24,9 @@ const waitlistSchema = z.object({
   referral_source: z.string().trim().max(200).optional(),
   current_services: z.string().trim().max(500).optional(),
   client_count: z.string().optional(),
+  marketing_consent: z.boolean().refine(val => val === true, {
+    message: "You must agree to receive updates to join the waitlist"
+  }),
 });
 
 export default function Waitlist() {
@@ -46,6 +50,7 @@ export default function Waitlist() {
     referral_source: "",
     current_services: "",
     client_count: "",
+    marketing_consent: false,
   });
   const [customServiceType, setCustomServiceType] = useState("");
   const [referralSourceType, setReferralSourceType] = useState<"select" | "referral_code">("select");
@@ -88,6 +93,7 @@ export default function Waitlist() {
         referral_source: validatedData.referral_source || null,
         current_services: validatedData.current_services || null,
         client_count: validatedData.client_count || null,
+        marketing_consent: validatedData.marketing_consent,
       };
 
       const { error } = await supabase
@@ -220,7 +226,7 @@ export default function Waitlist() {
     }
   };
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -600,6 +606,26 @@ export default function Waitlist() {
                       </p>
                     </div>
                   )}
+
+                  {/* Marketing Consent Checkbox */}
+                  <div className="flex items-start gap-3 p-4 border rounded-lg bg-muted/30">
+                    <Checkbox
+                      id="marketing_consent"
+                      checked={formData.marketing_consent}
+                      onCheckedChange={(checked) => 
+                        updateField("marketing_consent", checked as boolean)
+                      }
+                      required
+                      className="mt-0.5"
+                    />
+                    <Label 
+                      htmlFor="marketing_consent" 
+                      className="text-sm cursor-pointer leading-tight flex-1"
+                    >
+                      I agree to receive updates, launch notifications, and marketing 
+                      content from HomeBase via email and SMS. You can unsubscribe anytime.
+                    </Label>
+                  </div>
 
                   <Button type="submit" className="w-full" size="lg" disabled={loading}>
                     {loading ? "Joining..." : "Join Waitlist"}

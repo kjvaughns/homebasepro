@@ -126,6 +126,7 @@ export default function WaitlistThankYou() {
   const isHomeowner = accountType === "homeowner";
   const referralLink = referralCode ? `${window.location.origin}/waitlist?ref=${referralCode}` : "";
   const perksUnlocked = totalReferred >= 5;
+  const percentage = Math.round((totalReferred / 5) * 100);
 
   if (isLoading) {
     return (
@@ -142,12 +143,12 @@ export default function WaitlistThankYou() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl md:text-3xl">
-            Welcome to the HomeBase Club{firstName ? `, ${firstName}` : ""}! 🎉
+            Welcome to the HomeBase {isHomeowner ? 'Club' : 'Provider Network'}{firstName ? `, ${firstName}` : ""}! 🎉
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base">
             {isHomeowner
-              ? "You're on the homeowner early access list."
-              : "You're on the provider early access list."}
+              ? "You're officially on the Homeowner Early Access List. Invite 5 friends to unlock your $50 HomeBase Service Credit and secure Beta Access."
+              : "You're officially on the Provider Early Access List. Invite 5 providers or homeowners to unlock 25% off for life on your plan and secure Beta Access."}
           </CardDescription>
           {referralCode && (
             <div className="pt-2">
@@ -163,24 +164,12 @@ export default function WaitlistThankYou() {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Always show referral section */}
-          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-6 space-y-4">
+          {/* Progress Section */}
+          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-4 sm:p-6 space-y-4">
             <div className="text-center space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                {perksUnlocked ? (
-                  <Unlock className="w-6 h-6 text-primary" />
-                ) : (
-                  <Lock className="w-6 h-6 text-muted-foreground" />
-                )}
-                <h3 className="font-bold text-xl">
-                  {perksUnlocked ? '🎉 Perks Unlocked!' : '🔒 Unlock Your Perks'}
-                </h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                <strong>Invite 5 {isHomeowner ? 'friends' : 'homeowners'} to unlock your {isHomeowner ? '$50 service credits' : '25% lifetime discount'}</strong>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Must refer 5 people (homeowners or providers) who sign up to receive your early adopter discount
+              <h3 className="font-bold text-lg sm:text-xl">💼 Your Progress</h3>
+              <p className="text-2xl sm:text-3xl font-bold">
+                {totalReferred} / 5 • {percentage}% Complete
               </p>
             </div>
 
@@ -189,16 +178,65 @@ export default function WaitlistThankYou() {
             {perksUnlocked && (
               <div className="bg-card rounded-lg p-4 text-center space-y-2">
                 <p className="font-semibold text-primary text-lg">
-                  {isHomeowner ? '💰 Rewards Active!' : '✨ 25% Discount Active!'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isHomeowner 
-                    ? 'Every 5 eligible referrals earns you $50 in credits'
-                    : 'Your 25% lifetime discount is locked in'
-                  }
+                  🎉 You've unlocked Beta Access and your rewards!
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Perks Section */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-lg">
+              {isHomeowner ? '🏠 Your Homeowner Perks' : '⚙️ Your Provider Perks'}
+            </h3>
+            <ul className="space-y-2 text-sm">
+              {isHomeowner ? (
+                <>
+                  <li className="flex items-start gap-3 p-3 border rounded-lg">
+                    <span className="text-xl">🏡</span>
+                    <div>
+                      <p className="font-semibold">$50 credit for every 5 eligible referrals</p>
+                      <p className="text-xs text-muted-foreground">Must sign up and make a purchase</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3 p-3 border rounded-lg">
+                    <span className="text-xl">🚀</span>
+                    <p className="font-semibold">Priority access to the HomeBase Beta Launch</p>
+                  </li>
+                  <li className="flex items-start gap-3 p-3 border rounded-lg">
+                    <span className="text-xl">💡</span>
+                    <p className="font-semibold">Personalized home maintenance plan at launch</p>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li className="flex items-start gap-3 p-3 border rounded-lg">
+                    <span className="text-xl">💸</span>
+                    <p className="font-semibold">25% off for life once you reach 5 eligible referrals</p>
+                  </li>
+                  <li className="flex items-start gap-3 p-3 border rounded-lg">
+                    <span className="text-xl">🚀</span>
+                    <p className="font-semibold">Priority access to the Provider Beta Launch</p>
+                  </li>
+                  <li className="flex items-start gap-3 p-3 border rounded-lg">
+                    <span className="text-xl">📈</span>
+                    <p className="font-semibold">Early listing in the HomeBase provider directory</p>
+                  </li>
+                </>
+              )}
+            </ul>
+            
+            {/* Fine Print */}
+            <div className="bg-muted/50 border border-border rounded-lg p-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-2">🔒 How it works:</p>
+              <p>
+                An eligible referral is someone who signs up through your link and makes a purchase. 
+                {isHomeowner 
+                  ? ' Credits unlock once 5 eligible referrals are confirmed.'
+                  : ' Lifetime discount unlocks after 5 eligible referrals.'
+                } Beta access is automatic when you reach your goal.
+              </p>
+            </div>
           </div>
 
           <RoleBanner role={accountType} />
@@ -242,19 +280,6 @@ export default function WaitlistThankYou() {
             </div>
           )}
 
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Your Early Adopter Perks</h3>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <li className="p-3 border rounded-lg">🎁 Lifetime 25% discount potential</li>
-              <li className="p-3 border rounded-lg">⚡ Priority access at launch</li>
-              <li className="p-3 border rounded-lg">💬 Influence the roadmap with feedback</li>
-              {isHomeowner ? (
-                <li className="p-3 border rounded-lg">💰 Earn $50 credits every 5 referrals</li>
-              ) : (
-                <li className="p-3 border rounded-lg">💼 Reduced transaction fees</li>
-              )}
-            </ul>
-          </div>
 
           {!isHomeowner && (
             <div className="space-y-3">

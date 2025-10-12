@@ -1630,6 +1630,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          marketing_consent: boolean | null
           notified: boolean | null
           phone: string
           referral_source: string | null
@@ -1646,6 +1647,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          marketing_consent?: boolean | null
           notified?: boolean | null
           phone: string
           referral_source?: string | null
@@ -1662,6 +1664,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          marketing_consent?: boolean | null
           notified?: boolean | null
           phone?: string
           referral_source?: string | null
