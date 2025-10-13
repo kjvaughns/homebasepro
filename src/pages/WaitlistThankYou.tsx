@@ -71,7 +71,7 @@ export default function WaitlistThankYou() {
           .from('referral_stats')
           .select('*')
           .eq('referrer_code', code)
-          .single();
+          .maybeSingle();
         
         if (stats) {
           setTotalReferred(stats.total_referred || 0);
