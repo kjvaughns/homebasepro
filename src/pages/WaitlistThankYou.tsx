@@ -141,7 +141,7 @@ export default function WaitlistThankYou() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center space-y-2">
+        <CardHeader className="text-center space-y-4">
           <CardTitle className="text-2xl md:text-3xl">
             Welcome to the HomeBase {isHomeowner ? 'Club' : 'Provider Network'}{firstName ? `, ${firstName}` : ""}! 🎉
           </CardTitle>
@@ -150,16 +150,29 @@ export default function WaitlistThankYou() {
               ? "You're officially on the Homeowner Early Access List. Invite 5 friends to unlock your $50 HomeBase Service Credit and secure Beta Access."
               : "You're officially on the Provider Early Access List. Invite 5 providers or homeowners to unlock 25% off for life on your plan and secure Beta Access."}
           </CardDescription>
+
+          {/* Referral Code Display */}
           {referralCode && (
-            <div className="pt-2">
-              <Button 
-                onClick={() => navigate(`/club?code=${referralCode}`)}
-                className="w-full max-w-sm mx-auto"
-                size="lg"
-                variant="default"
-              >
-                🎁 Access Your Referral Portal
-              </Button>
+            <div className="bg-primary/10 border-2 border-primary/30 rounded-lg p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Your Referral Code</p>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <code className="text-xl sm:text-2xl font-bold tracking-wider px-4 py-2 bg-background rounded-md border-2">
+                  {referralCode}
+                </code>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(referralCode);
+                    toast({
+                      title: "Copied!",
+                      description: "Referral code copied to clipboard",
+                    });
+                  }}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Copy Code
+                </Button>
+              </div>
             </div>
           )}
         </CardHeader>
@@ -184,6 +197,19 @@ export default function WaitlistThankYou() {
             )}
           </div>
 
+          {/* Unlock Requirements Warning */}
+          <div className="bg-yellow-500/10 border-2 border-yellow-500/40 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">⚠️</span>
+              <div className="space-y-2">
+                <p className="font-bold text-base">Perks unlock at 5 referrals</p>
+                <p className="text-sm text-muted-foreground">
+                  Share your link with 5 friends who sign up <strong>AND</strong> make a purchase to unlock your rewards and beta access.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Perks Section */}
           <div className="space-y-3">
             <h3 className="font-semibold text-lg">
@@ -195,13 +221,16 @@ export default function WaitlistThankYou() {
                   <li className="flex items-start gap-3 p-3 border rounded-lg">
                     <span className="text-xl">🏡</span>
                     <div>
-                      <p className="font-semibold">$50 credit for every 5 eligible referrals</p>
-                      <p className="text-xs text-muted-foreground">Must sign up and make a purchase</p>
+                      <p className="font-semibold">$50 service credit</p>
+                      <p className="text-xs text-muted-foreground">Unlocks when you reach 5 eligible referrals</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3 p-3 border rounded-lg">
                     <span className="text-xl">🚀</span>
-                    <p className="font-semibold">Priority access to the HomeBase Beta Launch</p>
+                    <div>
+                      <p className="font-semibold">Priority Beta Access</p>
+                      <p className="text-xs text-muted-foreground">Automatic at 5 referrals</p>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3 p-3 border rounded-lg">
                     <span className="text-xl">💡</span>
@@ -212,11 +241,17 @@ export default function WaitlistThankYou() {
                 <>
                   <li className="flex items-start gap-3 p-3 border rounded-lg">
                     <span className="text-xl">💸</span>
-                    <p className="font-semibold">25% off for life once you reach 5 eligible referrals</p>
+                    <div>
+                      <p className="font-semibold">25% off for life</p>
+                      <p className="text-xs text-muted-foreground">Unlocks when you reach 5 eligible referrals</p>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3 p-3 border rounded-lg">
                     <span className="text-xl">🚀</span>
-                    <p className="font-semibold">Priority access to the Provider Beta Launch</p>
+                    <div>
+                      <p className="font-semibold">Priority Beta Access</p>
+                      <p className="text-xs text-muted-foreground">Automatic at 5 referrals</p>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3 p-3 border rounded-lg">
                     <span className="text-xl">📈</span>
@@ -230,7 +265,7 @@ export default function WaitlistThankYou() {
             <div className="bg-muted/50 border border-border rounded-lg p-4 text-xs text-muted-foreground">
               <p className="font-semibold mb-2">🔒 How it works:</p>
               <p>
-                An eligible referral is someone who signs up through your link and makes a purchase. 
+                An eligible referral is someone who signs up through your link <strong>AND</strong> makes a purchase. 
                 {isHomeowner 
                   ? ' Credits unlock once 5 eligible referrals are confirmed.'
                   : ' Lifetime discount unlocks after 5 eligible referrals.'
@@ -244,9 +279,9 @@ export default function WaitlistThankYou() {
           {referralLink && (
             <div className="space-y-4">
               <div className="text-center space-y-2">
-                <h3 className="font-semibold text-lg">Your Referral Link</h3>
+                <h3 className="font-semibold text-lg">Share Your Referral Link</h3>
                 <p className="text-sm text-muted-foreground">
-                  Share this link to track your progress
+                  Share this link to start unlocking your perks
                 </p>
               </div>
               
@@ -256,20 +291,6 @@ export default function WaitlistThankYou() {
                 referralLink={referralLink}
                 shareText={`Join me on HomeBase and ${isHomeowner ? 'get amazing home services' : 'grow your business'}!`}
               />
-
-              <div className="text-center pt-4 space-y-3">
-                <Button 
-                  onClick={() => navigate(`/club?code=${referralCode}`)}
-                  className="w-full"
-                  size="lg"
-                >
-                  Open Referral Portal
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Bookmark this link to access your portal anytime: <br />
-                  <code className="bg-muted px-2 py-1 rounded text-xs">{window.location.origin}/club?code={referralCode}</code>
-                </p>
-              </div>
             </div>
           )}
 
@@ -316,9 +337,20 @@ export default function WaitlistThankYou() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Button variant="outline" onClick={() => navigate("/")}>Back to Home</Button>
-            <Button onClick={() => navigate("/pricing")}>See Pricing</Button>
+          <div className="flex flex-col gap-3">
+            {referralCode && (
+              <Button 
+                onClick={() => navigate("/club")}
+                size="lg"
+                className="w-full"
+              >
+                🎯 View Full Referral Dashboard
+              </Button>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button variant="outline" onClick={() => navigate("/")}>Back to Home</Button>
+              <Button variant="outline" onClick={() => navigate("/pricing")}>View Pricing</Button>
+            </div>
           </div>
         </CardContent>
       </Card>
