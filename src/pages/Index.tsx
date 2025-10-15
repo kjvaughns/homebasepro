@@ -3,6 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Home, Calendar, Shield, CreditCard, CheckCircle, Users, Star, TrendingUp, Clock, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import homebaseLogo from "@/assets/homebase-logo.png";
+import homeownerMockup from "@/assets/homeowner-mobile-mockup.png";
+import providerMockup from "@/assets/provider-dashboard-mockup.png";
+import heroProviderImage from "@/assets/hero-provider-image.png";
 import {
   Accordion,
   AccordionContent,
@@ -96,26 +99,37 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-        <div className="container mx-auto text-center max-w-4xl relative z-10">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in">
-            <Star className="h-4 w-4" />
-            <span className="text-xs sm:text-sm font-medium">🎉 Early Access: Lifetime 25% Discount for Beta Users</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
-            Never forget maintenance again
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in px-4">
-            HomeBase connects homeowners with trusted service providers through maintenance subscriptions. 
-            Manage all your home services in one place.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in px-4">
-            <Button 
-              size="lg" 
-              onClick={() => navigate("/waitlist")}
-              className="text-base sm:text-lg px-6 sm:px-12 py-5 sm:py-6 w-full sm:w-auto"
-            >
-              Join the Waitlist
-            </Button>
+        <div className="container mx-auto relative z-10">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
+            <div className="text-center md:text-left">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in">
+                <Star className="h-4 w-4" />
+                <span className="text-xs sm:text-sm font-medium">🎉 Early Access: Lifetime 25% Discount for Beta Users</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
+                Never forget maintenance again
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 animate-fade-in">
+                HomeBase connects homeowners with trusted service providers through maintenance subscriptions. 
+                Manage all your home services in one place.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start animate-fade-in">
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/waitlist")}
+                  className="text-base sm:text-lg px-6 sm:px-12 py-5 sm:py-6 w-full sm:w-auto"
+                >
+                  Join the Waitlist
+                </Button>
+              </div>
+            </div>
+            <div className="relative animate-fade-in">
+              <img 
+                src={heroProviderImage} 
+                alt="Professional HomeBase service provider with equipment" 
+                className="rounded-2xl shadow-2xl w-full"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -365,7 +379,7 @@ const Index = () => {
           <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             <Card className="p-6 overflow-hidden">
               <img 
-                src="/src/assets/homeowner-mobile-mockup.png" 
+                src={homeownerMockup} 
                 alt="Homeowner Mobile App" 
                 className="w-full h-auto rounded-lg shadow-lg mb-4"
               />
@@ -376,7 +390,7 @@ const Index = () => {
             </Card>
             <Card className="p-6 overflow-hidden">
               <img 
-                src="/src/assets/provider-dashboard-mockup.png" 
+                src={providerMockup} 
                 alt="Provider Dashboard" 
                 className="w-full h-auto rounded-lg shadow-lg mb-4"
               />

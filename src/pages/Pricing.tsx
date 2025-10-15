@@ -74,15 +74,17 @@ const Pricing = () => {
 
   const getPrice = (plan: typeof plans[0]) => {
     if (plan.price.monthly === 0) return 0;
-    return billingPeriod === "monthly" ? plan.price.monthly : plan.price.annual;
+    if (billingPeriod === "monthly") return plan.price.monthly;
+    // For annual: show monthly equivalent (annual price ÷ 12)
+    return Math.round(plan.price.annual / 12);
   };
 
   const getSavings = (plan: typeof plans[0]) => {
-    if (plan.price.monthly === 0) return null;
+    if (billingPeriod === "monthly" || plan.price.monthly === 0) return null;
     const monthlyCost = plan.price.monthly * 12;
-    const annualCost = plan.price.annual * 12;
+    const annualCost = plan.price.annual;
     const savings = monthlyCost - annualCost;
-    return savings > 0 ? `Save $${savings}/year` : null;
+    return savings > 0 ? savings : null;
   };
 
   return (
@@ -159,14 +161,17 @@ const Pricing = () => {
                   ${getPrice(plan)}
                 </span>
                 {plan.price.monthly > 0 && (
-                  <span className="text-muted-foreground">
-                    /{billingPeriod === "monthly" ? "mo" : "yr"}
-                  </span>
+                  <span className="text-muted-foreground">/mo</span>
                 )}
               </div>
+              {billingPeriod === "annual" && plan.price.annual > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  billed ${plan.price.annual} annually
+                </p>
+              )}
               {getSavings(plan) && (
-                <p className="text-sm text-[#16A34A] font-medium">
-                  {getSavings(plan)}
+                <p className="text-sm text-[#16A34A] font-medium mt-1">
+                  Save ${getSavings(plan)}/year
                 </p>
               )}
               <div className="space-y-1 text-sm">
