@@ -20,3 +20,12 @@ verify_jwt = true
 
 [functions.purchase-webhook]
 verify_jwt = false
+
+[functions.lookup-home]
+verify_jwt = false
+
+[functions.pricing-engine]
+verify_jwt = false
+
+[functions.assistant]
+verify_jwt = true

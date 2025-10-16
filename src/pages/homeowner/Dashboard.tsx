@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, ChevronRight, Plus, Clock, CheckCircle2 } from "lucide-react";
+import { Calendar, ChevronRight, Plus, Clock, CheckCircle2, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import AIAssistant from "@/components/ai/AIAssistant";
 
 export default function HomeownerDashboard() {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ export default function HomeownerDashboard() {
   const [needsProfile, setNeedsProfile] = useState(false);
   const { canInstall, isInstalled, isIOS, promptInstall, dismissInstall } = usePWAInstall();
   const [showInstallDialog, setShowInstallDialog] = useState(false);
+  const [showAI, setShowAI] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -298,6 +301,27 @@ export default function HomeownerDashboard() {
         }}
         onDismiss={dismissInstall}
       />
+
+      {/* AI Assistant Button */}
+      <Button
+        onClick={() => setShowAI(true)}
+        className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg z-50"
+        size="icon"
+      >
+        <MessageCircle className="w-6 h-6" />
+      </Button>
+
+      {/* AI Assistant Dialog */}
+      <Dialog open={showAI} onOpenChange={setShowAI}>
+        <DialogContent className="max-w-2xl h-[600px] p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>HomeBase AI Assistant</DialogTitle>
+          </DialogHeader>
+          <div className="h-[calc(100%-80px)]">
+            <AIAssistant />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

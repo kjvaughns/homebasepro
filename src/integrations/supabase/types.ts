@@ -137,6 +137,76 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["chat_role"]
+          session_id: string
+          tool_calls: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["chat_role"]
+          session_id: string
+          tool_calls?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["chat_role"]
+          session_id?: string
+          tool_calls?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_chat_sessions: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          profile_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_sessions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           key: string
@@ -838,6 +908,66 @@ export type Database = {
           },
         ]
       }
+      price_estimates: {
+        Row: {
+          base_flat: number | null
+          base_per_unit: number | null
+          confidence: number
+          created_at: string
+          estimate: number
+          id: string
+          multipliers: Json | null
+          property_lookup_id: string | null
+          service_name: string
+          session_id: string | null
+          unit_type: string
+          units: number
+        }
+        Insert: {
+          base_flat?: number | null
+          base_per_unit?: number | null
+          confidence?: number
+          created_at?: string
+          estimate: number
+          id?: string
+          multipliers?: Json | null
+          property_lookup_id?: string | null
+          service_name: string
+          session_id?: string | null
+          unit_type: string
+          units: number
+        }
+        Update: {
+          base_flat?: number | null
+          base_per_unit?: number | null
+          confidence?: number
+          created_at?: string
+          estimate?: number
+          id?: string
+          multipliers?: Json | null
+          property_lookup_id?: string | null
+          service_name?: string
+          session_id?: string | null
+          unit_type?: string
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_estimates_property_lookup_id_fkey"
+            columns: ["property_lookup_id"]
+            isOneToOne: false
+            referencedRelation: "property_lookups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_estimates_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -871,6 +1001,54 @@ export type Database = {
           user_id?: string
           user_type?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      property_lookups: {
+        Row: {
+          address_input: string
+          address_std: string | null
+          baths: number | null
+          beds: number | null
+          created_at: string
+          id: string
+          lot_acres: number | null
+          raw_data: Json | null
+          sqft: number | null
+          updated_at: string
+          year_built: number | null
+          zip: string | null
+          zpid: string | null
+        }
+        Insert: {
+          address_input: string
+          address_std?: string | null
+          baths?: number | null
+          beds?: number | null
+          created_at?: string
+          id?: string
+          lot_acres?: number | null
+          raw_data?: Json | null
+          sqft?: number | null
+          updated_at?: string
+          year_built?: number | null
+          zip?: string | null
+          zpid?: string | null
+        }
+        Update: {
+          address_input?: string
+          address_std?: string | null
+          baths?: number | null
+          beds?: number | null
+          created_at?: string
+          id?: string
+          lot_acres?: number | null
+          raw_data?: Json | null
+          sqft?: number | null
+          updated_at?: string
+          year_built?: number | null
+          zip?: string | null
+          zpid?: string | null
         }
         Relationships: []
       }
@@ -1780,6 +1958,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      chat_role: "user" | "assistant" | "tool"
       subscription_tier: "free" | "growth" | "pro" | "scale"
       team_role: "owner" | "manager" | "technician" | "admin"
     }
@@ -1910,6 +2089,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      chat_role: ["user", "assistant", "tool"],
       subscription_tier: ["free", "growth", "pro", "scale"],
       team_role: ["owner", "manager", "technician", "admin"],
     },
