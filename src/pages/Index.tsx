@@ -113,7 +113,7 @@ const Index = () => {
                 HomeBase connects homeowners with trusted service providers through maintenance subscriptions. 
                 Manage all your home services in one place.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start animate-fade-in">
+              <div className="flex flex-col gap-4 items-center md:items-start animate-fade-in">
                 <Button 
                   size="lg" 
                   onClick={() => navigate("/waitlist")}
@@ -121,6 +121,25 @@ const Index = () => {
                 >
                   Join the Waitlist
                 </Button>
+                
+                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/demo/homeowner")}
+                    className="text-sm"
+                  >
+                    👤 Homeowner Demo
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/demo/serviceprovider")}
+                    className="text-sm"
+                  >
+                    🏢 Provider Demo
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="relative animate-fade-in">

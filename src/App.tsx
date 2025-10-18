@@ -14,6 +14,8 @@ import Pricing from "./pages/Pricing";
 import Waitlist from "./pages/Waitlist";
 import WaitlistThankYou from "./pages/WaitlistThankYou";
 import Club from "./pages/Club";
+import DemoHomeowner from "./pages/demo/DemoHomeowner";
+import DemoProvider from "./pages/demo/DemoProvider";
 import OnboardingHomeowner from "./pages/OnboardingHomeowner";
 import OnboardingProvider from "./pages/OnboardingProvider";
 import HomeownerDashboard from "./pages/homeowner/Dashboard";
@@ -88,9 +90,11 @@ const App = () => {
         <Route path="/" element={<Index />} />
         <Route path="/pwa-launch" element={<PWALaunch />} />
         <Route path="/home" element={<Index />} />
-            <Route path="/waitlist" element={<Waitlist />} />
-            <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
-            <Route path="/club" element={<Club />} />
+          <Route path="/waitlist" element={<Waitlist />} />
+          <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
+          <Route path="/club" element={<Club />} />
+          <Route path="/demo/homeowner" element={<DemoHomeowner />} />
+          <Route path="/demo/serviceprovider" element={<DemoProvider />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/signup" element={<Signup />} />

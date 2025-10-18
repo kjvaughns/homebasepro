@@ -203,6 +203,50 @@ export default function WaitlistThankYou() {
           >
             🎁 Go to Referral Club
           </Button>
+
+          {/* Demo CTAs */}
+          <div className="pt-8 border-t space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Want a sneak peek at what you'll get?
+            </p>
+            
+            {state?.account_type === "homeowner" && (
+              <Button
+                variant="outline"
+                onClick={() => navigate("/demo/homeowner")}
+                className="w-full"
+              >
+                👤 View Homeowner Demo
+              </Button>
+            )}
+            
+            {state?.account_type === "provider" && (
+              <Button
+                variant="outline"
+                onClick={() => navigate("/demo/serviceprovider")}
+                className="w-full"
+              >
+                🏢 View Provider Demo
+              </Button>
+            )}
+            
+            {!state?.account_type && (
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/demo/homeowner")}
+                >
+                  👤 Homeowner
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/demo/serviceprovider")}
+                >
+                  🏢 Provider
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
