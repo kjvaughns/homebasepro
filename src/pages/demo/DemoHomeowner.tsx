@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DemoLayout } from "@/components/demo/DemoLayout";
-import { RemindersCard, ProviderTable, QuoteCalculator, DashboardStats } from "@/components/demo/DemoWidgets";
+import { RemindersCard, ProviderTable, QuoteCalculator, DashboardStats, ProcessFlowDiagram, AIChatMockup } from "@/components/demo/DemoWidgets";
+import homeownerMockup from "@/assets/homeowner-mobile-mockup.png";
 import { Button } from "@/components/ui/button";
 import { Home, Zap, Bell, Users, DollarSign, LayoutDashboard, Sparkles } from "lucide-react";
 
@@ -41,7 +42,15 @@ export default function DemoHomeowner() {
           </div>
         </>
       ),
-      widget: <img src="/placeholder.svg" alt="HomeBase App" className="w-full rounded-lg shadow-lg" />,
+      widget: (
+        <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-8">
+          <img 
+            src={homeownerMockup} 
+            alt="HomeBase app on mobile device" 
+            className="max-h-[500px] w-auto object-contain animate-fade-in hover-scale"
+          />
+        </div>
+      ),
     },
     {
       title: "How it works",
@@ -80,7 +89,11 @@ export default function DemoHomeowner() {
           </div>
         </>
       ),
-      widget: <img src="/placeholder.svg" alt="How it works" className="w-full rounded-lg shadow-lg" />,
+      widget: (
+        <div className="flex items-center justify-center h-full bg-background rounded-lg p-6">
+          <ProcessFlowDiagram />
+        </div>
+      ),
     },
     {
       title: "Smart maintenance reminders",
@@ -140,7 +153,11 @@ export default function DemoHomeowner() {
           </div>
         </>
       ),
-      widget: <img src="/placeholder.svg" alt="AI Suggestions" className="w-full rounded-lg shadow-lg" />,
+      widget: (
+        <div className="flex items-center justify-center h-full">
+          <AIChatMockup />
+        </div>
+      ),
     },
     {
       title: "Browse trusted local providers",

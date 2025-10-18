@@ -25,78 +25,96 @@ export default function WaitlistThankYou() {
   const [referralCode, setReferralCode] = useState<string>("");
   const [totalReferred, setTotalReferred] = useState<number>(0);
 
+  // Extract specific values to stabilize dependencies
+  const stateReferralCode = state.referral_code;
+  const stateWaitlistId = state.waitlist_id;
+  const stateEmail = state.email;
+  const stateFullName = state.full_name;
+  const stateAccountType = state.account_type;
+  const stateTotalReferred = state.total_referred;
+
   useEffect(() => {
     document.title = "HomeBase – Waitlist Confirmed";
     const existing = document.querySelector('meta[name="description"]');
     if (existing) existing.setAttribute("content", "You're on the HomeBase early access list. Early adopter perks secured.");
 
+    let isMounted = true;
+    let hasCalledEdgeFunction = false;
+
     const fetchOrCreateProfile = async () => {
-      setIsLoading(true);
-      
-      let code = state.referral_code || 
-                 localStorage.getItem('homebase_referral_code');
-      
-      const waitlistId = state.waitlist_id || localStorage.getItem('homebase_waitlist_id');
-      const email = state.email || localStorage.getItem('homebase_email');
-      const name = state.full_name || localStorage.getItem('homebase_full_name') || "";
-      const type = state.account_type || "homeowner";
+      try {
+        // Priority: state > localStorage
+        const existingCode = stateReferralCode || localStorage.getItem('homebase_referral_code');
+        const existingReferred = stateTotalReferred || parseInt(localStorage.getItem('homebase_total_referred') || '0');
 
-      if (code) {
-        setReferralCode(code);
-        localStorage.setItem('homebase_referral_code', code);
-        
-        const { data: stats } = await supabase
-          .from('referral_stats')
-          .select('*')
-          .eq('referrer_code', code)
-          .maybeSingle();
-        
-        if (stats) {
-          setTotalReferred(stats.total_referred || 0);
-        } else {
-          setTotalReferred(state.total_referred || 0);
-        }
-        
-        setIsLoading(false);
-        return;
-      }
-
-      if (waitlistId || email) {
-        try {
-          const { data, error } = await supabase.functions.invoke(
-            'get-or-create-referral-profile',
-            {
-              body: {
-                waitlist_id: waitlistId || undefined,
-                email: email || undefined,
-                full_name: name || undefined,
-                role: type
-              }
-            }
-          );
-
-          if (error) {
-            console.error('Error fetching profile:', error);
-            toast({
-              title: "Could not load referral data",
-              description: "Please contact support if this persists.",
-              variant: "destructive"
-            });
-          } else if (data) {
-            setReferralCode(data.referral_code);
-            setTotalReferred(data.total_referred || 0);
-            localStorage.setItem('homebase_referral_code', data.referral_code);
+        // If we have code from state/localStorage, use it
+        if (existingCode) {
+          if (isMounted) {
+            setReferralCode(existingCode);
+            setTotalReferred(existingReferred);
+            setIsLoading(false);
           }
-        } catch (err) {
-          console.error('Exception fetching profile:', err);
+          
+          // Update localStorage if not already there
+          if (!localStorage.getItem('homebase_referral_code')) {
+            localStorage.setItem('homebase_referral_code', existingCode);
+            localStorage.setItem('homebase_total_referred', existingReferred.toString());
+          }
+          return;
+        }
+
+        // Only call edge function if we have email/waitlistId and haven't called yet
+        if ((!stateEmail && !stateWaitlistId) || hasCalledEdgeFunction) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        hasCalledEdgeFunction = true;
+        setIsLoading(true);
+
+        const { data, error } = await supabase.functions.invoke('get-or-create-referral-profile', {
+          body: {
+            email: stateEmail || undefined,
+            waitlist_id: stateWaitlistId || undefined,
+            full_name: stateFullName || undefined,
+            role: stateAccountType || 'homeowner'
+          }
+        });
+
+        if (error) throw error;
+
+        if (data && isMounted) {
+          const code = data.referral_code;
+          const referred = data.total_referred || 0;
+          
+          setReferralCode(code);
+          setTotalReferred(referred);
+          
+          localStorage.setItem('homebase_referral_code', code);
+          localStorage.setItem('homebase_total_referred', referred.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching referral profile:', error);
+        if (isMounted) {
+          toast({
+            title: "Notice",
+            description: "Your waitlist spot is confirmed! Referral link will be available shortly.",
+            variant: "default",
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
-      
-      setIsLoading(false);
     };
 
     fetchOrCreateProfile();
-  }, [state, toast]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [stateReferralCode, stateWaitlistId, stateEmail, stateFullName, stateAccountType, stateTotalReferred, toast]);
 
   const referralLink = referralCode 
     ? `https://homebase.app/club/${referralCode}` 

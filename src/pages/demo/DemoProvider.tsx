@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DemoLayout } from "@/components/demo/DemoLayout";
-import { CalendarRouteMock, ClientTable, QuoteCalculator, InvoiceList } from "@/components/demo/DemoWidgets";
+import { CalendarRouteMock, ClientTable, QuoteCalculator, InvoiceList, ComparisonCards, WorkflowDiagram } from "@/components/demo/DemoWidgets";
+import providerDashboard from "@/assets/provider-dashboard-mockup.png";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Zap, Calendar, Users, DollarSign, TrendingUp, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,15 @@ export default function DemoProvider() {
           </div>
         </>
       ),
-      widget: <img src="/placeholder.svg" alt="Provider Portal" className="w-full rounded-lg shadow-lg" />,
+      widget: (
+        <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-8">
+          <img 
+            src={providerDashboard} 
+            alt="HomeBase provider dashboard" 
+            className="max-h-[500px] w-auto object-contain animate-fade-in hover-scale"
+          />
+        </div>
+      ),
     },
     {
       title: "Running a business means wearing every hat",
@@ -89,7 +98,11 @@ export default function DemoProvider() {
           </div>
         </>
       ),
-      widget: <img src="/placeholder.svg" alt="Pain Points" className="w-full rounded-lg shadow-lg" />,
+      widget: (
+        <div className="flex items-center justify-center h-full p-4">
+          <ComparisonCards />
+        </div>
+      ),
     },
     {
       title: "How HomeBase works for providers",
@@ -128,7 +141,11 @@ export default function DemoProvider() {
           </div>
         </>
       ),
-      widget: <img src="/placeholder.svg" alt="How it works" className="w-full rounded-lg shadow-lg" />,
+      widget: (
+        <div className="flex items-center justify-center h-full bg-background rounded-lg p-6">
+          <WorkflowDiagram />
+        </div>
+      ),
     },
     {
       title: "Your Provider Control Center",

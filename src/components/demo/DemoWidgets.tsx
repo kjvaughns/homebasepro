@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, DollarSign, TrendingUp, Users, CheckCircle2, Clock } from "lucide-react";
+import { Calendar, MapPin, DollarSign, TrendingUp, Users, CheckCircle2, Clock, Home, MessageSquare, Sparkles, ClipboardList, XCircle, ArrowRight } from "lucide-react";
 
 // Reminders Card Widget
 export function RemindersCard() {
@@ -263,5 +263,156 @@ export function InvoiceList() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// 4-Step Process Flow
+export function ProcessFlowDiagram() {
+  const steps = [
+    { icon: Home, title: "Create Account", desc: "Sign up in 30 seconds" },
+    { icon: MapPin, title: "Add Your Home", desc: "We pull property details" },
+    { icon: Calendar, title: "Book & Track", desc: "Schedule verified pros" },
+    { icon: Sparkles, title: "Smart AI Tips", desc: "Get personalized advice" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {steps.map((step, i) => (
+        <div key={i} className="relative">
+          <div className="flex items-start gap-4 animate-fade-in" style={{ animationDelay: `${i * 0.15}s` }}>
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <step.icon className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1 pt-1">
+              <h4 className="font-semibold text-foreground mb-1">{step.title}</h4>
+              <p className="text-sm text-muted-foreground">{step.desc}</p>
+            </div>
+          </div>
+          {i < steps.length - 1 && (
+            <div className="absolute left-6 top-12 w-0.5 h-8 bg-border" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// AI Chat Mockup
+export function AIChatMockup() {
+  const messages = [
+    { type: "user", text: "When should I service my HVAC?" },
+    { type: "ai", text: "Based on your 2019 system and Jackson's climate, I recommend servicing twice yearly - April and October. I've added this to your schedule!" },
+    { type: "user", text: "Can you find me a provider?" },
+    { type: "ai", text: "Found 3 top-rated HVAC pros near you. Capitol HVAC has a 4.8★ rating and availability this Thursday at 2pm for $89. Book now?" },
+  ];
+
+  return (
+    <Card className="bg-gradient-to-br from-background to-muted/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Sparkles className="w-5 h-5 text-primary" />
+          HomeBase AI Assistant
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+            style={{ animationDelay: `${i * 0.3}s` }}
+          >
+            <div
+              className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+                msg.type === 'user'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-foreground'
+              }`}
+            >
+              <p className="text-sm leading-relaxed">{msg.text}</p>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Before/After Comparison Cards
+export function ComparisonCards() {
+  const before = [
+    { icon: ClipboardList, text: "Manual scheduling in spreadsheets" },
+    { icon: MessageSquare, text: "Endless phone tag with clients" },
+    { icon: XCircle, text: "Missed appointments & no-shows" },
+  ];
+
+  const after = [
+    { icon: Calendar, text: "Auto-schedule with AI route optimization" },
+    { icon: MessageSquare, text: "In-app messaging with clients" },
+    { icon: CheckCircle2, text: "Automated reminders & confirmations" },
+  ];
+
+  return (
+    <div className="grid md:grid-cols-2 gap-4">
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-base text-destructive">Before HomeBase</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {before.map((item, i) => (
+            <div key={i} className="flex items-start gap-3 animate-fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
+              <XCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">{item.text}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/50 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-base text-primary">With HomeBase</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {after.map((item, i) => (
+            <div key={i} className="flex items-start gap-3 animate-fade-in" style={{ animationDelay: `${i * 0.1 + 0.15}s` }}>
+              <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-foreground font-medium">{item.text}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Workflow Diagram
+export function WorkflowDiagram() {
+  const workflow = [
+    { step: "1", title: "Client Books", desc: "Via HomeBase app", color: "bg-blue-500" },
+    { step: "2", title: "AI Quotes", desc: "Dynamic pricing", color: "bg-purple-500" },
+    { step: "3", title: "You Confirm", desc: "One-tap approval", color: "bg-green-500" },
+    { step: "4", title: "Get Paid", desc: "Instant payout", color: "bg-yellow-500" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {workflow.map((item, i) => (
+        <div key={i} className="relative">
+          <div className="flex items-center gap-4 animate-fade-in" style={{ animationDelay: `${i * 0.15}s` }}>
+            <div className={`w-10 h-10 rounded-full ${item.color} text-white flex items-center justify-center font-bold flex-shrink-0`}>
+              {item.step}
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-foreground">{item.title}</h4>
+              <p className="text-sm text-muted-foreground">{item.desc}</p>
+            </div>
+          </div>
+          {i < workflow.length - 1 && (
+            <div className="flex items-center justify-center my-2 ml-5">
+              <ArrowRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
