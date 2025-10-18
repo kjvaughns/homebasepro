@@ -471,8 +471,22 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; 2025 HomeBase. All rights reserved.</p>
+        <div className="container mx-auto px-4 text-center">
+          <div className="flex justify-center gap-6 mb-4">
+            <button 
+              onClick={() => navigate("/privacy")} 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Privacy Policy
+            </button>
+            <button 
+              onClick={() => navigate("/terms")} 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Terms & Conditions
+            </button>
+          </div>
+          <p className="text-muted-foreground">&copy; 2025 HomeBase. All rights reserved.</p>
         </div>
       </footer>
     </div>
