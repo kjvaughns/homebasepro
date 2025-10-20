@@ -108,12 +108,17 @@ export default function HomeBaseAI({
         throw new Error('Please sign in to use HomeBase AI');
       }
 
+      const token = authData.session.access_token;
+
       const { data, error } = await supabase.functions.invoke('assistant', {
         body: {
           session_id: sessionId,
           message: userMsg.content,
           history: messages.map(m => ({ role: m.role, content: m.content })).slice(-15),
           context
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
         }
       });
 
