@@ -14,6 +14,7 @@ import { DownloadButtons } from "@/components/resources/DownloadButtons";
 import { StickyFooterCTA } from "@/components/resources/StickyFooterCTA";
 import { toast } from "@/hooks/use-toast";
 import { Copy } from "lucide-react";
+import { generateCommunicationPackPDF } from "@/utils/generatePDF";
 
 interface CommunicationPack {
   estimate: {
@@ -168,11 +169,50 @@ export default function ProviderCommunicationBuilder() {
     });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
+    if (!generatedPack) return;
+    
     toast({
-      title: "PDF Download",
-      description: "PDF generation coming soon! Use copy to clipboard for now.",
+      title: "Generating PDF...",
+      description: "This may take a moment",
     });
+    
+    try {
+      // Convert the data to match the expected interface
+      const packForPDF = {
+        estimate: {
+          items: generatedPack.estimate.lineItems.map((item, index) => ({
+            description: item.description,
+            quantity: 1,
+            rate: parseFloat(item.price.replace(/[^0-9.]/g, '')),
+            total: parseFloat(item.price.replace(/[^0-9.]/g, '')),
+          })),
+          subtotal: parseFloat(generatedPack.estimate.total.replace(/[^0-9.]/g, '')),
+          tax: 0,
+          total: parseFloat(generatedPack.estimate.total.replace(/[^0-9.]/g, '')),
+        },
+        messages: generatedPack.messages,
+        policies: generatedPack.policies,
+      };
+
+      await generateCommunicationPackPDF(packForPDF, {
+        businessName,
+        phone,
+        email,
+        logoUrl,
+      });
+      
+      toast({
+        title: "PDF Downloaded!",
+        description: "Your communication pack is ready",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

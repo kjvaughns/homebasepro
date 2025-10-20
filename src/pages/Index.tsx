@@ -12,6 +12,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { MobileMenu } from "@/components/MobileMenu";
+import { ResourcesDropdown } from "@/components/ResourcesDropdown";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -62,20 +64,15 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-50 backdrop-blur-sm bg-card/95">
         <div className="container mx-auto px-4 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
               <img src={homebaseLogo} alt="HomeBase" className="h-8 w-8" />
               <span className="text-2xl font-bold text-foreground">HomeBase</span>
             </div>
-            <div className="flex items-center gap-3">
-              <Button 
-                onClick={() => navigate("/resources")} 
-                variant="ghost" 
-                size="sm" 
-                className="h-9 text-sm px-4"
-              >
-                Resources
-              </Button>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
+              <ResourcesDropdown />
               <Button 
                 onClick={() => navigate("/pricing")} 
                 variant="ghost" 
@@ -100,6 +97,9 @@ const Index = () => {
                 Join Waitlist
               </Button>
             </div>
+
+            {/* Mobile Navigation */}
+            <MobileMenu />
           </div>
         </div>
       </header>
@@ -122,23 +122,13 @@ const Index = () => {
                 Manage all your home services in one place.
               </p>
               <div className="flex flex-col gap-4 items-center md:items-start animate-fade-in">
-                <div className="flex gap-3">
-                  <Button 
-                    size="lg" 
-                    onClick={() => navigate("/waitlist")}
-                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
-                  >
-                    Join the Waitlist
-                  </Button>
-                  <Button 
-                    size="lg"
-                    variant="outline"
-                    onClick={() => navigate("/resources")}
-                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
-                  >
-                    Free Tools
-                  </Button>
-                </div>
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/waitlist")}
+                  className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
+                >
+                  Join the Waitlist
+                </Button>
                 
                 <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                   <Button
@@ -490,19 +480,27 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex justify-center gap-6 mb-4">
-            <button 
-              onClick={() => navigate("/privacy")} 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Privacy Policy
-            </button>
-            <button 
-              onClick={() => navigate("/terms")} 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Terms & Conditions
-            </button>
+          <div className="flex flex-col md:flex-row justify-center gap-6 mb-4">
+            <div className="flex flex-col md:flex-row gap-6">
+              <button 
+                onClick={() => navigate("/resources")} 
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Resources
+              </button>
+              <button 
+                onClick={() => navigate("/privacy")} 
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Privacy Policy
+              </button>
+              <button 
+                onClick={() => navigate("/terms")} 
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Terms & Conditions
+              </button>
+            </div>
           </div>
           <p className="text-muted-foreground">&copy; 2025 HomeBase. All rights reserved.</p>
         </div>

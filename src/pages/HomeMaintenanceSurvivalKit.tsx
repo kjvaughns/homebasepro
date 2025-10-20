@@ -14,6 +14,7 @@ import { DownloadButtons } from "@/components/resources/DownloadButtons";
 import { StickyFooterCTA } from "@/components/resources/StickyFooterCTA";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
+import { generateMaintenancePlanPDF } from "@/utils/generatePDF";
 
 interface MaintenancePlan {
   tasksPerYear: number;
@@ -249,11 +250,39 @@ export default function HomeMaintenanceSurvivalKit() {
     });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
+    if (!generatedPlan) return;
+    
     toast({
-      title: "PDF Download",
-      description: "PDF generation coming soon! Use CSV for now.",
+      title: "Generating PDF...",
+      description: "This may take a moment",
     });
+    
+    try {
+      await generateMaintenancePlanPDF(generatedPlan, {
+        zipCode,
+        propertyType,
+        homeAge,
+        squareFeet,
+        bedrooms,
+        bathrooms,
+        hasPool,
+        hasHVAC,
+        hasSprinklers,
+        hasFence,
+      });
+      
+      toast({
+        title: "PDF Downloaded!",
+        description: "Your maintenance plan is ready",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadCSV = () => {
