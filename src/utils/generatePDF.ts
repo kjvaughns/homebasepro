@@ -58,29 +58,45 @@ export async function generateMaintenancePlanPDF(
   const margin = 20;
   const contentWidth = pageWidth - 2 * margin;
 
+  // Load HomeBase logo
+  let logoData: string | null = null;
+  try {
+    const response = await fetch('/homebase-email-logo.png');
+    const blob = await response.blob();
+    logoData = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.warn('Could not load logo for PDF');
+  }
+
   // Cover Page
-  pdf.setFillColor(59, 130, 246); // primary color
+  pdf.setFillColor(34, 197, 94); // HomeBase green
   pdf.rect(0, 0, pageWidth, 70, "F");
+  
+  // Add HomeBase logo
+  if (logoData) {
+    pdf.addImage(logoData, 'PNG', pageWidth / 2 - 20, 10, 40, 40);
+  }
   
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(32);
   pdf.setFont("helvetica", "bold");
-  pdf.text("Your Home", pageWidth / 2, 30, { align: "center" });
-  pdf.text("Maintenance Survival Kit", pageWidth / 2, 45, { align: "center" });
-  
-  pdf.setFontSize(12);
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 60, { align: "center" });
+  pdf.text("Your Home", pageWidth / 2, logoData ? 58 : 30, { align: "center" });
+  pdf.setFontSize(28);
+  pdf.text("Maintenance Survival Kit", pageWidth / 2, logoData ? 66 : 45, { align: "center" });
 
   // Home Details
   pdf.setTextColor(0, 0, 0);
   pdf.setFontSize(16);
   pdf.setFont("helvetica", "bold");
-  pdf.text("Your Home Details", margin, 90);
+  pdf.text("Your Home Details", margin, logoData ? 95 : 90);
 
   pdf.setFontSize(11);
   pdf.setFont("helvetica", "normal");
-  let yPos = 105;
+  let yPos = logoData ? 110 : 105;
   const lineHeight = 7;
 
   const details = [
@@ -116,7 +132,7 @@ export async function generateMaintenancePlanPDF(
   pdf.text("Annual Maintenance Summary", margin + 5, yPos + 10);
   
   pdf.setFontSize(20);
-  pdf.setTextColor(59, 130, 246);
+  pdf.setTextColor(34, 197, 94); // HomeBase green
   const costText = `$${plan.annualCostLow.toLocaleString()} - $${plan.annualCostHigh.toLocaleString()}`;
   pdf.text(costText, margin + 5, yPos + 23);
   
@@ -136,7 +152,7 @@ export async function generateMaintenancePlanPDF(
   pdf.setFontSize(9);
   
   // Table header
-  pdf.setFillColor(59, 130, 246);
+  pdf.setFillColor(34, 197, 94); // HomeBase green
   pdf.setTextColor(255, 255, 255);
   pdf.rect(margin, yPos, contentWidth, 8, "F");
   pdf.text("Task", margin + 2, yPos + 5);
@@ -203,34 +219,53 @@ export async function generateCommunicationPackPDF(
   const margin = 20;
   const contentWidth = pageWidth - 2 * margin;
 
+  // Load HomeBase logo
+  let logoData: string | null = null;
+  try {
+    const response = await fetch('/homebase-email-logo.png');
+    const blob = await response.blob();
+    logoData = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.warn('Could not load logo for PDF');
+  }
+
   // Cover Page
-  pdf.setFillColor(59, 130, 246);
-  pdf.rect(0, 0, pageWidth, 80, "F");
+  pdf.setFillColor(34, 197, 94); // HomeBase green
+  pdf.rect(0, 0, pageWidth, 90, "F");
+  
+  // Add HomeBase logo
+  if (logoData) {
+    pdf.addImage(logoData, 'PNG', pageWidth / 2 - 20, 10, 40, 40);
+  }
   
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(28);
   pdf.setFont("helvetica", "bold");
-  pdf.text(info.businessName, pageWidth / 2, 35, { align: "center" });
+  pdf.text(info.businessName, pageWidth / 2, logoData ? 58 : 35, { align: "center" });
   
   pdf.setFontSize(18);
   pdf.setFont("helvetica", "normal");
-  pdf.text("Communication Pack", pageWidth / 2, 50, { align: "center" });
+  pdf.text("Communication Pack", pageWidth / 2, logoData ? 68 : 50, { align: "center" });
   
   pdf.setFontSize(11);
-  pdf.text(`${info.phone} | ${info.email}`, pageWidth / 2, 65, { align: "center" });
-  pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 72, { align: "center" });
+  pdf.text(`${info.phone} | ${info.email}`, pageWidth / 2, logoData ? 76 : 65, { align: "center" });
+  pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, logoData ? 82 : 72, { align: "center" });
 
   // Estimate Section
   pdf.setTextColor(0, 0, 0);
   pdf.setFontSize(20);
   pdf.setFont("helvetica", "bold");
-  pdf.text("Estimate Template", margin, 100);
+  pdf.text("Estimate Template", margin, 110);
 
-  let yPos = 115;
+  let yPos = 125;
   pdf.setFontSize(10);
   
   // Estimate table header
-  pdf.setFillColor(59, 130, 246);
+  pdf.setFillColor(34, 197, 94); // HomeBase green
   pdf.setTextColor(255, 255, 255);
   pdf.rect(margin, yPos, contentWidth, 8, "F");
   pdf.text("Description", margin + 2, yPos + 5);
