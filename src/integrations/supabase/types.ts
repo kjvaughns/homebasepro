@@ -952,6 +952,9 @@ export type Database = {
       }
       organizations: {
         Row: {
+          avg_response_time_hours: number | null
+          city: string | null
+          completion_rate: number | null
           created_at: string
           description: string | null
           email: string | null
@@ -965,9 +968,14 @@ export type Database = {
           service_area: string | null
           service_type: string[] | null
           slug: string
+          tagline: string | null
           updated_at: string
+          verified: boolean | null
         }
         Insert: {
+          avg_response_time_hours?: number | null
+          city?: string | null
+          completion_rate?: number | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -981,9 +989,14 @@ export type Database = {
           service_area?: string | null
           service_type?: string[] | null
           slug: string
+          tagline?: string | null
           updated_at?: string
+          verified?: boolean | null
         }
         Update: {
+          avg_response_time_hours?: number | null
+          city?: string | null
+          completion_rate?: number | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -997,7 +1010,9 @@ export type Database = {
           service_area?: string | null
           service_type?: string[] | null
           slug?: string
+          tagline?: string | null
           updated_at?: string
+          verified?: boolean | null
         }
         Relationships: []
       }
@@ -1404,8 +1419,10 @@ export type Database = {
       }
       provider_metrics: {
         Row: {
+          avg_rating: number | null
           created_at: string | null
           id: string
+          jobs_completed_last_month: number | null
           last_calculated_at: string | null
           on_time_rate: number | null
           provider_org_id: string
@@ -1417,8 +1434,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          avg_rating?: number | null
           created_at?: string | null
           id?: string
+          jobs_completed_last_month?: number | null
           last_calculated_at?: string | null
           on_time_rate?: number | null
           provider_org_id: string
@@ -1430,8 +1449,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          avg_rating?: number | null
           created_at?: string | null
           id?: string
+          jobs_completed_last_month?: number | null
           last_calculated_at?: string | null
           on_time_rate?: number | null
           provider_org_id?: string
@@ -1477,6 +1498,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "provider_onboarding_answers_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_promotions: {
+        Row: {
+          created_at: string | null
+          current_uses: number | null
+          description: string | null
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          promo_code: string | null
+          provider_org_id: string
+          title: string
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          promo_code?: string | null
+          provider_org_id: string
+          title: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          promo_code?: string | null
+          provider_org_id?: string
+          title?: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_promotions_provider_org_id_fkey"
             columns: ["provider_org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

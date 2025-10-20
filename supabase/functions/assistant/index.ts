@@ -584,19 +584,44 @@ serve(async (req) => {
 
             const { data: orgs } = await supabase
               .from('organizations')
-              .select('id, name, service_type, provider_metrics(trust_score)')
+              .select(`
+                id, 
+                name, 
+                slug,
+                service_type,
+                logo_url,
+                city,
+                tagline,
+                verified,
+                avg_response_time_hours,
+                completion_rate,
+                provider_metrics(trust_score, avg_rating, jobs_completed_last_month)
+              `)
               .contains('service_type', [category])
               .order('created_at', { ascending: false })
               .limit(10);
 
             const providers = (orgs || [])
-              .map((o: any) => ({
-                provider_id: o.id,
-                name: o.name,
-                trust_score: o.provider_metrics?.[0]?.trust_score || 5.0,
-                distance_mi: null,
-                soonest_slot: 'Tomorrow 1–3pm'
-              }))
+              .map((o: any) => {
+                const metrics = o.provider_metrics?.[0];
+                return {
+                  provider_id: o.id,
+                  name: o.name,
+                  slug: o.slug || o.name.toLowerCase().replace(/\s+/g, '-'),
+                  trust_score: metrics?.trust_score || 5.0,
+                  avg_rating: metrics?.avg_rating || 5.0,
+                  jobs_completed_last_month: metrics?.jobs_completed_last_month || 0,
+                  distance_mi: null,
+                  soonest_slot: 'Tomorrow 1–3pm',
+                  logo_url: o.logo_url,
+                  category: category,
+                  city: o.city,
+                  tagline: o.tagline,
+                  verified: o.verified || false,
+                  avg_response_time_hours: o.avg_response_time_hours || 24,
+                  completion_rate: o.completion_rate || 0.95
+                };
+              })
               .sort((a: any, b: any) => b.trust_score - a.trust_score)
               .slice(0, args.limit || 3);
 

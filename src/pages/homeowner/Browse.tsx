@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Search, MapPin, Calendar, SlidersHorizontal, Star, Droplet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { FloatingAIAssistant } from "@/components/marketplace/FloatingAIAssistant";
 
 export default function Browse() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,7 +22,9 @@ export default function Browse() {
 
   useEffect(() => {
     loadProviders();
-  }, []);
+    const category = searchParams.get('category');
+    if (category) setSelectedCategory(category);
+  }, [searchParams]);
 
   const loadProviders = async () => {
     try {
@@ -209,6 +213,8 @@ export default function Browse() {
           </div>
         )}
       </div>
+      
+      <FloatingAIAssistant />
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Send, Bot, User, Home, DollarSign, Loader2, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ProviderCard } from '@/components/marketplace/ProviderCard';
+import { BookingDialog } from '@/components/marketplace/BookingDialog';
 
 interface ChatMessage {
   id: string;
@@ -39,6 +41,11 @@ export default function HomeBaseAI({
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [currentServiceType, setCurrentServiceType] = useState<string>('');
+  const [currentEstimate, setCurrentEstimate] = useState<any>(null);
+  const [defaultProperty, setDefaultProperty] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -200,6 +207,20 @@ export default function HomeBaseAI({
       case 'moderate': return <AlertCircle className="w-4 h-4" />;
       default: return <CheckCircle2 className="w-4 h-4" />;
     }
+  };
+
+  const handleBookProvider = (provider: any) => {
+    setSelectedProvider(provider);
+    setCurrentServiceType(context?.serviceType || 'Service');
+    setBookingDialogOpen(true);
+  };
+
+  const handleBookingSuccess = () => {
+    toast({
+      title: "Booking Requested",
+      description: "The provider will confirm your appointment shortly.",
+    });
+    navigate('/homeowner/appointments');
   };
 
   const renderToolResult = (tr: any) => {
@@ -410,6 +431,25 @@ export default function HomeBaseAI({
                         </CardContent>
                       </Card>
                     )}
+
+                    {result.type === 'providers' && result.data?.providers && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <Star className="w-4 h-4 text-primary" />
+                          {result.data.providers.length} Provider{result.data.providers.length !== 1 ? 's' : ''} Available
+                        </p>
+                        <div className="grid gap-3">
+                          {result.data.providers.map((provider: any) => (
+                            <ProviderCard
+                              key={provider.provider_id}
+                              provider={provider}
+                              onBook={(providerId) => handleBookProvider(provider)}
+                              onViewProfile={(providerId) => navigate(`/homeowner/browse/${providerId}`)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -432,6 +472,19 @@ export default function HomeBaseAI({
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Booking Dialog */}
+      {selectedProvider && defaultProperty && (
+        <BookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          provider={selectedProvider}
+          serviceType={currentServiceType}
+          defaultProperty={defaultProperty}
+          estimatedPrice={currentEstimate}
+          onSuccess={handleBookingSuccess}
+        />
+      )}
 
       <div className="border-t p-3 sm:p-4 bg-background safe-bottom">
         <div className="flex gap-2">
