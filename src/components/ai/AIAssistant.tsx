@@ -67,12 +67,26 @@ export default function AIAssistant({
 
       const token = authData.session.access_token;
 
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('user_id', user?.id)
+        .single();
+
+      const enrichedContext = {
+        ...context,
+        role: profile?.user_type || 'homeowner',
+        last_route: window.location.pathname,
+        prefer_default_property: true
+      };
+
       const { data, error } = await supabase.functions.invoke('assistant', {
         body: {
           session_id: sessionId,
           message: userMsg.content,
           history: messages.map(m => ({ role: m.role, content: m.content })).slice(-15),
-          context
+          context: enrichedContext
         },
         headers: {
           Authorization: `Bearer ${token}`

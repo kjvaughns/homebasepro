@@ -261,6 +261,190 @@ export type Database = {
         }
         Relationships: []
       }
+      bookings: {
+        Row: {
+          address: string
+          cancellation_reason: string | null
+          created_at: string
+          date_time_end: string
+          date_time_start: string
+          estimated_price_high: number | null
+          estimated_price_low: number | null
+          final_price: number | null
+          home_id: string | null
+          homeowner_profile_id: string
+          id: string
+          notes: string | null
+          provider_org_id: string
+          service_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          cancellation_reason?: string | null
+          created_at?: string
+          date_time_end: string
+          date_time_start: string
+          estimated_price_high?: number | null
+          estimated_price_low?: number | null
+          final_price?: number | null
+          home_id?: string | null
+          homeowner_profile_id: string
+          id?: string
+          notes?: string | null
+          provider_org_id: string
+          service_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          cancellation_reason?: string | null
+          created_at?: string
+          date_time_end?: string
+          date_time_start?: string
+          estimated_price_high?: number | null
+          estimated_price_low?: number | null
+          final_price?: number | null
+          home_id?: string | null
+          homeowner_profile_id?: string
+          id?: string
+          notes?: string | null
+          provider_org_id?: string
+          service_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_homeowner_profile_id_fkey"
+            columns: ["homeowner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_connections: {
+        Row: {
+          calendar_id: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          method: string
+          oauth_refresh_token: string | null
+          oauth_token: string | null
+          provider_org_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          method: string
+          oauth_refresh_token?: string | null
+          oauth_token?: string | null
+          provider_org_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          method?: string
+          oauth_refresh_token?: string | null
+          oauth_token?: string | null
+          provider_org_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_connections_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_profiles: {
+        Row: {
+          contact_preferences: Json | null
+          created_at: string
+          home_id: string
+          homeowner_profile_id: string
+          id: string
+          provider_org_id: string
+          service_history_summary: string | null
+          special_instructions: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_preferences?: Json | null
+          created_at?: string
+          home_id: string
+          homeowner_profile_id: string
+          id?: string
+          provider_org_id: string
+          service_history_summary?: string | null
+          special_instructions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_preferences?: Json | null
+          created_at?: string
+          home_id?: string
+          homeowner_profile_id?: string
+          id?: string
+          provider_org_id?: string
+          service_history_summary?: string | null
+          special_instructions?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_profiles_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_profiles_homeowner_profile_id_fkey"
+            columns: ["homeowner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_profiles_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_subscriptions: {
         Row: {
           auto_renew: boolean
@@ -538,50 +722,77 @@ export type Database = {
       }
       homes: {
         Row: {
+          access_notes: string | null
           address: string
           city: string
           created_at: string
+          gate_code: string | null
+          hvac_system_count: number | null
           id: string
+          is_default: boolean | null
           is_primary: boolean
+          lot_acres: number | null
+          maintenance_score: number | null
           name: string
           notes: string | null
           owner_id: string
+          pets: string | null
+          preferred_contact_method: string | null
           property_type: string | null
           square_footage: number | null
           state: string
           updated_at: string
+          water_heater_type: string | null
           year_built: number | null
           zip_code: string
         }
         Insert: {
+          access_notes?: string | null
           address: string
           city: string
           created_at?: string
+          gate_code?: string | null
+          hvac_system_count?: number | null
           id?: string
+          is_default?: boolean | null
           is_primary?: boolean
+          lot_acres?: number | null
+          maintenance_score?: number | null
           name: string
           notes?: string | null
           owner_id: string
+          pets?: string | null
+          preferred_contact_method?: string | null
           property_type?: string | null
           square_footage?: number | null
           state: string
           updated_at?: string
+          water_heater_type?: string | null
           year_built?: number | null
           zip_code: string
         }
         Update: {
+          access_notes?: string | null
           address?: string
           city?: string
           created_at?: string
+          gate_code?: string | null
+          hvac_system_count?: number | null
           id?: string
+          is_default?: boolean | null
           is_primary?: boolean
+          lot_acres?: number | null
+          maintenance_score?: number | null
           name?: string
           notes?: string | null
           owner_id?: string
+          pets?: string | null
+          preferred_contact_method?: string | null
           property_type?: string | null
           square_footage?: number | null
           state?: string
           updated_at?: string
+          water_heater_type?: string | null
           year_built?: number | null
           zip_code?: string
         }
@@ -594,6 +805,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      knowledge_base: {
+        Row: {
+          body_md: string
+          category: string
+          created_at: string
+          id: string
+          slug: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_md: string
+          category: string
+          created_at?: string
+          id?: string
+          slug: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_md?: string
+          category?: string
+          created_at?: string
+          id?: string
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -712,6 +956,8 @@ export type Database = {
           description: string | null
           email: string | null
           id: string
+          lat: number | null
+          lng: number | null
           logo_url: string | null
           name: string
           owner_id: string
@@ -726,6 +972,8 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           logo_url?: string | null
           name: string
           owner_id: string
@@ -740,6 +988,8 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           logo_url?: string | null
           name?: string
           owner_id?: string
@@ -972,6 +1222,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          default_property_id: string | null
           full_name: string
           id: string
           phone: string | null
@@ -983,6 +1234,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          default_property_id?: string | null
           full_name: string
           id?: string
           phone?: string | null
@@ -994,6 +1246,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          default_property_id?: string | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -1002,7 +1255,15 @@ export type Database = {
           user_type?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_default_property_id_fkey"
+            columns: ["default_property_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_lookups: {
         Row: {
@@ -1051,6 +1312,56 @@ export type Database = {
           zpid?: string | null
         }
         Relationships: []
+      }
+      property_systems: {
+        Row: {
+          created_at: string
+          home_id: string
+          id: string
+          install_date: string | null
+          last_service_date: string | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          system_type: string
+          updated_at: string
+          warranty_expires: string | null
+        }
+        Insert: {
+          created_at?: string
+          home_id: string
+          id?: string
+          install_date?: string | null
+          last_service_date?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          system_type: string
+          updated_at?: string
+          warranty_expires?: string | null
+        }
+        Update: {
+          created_at?: string
+          home_id?: string
+          id?: string
+          install_date?: string | null
+          last_service_date?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          system_type?: string
+          updated_at?: string
+          warranty_expires?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_systems_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       provider_capabilities: {
         Row: {
@@ -1166,6 +1477,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "provider_onboarding_answers_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_rates: {
+        Row: {
+          base_flat: number | null
+          base_per_unit: number | null
+          created_at: string
+          dynamic_pricing_enabled: boolean | null
+          id: string
+          max_fee: number | null
+          min_fee: number | null
+          provider_org_id: string
+          service_name: string
+          travel_fee: number | null
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          base_flat?: number | null
+          base_per_unit?: number | null
+          created_at?: string
+          dynamic_pricing_enabled?: boolean | null
+          id?: string
+          max_fee?: number | null
+          min_fee?: number | null
+          provider_org_id: string
+          service_name: string
+          travel_fee?: number | null
+          unit_type: string
+          updated_at?: string
+        }
+        Update: {
+          base_flat?: number | null
+          base_per_unit?: number | null
+          created_at?: string
+          dynamic_pricing_enabled?: boolean | null
+          id?: string
+          max_fee?: number | null
+          min_fee?: number | null
+          provider_org_id?: string
+          service_name?: string
+          travel_fee?: number | null
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_rates_provider_org_id_fkey"
             columns: ["provider_org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

@@ -8,54 +8,66 @@ const corsHeaders = {
 };
 
 const SYSTEM_PROMPT = `
-You are **HomeBase AI**, the support + operations assistant for the HomeBase platform.
+You are **HomeBase AI**, the assistant for the HomeBase platform.
 
-MISSION
-- Help HOMEOWNERS describe issues, get a **pricing range**, see **top providers**, and **book/reschedule/cancel**.
-- Help PROVIDERS set up profile/services/rates, connect calendar, see jobs, and manage bookings.
-- Act, don't lecture. Keep replies **1–3 short sentences** (bullets ok). Ask **at most one** clarifying question.
+CORE MISSION
+- For HOMEOWNERS: use account memory and the default property to give price ranges, find providers, and book/reschedule/cancel without asking for info we already have.
+- For PROVIDERS: help with onboarding, service/rate setup, calendar sync, job lists, and viewing the full client profile for booked jobs.
+- Replies are short (1–3 sentences). Ask at most ONE clarifying question.
 
-NEVER DO
-- Do not mention tools, APIs, keys, Zapier, Supabase, or internal systems.
-- Do not give browser "clear cache / different browser" advice. Issues are about the **home**, not the website.
-- Do not ask multiple questions at once.
+MEMORY & CONTEXT (use before anything else)
+- Always begin by hydrating memory: call get_profile and get_properties.
+- If a **default property** exists, use it automatically (address, zip, lat/lng, sqft/lot if present).
+- If the user has >1 property, select the default; if none set, ask: "Use [A] or [B]?" and then call set_default_property.
+- Any new facts (units, systems, gate code, pets, notes) → save via upsert_client_profile.
 
-CONTEXT LOGIC
-- If context.role === "homeowner": default to diagnosing the home issue, then (1) price_service → (2) search_providers → (3) book_service.
-- If context.role === "provider": default to provider ops (provider_setup, set_service_rates, connect_calendar, list_jobs).
-- If address or units are missing, ask **one** concise question (e.g., "About how many linear feet?").
+ADDRESS & ENRICHMENT
+- When user gives a new address (or property missing coords/zip), call enrich_address (Google Geocoding) to standardize and attach: formatted address, zip, city/state, lat/lng, neighborhood if available. Save to DB.
+- If critical home fields are missing for pricing (e.g., acreage, linear feet), ask ONE short question and continue.
+
+TOOL ROUTING (decide automatically)
+1) **Hydrate memory**: get_profile → get_properties
+2) **If address typed or missing data**: enrich_address → upsert_client_profile
+3) **Pricing**: price_service({ service_name, unit_type, units?, sqft?, lot_acres?, systems?, year_built?, zip }) → always return a RANGE with confidence + factor note.
+4) **Match**: search_providers({ service_name, zip, radius_mi?, earliest_date? }) → show top 3 with trust score + soonest slot.
+5) **Book/Manage**: book_service, reschedule_service, cancel_service
+6) **Provider Ops**: provider_setup, set_service_rates, connect_calendar, list_jobs
+7) **Knowledge/Support**: troubleshoot, get_article
+8) **Profile updates**: upsert_client_profile, set_default_property
+
+CLIENT PROFILE (what providers must see)
+- Always maintain a complete "Client Profile" object for the active property:
+  { address_std, zip, lat, lng, sqft?, lot_acres?, beds?, baths?, year_built?, systems:{ hvac_count?, water_heater_type? }, access_notes?, pets?, preferred_windows?, contact_phone?, email? }
+- After booking, call get_profile and include the latest Client Profile in the job payload so providers see everything.
 
 PRICING RULES
-- Always return a **RANGE** estimate (low–high) with a short factor note and a confidence (e.g., "72%").
-- Examples of units: Lawn=acre, Cleaning/Pest=sqft, Gutter=linear_foot, Windows=pane, HVAC tune-up=system_count, Flat services=flat.
-- If units unknown, ask one question and continue.
+- Ranges only (low–high). Mention key factors briefly (e.g., acreage, season, home size, age). Include a confidence (e.g., 0.72 → "72%").
+- Unit mapping: Lawn=acre; Cleaning/Pest=sqft; Gutter=linear_foot; Windows=pane; HVAC tune-up=system_count; flat services=flat.
 
-MATCHING & BOOKING
-- After pricing, offer: "I can show trusted providers nearby." Then call search_providers.
-- Show **up to 3** providers (name, trust score, soonest slot). Offer to **book** a time window.
-- If no providers found: say "I couldn't find anyone nearby yet. I can notify our team to expand coverage and follow up."
-
-TROUBLESHOOT/HELP
-- If user asks about the app (login, calendar, notifications), call troubleshoot or get_article and give **2–4** precise steps. No web-tech filler.
+ASKING QUESTIONS (only when needed)
+- If a required unit is missing, ask exactly one: 
+  "About how many linear feet of gutters?" or "Roughly how many acres?"
+- If we already have it in memory, do NOT ask; reuse it.
 
 TONE & UX
-- Friendly, clear, confident. Speak as HomeBase ("our system").
-- End most answers with a simple action: **Book now? Save this quote? Show providers?** 
+- Friendly, confident, action-oriented. Never mention tools, APIs, or databases. Say "our system" or "your profile."
+- End with a next step: "Show providers?", "Book Friday 3–5pm?", "Save this quote?"
 
-EXAMPLES (style guide)
-- User: "my refrigerator is leaking"
-  Assistant: "That's an appliance repair. I can estimate a range and show local techs. Want me to start with pricing?"
-- User: "need lawn mowing for about half an acre"
-  Assistant: "Estimated **$65–$95** (acreage + season). Want me to show the earliest openings?"
-- User: "book hvac tune-up friday afternoon"
-  Assistant: "Got it—I'll check trusted HVAC pros and the 3–5pm window. Ready to confirm with the best match?"
+ERRORS & FALLBACKS
+- If a tool fails: retry once silently. Then say: "Our system hiccuped—I can try again or loop in support."
+- If no providers: "I didn't find someone nearby yet. I can notify our team and follow up."
 
-FAILURE & ESCALATION
-- If a tool fails, retry once silently. If it still fails: "Our system hiccuped—I can loop in support or try again."
-- If the user requests a human, ask for best email/phone and create/flag a support ticket.
+EXAMPLES
+- User: "My refrigerator is leaking."
+  Assistant: "I'll use your default property at 123 Main St. Appliance repair there typically runs **$110–$240** (diagnosis + minor fix, 74% confidence). Want me to show local techs?"
+- User: "Schedule lawn mowing this weekend."
+  Assistant: "For ~0.6 acres at your Main St property, **$65–$95**. I can book Sat 9–11am with GreenLeaf. Confirm?"
+- Provider: "Help me connect calendar."
+  Assistant: "Sure—use Google Calendar? I'll open the connection and sync availability."
 
-OUTPUT GOAL
-- Keep every reply short and action-oriented. If more detail is needed, ask **one** clarifying question, then proceed with the correct tool flow.
+PRIVACY
+- Do not reveal stored personal data unless relevant to the task.
+- Never echo secrets or internal IDs.
 `;
 
 serve(async (req) => {
@@ -125,8 +137,87 @@ serve(async (req) => {
     
     // Define tools
     const tools = [
-      { type: 'function', function: { 
-        name: 'lookup_home', 
+      {
+        type: "function",
+        function: {
+          name: "get_profile",
+          description: "Get user profile with default property details (address, zip, sqft, lot_acres, systems, etc.)",
+          parameters: {
+            type: "object",
+            properties: {},
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_properties",
+          description: "List all user properties with is_default flag",
+          parameters: {
+            type: "object",
+            properties: {},
+            required: []
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "set_default_property",
+          description: "Mark a property as the default for the user",
+          parameters: {
+            type: "object",
+            properties: {
+              property_id: { type: "string", description: "UUID of the property to set as default" }
+            },
+            required: ["property_id"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "upsert_client_profile",
+          description: "Save/update property details learned in conversation (lot_acres, hvac_count, pets, gate_code, etc.)",
+          parameters: {
+            type: "object",
+            properties: {
+              property_id: { type: "string", description: "UUID of the property" },
+              updates: {
+                type: "object",
+                description: "Fields to update",
+                properties: {
+                  lot_acres: { type: "number" },
+                  hvac_system_count: { type: "integer" },
+                  water_heater_type: { type: "string" },
+                  gate_code: { type: "string" },
+                  pets: { type: "string" },
+                  access_notes: { type: "string" },
+                  preferred_contact_method: { type: "string" }
+                }
+              }
+            },
+            required: ["property_id", "updates"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "enrich_address",
+          description: "Use Google Geocoding to standardize address and get coordinates, zip, city, state, neighborhood",
+          parameters: {
+            type: "object",
+            properties: {
+              address: { type: "string", description: "Full or partial address string" }
+            },
+            required: ["address"]
+          }
+        }
+      },
+      { type: 'function', function: {
+        name: 'lookup_home',
         description: 'Normalize an address and return property details',
         parameters: { type: 'object', properties: { address: { type: 'string' } }, required: ['address'] } 
       }},
@@ -344,10 +435,138 @@ serve(async (req) => {
         let result: any = { error: 'Tool not implemented' };
 
         try {
-          if (fnName === 'lookup_home') {
+          // New memory tools
+          if (fnName === 'get_profile') {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', user.id)
+              .single();
+
+            if (profile?.default_property_id) {
+              const { data: defaultHome } = await supabase
+                .from('homes')
+                .select('*')
+                .eq('id', profile.default_property_id)
+                .single();
+
+              result = {
+                user_id: profile.user_id,
+                role: profile.user_type,
+                full_name: profile.full_name,
+                phone: profile.phone,
+                email: user.email,
+                default_property: defaultHome || null
+              };
+            } else {
+              result = {
+                user_id: profile.user_id,
+                role: profile.user_type,
+                full_name: profile.full_name,
+                phone: profile.phone,
+                email: user.email,
+                default_property: null
+              };
+            }
+          } else if (fnName === 'get_properties') {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('user_id', user.id)
+              .single();
+
+            if (profile?.id) {
+              const { data: properties } = await supabase
+                .from('homes')
+                .select('*')
+                .eq('owner_id', profile.id)
+                .order('is_default', { ascending: false })
+                .order('created_at', { ascending: false });
+
+              result = properties || [];
+            } else {
+              result = [];
+            }
+          } else if (fnName === 'set_default_property') {
+            const { property_id } = args;
+
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('user_id', user.id)
+              .single();
+
+            if (profile?.id) {
+              await supabase
+                .from('homes')
+                .update({ is_default: false })
+                .eq('owner_id', profile.id);
+
+              await supabase
+                .from('homes')
+                .update({ is_default: true })
+                .eq('id', property_id)
+                .eq('owner_id', profile.id);
+
+              await supabase
+                .from('profiles')
+                .update({ default_property_id: property_id })
+                .eq('id', profile.id);
+
+              result = { ok: true, property_id };
+            } else {
+              result = { error: 'Profile not found' };
+            }
+          } else if (fnName === 'upsert_client_profile') {
+            const { property_id, updates } = args;
+
+            const { data: updatedHome, error } = await supabase
+              .from('homes')
+              .update(updates)
+              .eq('id', property_id)
+              .select()
+              .single();
+
+            result = error ? { ok: false, error: error.message } : { ok: true, home: updatedHome };
+          } else if (fnName === 'enrich_address') {
+            const { address } = args;
+            const GOOGLE_MAPS_KEY = Deno.env.get('google_maps');
+
+            if (!GOOGLE_MAPS_KEY) {
+              result = { error: 'Google Maps API key not configured' };
+            } else {
+              try {
+                const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_KEY}`;
+                const geoResp = await fetch(url);
+                const geoData = await geoResp.json();
+
+                if (geoData.status === 'OK' && geoData.results?.length > 0) {
+                  const place = geoData.results[0];
+                  const components = place.address_components || [];
+
+                  const getComponent = (type: string) => 
+                    components.find((c: any) => c.types.includes(type))?.long_name || null;
+
+                  result = {
+                    address_std: place.formatted_address,
+                    zip: getComponent('postal_code'),
+                    city: getComponent('locality') || getComponent('sublocality'),
+                    state: getComponent('administrative_area_level_1'),
+                    lat: place.geometry.location.lat,
+                    lng: place.geometry.location.lng,
+                    neighborhood: getComponent('neighborhood') || getComponent('sublocality')
+                  };
+                } else {
+                  result = { error: 'Address not found' };
+                }
+              } catch (err) {
+                result = { error: err instanceof Error ? err.message : 'Unknown error' };
+              }
+            }
+          } else if (fnName === 'lookup_home') {
             const res = await supabase.functions.invoke('lookup-home', { body: { address: args.address } });
             result = res.data || res.error;
-          } 
+          }
           else if (fnName === 'price_service') {
             const res = await supabase.functions.invoke('price-service', { body: args });
             result = res.data || res.error;
