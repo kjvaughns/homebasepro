@@ -8,6 +8,38 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function to decode Google polyline
+function decodePolyline(encoded: string): Array<{ lat: number; lng: number }> {
+  const points: Array<{ lat: number; lng: number }> = [];
+  let index = 0, len = encoded.length;
+  let lat = 0, lng = 0;
+
+  while (index < len) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+
+    points.push({ lat: lat / 1e5, lng: lng / 1e5 });
+  }
+
+  return points;
+}
+
 const MODEL = "google/gemini-2.5-flash";
 const LLM_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -342,11 +374,36 @@ async function routeTool(sb: any, name: string, args: any) {
 
     if (!org?.id) return { error: "no_organization" };
 
+    // Geocode address if provided
+    let lat = null;
+    let lng = null;
+    
+    if (args.address) {
+      const GOOGLE_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
+      if (GOOGLE_API_KEY) {
+        try {
+          const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(args.address)}&key=${GOOGLE_API_KEY}`;
+          const geocodeResponse = await fetch(geocodeUrl);
+          const geocodeData = await geocodeResponse.json();
+          
+          if (geocodeData.status === "OK" && geocodeData.results[0]) {
+            const location = geocodeData.results[0].geometry.location;
+            lat = location.lat;
+            lng = location.lng;
+          }
+        } catch (e) {
+          console.error("Geocoding error:", e);
+        }
+      }
+    }
+
     const jobData = {
       provider_org_id: org.id,
       client_id: args.client_id,
       service_name: args.service_name,
       address: args.address,
+      lat,
+      lng,
       is_service_call: args.is_service_call || false,
       status: args.is_service_call ? 'service_call' : 
               args.window_start ? 'scheduled' : 'lead',
@@ -453,17 +510,72 @@ async function routeTool(sb: any, name: string, args: any) {
   }
 
   if (name === "optimize_route") {
+    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
+    
+    if (!GOOGLE_API_KEY) {
+      return { error: "Google Maps API key not configured" };
+    }
+
+    // Fetch jobs with locations
     const { data: jobs, error } = await sb
       .from("jobs" as any)
       .select("*")
       .in("id", args.job_ids)
-      .order("address");
+      .not("lat", "is", null)
+      .not("lng", "is", null);
 
     if (error) return { error: error.message };
+    if (!jobs || jobs.length < 2) {
+      return { error: "Need at least 2 jobs with locations" };
+    }
+
+    // Get start location (first job or default)
+    const startLat = jobs[0].lat;
+    const startLng = jobs[0].lng;
+
+    // Build waypoints for Google Directions API
+    const waypoints = jobs.slice(1).map((j: any) => `${j.lat},${j.lng}`).join("|");
+
+    // Call Google Directions API with waypoint optimization
+    const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?` +
+      `origin=${startLat},${startLng}&` +
+      `destination=${startLat},${startLng}&` + // Return to start (circular)
+      `waypoints=optimize:true|${waypoints}&` +
+      `key=${GOOGLE_API_KEY}`;
+
+    const response = await fetch(directionsUrl);
+    const data = await response.json();
+
+    if (data.status !== "OK") {
+      console.error("Google Directions API error:", data);
+      return { error: `Route optimization failed: ${data.status}` };
+    }
+
+    // Extract optimized order and update jobs
+    const route = data.routes[0];
+    const waypointOrder = route.waypoint_order || [];
+    const optimizedJobs = [jobs[0], ...waypointOrder.map((idx: number) => jobs[idx + 1])];
+
+    // Update route_order in database
+    for (let i = 0; i < optimizedJobs.length; i++) {
+      await sb
+        .from("jobs" as any)
+        .update({ route_order: i + 1 })
+        .eq("id", optimizedJobs[i].id);
+    }
+
+    // Extract route path for display
+    const path = route.overview_polyline.points;
+    const decodedPath = decodePolyline(path);
 
     return { 
-      jobs: jobs || [],
-      message: "Route optimized by address proximity"
+      jobs: optimizedJobs,
+      route: {
+        path: decodedPath,
+        distance: route.legs.reduce((sum: number, leg: any) => sum + leg.distance.value, 0) / 1609.34, // meters to miles
+        duration: route.legs.reduce((sum: number, leg: any) => sum + leg.duration.value, 0) / 60, // seconds to minutes
+      },
+      message: `Route optimized for ${optimizedJobs.length} jobs`
     };
   }
 

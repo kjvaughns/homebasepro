@@ -30,7 +30,6 @@ import Clients from "./pages/provider/Clients";
 import ClientDetail from "./pages/provider/ClientDetail";
 import Payments from "./pages/provider/Payments";
 import Reviews from "./pages/provider/Reviews";
-import Jobs from "./pages/provider/Jobs";
 import Team from "./pages/provider/Team";
 import Settings from "./pages/provider/Settings";
 import NotFound from "./pages/NotFound";
@@ -47,6 +46,8 @@ import Appointments from "./pages/homeowner/Appointments";
 import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
 import HomeownerMessages from "./pages/homeowner/Messages";
+import Jobs from "@/pages/provider/Jobs";
+import MyJobs from "@/pages/provider/MyJobs";
 import ProviderMessages from "./pages/provider/Messages";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
@@ -150,8 +151,8 @@ const App = () => {
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientDetail />} />
               <Route path="jobs" element={<Jobs />} />
+              <Route path="my-jobs" element={<MyJobs />} />
               <Route path="payments" element={<Payments />} />
-              <Route path="reviews" element={<Reviews />} />
               <Route path="team" element={<Team />} />
               <Route path="settings" element={<Settings />} />
               <Route path="messages" element={<ProviderMessages />} />
