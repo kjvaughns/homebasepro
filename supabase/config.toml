@@ -27,5 +27,8 @@ verify_jwt = false
 [functions.pricing-engine]
 verify_jwt = false
 
+[functions.price-service]
+verify_jwt = false
+
 [functions.assistant]
 verify_jwt = true

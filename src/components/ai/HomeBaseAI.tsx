@@ -181,6 +181,16 @@ export default function HomeBaseAI({
     }
   };
 
+  const renderToolResult = (tr: any) => {
+    if (tr.tool === 'lookup_home' && tr.result) {
+      return <Card className="p-3 bg-accent/10"><p className="text-sm font-medium">{tr.result.address_std}</p></Card>;
+    }
+    if (tr.tool === 'price_service' && tr.result) {
+      return <Card className="p-3 bg-accent/10"><p className="text-lg font-bold">${tr.result.estimate_low}–${tr.result.estimate_high}</p></Card>;
+    }
+    return null;
+  };
+
   return (
     <div className="flex flex-col h-full touch-manipulation">
       <div className="flex-1 overflow-y-auto space-y-4 p-3 sm:p-4">

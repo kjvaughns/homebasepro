@@ -65,17 +65,39 @@ import AdminReferrals from "./pages/admin/Referrals";
 import PWALaunch from "./pages/PWALaunch";
 import AdminCommerce from "./pages/admin/Commerce";
 import AdminUsersAccess from "./pages/admin/UsersAccess";
+import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<'homeowner' | 'provider'>('homeowner');
+
   useEffect(() => {
-    // Register service worker for PWA functionality
     registerServiceWorker();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        supabase.from('profiles').select('user_type').eq('user_id', session.user.id).single()
+          .then(({ data }) => setUserRole(data?.user_type === 'provider' ? 'provider' : 'homeowner'));
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        supabase.from('profiles').select('user_type').eq('user_id', session.user.id).single()
+          .then(({ data }) => setUserRole(data?.user_type === 'provider' ? 'provider' : 'homeowner'));
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    // Force PWA launches to route through /pwa-launch (auth-aware)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (isStandalone) {
       const path = window.location.pathname;
@@ -90,6 +112,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        {user && <FloatingAIAssistant userRole={userRole} />}
         <BrowserRouter>
           <Routes>
         <Route path="/" element={<Index />} />
