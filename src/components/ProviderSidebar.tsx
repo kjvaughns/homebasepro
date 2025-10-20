@@ -25,7 +25,7 @@ import {
 const navigationItems = [
   { to: "/provider/dashboard", title: "Dashboard", icon: Home },
   { to: "/provider/clients", title: "Clients", icon: Users },
-  { to: "/provider/service-calls", title: "Service Calls", icon: Briefcase },
+  { to: "/provider/jobs", title: "Jobs", icon: Briefcase },
   { to: "/provider/payments", title: "Payments", icon: DollarSign },
   { to: "/provider/reviews", title: "Reviews", icon: Star },
   { to: "/provider/team", title: "Team", icon: Users },

@@ -26,6 +26,7 @@ import {
   BarChart3,
   Receipt,
   UserPlus,
+  Briefcase,
 } from "lucide-react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import homebaseLogo from "@/assets/homebase-logo.png";
@@ -39,8 +40,8 @@ const TABBAR_H = 80;
 const mobileNavigation = [
   { name: "Dashboard", href: "/provider/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/provider/clients", icon: Users },
+  { name: "Jobs", href: "/provider/jobs", icon: Briefcase },
   { name: "Payments", href: "/provider/payments", icon: DollarSign },
-  { name: "Settings", href: "/provider/settings", icon: Settings },
 ];
 
 const ProviderLayout = () => {

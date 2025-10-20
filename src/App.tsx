@@ -28,9 +28,9 @@ import ProviderDashboard from "./pages/provider/Dashboard";
 import BecomeProvider from "./pages/BecomeProvider";
 import Clients from "./pages/provider/Clients";
 import ClientDetail from "./pages/provider/ClientDetail";
-import ServiceCalls from "./pages/provider/ServiceCalls";
 import Payments from "./pages/provider/Payments";
 import Reviews from "./pages/provider/Reviews";
+import Jobs from "./pages/provider/Jobs";
 import Team from "./pages/provider/Team";
 import Settings from "./pages/provider/Settings";
 import NotFound from "./pages/NotFound";
@@ -149,7 +149,7 @@ const App = () => {
               <Route path="dashboard" element={<ProviderDashboard />} />
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientDetail />} />
-              <Route path="service-calls" element={<ServiceCalls />} />
+              <Route path="jobs" element={<Jobs />} />
               <Route path="payments" element={<Payments />} />
               <Route path="reviews" element={<Reviews />} />
               <Route path="team" element={<Team />} />

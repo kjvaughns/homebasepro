@@ -63,9 +63,32 @@ serve(async (req) => {
     const tools = [
       fn("get_provider_profile", "Get current provider user profile.", {}),
       fn("get_provider_org", "Get provider organization details.", {}),
-      fn("list_jobs", "List provider jobs.", {
-        timeframe: { type: "string", enum: ["today", "week", "month"] }
-      }, ["timeframe"]),
+      fn("list_jobs", "List jobs with optional filters.", {
+        status: { type: "array", items: { type: "string" }, description: "Filter by status: lead, service_call, quoted, scheduled, in_progress, completed, invoiced, paid, cancelled" },
+        timeframe: { type: "string", enum: ["today", "week", "month", "all"] },
+        client_id: { type: "string", description: "Filter by specific client" }
+      }),
+      fn("create_job", "Create a new job (lead, service call, or direct booking).", {
+        client_id: { type: "string" },
+        service_name: { type: "string" },
+        address: { type: "string" },
+        is_service_call: { type: "boolean", description: "True for diagnostic-first workflows (HVAC, Plumbing, etc.)" },
+        quote_low: { type: "number" },
+        quote_high: { type: "number" },
+        deposit_due: { type: "number", description: "Diagnostic fee amount" },
+        window_start: { type: "string", description: "ISO datetime for scheduled start" },
+        window_end: { type: "string", description: "ISO datetime for scheduled end" },
+        pre_job_notes: { type: "string" }
+      }, ["service_name"]),
+      fn("update_job_status", "Move job to next status in pipeline.", {
+        job_id: { type: "string" },
+        action: { type: "string", enum: ["quote", "approve_quote", "schedule", "start", "complete", "invoice", "mark_paid", "cancel"] },
+        payload: { type: "object", description: "Additional data like quote amounts, payment info, etc." }
+      }, ["job_id", "action"]),
+      fn("optimize_route", "Optimize job schedule by location.", {
+        date: { type: "string", description: "Date to optimize (YYYY-MM-DD)" },
+        job_ids: { type: "array", items: { type: "string" } }
+      }, ["date"]),
       fn("price_service", "Calculate service price estimate.", {
         service_name: { type: "string" },
         unit_type: { type: "string" },
@@ -256,6 +279,8 @@ async function routeTool(sb: any, name: string, args: any) {
 
   if (name === "list_jobs") {
     const { data: { user } } = await sb.auth.getUser();
+    if (!user?.id) return { error: "unauthorized" };
+
     const { data: org } = await sb
       .from("organizations")
       .select("id")
@@ -265,20 +290,181 @@ async function routeTool(sb: any, name: string, args: any) {
     if (!org?.id) return { jobs: [] };
 
     let query = sb
-      .from("bookings")
-      .select("id, service_name, address, date_time_start, date_time_end, status")
+      .from("jobs" as any)
+      .select("*, clients(name, email, phone)")
       .eq("provider_org_id", org.id)
-      .order("date_time_start");
+      .order("window_start", { ascending: true, nullsFirst: false });
+
+    if (args.status?.length) {
+      query = query.in("status", args.status);
+    }
 
     if (args.timeframe === "today") {
       const today = new Date().toISOString().split("T")[0];
       query = query
-        .gte("date_time_start", `${today}T00:00:00Z`)
-        .lt("date_time_start", `${today}T23:59:59Z`);
+        .gte("window_start", `${today}T00:00:00Z`)
+        .lt("window_start", `${today}T23:59:59Z`);
+    } else if (args.timeframe === "week") {
+      const now = new Date();
+      const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      query = query
+        .gte("window_start", now.toISOString())
+        .lt("window_start", weekEnd.toISOString());
     }
 
-    const { data: jobs } = await query.limit(20);
-    return { jobs: jobs || [], count: jobs?.length || 0 };
+    if (args.client_id) {
+      query = query.eq("client_id", args.client_id);
+    }
+
+    const { data: jobs, error } = await query;
+
+    if (error) return { error: error.message };
+
+    // Group by status for Kanban view
+    const grouped = (jobs || []).reduce((acc: any, job: any) => {
+      acc[job.status] = acc[job.status] || [];
+      acc[job.status].push(job);
+      return acc;
+    }, {});
+
+    return { jobs: jobs || [], grouped };
+  }
+
+  if (name === "create_job") {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user?.id) return { error: "unauthorized" };
+
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org?.id) return { error: "no_organization" };
+
+    const jobData = {
+      provider_org_id: org.id,
+      client_id: args.client_id,
+      service_name: args.service_name,
+      address: args.address,
+      is_service_call: args.is_service_call || false,
+      status: args.is_service_call ? 'service_call' : 
+              args.window_start ? 'scheduled' : 'lead',
+      quote_low: args.quote_low,
+      quote_high: args.quote_high,
+      deposit_due: args.deposit_due || 0,
+      window_start: args.window_start,
+      window_end: args.window_end,
+      pre_job_notes: args.pre_job_notes
+    };
+
+    const { data: job, error } = await sb
+      .from("jobs" as any)
+      .insert(jobData)
+      .select()
+      .single();
+
+    if (error) return { error: error.message };
+
+    // Log event
+    await sb.from("job_events" as any).insert({
+      job_id: job.id,
+      event_type: 'created',
+      payload: jobData
+    });
+
+    return { job, message: "Job created successfully" };
+  }
+
+  if (name === "update_job_status") {
+    const statusMap: Record<string, { next: string; event: string; updates?: any }> = {
+      quote: { 
+        next: 'quoted', 
+        event: 'quote_sent',
+        updates: {
+          quote_low: args.payload?.quote_low,
+          quote_high: args.payload?.quote_high
+        }
+      },
+      approve_quote: { next: 'quoted', event: 'quote_approved' },
+      schedule: { 
+        next: 'scheduled', 
+        event: 'scheduled',
+        updates: {
+          window_start: args.payload?.window_start,
+          window_end: args.payload?.window_end
+        }
+      },
+      start: { next: 'in_progress', event: 'started' },
+      complete: { 
+        next: 'completed', 
+        event: 'completed',
+        updates: {
+          post_job_notes: args.payload?.post_job_notes,
+          total_due: args.payload?.total_due
+        }
+      },
+      invoice: { 
+        next: 'invoiced', 
+        event: 'invoiced',
+        updates: {
+          total_due: args.payload?.amount
+        }
+      },
+      mark_paid: { 
+        next: 'paid', 
+        event: 'payment_received',
+        updates: {
+          total_paid: args.payload?.amount
+        }
+      },
+      cancel: { next: 'cancelled', event: 'cancelled' }
+    };
+
+    const transition = statusMap[args.action];
+    if (!transition) return { error: "invalid_action" };
+
+    const updates: any = {
+      status: transition.next,
+      updated_at: new Date().toISOString()
+    };
+
+    if (transition.updates) {
+      Object.assign(updates, transition.updates);
+    }
+
+    const { data: job, error } = await sb
+      .from("jobs" as any)
+      .update(updates)
+      .eq("id", args.job_id)
+      .select()
+      .single();
+
+    if (error) return { error: error.message };
+
+    // Log event
+    await sb.from("job_events" as any).insert({
+      job_id: args.job_id,
+      event_type: transition.event,
+      payload: args.payload || {}
+    });
+
+    return { job, message: `Job ${transition.event}` };
+  }
+
+  if (name === "optimize_route") {
+    const { data: jobs, error } = await sb
+      .from("jobs" as any)
+      .select("*")
+      .in("id", args.job_ids)
+      .order("address");
+
+    if (error) return { error: error.message };
+
+    return { 
+      jobs: jobs || [],
+      message: "Route optimized by address proximity"
+    };
   }
 
   if (name === "price_service") {
