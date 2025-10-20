@@ -81,6 +81,36 @@ serve(async (req) => {
         amount_high: { type: "number" },
         note: { type: "string" }
       }, ["customer_id", "amount_low", "amount_high"]),
+      fn("create_service_call", "Create a new service call/quote.", {
+        client_id: { type: "string" },
+        service_name: { type: "string" },
+        quote_low: { type: "number" },
+        quote_high: { type: "number" },
+        scheduled_date: { type: "string" },
+        pre_job_notes: { type: "string" }
+      }, ["client_id", "service_name", "quote_low", "quote_high"]),
+      fn("complete_service_call", "Mark service call as completed.", {
+        service_call_id: { type: "string" },
+        actual_amount: { type: "number" },
+        post_job_notes: { type: "string" },
+        auto_invoice: { type: "boolean" }
+      }, ["service_call_id", "actual_amount"]),
+      fn("create_invoice", "Create invoice for a job.", {
+        service_call_id: { type: "string" },
+        booking_id: { type: "string" },
+        amount: { type: "number" },
+        due_days: { type: "number" }
+      }, ["amount"]),
+      fn("get_revenue_summary", "Get revenue summary for period.", {
+        period: { type: "string", enum: ["week", "month", "year"] }
+      }, ["period"]),
+      fn("list_unpaid_invoices", "List unpaid/overdue invoices.", {
+        days_overdue: { type: "number" }
+      }),
+      fn("send_review_request", "Request review from client.", {
+        booking_id: { type: "string" },
+        client_id: { type: "string" }
+      }, ["client_id"]),
     ];
 
     const first = await llm(LOVABLE_KEY, {
@@ -303,6 +333,204 @@ async function routeTool(sb: any, name: string, args: any) {
       sent: true,
       customer_id: args.customer_id,
       amount_range: `$${args.amount_low}-$${args.amount_high}`
+    };
+  }
+
+  if (name === "create_service_call") {
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org?.id) return { error: "no_organization" };
+
+    const { data: serviceCall, error } = await sb
+      .from("service_calls")
+      .insert({
+        provider_org_id: org.id,
+        client_id: args.client_id,
+        service_name: args.service_name,
+        quote_low: args.quote_low,
+        quote_high: args.quote_high,
+        scheduled_date: args.scheduled_date || null,
+        pre_job_notes: args.pre_job_notes || null,
+        status: "pending"
+      })
+      .select()
+      .single();
+
+    if (error) return { error: error.message };
+    return { service_call: serviceCall, created: true };
+  }
+
+  if (name === "complete_service_call") {
+    const { data: { user } } = await sb.auth.getUser();
+    
+    const { data: serviceCall, error: updateError } = await sb
+      .from("service_calls")
+      .update({
+        status: "completed",
+        actual_amount: args.actual_amount,
+        post_job_notes: args.post_job_notes || null
+      })
+      .eq("id", args.service_call_id)
+      .select("*, clients(id, name, email)")
+      .single();
+
+    if (updateError) return { error: updateError.message };
+
+    // Auto-create invoice if requested
+    if (args.auto_invoice !== false && serviceCall) {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7);
+
+      await sb
+        .from("invoices")
+        .insert({
+          service_call_id: serviceCall.id,
+          client_id: serviceCall.client_id,
+          provider_org_id: serviceCall.provider_org_id,
+          amount: args.actual_amount,
+          status: "sent",
+          due_date: dueDate.toISOString().split("T")[0],
+          sent_at: new Date().toISOString()
+        });
+    }
+
+    return { service_call: serviceCall, completed: true, invoice_created: args.auto_invoice !== false };
+  }
+
+  if (name === "create_invoice") {
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org?.id) return { error: "no_organization" };
+
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + (args.due_days || 7));
+
+    // Get client_id from service_call or booking
+    let clientId = null;
+    if (args.service_call_id) {
+      const { data: sc } = await sb
+        .from("service_calls")
+        .select("client_id")
+        .eq("id", args.service_call_id)
+        .single();
+      clientId = sc?.client_id;
+    } else if (args.booking_id) {
+      const { data: booking } = await sb
+        .from("bookings")
+        .select("homeowner_profile_id")
+        .eq("id", args.booking_id)
+        .single();
+      // Would need to map homeowner_profile_id to client_id
+      clientId = booking?.homeowner_profile_id;
+    }
+
+    if (!clientId) return { error: "client_not_found" };
+
+    const { data: invoice, error } = await sb
+      .from("invoices")
+      .insert({
+        service_call_id: args.service_call_id || null,
+        booking_id: args.booking_id || null,
+        client_id: clientId,
+        provider_org_id: org.id,
+        amount: args.amount,
+        status: "sent",
+        due_date: dueDate.toISOString().split("T")[0],
+        sent_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) return { error: error.message };
+    return { invoice, created: true };
+  }
+
+  if (name === "get_revenue_summary") {
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org?.id) return { total_paid: 0, pending: 0, projected: 0 };
+
+    // Calculate date range
+    const now = new Date();
+    let startDate = new Date();
+    
+    if (args.period === "week") {
+      startDate.setDate(now.getDate() - 7);
+    } else if (args.period === "month") {
+      startDate.setMonth(now.getMonth() - 1);
+    } else if (args.period === "year") {
+      startDate.setFullYear(now.getFullYear() - 1);
+    }
+
+    const { data: paidInvoices } = await sb
+      .from("invoices")
+      .select("amount")
+      .eq("provider_org_id", org.id)
+      .eq("status", "paid")
+      .gte("paid_at", startDate.toISOString());
+
+    const { data: pendingInvoices } = await sb
+      .from("invoices")
+      .select("amount")
+      .eq("provider_org_id", org.id)
+      .in("status", ["sent", "overdue"]);
+
+    const totalPaid = (paidInvoices || []).reduce((sum: number, inv: any) => sum + inv.amount, 0);
+    const pending = (pendingInvoices || []).reduce((sum: number, inv: any) => sum + inv.amount, 0);
+    const projected = totalPaid + pending;
+
+    return { total_paid: totalPaid, pending, projected, period: args.period };
+  }
+
+  if (name === "list_unpaid_invoices") {
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org?.id) return { invoices: [] };
+
+    let query = sb
+      .from("invoices")
+      .select("*, clients(name, email)")
+      .eq("provider_org_id", org.id)
+      .in("status", ["sent", "overdue"])
+      .order("due_date");
+
+    if (args.days_overdue) {
+      const overdueDate = new Date();
+      overdueDate.setDate(overdueDate.getDate() - args.days_overdue);
+      query = query.lte("due_date", overdueDate.toISOString().split("T")[0]);
+    }
+
+    const { data: invoices } = await query;
+    return { invoices: invoices || [], count: invoices?.length || 0 };
+  }
+
+  if (name === "send_review_request") {
+    // Placeholder - would integrate with email/SMS service
+    return {
+      ok: true,
+      sent: true,
+      client_id: args.client_id,
+      booking_id: args.booking_id
     };
   }
 

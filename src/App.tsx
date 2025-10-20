@@ -51,6 +51,8 @@ import ProviderMessages from "./pages/provider/Messages";
 import ProviderAnalytics from "./pages/provider/Analytics";
 import ProviderPayroll from "./pages/provider/Payroll";
 import ProviderAccounting from "./pages/provider/Accounting";
+import ServiceCalls from "./pages/provider/ServiceCalls";
+import Reviews from "./pages/provider/Reviews";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
