@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, LayoutGrid, List as ListIcon, Calendar as CalendarIcon, Map } from "lucide-react";
+import { Plus, LayoutGrid, List as ListIcon, Map as MapIcon, Sparkles } from "lucide-react";
 import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
+import { JobsMap } from "@/components/provider/JobsMap";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -13,23 +13,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 const Jobs = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [groupedJobs, setGroupedJobs] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'calendar' | 'map'>('kanban');
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'kanban'>('list');
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTimeframe, setFilterTimeframe] = useState<string>("all");
+  const [teamMemberFilter, setTeamMemberFilter] = useState<string>("all");
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [selectedJobEvents, setSelectedJobEvents] = useState<any[]>([]);
+  const [selectedJobReviews, setSelectedJobReviews] = useState<any[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [supportsServiceCalls, setSupportsServiceCalls] = useState(false);
+  const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
+  const [optimizing, setOptimizing] = useState(false);
 
   useEffect(() => {
     loadJobs();
     checkOrgFeatures();
-  }, [filterStatus, filterTimeframe]);
+    loadTeamMembers();
+  }, [filterStatus, filterTimeframe, teamMemberFilter]);
 
   const checkOrgFeatures = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -41,11 +48,30 @@ const Jobs = () => {
       .eq("owner_id", user.id)
       .single();
     
-    // Service calls for HVAC, Plumbing, Electrical, Appliance Repair
     const diagnosticTrades = ['HVAC', 'Plumbing', 'Electrical', 'Appliance Repair'];
     setSupportsServiceCalls(
       org?.service_type?.some((type: string) => diagnosticTrades.includes(type)) || false
     );
+  };
+
+  const loadTeamMembers = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org) return;
+
+    const { data } = await supabase
+      .from("team_members")
+      .select("id, name")
+      .eq("organization_id", org.id);
+
+    setTeamMembers(data || []);
   };
 
   const loadJobs = async () => {
@@ -82,11 +108,18 @@ const Jobs = () => {
           .lt("window_start", weekEnd.toISOString());
       }
 
+      if (teamMemberFilter && teamMemberFilter !== "all") {
+        if (teamMemberFilter === "unassigned") {
+          query = query.is("assigned_team_member_id", null);
+        } else {
+          query = query.eq("assigned_team_member_id", teamMemberFilter);
+        }
+      }
+
       const { data: jobsData } = await query;
 
       setJobs(jobsData || []);
 
-      // Group by status for Kanban
       const grouped = (jobsData || []).reduce((acc: any, job: any) => {
         acc[job.status] = acc[job.status] || [];
         acc[job.status].push(job);
@@ -108,12 +141,6 @@ const Jobs = () => {
         await handleStatusUpdate(jobId, "start");
       } else if (action === "complete") {
         await handleStatusUpdate(jobId, "complete");
-      } else if (action === "invoice") {
-        await handleStatusUpdate(jobId, "invoice", { amount: 150 });
-      } else if (action === "mark_paid") {
-        await handleStatusUpdate(jobId, "mark_paid", { amount: 150 });
-      } else {
-        toast.info(`${action} dialog coming soon`);
       }
     } catch (error) {
       console.error("Error handling action:", error);
@@ -121,14 +148,11 @@ const Jobs = () => {
     }
   };
 
-  const handleStatusUpdate = async (jobId: string, action: string, payload?: any) => {
+  const handleStatusUpdate = async (jobId: string, action: string) => {
     const { error } = await supabase.functions.invoke("assistant-provider", {
       body: {
-        message: `update_job_status`,
-        tools: [{
-          name: "update_job_status",
-          arguments: { job_id: jobId, action, payload }
-        }]
+        message: `update_job_status for ${jobId} with action ${action}`,
+        context: { job_id: jobId, action }
       }
     });
 
@@ -141,15 +165,56 @@ const Jobs = () => {
   const openJobDetail = async (job: any) => {
     setSelectedJob(job);
     
-    // Load events
     const { data: events } = await supabase
       .from("job_events" as any)
       .select("*")
       .eq("job_id", job.id)
       .order("created_at", { ascending: false });
     
+    const { data: reviews } = await supabase
+      .from("reviews" as any)
+      .select("*")
+      .eq("job_id", job.id)
+      .order("created_at", { ascending: false });
+    
     setSelectedJobEvents(events || []);
+    setSelectedJobReviews(reviews || []);
     setDrawerOpen(true);
+  };
+
+  const handleOptimizeRoute = async () => {
+    setOptimizing(true);
+    try {
+      const scheduledJobs = jobs.filter(j => 
+        ['scheduled', 'in_progress'].includes(j.status) && j.lat && j.lng
+      );
+
+      if (scheduledJobs.length < 2) {
+        toast.error("Need at least 2 jobs with locations to optimize route");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("assistant-provider", {
+        body: {
+          message: `Optimize route for ${scheduledJobs.length} jobs`,
+          context: {
+            action: "optimize_route",
+            job_ids: scheduledJobs.map(j => j.id)
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      setOptimizedRoute(data.route);
+      toast.success("Route optimized!");
+      loadJobs();
+    } catch (error) {
+      console.error("Error optimizing route:", error);
+      toast.error("Failed to optimize route");
+    } finally {
+      setOptimizing(false);
+    }
   };
 
   const columns = [
@@ -168,7 +233,7 @@ const Jobs = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 md:pb-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Jobs</h1>
@@ -181,22 +246,47 @@ const Jobs = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 items-center flex-wrap">
-        <Select value={filterTimeframe} onValueChange={setFilterTimeframe}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex gap-2">
+          <Button
+            variant={filterTimeframe === "today" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterTimeframe("today")}
+          >
+            Today
+          </Button>
+          <Button
+            variant={filterTimeframe === "week" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterTimeframe("week")}
+          >
+            This Week
+          </Button>
+          <Button
+            variant={filterTimeframe === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterTimeframe("all")}
+          >
+            All
+          </Button>
+        </div>
+
+        <Select value={teamMemberFilter} onValueChange={setTeamMemberFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Team Members" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Time</SelectItem>
-            <SelectItem value="today">Today</SelectItem>
-            <SelectItem value="week">This Week</SelectItem>
-            <SelectItem value="month">This Month</SelectItem>
+            <SelectItem value="all">All Team Members</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+            {teamMembers.map(tm => (
+              <SelectItem key={tm.id} value={tm.id}>{tm.name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
@@ -208,12 +298,15 @@ const Jobs = () => {
 
         <div className="flex gap-2 ml-auto">
           <Button
-            variant={viewMode === 'kanban' ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
-            onClick={() => setViewMode('kanban')}
+            onClick={handleOptimizeRoute}
+            disabled={optimizing}
           >
-            <LayoutGrid className="h-4 w-4" />
+            <Sparkles className="h-4 w-4 mr-2" />
+            {optimizing ? "Optimizing..." : "Optimize Route"}
           </Button>
+          
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"
@@ -222,27 +315,56 @@ const Jobs = () => {
             <ListIcon className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'calendar' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('calendar')}
-          >
-            <CalendarIcon className="h-4 w-4" />
-          </Button>
-          <Button
             variant={viewMode === 'map' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('map')}
           >
-            <Map className="h-4 w-4" />
+            <MapIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'kanban' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('kanban')}
+          >
+            <LayoutGrid className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="space-y-3">
+          {jobs.length > 0 ? (
+            jobs.map((job) => (
+              <div key={job.id} onClick={() => openJobDetail(job)}>
+                <UnifiedJobCard job={job} onAction={handleAction} />
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-12 border rounded-lg">
+              <p className="text-muted-foreground">No jobs found</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Map View */}
+      {viewMode === 'map' && (
+        <div className="h-[calc(100vh-16rem)] md:h-[600px]">
+          <JobsMap 
+            jobs={jobs}
+            selectedJob={selectedJob}
+            onJobSelect={openJobDetail}
+            optimizedRoute={optimizedRoute}
+          />
+        </div>
+      )}
+
       {/* Kanban View */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 overflow-x-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
           {columns.map(col => (
-            <div key={col.key} className="bg-muted/30 rounded-xl p-3 min-w-[280px]">
+            <div key={col.key} className="bg-muted/30 rounded-xl p-3">
               <div className="font-semibold mb-3 flex items-center justify-between">
                 <span>{col.label}</span>
                 <Badge variant="secondary">{groupedJobs[col.key]?.length || 0}</Badge>
@@ -253,49 +375,18 @@ const Jobs = () => {
                     <UnifiedJobCard job={job} onAction={handleAction} />
                   </div>
                 ))}
-                {(!groupedJobs[col.key] || groupedJobs[col.key].length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    No {col.label.toLowerCase()}
-                  </div>
-                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* List View */}
-      {viewMode === 'list' && (
-        <>
-          {jobs.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No jobs found</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {jobs.map((job) => (
-                <div key={job.id} onClick={() => openJobDetail(job)}>
-                  <UnifiedJobCard job={job} onAction={handleAction} />
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Calendar/Map placeholders */}
-      {(viewMode === 'calendar' || viewMode === 'map') && (
-        <div className="border rounded-lg p-12 text-center">
-          <p className="text-muted-foreground capitalize">{viewMode} view coming soon</p>
-        </div>
-      )}
-
-      {/* Job Detail Drawer */}
       <JobDetailDrawer
         job={selectedJob}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         events={selectedJobEvents}
+        reviews={selectedJobReviews}
       />
     </div>
   );

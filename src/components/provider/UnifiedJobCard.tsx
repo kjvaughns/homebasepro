@@ -96,91 +96,68 @@ const statusConfig: Record<string, {
 
 export const UnifiedJobCard = ({ job, onAction }: UnifiedJobCardProps) => {
   const config = statusConfig[job.status] || statusConfig.lead;
+  const primaryAction = config.actions[0];
+  const PrimaryIcon = primaryAction?.icon;
   
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="space-y-1 flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{job.service_name}</CardTitle>
-            {job.clients && (
-              <p className="text-sm text-muted-foreground truncate">{job.clients.name}</p>
-            )}
-          </div>
-          <Badge className={config.color} variant="secondary">
-            {config.label}
-          </Badge>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* Address */}
-        {job.address && (
-          <div className="flex items-start gap-2 text-sm">
-            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <span className="text-muted-foreground line-clamp-2">{job.address}</span>
-          </div>
-        )}
-        
-        {/* Time Window */}
-        {job.window_start && (
-          <div className="space-y-1 text-sm">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{format(new Date(job.window_start), 'MMM d, yyyy')}</span>
+              <h3 className="font-semibold truncate">{job.clients?.name || "New Client"}</h3>
+              <Badge className={config.color} variant="secondary">
+                {config.label}
+              </Badge>
             </div>
-            {job.window_end && (
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  {format(new Date(job.window_start), 'h:mm a')} - {format(new Date(job.window_end), 'h:mm a')}
-                </span>
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground truncate">{job.service_name}</p>
           </div>
-        )}
+        </div>
         
-        {/* Pricing */}
-        {(job.deposit_due || job.quote_low || job.total_due) && (
-          <div className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-            {job.is_service_call && job.deposit_due ? (
-              <div className="flex items-center gap-2">
-                <span className="font-medium">${job.deposit_due} diagnostic</span>
-                {job.deposit_paid && (
-                  <Badge variant="outline" className="text-xs">Paid</Badge>
-                )}
-              </div>
-            ) : job.quote_low && job.quote_high ? (
-              <span className="font-medium">${job.quote_low} - ${job.quote_high}</span>
-            ) : job.total_due ? (
-              <span className="font-medium">${job.total_due}</span>
-            ) : null}
-          </div>
-        )}
+        {/* Compact Info */}
+        <div className="space-y-2 text-sm text-muted-foreground">
+          {job.window_start && (
+            <div className="flex items-center gap-2">
+              <Clock className="h-3 w-3" />
+              <span className="truncate">
+                {format(new Date(job.window_start), 'MMM d, h:mm a')}
+              </span>
+            </div>
+          )}
+          
+          {job.address && (
+            <div className="flex items-start gap-2">
+              <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+              <span className="truncate">{job.address.split(',')[0]}</span>
+            </div>
+          )}
+          
+          {(job.quote_low || job.total_due || job.deposit_due) && (
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-3 w-3" />
+              <span className="font-medium">
+                {job.total_due && `$${job.total_due}`}
+                {job.quote_low && job.quote_high && `$${job.quote_low}-${job.quote_high}`}
+                {job.deposit_due && !job.deposit_paid && `$${job.deposit_due} diag`}
+              </span>
+            </div>
+          )}
+        </div>
         
-        {/* Action Buttons */}
-        {config.actions.length > 0 && onAction && (
-          <div className="flex gap-2 pt-2 border-t">
-            {config.actions.map((actionConfig) => {
-              const Icon = actionConfig.icon;
-              return (
-                <Button
-                  key={actionConfig.action}
-                  size="sm"
-                  variant={(actionConfig.variant as any) || "default"}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAction(job.id, actionConfig.action);
-                  }}
-                  className="flex-1"
-                >
-                  <Icon className="h-4 w-4 mr-1" />
-                  {actionConfig.label}
-                </Button>
-              );
-            })}
-          </div>
+        {/* Primary Action Button */}
+        {primaryAction && onAction && (
+          <Button 
+            size="sm" 
+            className="w-full mt-3"
+            variant={(primaryAction.variant as any) || "default"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction(job.id, primaryAction.action);
+            }}
+          >
+            {PrimaryIcon && <PrimaryIcon className="h-4 w-4 mr-2" />}
+            {primaryAction.label}
+          </Button>
         )}
       </CardContent>
     </Card>

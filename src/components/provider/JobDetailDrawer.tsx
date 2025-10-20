@@ -10,9 +10,11 @@ interface JobDetailDrawerProps {
   open: boolean;
   onClose: () => void;
   events?: any[];
+  reviews?: any[];
+  onRequestReview?: () => void;
 }
 
-export const JobDetailDrawer = ({ job, open, onClose, events }: JobDetailDrawerProps) => {
+export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequestReview }: JobDetailDrawerProps) => {
   if (!job) return null;
   
   const statusConfig: Record<string, string> = {
@@ -38,10 +40,11 @@ export const JobDetailDrawer = ({ job, open, onClose, events }: JobDetailDrawerP
         </SheetHeader>
         
         <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="client">Client</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
           </TabsList>
           
@@ -189,6 +192,44 @@ export const JobDetailDrawer = ({ job, open, onClose, events }: JobDetailDrawerP
             ) : (
               <div className="text-center py-8">
                 <p className="text-sm text-muted-foreground">No activity recorded yet</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="reviews" className="mt-4 space-y-4">
+            {reviews && reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviews.map((review: any) => (
+                  <div key={review.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold">{review.reviewer_name || "Anonymous"}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className="text-yellow-500">
+                              {i < review.rating ? "★" : "☆"}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(review.created_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    {review.comment && (
+                      <p className="text-sm text-muted-foreground">{review.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-sm text-muted-foreground">No reviews yet</p>
+                {job.status === 'completed' && onRequestReview && (
+                  <Button onClick={onRequestReview} size="sm">
+                    Request Review
+                  </Button>
+                )}
               </div>
             )}
           </TabsContent>
