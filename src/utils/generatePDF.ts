@@ -3,12 +3,14 @@ import jsPDF from "jspdf";
 
 interface MaintenancePlan {
   annualCostLow: number;
+  annualCostTypical: number;
   annualCostHigh: number;
   tasks: {
     name: string;
     category: string;
     frequency: string;
     costLow: number;
+    costTypical: number;
     costHigh: number;
     isDIY: boolean;
     riskNote: string;
@@ -24,8 +26,8 @@ interface FormInputs {
   bathrooms: string;
   hasPool: boolean;
   hasHVAC: boolean;
-  hasSprinklers: boolean;
-  hasFence: boolean;
+  hasSprinklers?: boolean;
+  hasFence?: boolean;
 }
 
 interface CommunicationPack {
@@ -107,7 +109,7 @@ export async function generateMaintenancePlanPDF(
   // Summary Box
   yPos += 10;
   pdf.setFillColor(240, 240, 240);
-  pdf.rect(margin, yPos, contentWidth, 35, "F");
+  pdf.rect(margin, yPos, contentWidth, 40, "F");
   
   pdf.setFontSize(14);
   pdf.setFont("helvetica", "bold");
@@ -120,7 +122,8 @@ export async function generateMaintenancePlanPDF(
   
   pdf.setFontSize(11);
   pdf.setTextColor(100, 100, 100);
-  pdf.text(`${plan.tasks.length} maintenance tasks per year`, margin + 5, yPos + 31);
+  pdf.text(`Typical: $${plan.annualCostTypical.toLocaleString()}`, margin + 5, yPos + 31);
+  pdf.text(`${plan.tasks.length} maintenance tasks per year`, margin + 5, yPos + 37);
 
   // Add new page for tasks
   pdf.addPage();
@@ -137,8 +140,8 @@ export async function generateMaintenancePlanPDF(
   pdf.setTextColor(255, 255, 255);
   pdf.rect(margin, yPos, contentWidth, 8, "F");
   pdf.text("Task", margin + 2, yPos + 5);
-  pdf.text("Frequency", margin + 70, yPos + 5);
-  pdf.text("Cost Range", margin + 110, yPos + 5);
+  pdf.text("Frequency", margin + 65, yPos + 5);
+  pdf.text("Cost", margin + 105, yPos + 5);
   pdf.text("DIY", margin + 145, yPos + 5);
   
   yPos += 8;
@@ -158,11 +161,11 @@ export async function generateMaintenancePlanPDF(
     }
 
     pdf.setFont("helvetica", "bold");
-    pdf.text(task.name, margin + 2, yPos + 4, { maxWidth: 65 });
+    pdf.text(task.name, margin + 2, yPos + 4, { maxWidth: 60 });
     
     pdf.setFont("helvetica", "normal");
-    pdf.text(task.frequency, margin + 70, yPos + 4);
-    pdf.text(`$${task.costLow}-$${task.costHigh}`, margin + 110, yPos + 4);
+    pdf.text(task.frequency, margin + 65, yPos + 4, { maxWidth: 35 });
+    pdf.text(`$${task.costTypical}`, margin + 105, yPos + 4);
     pdf.text(task.isDIY ? "Yes" : "No", margin + 145, yPos + 4);
     
     if (task.riskNote) {

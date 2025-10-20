@@ -24,6 +24,7 @@ interface MaintenancePlan {
   nextDueTask: string;
   tasks: Array<{
     name: string;
+    category: string;
     frequency: string;
     costLow: number;
     costTypical: number;
@@ -43,6 +44,8 @@ export default function HomeMaintenanceSurvivalKit() {
   const [propertyType, setPropertyType] = useState("");
   const [homeAge, setHomeAge] = useState("");
   const [squareFeet, setSquareFeet] = useState("");
+  const [bedrooms, setBedrooms] = useState("");
+  const [bathrooms, setBathrooms] = useState("");
   const [hasHVAC, setHasHVAC] = useState(false);
   const [hasGasHeat, setHasGasHeat] = useState(false);
   const [hasElectricHeat, setHasElectricHeat] = useState(false);
@@ -50,6 +53,8 @@ export default function HomeMaintenanceSurvivalKit() {
   const [roofAge, setRoofAge] = useState("");
   const [hasLawn, setHasLawn] = useState(false);
   const [hasPool, setHasPool] = useState(false);
+  const [hasSprinklers, setHasSprinklers] = useState(false);
+  const [hasFence, setHasFence] = useState(false);
   const [diyComfort, setDiyComfort] = useState("");
   const [serviceLevel, setServiceLevel] = useState("");
 
@@ -68,6 +73,7 @@ export default function HomeMaintenanceSurvivalKit() {
     if (hasHVAC) {
       tasks.push({
         name: "HVAC Filter Replacement",
+        category: "HVAC",
         frequency: "Quarterly",
         costLow: 20 * multiplier,
         costTypical: 40 * multiplier,
@@ -78,6 +84,7 @@ export default function HomeMaintenanceSurvivalKit() {
       });
       tasks.push({
         name: "HVAC Professional Tune-up",
+        category: "HVAC",
         frequency: "Bi-annual (Spring & Fall)",
         costLow: 80 * multiplier,
         costTypical: 150 * multiplier,
@@ -91,6 +98,7 @@ export default function HomeMaintenanceSurvivalKit() {
     if (waterHeaterType === "tank") {
       tasks.push({
         name: "Water Heater Flush",
+        category: "Plumbing",
         frequency: "Annual",
         costLow: 75 * multiplier,
         costTypical: 120 * multiplier,
@@ -102,6 +110,7 @@ export default function HomeMaintenanceSurvivalKit() {
     } else if (waterHeaterType === "tankless") {
       tasks.push({
         name: "Tankless Water Heater Descaling",
+        category: "Plumbing",
         frequency: "Annual",
         costLow: 100 * multiplier,
         costTypical: 175 * multiplier,
@@ -116,6 +125,7 @@ export default function HomeMaintenanceSurvivalKit() {
     const roofFreq = roofAgeNum > 20 ? "Bi-annual" : "Annual";
     tasks.push({
       name: "Roof Inspection",
+      category: "Exterior",
       frequency: roofFreq,
       costLow: 100 * multiplier,
       costTypical: 200 * multiplier,
@@ -127,6 +137,7 @@ export default function HomeMaintenanceSurvivalKit() {
     
     tasks.push({
       name: "Gutter Cleaning",
+      category: "Exterior",
       frequency: "Bi-annual",
       costLow: 75 * multiplier,
       costTypical: 150 * multiplier,
@@ -138,6 +149,7 @@ export default function HomeMaintenanceSurvivalKit() {
     
     tasks.push({
       name: "Dryer Vent Cleaning",
+      category: "Safety",
       frequency: "Annual",
       costLow: 90 * multiplier,
       costTypical: 140 * multiplier,
@@ -150,6 +162,7 @@ export default function HomeMaintenanceSurvivalKit() {
     if (hasLawn) {
       tasks.push({
         name: "Lawn Care (Mowing, Edging)",
+        category: "Landscaping",
         frequency: "Weekly (seasonal)",
         costLow: 30 * multiplier,
         costTypical: 50 * multiplier,
@@ -160,6 +173,7 @@ export default function HomeMaintenanceSurvivalKit() {
       });
       tasks.push({
         name: "Pest Prevention Treatment",
+        category: "Landscaping",
         frequency: "Quarterly",
         costLow: 70 * multiplier,
         costTypical: 100 * multiplier,
@@ -173,6 +187,7 @@ export default function HomeMaintenanceSurvivalKit() {
     if (hasPool) {
       tasks.push({
         name: "Pool Maintenance & Chemicals",
+        category: "Pool",
         frequency: "Weekly",
         costLow: 80 * multiplier,
         costTypical: 120 * multiplier,
@@ -185,6 +200,7 @@ export default function HomeMaintenanceSurvivalKit() {
     
     tasks.push({
       name: "Smoke & CO Detector Test",
+      category: "Safety",
       frequency: "Monthly",
       costLow: 0,
       costTypical: 0,
@@ -196,6 +212,7 @@ export default function HomeMaintenanceSurvivalKit() {
     
     tasks.push({
       name: "Smoke & CO Detector Battery Replacement",
+      category: "Safety",
       frequency: "Annual",
       costLow: 15 * multiplier,
       costTypical: 25 * multiplier,
