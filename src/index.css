@@ -148,4 +148,19 @@ All colors MUST be HSL.
       padding-bottom: max(env(safe-area-inset-bottom), 0px);
     }
   }
+
+  /* iOS safe area support */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Touch optimization for mobile */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
 }

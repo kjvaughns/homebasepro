@@ -132,36 +132,36 @@ export default function HomeownerDashboard() {
   }
 
   return (
-    <div className="container max-w-2xl py-6 space-y-6 px-4">
+    <div className="container max-w-2xl py-4 sm:py-6 space-y-6 px-4">
       {/* Header */}
       <div className="mb-4">
-        <h1 className="text-3xl font-bold">Welcome Back</h1>
-        <p className="text-muted-foreground">Your home, simplified</p>
+        <h1 className="text-2xl sm:text-3xl font-bold">Welcome Back</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Your home, simplified</p>
       </div>
 
       {/* AI Search - Primary CTA */}
       <Card 
-        className="mb-6 cursor-pointer hover:shadow-lg transition-all border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent"
+        className="mb-6 cursor-pointer hover:shadow-lg transition-all border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent active:scale-[0.98]"
         onClick={() => setShowAI(true)}
       >
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-primary rounded-2xl shadow-lg">
-              <Bot className="w-8 h-8 text-primary-foreground" />
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 bg-primary rounded-2xl shadow-lg flex-shrink-0">
+              <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg mb-1">Ask HomeBase AI</h3>
-              <p className="text-sm text-muted-foreground">Describe your problem and get matched with trusted pros</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-base sm:text-lg mb-1">Ask HomeBase AI</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Describe your problem and get matched with trusted pros</p>
             </div>
-            <ChevronRight className="w-6 h-6 text-primary" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
           </div>
         </CardContent>
       </Card>
 
       {/* Quick Service Categories */}
       <div className="mb-6">
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">Or browse by category</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <h2 className="text-xs sm:text-sm font-medium text-muted-foreground mb-3">Or browse by category</h2>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[
             { icon: Wrench, label: 'HVAC', color: 'from-blue-500/10 to-blue-600/10' },
             { icon: Droplet, label: 'Plumbing', color: 'from-cyan-500/10 to-cyan-600/10' },
@@ -172,15 +172,15 @@ export default function HomeownerDashboard() {
           ].map((category) => (
             <Card 
               key={category.label}
-              className={`cursor-pointer hover:shadow-md transition-all bg-gradient-to-br ${category.color}`}
+              className={`cursor-pointer hover:shadow-md transition-all bg-gradient-to-br ${category.color} active:scale-95`}
               onClick={() => {
                 setShowAI(true);
                 setTimeout(() => setInput(`I need help with ${category.label}`), 100);
               }}
             >
-              <CardContent className="p-4 text-center">
-                <category.icon className="w-6 h-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs font-medium">{category.label}</p>
+              <CardContent className="p-4 sm:p-5 text-center">
+                <category.icon className="w-7 h-7 sm:w-6 sm:h-6 mx-auto mb-2 text-primary" />
+                <p className="text-xs sm:text-sm font-medium leading-tight">{category.label}</p>
               </CardContent>
             </Card>
           ))}
@@ -353,9 +353,9 @@ export default function HomeownerDashboard() {
 
       {/* HomeBase AI Dialog */}
       <Dialog open={showAI} onOpenChange={setShowAI}>
-        <DialogContent className="max-w-2xl h-[600px] p-0 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-2xl h-[100vh] sm:h-[80vh] sm:max-h-[700px] p-0 flex flex-col">
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2 flex-shrink-0 border-b">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Bot className="w-5 h-5 text-primary" />
               HomeBase AI
             </DialogTitle>

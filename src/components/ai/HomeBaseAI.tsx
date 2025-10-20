@@ -133,8 +133,8 @@ export default function HomeBaseAI({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-4 p-4">
+    <div className="flex flex-col h-full touch-manipulation">
+      <div className="flex-1 overflow-y-auto space-y-4 p-3 sm:p-4">
         {messages.length === 0 && (
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-6">
@@ -179,7 +179,7 @@ export default function HomeBaseAI({
 
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex gap-2 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex gap-2 max-w-[90%] sm:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
               <div className={`p-2 rounded-full flex-shrink-0 ${
                 msg.role === 'user' ? 'bg-primary' : 'bg-muted'
               }`}>
@@ -190,12 +190,12 @@ export default function HomeBaseAI({
                 )}
               </div>
               <div className="space-y-3">
-                <div className={`rounded-2xl p-4 ${
+                <div className={`rounded-2xl p-3 sm:p-4 ${
                   msg.role === 'user' 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-muted'
                 }`}>
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                 </div>
                 
                 {msg.toolResults?.map((result, idx) => (
@@ -323,7 +323,7 @@ export default function HomeBaseAI({
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t p-4 bg-background">
+      <div className="border-t p-3 sm:p-4 bg-background safe-bottom">
         <div className="flex gap-2">
           <Input
             value={input}
@@ -331,15 +331,15 @@ export default function HomeBaseAI({
             onKeyPress={handleKeyPress}
             placeholder="Describe your home problem..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 h-11 sm:h-10 text-base"
           />
           <Button 
             onClick={sendMessage} 
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="rounded-full"
+            className="rounded-full h-11 w-11 sm:h-10 sm:w-10 active:scale-95 transition-transform"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5 sm:w-4 sm:h-4" />
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
