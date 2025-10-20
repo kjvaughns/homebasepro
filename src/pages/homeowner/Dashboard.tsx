@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, ChevronRight, Plus, Clock, CheckCircle2, MessageCircle } from "lucide-react";
+import { Calendar, ChevronRight, Plus, Clock, CheckCircle2, MessageCircle, Bot, Wrench, Droplet, Zap, Leaf, Sparkles, Home as HomeIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import AIAssistant from "@/components/ai/AIAssistant";
+import HomeBaseAI from "@/components/ai/HomeBaseAI";
 
 export default function HomeownerDashboard() {
   const navigate = useNavigate();
@@ -24,6 +24,7 @@ export default function HomeownerDashboard() {
   const { canInstall, isInstalled, isIOS, promptInstall, dismissInstall } = usePWAInstall();
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [input, setInput] = useState('');
 
   useEffect(() => {
     loadDashboardData();
@@ -133,9 +134,57 @@ export default function HomeownerDashboard() {
   return (
     <div className="container max-w-2xl py-6 space-y-6 px-4">
       {/* Header */}
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold">My Home</h1>
-        <p className="text-muted-foreground text-sm">Manage your services</p>
+      <div className="mb-4">
+        <h1 className="text-3xl font-bold">Welcome Back</h1>
+        <p className="text-muted-foreground">Your home, simplified</p>
+      </div>
+
+      {/* AI Search - Primary CTA */}
+      <Card 
+        className="mb-6 cursor-pointer hover:shadow-lg transition-all border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent"
+        onClick={() => setShowAI(true)}
+      >
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-primary rounded-2xl shadow-lg">
+              <Bot className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-1">Ask HomeBase AI</h3>
+              <p className="text-sm text-muted-foreground">Describe your problem and get matched with trusted pros</p>
+            </div>
+            <ChevronRight className="w-6 h-6 text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Service Categories */}
+      <div className="mb-6">
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">Or browse by category</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { icon: Wrench, label: 'HVAC', color: 'from-blue-500/10 to-blue-600/10' },
+            { icon: Droplet, label: 'Plumbing', color: 'from-cyan-500/10 to-cyan-600/10' },
+            { icon: Zap, label: 'Electrical', color: 'from-yellow-500/10 to-yellow-600/10' },
+            { icon: Leaf, label: 'Lawn Care', color: 'from-green-500/10 to-green-600/10' },
+            { icon: Sparkles, label: 'Cleaning', color: 'from-purple-500/10 to-purple-600/10' },
+            { icon: HomeIcon, label: 'Handyman', color: 'from-orange-500/10 to-orange-600/10' },
+          ].map((category) => (
+            <Card 
+              key={category.label}
+              className={`cursor-pointer hover:shadow-md transition-all bg-gradient-to-br ${category.color}`}
+              onClick={() => {
+                setShowAI(true);
+                setTimeout(() => setInput(`I need help with ${category.label}`), 100);
+              }}
+            >
+              <CardContent className="p-4 text-center">
+                <category.icon className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <p className="text-xs font-medium">{category.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {needsProfile && (
@@ -302,23 +351,25 @@ export default function HomeownerDashboard() {
         onDismiss={dismissInstall}
       />
 
-      {/* AI Assistant Button */}
-      <Button
-        onClick={() => setShowAI(true)}
-        className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg z-50"
-        size="icon"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </Button>
-
-      {/* AI Assistant Dialog */}
+      {/* HomeBase AI Dialog */}
       <Dialog open={showAI} onOpenChange={setShowAI}>
-        <DialogContent className="max-w-2xl h-[600px] p-0">
-          <DialogHeader className="px-6 pt-6 pb-2">
-            <DialogTitle>HomeBase AI Assistant</DialogTitle>
+        <DialogContent className="max-w-2xl h-[600px] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-primary" />
+              HomeBase AI
+            </DialogTitle>
           </DialogHeader>
-          <div className="h-[calc(100%-80px)]">
-            <AIAssistant />
+          <div className="flex-1 min-h-0">
+            <HomeBaseAI 
+              context={{ homeId: profileId || undefined }}
+              onServiceRequestCreated={(request) => {
+                toast({
+                  title: 'Service Request Created',
+                  description: 'We found trusted providers for you!'
+                });
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>

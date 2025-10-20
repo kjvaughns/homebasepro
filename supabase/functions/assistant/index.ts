@@ -44,6 +44,13 @@ serve(async (req) => {
       );
     }
 
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, user_type')
+      .eq('user_id', user.id)
+      .single();
+
     // Get or create session
     let currentSessionId = session_id;
     if (!currentSessionId) {
@@ -51,6 +58,7 @@ serve(async (req) => {
         .from('ai_chat_sessions')
         .insert({
           user_id: user.id,
+          profile_id: profile?.id,
           context: context || {}
         })
         .select()
@@ -75,24 +83,57 @@ serve(async (req) => {
       content: message
     });
 
-    // System prompt
-    const systemPrompt = `You are HomeBase Support AI, helping users get instant property lookups and service price estimates.
+    // System prompt for HomeBase AI
+    const systemPrompt = `You are HomeBase AI, a smart home services assistant that helps homeowners solve problems and connect with trusted local service providers.
 
-Key capabilities:
-- When a user provides a street address, use lookup_home to fetch property details
-- For pricing requests, use price_service with the service name and unit type
-- If units are unknown (e.g., linear feet of gutters), ask ONE short follow-up question
-- After tool results, provide a clear summary and suggest next steps
+YOUR CORE MISSION:
+- Listen to the homeowner's problem or need
+- Ask 3-5 clarifying questions to understand the issue completely
+- Generate a detailed service request with AI analysis
+- Match them with the best local providers
 
-Common services and unit types:
-- Lawn Mowing/Care: acre (from lot size)
-- HVAC Service: system_count
-- Gutter Cleaning: linear_foot
-- Window Cleaning: pane
-- Pool Cleaning: flat
-- Pressure Washing: sqft
+CONVERSATION FLOW:
+1. When they describe a problem (e.g., "My AC is blowing warm air"), acknowledge it and ask relevant follow-up questions:
+   - How long has this been happening?
+   - Is the unit still blowing air?
+   - How old is your system?
+   - Have you noticed any unusual sounds or smells?
+   
+2. Use the create_service_request tool once you have enough information to:
+   - Classify the service type
+   - Determine severity (low/moderate/high)
+   - Identify likely cause
+   - Generate cost estimate range
+   - Create scope of work (what's included/excluded)
+   
+3. After creating the request, show the homeowner:
+   - The AI summary of their issue
+   - Estimated cost range
+   - What the service will include
+   - Top 3-5 matched providers in their area
 
-Be concise, helpful, and confident. Always explain pricing breakdowns when available.`;
+SERVICE CATEGORIES:
+- HVAC (heating, cooling, ventilation)
+- Plumbing (leaks, clogs, repairs)
+- Electrical (wiring, fixtures, panels)
+- Lawn Care (mowing, treatment, landscaping)
+- Cleaning (house, windows, deep cleaning)
+- Exterior (gutters, pressure washing, siding)
+- Handyman (general repairs, installations)
+
+PRICING CONTEXT:
+- Use your judgment for cost estimates based on typical market rates
+- Consider: severity, complexity, parts vs labor, home size
+- Always give a range, not exact price
+- Mention factors that could affect price
+
+TONE:
+- Friendly and reassuring
+- Explain issues in simple terms (avoid technical jargon)
+- Be confident in your recommendations
+- Show empathy for their home problem
+
+Use the lookup_home tool if they mention an address or you need property details for sizing/pricing.`;
 
     // Define tools
     const tools = [
@@ -100,7 +141,7 @@ Be concise, helpful, and confident. Always explain pricing breakdowns when avail
         type: 'function',
         function: {
           name: 'lookup_home',
-          description: 'Look up property details for a street address using Zillow data',
+          description: 'Look up property details for accurate service sizing and pricing',
           parameters: {
             type: 'object',
             properties: {
@@ -116,36 +157,66 @@ Be concise, helpful, and confident. Always explain pricing breakdowns when avail
       {
         type: 'function',
         function: {
-          name: 'price_service',
-          description: 'Calculate dynamic price estimate for a home service',
+          name: 'create_service_request',
+          description: 'Create a service request after gathering enough information from the homeowner',
           parameters: {
             type: 'object',
             properties: {
-              service_name: { 
+              service_type: { 
                 type: 'string',
-                description: 'Name of the service (e.g., "Lawn Mowing", "HVAC Tune-Up")'
+                description: 'Main category (HVAC, Plumbing, Electrical, Lawn Care, Cleaning, Exterior, Handyman)'
               },
-              unit_type: { 
+              ai_summary: {
                 type: 'string',
-                enum: ['acre', 'sqft', 'linear_foot', 'pane', 'system_count', 'flat'],
-                description: 'Unit type for pricing'
+                description: 'Short clear summary of the issue (e.g., "AC blowing warm air - likely low refrigerant")'
               },
-              units: { type: 'number', description: 'Number of units (optional if deriving from property)' },
-              lot_acres: { type: 'number' },
-              sqft: { type: 'number' },
-              beds: { type: 'number' },
-              baths: { type: 'number' },
-              year_built: { type: 'number' },
-              zip: { type: 'string' },
-              month: { type: 'number', description: '1-12' }
+              description: {
+                type: 'string',
+                description: 'Detailed description from conversation'
+              },
+              severity_level: {
+                type: 'string',
+                enum: ['low', 'moderate', 'high'],
+                description: 'Urgency level'
+              },
+              likely_cause: {
+                type: 'string',
+                description: 'Most probable cause or diagnosis'
+              },
+              confidence_score: {
+                type: 'number',
+                description: '0-1 confidence in the diagnosis'
+              },
+              estimated_min_cost: {
+                type: 'number',
+                description: 'Lower bound estimate in dollars'
+              },
+              estimated_max_cost: {
+                type: 'number',
+                description: 'Upper bound estimate in dollars'
+              },
+              scope_includes: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'What the service includes'
+              },
+              scope_excludes: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'What is NOT included'
+              },
+              home_id: {
+                type: 'string',
+                description: 'UUID of home if known from context'
+              }
             },
-            required: ['service_name', 'unit_type']
+            required: ['service_type', 'ai_summary', 'severity_level', 'estimated_min_cost', 'estimated_max_cost']
           }
         }
       }
     ];
 
-    // Build messages for OpenAI
+    // Build messages for AI
     const messages = [
       { role: 'system', content: systemPrompt },
       ...recentHistory.map((m: any) => ({ role: m.role, content: m.content })),
@@ -176,7 +247,7 @@ Be concise, helpful, and confident. Always explain pricing breakdowns when avail
     let aiMessage = result.choices?.[0]?.message;
     const toolResults: any[] = [];
 
-    // Handle tool calls (up to 2 rounds)
+    // Handle tool calls
     for (let round = 0; round < 2 && aiMessage?.tool_calls; round++) {
       const calls = aiMessage.tool_calls;
       const toolMessages: any[] = [];
@@ -202,23 +273,104 @@ Be concise, helpful, and confident. Always explain pricing breakdowns when avail
           });
         }
 
-        if (fnName === 'price_service') {
-          console.log('Calling pricing-engine with:', args);
-          const priceRes = await supabase.functions.invoke('pricing-engine', {
-            body: { 
-              ...args,
-              session_id: currentSessionId
+        if (fnName === 'create_service_request' && profile) {
+          console.log('Creating service request:', args);
+          
+          // Get or create a home for the user if not provided
+          let homeId = args.home_id || context?.homeId;
+          if (!homeId) {
+            const { data: homes } = await supabase
+              .from('homes')
+              .select('id')
+              .eq('owner_id', profile.id)
+              .eq('is_primary', true)
+              .limit(1);
+            
+            if (homes && homes.length > 0) {
+              homeId = homes[0].id;
             }
-          });
+          }
 
-          const priceData = priceRes.data;
-          toolResults.push({ type: 'price', data: priceData });
+          // Create service request
+          const { data: serviceRequest, error: srError } = await supabase
+            .from('service_requests')
+            .insert({
+              homeowner_id: profile.id,
+              home_id: homeId,
+              service_type: args.service_type,
+              description: args.description,
+              ai_summary: args.ai_summary,
+              severity_level: args.severity_level,
+              likely_cause: args.likely_cause,
+              confidence_score: args.confidence_score,
+              estimated_min_cost: args.estimated_min_cost,
+              estimated_max_cost: args.estimated_max_cost,
+              ai_scope_json: {
+                includes: args.scope_includes || [],
+                excludes: args.scope_excludes || []
+              },
+              ai_metadata: {
+                created_by_ai: true,
+                session_id: currentSessionId,
+                timestamp: new Date().toISOString()
+              },
+              status: 'pending'
+            })
+            .select()
+            .single();
 
+          if (srError) {
+            console.error('Error creating service request:', srError);
+            toolMessages.push({
+              role: 'tool',
+              tool_call_id: call.id,
+              name: 'create_service_request',
+              content: JSON.stringify({ error: 'Failed to create service request' })
+            });
+            continue;
+          }
+
+          // Find matching providers
+          const { data: matchedProviders } = await supabase.rpc('match_providers', {
+            p_service_type: args.service_type,
+            p_home_id: homeId,
+            p_limit: 5
+          }).select(`
+            *,
+            organizations!inner(id, name, service_type, service_area, logo_url),
+            provider_metrics(trust_score, satisfaction_score, on_time_rate)
+          `);
+
+          // Update service request with matched providers
+          if (matchedProviders && matchedProviders.length > 0) {
+            await supabase
+              .from('service_requests')
+              .update({
+                matched_providers: matchedProviders.map((p: any) => ({
+                  org_id: p.organizations.id,
+                  name: p.organizations.name,
+                  trust_score: p.provider_metrics?.trust_score || 5.0
+                }))
+              })
+              .eq('id', serviceRequest.id);
+          }
+
+          const resultData = {
+            request_id: serviceRequest.id,
+            summary: args.ai_summary,
+            severity: args.severity_level,
+            cost_range: `$${args.estimated_min_cost}-$${args.estimated_max_cost}`,
+            matched_count: matchedProviders?.length || 0,
+            providers: matchedProviders?.slice(0, 3) || []
+          };
+
+          toolResults.push({ type: 'service_request', data: resultData });
+          
           toolMessages.push({
             role: 'tool',
             tool_call_id: call.id,
-            name: 'price_service',
-            content: JSON.stringify(priceData)
+            name: 'create_service_request',
+            content: JSON.stringify(resultData)
           });
         }
       }

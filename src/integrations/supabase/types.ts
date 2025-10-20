@@ -1052,6 +1052,127 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_capabilities: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          provider_org_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          provider_org_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          provider_org_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_capabilities_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_capabilities_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "service_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_calculated_at: string | null
+          on_time_rate: number | null
+          provider_org_id: string
+          repeat_customer_rate: number | null
+          response_speed_minutes: number | null
+          satisfaction_score: number | null
+          total_jobs_completed: number | null
+          trust_score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          on_time_rate?: number | null
+          provider_org_id: string
+          repeat_customer_rate?: number | null
+          response_speed_minutes?: number | null
+          satisfaction_score?: number | null
+          total_jobs_completed?: number | null
+          trust_score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          on_time_rate?: number | null
+          provider_org_id?: string
+          repeat_customer_rate?: number | null
+          response_speed_minutes?: number | null
+          satisfaction_score?: number | null
+          total_jobs_completed?: number | null
+          trust_score?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_metrics_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_onboarding_answers: {
+        Row: {
+          answer: string
+          created_at: string | null
+          id: string
+          provider_org_id: string
+          question: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          id?: string
+          provider_org_id: string
+          question: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          id?: string
+          provider_org_id?: string
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_onboarding_answers_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1340,53 +1461,80 @@ export type Database = {
       }
       service_requests: {
         Row: {
+          ai_metadata: Json | null
+          ai_scope_json: Json | null
+          ai_summary: string | null
           completed_at: string | null
+          confidence_score: number | null
           created_at: string
           description: string | null
+          estimated_max_cost: number | null
+          estimated_min_cost: number | null
           estimated_price: number | null
           final_price: number | null
           home_id: string
           homeowner_id: string
           id: string
+          likely_cause: string | null
+          matched_providers: Json | null
           notes: string | null
           preferred_date: string | null
           provider_org_id: string | null
           scheduled_date: string | null
           service_type: string
+          severity_level: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          ai_metadata?: Json | null
+          ai_scope_json?: Json | null
+          ai_summary?: string | null
           completed_at?: string | null
+          confidence_score?: number | null
           created_at?: string
           description?: string | null
+          estimated_max_cost?: number | null
+          estimated_min_cost?: number | null
           estimated_price?: number | null
           final_price?: number | null
           home_id: string
           homeowner_id: string
           id?: string
+          likely_cause?: string | null
+          matched_providers?: Json | null
           notes?: string | null
           preferred_date?: string | null
           provider_org_id?: string | null
           scheduled_date?: string | null
           service_type: string
+          severity_level?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          ai_metadata?: Json | null
+          ai_scope_json?: Json | null
+          ai_summary?: string | null
           completed_at?: string | null
+          confidence_score?: number | null
           created_at?: string
           description?: string | null
+          estimated_max_cost?: number | null
+          estimated_min_cost?: number | null
           estimated_price?: number | null
           final_price?: number | null
           home_id?: string
           homeowner_id?: string
           id?: string
+          likely_cause?: string | null
+          matched_providers?: Json | null
           notes?: string | null
           preferred_date?: string | null
           provider_org_id?: string | null
           scheduled_date?: string | null
           service_type?: string
+          severity_level?: string | null
           status?: string
           updated_at?: string
         }
@@ -1413,6 +1561,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_tags: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       service_visits: {
         Row: {
@@ -1950,6 +2122,15 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      match_providers: {
+        Args: { p_home_id: string; p_limit?: number; p_service_type: string }
+        Returns: {
+          distance_miles: number
+          match_score: number
+          provider_org_id: string
+          trust_score: number
+        }[]
       }
       reset_unread_count: {
         Args: { conv_id: string; user_type: string }
