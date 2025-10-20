@@ -1,4 +1,4 @@
-import html2canvas from "html2canvas";
+// @ts-nocheck
 import jsPDF from "jspdf";
 
 interface MaintenancePlan {

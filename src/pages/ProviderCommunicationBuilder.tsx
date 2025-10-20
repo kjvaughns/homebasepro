@@ -198,8 +198,7 @@ export default function ProviderCommunicationBuilder() {
       await generateCommunicationPackPDF(packForPDF, {
         businessName,
         phone,
-        email,
-        logoUrl,
+        email: replyEmail,
       });
       
       toast({
