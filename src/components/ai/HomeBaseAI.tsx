@@ -112,6 +112,7 @@ export default function HomeBaseAI({
         body: {
           session_id: sessionId,
           message: userMsg.content,
+          history: messages.map(m => ({ role: m.role, content: m.content })).slice(-15),
           context
         }
       });
