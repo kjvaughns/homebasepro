@@ -23,13 +23,15 @@ interface AIAssistantProps {
   };
   onPropertyFound?: (property: any) => void;
   onPriceGenerated?: (estimate: any) => void;
+  userRole?: 'homeowner' | 'provider';
 }
 
 export default function AIAssistant({ 
   sessionId: initialSessionId,
   context,
   onPropertyFound,
-  onPriceGenerated 
+  onPriceGenerated,
+  userRole = 'homeowner'
 }: AIAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -81,7 +83,10 @@ export default function AIAssistant({
         prefer_default_property: true
       };
 
-      const { data, error } = await supabase.functions.invoke('assistant', {
+      // Route to correct assistant based on role
+      const functionName = userRole === 'provider' ? 'assistant-provider' : 'assistant';
+
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: {
           session_id: sessionId,
           message: userMsg.content,

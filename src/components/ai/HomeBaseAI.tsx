@@ -132,7 +132,10 @@ export default function HomeBaseAI({
         prefer_default_property: true
       };
 
-      const { data, error } = await supabase.functions.invoke('assistant', {
+      // Route to correct assistant based on role
+      const functionName = isProvider ? 'assistant-provider' : 'assistant';
+
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: {
           session_id: sessionId,
           message: userMsg.content,

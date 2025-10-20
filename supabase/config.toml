@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.assistant]
 verify_jwt = true
+
+[functions.assistant-provider]
+verify_jwt = true
