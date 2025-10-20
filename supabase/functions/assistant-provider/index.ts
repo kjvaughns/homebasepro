@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = {
@@ -252,15 +252,16 @@ async function routeTool(sb: any, name: string, args: any) {
   }
 
   if (name === "price_service") {
-    const per = {
+    const unitTypeMap: Record<string, number> = {
       acre: 55,
       sqft: 0.2,
       linear_foot: 1.3,
       pane: 6,
       system_count: 85,
       flat: 120
-    }[args.unit_type] || 50;
+    };
 
+    const per = unitTypeMap[args.unit_type as string] || 50;
     const units = Number(args.units || 1);
     const base = Math.max(per * units, 60);
     const low = Math.round(base * 0.9);
