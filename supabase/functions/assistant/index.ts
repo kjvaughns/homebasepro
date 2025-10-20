@@ -626,6 +626,8 @@ serve(async (req) => {
               .slice(0, args.limit || 3);
 
             result = { providers };
+            toolResults.push({ type: 'providers', data: result });
+            continue; // Skip generic push for providers
           }
           else if (fnName === 'list_jobs') {
             const { data: orgData } = await supabase
