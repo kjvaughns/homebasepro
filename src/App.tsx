@@ -13,6 +13,9 @@ import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Resources from "./pages/Resources";
+import HomeMaintenanceSurvivalKit from "./pages/HomeMaintenanceSurvivalKit";
+import ProviderCommunicationBuilder from "./pages/ProviderCommunicationBuilder";
 import Waitlist from "./pages/Waitlist";
 import WaitlistThankYou from "./pages/WaitlistThankYou";
 import Club from "./pages/Club";
@@ -100,6 +103,9 @@ const App = () => {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/resources/home-maintenance-survival-kit" element={<HomeMaintenanceSurvivalKit />} />
+            <Route path="/resources/provider-communication-builder" element={<ProviderCommunicationBuilder />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />

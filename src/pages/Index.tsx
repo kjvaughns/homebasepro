@@ -69,6 +69,14 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-3">
               <Button 
+                onClick={() => navigate("/resources")} 
+                variant="ghost" 
+                size="sm" 
+                className="h-9 text-sm px-4"
+              >
+                Resources
+              </Button>
+              <Button 
                 onClick={() => navigate("/pricing")} 
                 variant="ghost" 
                 size="sm" 
@@ -114,13 +122,23 @@ const Index = () => {
                 Manage all your home services in one place.
               </p>
               <div className="flex flex-col gap-4 items-center md:items-start animate-fade-in">
-                <Button 
-                  size="lg" 
-                  onClick={() => navigate("/waitlist")}
-                  className="text-base sm:text-lg px-6 sm:px-12 py-5 sm:py-6 w-full sm:w-auto"
-                >
-                  Join the Waitlist
-                </Button>
+                <div className="flex gap-3">
+                  <Button 
+                    size="lg" 
+                    onClick={() => navigate("/waitlist")}
+                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
+                  >
+                    Join the Waitlist
+                  </Button>
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    onClick={() => navigate("/resources")}
+                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
+                  >
+                    Free Tools
+                  </Button>
+                </div>
                 
                 <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                   <Button
