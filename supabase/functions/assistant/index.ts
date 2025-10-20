@@ -341,6 +341,12 @@ Use the lookup_home tool if they mention an address or you need property details
       { role: 'user', content: message }
     ];
 
+    console.log(`Sending ${messages.length} messages to OpenAI (${isProvider ? 'provider' : 'homeowner'} context)`);
+
+    // Force natural language response on first turn (no tools yet)
+    const hasAssistantResponse = recentHistory.some((m: any) => m.role === 'assistant');
+    const firstTurnConfig = !hasAssistantResponse ? { tool_choice: 'none' as const } : { tool_choice: 'auto' as const };
+
     // Call OpenAI
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiKey) {
@@ -357,13 +363,51 @@ Use the lookup_home tool if they mention an address or you need property details
         model: 'gpt-4o-mini',
         messages,
         tools,
-        tool_choice: 'auto'
+        ...firstTurnConfig
       })
     });
 
     let result = await response.json();
     let aiMessage = result.choices?.[0]?.message;
     const toolResults: any[] = [];
+
+    console.log('AI response received with', aiMessage?.tool_calls?.length || 0, 'tool calls');
+    console.log('AI content length:', aiMessage?.content?.length || 0);
+
+    // If content is empty and no tool calls, retry with explicit instruction
+    if ((!aiMessage?.content || aiMessage.content.trim().length < 20) && !aiMessage?.tool_calls) {
+      console.log('Empty response detected, retrying with explicit instruction');
+      
+      const retryMessages = [
+        ...messages,
+        { 
+          role: 'system' as const, 
+          content: 'Your previous response was empty. Respond now with a friendly acknowledgement and 3-5 specific clarifying questions tailored to the user\'s last message. Be conversational and helpful. Do not say "Tell me what\'s going on".' 
+        }
+      ];
+
+      const retryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: retryMessages,
+          tool_choice: 'none'
+        })
+      });
+
+      if (retryResponse.ok) {
+        const retryData = await retryResponse.json();
+        const retryMessage = retryData.choices?.[0]?.message;
+        if (retryMessage?.content) {
+          console.log('Retry successful, content length:', retryMessage.content.length);
+          aiMessage = retryMessage;
+        }
+      }
+    }
 
     // Handle tool calls
     for (let round = 0; round < 2 && aiMessage?.tool_calls; round++) {
@@ -373,6 +417,89 @@ Use the lookup_home tool if they mention an address or you need property details
       for (const call of calls) {
         const fnName = call.function?.name;
         const args = JSON.parse(call.function?.arguments || '{}');
+
+        console.log(`Executing tool: ${fnName}`, args);
+
+        // Provider tools (stubs for now)
+        if (fnName === 'check_schedule') {
+          const dateRange = args.date_range || 'today';
+          const stubSchedule = {
+            date_range: dateRange,
+            appointments: [
+              { time: '9:00 AM', client: 'Johnson Residence', service: 'HVAC Maintenance', address: '123 Oak St', status: 'confirmed' },
+              { time: '11:30 AM', client: 'Smith Property', service: 'Plumbing Repair', address: '456 Maple Ave', status: 'confirmed' },
+              { time: '2:00 PM', client: 'Davis Home', service: 'Electrical Inspection', address: '789 Pine Rd', status: 'tentative' }
+            ],
+            note: 'Sample schedule - connect your calendar for real-time updates'
+          };
+          
+          toolMessages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            name: fnName,
+            content: JSON.stringify(stubSchedule)
+          });
+          continue;
+        }
+
+        if (fnName === 'prioritize_jobs') {
+          const criteria = args.criteria || 'urgency and value';
+          const stubJobs = {
+            criteria,
+            prioritized_jobs: [
+              { rank: 1, client: 'Emergency - Wilson Residence', service: 'Water heater leak', urgency: 'high', value: '$450', reason: 'Emergency repair, immediate revenue, repeat client' },
+              { rank: 2, client: 'Martinez Home', service: 'HVAC installation', urgency: 'medium', value: '$3,200', reason: 'High-value job, scheduled for this week' },
+              { rank: 3, client: 'Brown Property', service: 'Routine maintenance', urgency: 'low', value: '$120', reason: 'Subscription service, build long-term relationship' }
+            ],
+            note: 'Rankings based on urgency, revenue potential, and client relationship'
+          };
+          
+          toolMessages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            name: fnName,
+            content: JSON.stringify(stubJobs)
+          });
+          continue;
+        }
+
+        if (fnName === 'get_client_details') {
+          const clientId = args.client_id || args.client_name;
+          
+          if (!clientId) {
+            toolMessages.push({
+              role: 'tool',
+              tool_call_id: call.id,
+              name: fnName,
+              content: JSON.stringify({
+                error: 'No client specified',
+                suggestion: 'Please provide a client name or ID. You can ask me to search for a client by name.'
+              })
+            });
+            continue;
+          }
+
+          // Stub client details
+          const stubClient = {
+            client_name: clientId,
+            service_history: [
+              { date: '2025-09-15', service: 'HVAC Tune-up', amount: '$180', status: 'completed' },
+              { date: '2025-08-02', service: 'Plumbing Repair', amount: '$220', status: 'completed' }
+            ],
+            total_revenue: '$400',
+            next_scheduled: 'HVAC Maintenance - Nov 15, 2025',
+            notes: 'Sample client data - connect your CRM for real records',
+            contact: { phone: '(555) 123-4567', email: 'client@example.com' }
+          };
+
+          toolMessages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            name: fnName,
+            content: JSON.stringify(stubClient)
+          });
+          continue;
+        }
 
         if (fnName === 'lookup_home') {
           console.log('Calling lookup-home with:', args.address);
@@ -491,9 +618,23 @@ Use the lookup_home tool if they mention an address or you need property details
             content: JSON.stringify(resultData)
           });
         }
+        
+        // Handle unknown tools gracefully
+        if (!toolMessages.find(m => m.tool_call_id === call.id)) {
+          console.log(`Unknown tool: ${fnName}, returning stub response`);
+          toolMessages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            name: fnName,
+            content: JSON.stringify({ 
+              error: 'Tool not yet implemented',
+              message: `The ${fnName} feature is coming soon. I can still help you with other tasks!`
+            })
+          });
+        }
       }
 
-      // Get AI response with tool results
+      // Get AI response with tool results, include tools again for second round
       response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -506,7 +647,9 @@ Use the lookup_home tool if they mention an address or you need property details
             ...messages,
             { role: 'assistant', content: aiMessage.content || '', tool_calls: calls },
             ...toolMessages
-          ]
+          ],
+          tools,
+          tool_choice: 'auto'
         })
       });
 

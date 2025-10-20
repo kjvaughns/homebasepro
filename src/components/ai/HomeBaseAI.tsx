@@ -23,6 +23,7 @@ interface HomeBaseAIProps {
     serviceType?: string;
   };
   onServiceRequestCreated?: (request: any) => void;
+  onSessionChange?: (sessionId: string) => void;
   userRole?: 'homeowner' | 'provider';
 }
 
@@ -30,17 +31,55 @@ export default function HomeBaseAI({
   sessionId: initialSessionId,
   context,
   onServiceRequestCreated,
+  onSessionChange,
   userRole = 'homeowner'
 }: HomeBaseAIProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isProvider = userRole === 'provider';
+
+  // Load chat history when session ID is available
+  useEffect(() => {
+    if (!sessionId || historyLoaded) return;
+
+    const loadHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ai_chat_messages')
+          .select('role, content')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true })
+          .limit(50);
+
+        if (error) {
+          console.error('Error loading chat history:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          setMessages(data.map((msg, idx) => ({
+            id: `history-${idx}`,
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content
+          })));
+        }
+        
+        setHistoryLoaded(true);
+      } catch (err) {
+        console.error('Failed to load history:', err);
+        setHistoryLoaded(true);
+      }
+    };
+
+    loadHistory();
+  }, [sessionId, historyLoaded]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,8 +127,14 @@ export default function HomeBaseAI({
 
       setMessages(prev => [...prev, assistantMsg]);
 
-      if (data.session_id && !sessionId) {
-        setSessionId(data.session_id);
+      if (data.session_id) {
+        const newSessionId = data.session_id;
+        setSessionId(newSessionId);
+        
+        // Persist session ID
+        if (newSessionId !== sessionId && onSessionChange) {
+          onSessionChange(newSessionId);
+        }
       }
 
       // Trigger callbacks

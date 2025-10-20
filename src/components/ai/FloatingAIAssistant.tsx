@@ -11,9 +11,17 @@ interface FloatingAIAssistantProps {
 }
 
 export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated }: FloatingAIAssistantProps) {
+  const storageKey = `hbai:session:${userRole}`;
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [sessionId, setSessionId] = useState<string | undefined>(() => {
+    // Load persisted session on mount
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(storageKey) || undefined;
+    }
+    return undefined;
+  });
 
   const handleToggle = () => {
     if (isOpen && !isMinimized) {
@@ -29,15 +37,23 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
     }
   };
 
-  const handleClose = () => {
-    // Keep session ID but close the UI
-    setIsOpen(false);
-    setIsMinimized(false);
+  const handleMinimize = () => {
+    // Just minimize, don't close
+    setIsMinimized(true);
   };
 
   const handleServiceRequestCreated = (requestId: string) => {
-    setSessionId(undefined); // Start fresh session after completing a request
     onServiceRequestCreated?.(requestId);
+  };
+
+  const handleSessionChange = (newSessionId: string) => {
+    setSessionId(newSessionId);
+    localStorage.setItem(storageKey, newSessionId);
+  };
+
+  const handleClearConversation = () => {
+    setSessionId(undefined);
+    localStorage.removeItem(storageKey);
   };
 
   return (
@@ -82,14 +98,24 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
                 HomeBase AI {userRole === 'provider' ? '· Business Assistant' : '· Home Services'}
               </h3>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearConversation}
+                className="h-8 text-xs"
+              >
+                Clear
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleMinimize}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Chat Content */}
@@ -98,6 +124,7 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
               sessionId={sessionId}
               context={context}
               onServiceRequestCreated={handleServiceRequestCreated}
+              onSessionChange={handleSessionChange}
               userRole={userRole}
             />
           </div>
