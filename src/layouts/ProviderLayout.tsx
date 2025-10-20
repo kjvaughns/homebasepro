@@ -31,6 +31,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
@@ -228,6 +229,12 @@ const ProviderLayout = () => {
             })}
           </div>
         </nav>
+
+        {/* Floating AI Assistant */}
+        <FloatingAIAssistant 
+          userRole="provider"
+          context={{ userId: userProfile?.user_id, orgId: organization?.id }}
+        />
       </div>
     );
   }
@@ -319,6 +326,12 @@ const ProviderLayout = () => {
           </div>
         </main>
       </div>
+
+      {/* Floating AI Assistant */}
+      <FloatingAIAssistant 
+        userRole="provider"
+        context={{ userId: userProfile?.user_id, orgId: organization?.id }}
+      />
     </>
   );
 };

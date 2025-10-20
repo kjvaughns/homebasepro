@@ -23,12 +23,14 @@ interface HomeBaseAIProps {
     serviceType?: string;
   };
   onServiceRequestCreated?: (request: any) => void;
+  userRole?: 'homeowner' | 'provider';
 }
 
 export default function HomeBaseAI({ 
   sessionId: initialSessionId,
   context,
-  onServiceRequestCreated 
+  onServiceRequestCreated,
+  userRole = 'homeowner'
 }: HomeBaseAIProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -37,6 +39,8 @@ export default function HomeBaseAI({
   const { toast } = useToast();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const isProvider = userRole === 'provider';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -144,34 +148,64 @@ export default function HomeBaseAI({
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">HomeBase AI</h3>
-                  <p className="text-sm text-muted-foreground">Your smart home assistant</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isProvider ? 'Your business assistant' : 'Your smart home assistant'}
+                  </p>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 I can help you with:
               </p>
               <div className="grid gap-3">
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                  <Home className="w-5 h-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Describe any home problem</p>
-                    <p className="text-xs text-muted-foreground">AC issues, leaks, lawn care needs</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                  <DollarSign className="w-5 h-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Get instant price estimates</p>
-                    <p className="text-xs text-muted-foreground">Fair, transparent pricing ranges</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                  <Star className="w-5 h-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Match with trusted pros</p>
-                    <p className="text-xs text-muted-foreground">Top-rated local providers</p>
-                  </div>
-                </div>
+                {isProvider ? (
+                  <>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                      <Home className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Job Prioritization</p>
+                        <p className="text-xs text-muted-foreground">Optimize your daily schedule</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                      <DollarSign className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Quote Assistance</p>
+                        <p className="text-xs text-muted-foreground">Get pricing recommendations</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                      <Star className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Business Insights</p>
+                        <p className="text-xs text-muted-foreground">Track performance metrics</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                      <Home className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Describe any home problem</p>
+                        <p className="text-xs text-muted-foreground">AC issues, leaks, lawn care needs</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                      <DollarSign className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Get instant price estimates</p>
+                        <p className="text-xs text-muted-foreground">Fair, transparent pricing ranges</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                      <Star className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Match with trusted pros</p>
+                        <p className="text-xs text-muted-foreground">Top-rated local providers</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -329,7 +363,7 @@ export default function HomeBaseAI({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Describe your home problem..."
+            placeholder={isProvider ? "Ask about your business..." : "Describe your home problem..."}
             disabled={isLoading}
             className="flex-1 h-11 sm:h-10 text-base"
           />
@@ -343,7 +377,9 @@ export default function HomeBaseAI({
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Try: "My AC is blowing warm air" or "Need lawn mowing"
+          {isProvider 
+            ? 'Try: "What should I work on today?" or "Help me quote an HVAC job"'
+            : 'Try: "My AC is blowing warm air" or "Need lawn mowing"'}
         </p>
       </div>
     </div>

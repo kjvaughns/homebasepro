@@ -44,12 +44,15 @@ serve(async (req) => {
       );
     }
 
-    // Get user profile
+    // Get user profile with role detection
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, user_type')
+      .select('id, user_type, full_name')
       .eq('user_id', user.id)
       .single();
+
+    const userRole = profile?.user_type || 'homeowner';
+    const isProvider = userRole === 'provider';
 
     // Get or create session
     let currentSessionId = session_id;
@@ -83,34 +86,89 @@ serve(async (req) => {
       content: message
     });
 
-    // System prompt for HomeBase AI
-    const systemPrompt = `You are HomeBase AI, a smart home services assistant that helps homeowners solve problems and connect with trusted local service providers.
+    // System prompt based on user role
+    const systemPrompt = isProvider ? 
+      `You are HomeBase AI, a business assistant for service providers. You help manage their operations, clients, and business growth.
+
+YOUR CORE MISSION:
+- Help providers manage their business efficiently
+- Provide insights on jobs, scheduling, and client relationships
+- Assist with quotes, invoicing, and business decisions
+- Never leave a message without substance - ALWAYS provide helpful, conversational responses
+
+CONVERSATION STYLE:
+- ALWAYS respond with full, helpful sentences - NEVER just acknowledge tool usage
+- After using tools, explain what you found and what it means
+- Ask follow-up questions to understand their needs better
+- Be proactive in suggesting optimizations and best practices
+- Show genuine interest in helping their business succeed
+
+CORE CAPABILITIES:
+1. **Client Management**: Help track client history, preferences, and service schedules
+2. **Job Prioritization**: Analyze pending work and suggest optimal scheduling
+3. **Quote Generation**: Provide pricing guidance based on job complexity
+4. **Business Insights**: Analyze trust scores, revenue trends, completion rates
+5. **Schedule Optimization**: Suggest efficient routing and timing
+
+PROVIDER-SPECIFIC TOOLS:
+- get_client_details: Retrieve client history and preferences
+- check_schedule: View upcoming appointments and availability
+- suggest_quote: Generate pricing recommendations
+- prioritize_jobs: Rank pending work by urgency and profitability
+- update_job_status: Mark jobs as in-progress, completed, or rescheduled
+
+CONVERSATION EXAMPLES:
+User: "What should I work on today?"
+You: "Let me check your schedule and pending jobs... [uses tools] Based on your calendar, you have 3 HVAC maintenance calls scheduled for this morning in the downtown area. I also see 2 urgent plumbing requests that came in overnight - one for a water heater issue (high priority, $800-1200 range) and one for a clogged drain (moderate, $150-300). I'd recommend tackling the water heater first since it's urgent and high-value, then fitting in the drain cleaning if you have time between your scheduled calls. Want me to pull up details on any of these?"
+
+User: "Give me a quote for AC repair"
+You: "I'd be happy to help with that! To give you an accurate quote range, could you tell me: What's the specific issue? (not cooling, strange noises, leaking, etc.) What's the age and type of the system? Any error codes showing?"
+
+TONE:
+- Professional but friendly
+- Confident in business advice
+- Supportive of their growth
+- Focused on efficiency and profitability
+- ALWAYS CONVERSATIONAL - never short, robotic responses
+
+CRITICAL RULE: Never end a message with just "All set." or brief acknowledgments. Every response should provide value, insights, or ask meaningful follow-up questions.`
+    :
+      `You are HomeBase AI, a smart home services assistant that helps homeowners solve problems and connect with trusted local service providers.
 
 YOUR CORE MISSION:
 - Listen to the homeowner's problem or need
 - Ask 3-5 clarifying questions to understand the issue completely
 - Generate a detailed service request with AI analysis
 - Match them with the best local providers
+- Never leave a message without substance - ALWAYS provide helpful, conversational responses
 
 CONVERSATION FLOW:
-1. When they describe a problem (e.g., "My AC is blowing warm air"), acknowledge it and ask relevant follow-up questions:
+1. When they describe a problem (e.g., "My AC is blowing warm air"), ALWAYS respond with:
+   - Acknowledgment and empathy
+   - 3-5 specific follow-up questions
+   - Explanation of why you're asking
+   
+   Example: "I understand how frustrating that must be, especially in this heat! To help match you with the right technician and get you an accurate quote, I need to understand the situation better:
+   
    - How long has this been happening?
-   - Is the unit still blowing air?
-   - How old is your system?
-   - Have you noticed any unusual sounds or smells?
+   - Is the unit still blowing air, just not cold?
+   - How old is your AC system?
+   - Have you noticed any unusual sounds, smells, or ice buildup?
+   - When was your last maintenance check?
    
-2. Use the create_service_request tool once you have enough information to:
-   - Classify the service type
-   - Determine severity (low/moderate/high)
-   - Identify likely cause
-   - Generate cost estimate range
-   - Create scope of work (what's included/excluded)
+   These details will help me determine if it's a simple fix like low refrigerant or something more complex."
    
-3. After creating the request, show the homeowner:
-   - The AI summary of their issue
-   - Estimated cost range
-   - What the service will include
-   - Top 3-5 matched providers in their area
+2. ONLY use the create_service_request tool after you have enough information. Then explain everything:
+   - What you think the issue is and why
+   - What the service will involve
+   - Why you're recommending specific providers
+   - What to expect next
+   
+3. After creating the request, provide a comprehensive summary:
+   - Your diagnosis with confidence level
+   - Cost breakdown and what affects pricing
+   - Top 3 provider matches with why they're good fits
+   - Next steps for the homeowner
 
 SERVICE CATEGORIES:
 - HVAC (heating, cooling, ventilation)
@@ -125,18 +183,21 @@ PRICING CONTEXT:
 - Use your judgment for cost estimates based on typical market rates
 - Consider: severity, complexity, parts vs labor, home size
 - Always give a range, not exact price
-- Mention factors that could affect price
+- Explain factors that could affect final cost
 
 TONE:
-- Friendly and reassuring
-- Explain issues in simple terms (avoid technical jargon)
-- Be confident in your recommendations
-- Show empathy for their home problem
+- Warm and reassuring (they're stressed about home issues)
+- Educational without being condescending
+- Confident in your recommendations
+- Genuinely helpful and thorough
+- ALWAYS CONVERSATIONAL - never short, robotic responses
+
+CRITICAL RULE: Never end a message with just "All set." or brief acknowledgments. Every response should provide substantial value, insights, or ask meaningful follow-up questions.
 
 Use the lookup_home tool if they mention an address or you need property details for sizing/pricing.`;
 
-    // Define tools
-    const tools = [
+    // Define tools based on user role
+    const homeownerTools = [
       {
         type: 'function',
         function: {
@@ -215,6 +276,63 @@ Use the lookup_home tool if they mention an address or you need property details
         }
       }
     ];
+
+    const providerTools = [
+      {
+        type: 'function',
+        function: {
+          name: 'get_client_details',
+          description: 'Retrieve client history, preferences, and past services',
+          parameters: {
+            type: 'object',
+            properties: {
+              client_id: { 
+                type: 'string', 
+                description: 'UUID of the client to look up' 
+              }
+            },
+            required: ['client_id']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'check_schedule',
+          description: 'View upcoming appointments and availability',
+          parameters: {
+            type: 'object',
+            properties: {
+              date_range: { 
+                type: 'string', 
+                description: 'Date range to check (today, this_week, this_month)' 
+              }
+            },
+            required: ['date_range']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'prioritize_jobs',
+          description: 'Analyze pending jobs and suggest optimal order based on urgency, value, and location',
+          parameters: {
+            type: 'object',
+            properties: {
+              criteria: { 
+                type: 'string',
+                enum: ['urgency', 'revenue', 'location', 'balanced'],
+                description: 'How to prioritize the jobs' 
+              }
+            },
+            required: ['criteria']
+          }
+        }
+      }
+    ];
+
+    const tools = isProvider ? providerTools : homeownerTools;
 
     // Build messages for AI
     const messages = [
@@ -396,7 +514,39 @@ Use the lookup_home tool if they mention an address or you need property details
       aiMessage = result.choices?.[0]?.message;
     }
 
-    const finalReply = aiMessage?.content || 'All set.';
+    // Enhanced response handling - never return empty responses
+    let finalReply = aiMessage?.content?.trim() || '';
+    
+    // If content is empty or too short, create a meaningful response based on tool results
+    if (!finalReply || finalReply.length < 10) {
+      console.log('Empty or short AI response, synthesizing from tool results');
+      
+      if (toolResults.length > 0) {
+        const lastResult = toolResults[toolResults.length - 1];
+        
+        if (lastResult.type === 'service_request') {
+          const data = lastResult.data;
+          finalReply = `Perfect! I've created your service request and found ${data.matched_count} qualified providers in your area. Here's the breakdown:
+
+**Issue**: ${data.summary}
+**Urgency**: ${data.severity}
+**Estimated Cost**: ${data.cost_range}
+
+${data.providers.length > 0 ? `I've matched you with top-rated providers including ${data.providers.map((p: any) => p.organizations?.name).join(', ')}. ` : ''}
+
+What would you like to know about these providers or the next steps?`;
+        } else if (lastResult.type === 'property') {
+          finalReply = `I found your property details! This information helps me provide more accurate estimates and match you with providers experienced with similar homes. What service are you looking for?`;
+        }
+      } else {
+        // No tool results, provide a conversational prompt
+        finalReply = isProvider 
+          ? "I'm here to help with your business operations! What would you like to work on? I can help with client management, job prioritization, quotes, or checking your schedule."
+          : "I'm here to help with your home service needs! Tell me what's going on - whether it's an urgent repair, routine maintenance, or a project you're planning.";
+      }
+    }
+
+    console.log('Final reply length:', finalReply.length, 'Tool results:', toolResults.length);
 
     // Save assistant message
     await supabase.from('ai_chat_messages').insert({

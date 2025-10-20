@@ -24,7 +24,7 @@ import DemoProvider from "./pages/demo/DemoProvider";
 import OnboardingHomeowner from "./pages/OnboardingHomeowner";
 import OnboardingProvider from "./pages/OnboardingProvider";
 import HomeownerDashboard from "./pages/homeowner/Dashboard";
-import ProviderDashboard from "./pages/ProviderDashboard";
+import ProviderDashboard from "./pages/provider/Dashboard";
 import BecomeProvider from "./pages/BecomeProvider";
 import Clients from "./pages/provider/Clients";
 import ClientDetail from "./pages/provider/ClientDetail";

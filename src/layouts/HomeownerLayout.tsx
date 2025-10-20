@@ -14,6 +14,7 @@ import {
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import homebaseLogo from "@/assets/homebase-logo.png";
@@ -242,6 +243,12 @@ export default function HomeownerLayout() {
           </nav>
         </aside>
       )}
+
+      {/* Floating AI Assistant */}
+      <FloatingAIAssistant 
+        userRole="homeowner"
+        context={{ userId: userProfile?.user_id }}
+      />
     </div>
   );
 }
