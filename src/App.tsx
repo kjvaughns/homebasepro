@@ -28,9 +28,9 @@ import ProviderDashboard from "./pages/provider/Dashboard";
 import BecomeProvider from "./pages/BecomeProvider";
 import Clients from "./pages/provider/Clients";
 import ClientDetail from "./pages/provider/ClientDetail";
-import ServicePlans from "./pages/provider/ServicePlans";
-import Subscriptions from "./pages/provider/Subscriptions";
+import ServiceCalls from "./pages/provider/ServiceCalls";
 import Payments from "./pages/provider/Payments";
+import Reviews from "./pages/provider/Reviews";
 import Team from "./pages/provider/Team";
 import Settings from "./pages/provider/Settings";
 import NotFound from "./pages/NotFound";
@@ -48,11 +48,6 @@ import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
 import HomeownerMessages from "./pages/homeowner/Messages";
 import ProviderMessages from "./pages/provider/Messages";
-import ProviderAnalytics from "./pages/provider/Analytics";
-import ProviderPayroll from "./pages/provider/Payroll";
-import ProviderAccounting from "./pages/provider/Accounting";
-import ServiceCalls from "./pages/provider/ServiceCalls";
-import Reviews from "./pages/provider/Reviews";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -100,12 +95,12 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone) {
-      const path = window.location.pathname;
-      if (!['/pwa-launch', '/login', '/auth'].includes(path)) {
-        window.location.replace('/pwa-launch');
-      }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'NOTIFICATION_CLICKED') {
+          console.log('Notification clicked:', event.data);
+        }
+      });
     }
   }, []);
 
@@ -114,17 +109,10 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        {user && <FloatingAIAssistant userRole={userRole} />}
         <BrowserRouter>
           <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/pwa-launch" element={<PWALaunch />} />
-        <Route path="/home" element={<Index />} />
-          <Route path="/waitlist" element={<Waitlist />} />
-          <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
-          <Route path="/club" element={<Club />} />
-          <Route path="/demo/homeowner" element={<DemoHomeowner />} />
-          <Route path="/demo/serviceprovider" element={<DemoProvider />} />
+            {/* Public routes */}
+            <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
@@ -161,39 +149,45 @@ const App = () => {
               <Route path="dashboard" element={<ProviderDashboard />} />
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientDetail />} />
-              <Route path="plans" element={<ServicePlans />} />
-              <Route path="subscriptions" element={<Subscriptions />} />
+              <Route path="service-calls" element={<ServiceCalls />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="reviews" element={<Reviews />} />
               <Route path="team" element={<Team />} />
               <Route path="settings" element={<Settings />} />
               <Route path="messages" element={<ProviderMessages />} />
-              <Route path="analytics" element={<ProviderAnalytics />} />
-              <Route path="accounting" element={<ProviderAccounting />} />
-              <Route path="payroll" element={<ProviderPayroll />} />
             </Route>
 
-            {/* Admin login (no layout) */}
+            {/* Demo routes */}
+            <Route path="/demo/homeowner" element={<DemoHomeowner />} />
+            <Route path="/demo/provider" element={<DemoProvider />} />
+
+            {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
-
-            {/* Admin routes with shared layout */}
             <Route path="/admin" element={<AdminLayout />}>
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="commerce" element={<AdminCommerce />} />
-              <Route path="users-access" element={<AdminUsersAccess />} />
-              <Route path="data" element={<AdminData />} />
-              <Route path="settings" element={<AdminSettings />} />
-              {/* Legacy routes for backward compatibility */}
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="team" element={<AdminTeam />} />
-              <Route path="beta-access" element={<AdminBetaAccess />} />
+              <Route index element={<AdminDashboard />} />
               <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="data" element={<AdminData />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="team" element={<AdminTeam />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="beta" element={<AdminBetaAccess />} />
               <Route path="referrals" element={<AdminReferrals />} />
+              <Route path="commerce" element={<AdminCommerce />} />
+              <Route path="access" element={<AdminUsersAccess />} />
             </Route>
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            {/* Waitlist routes */}
+            <Route path="/waitlist" element={<Waitlist />} />
+            <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
+            <Route path="/club" element={<Club />} />
+            <Route path="/pwa-launch" element={<PWALaunch />} />
+
+            {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          
+          {user && <FloatingAIAssistant userRole={userRole} />}
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

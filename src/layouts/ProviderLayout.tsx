@@ -37,10 +37,9 @@ import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 const TABBAR_H = 80;
 
 const mobileNavigation = [
-  { name: "Overview", href: "/provider/dashboard", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/provider/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/provider/clients", icon: Users },
-  { name: "Plans", href: "/provider/plans", icon: Package },
-  { name: "Messages", href: "/provider/messages", icon: MessageSquare },
+  { name: "Payments", href: "/provider/payments", icon: DollarSign },
   { name: "Settings", href: "/provider/settings", icon: Settings },
 ];
 

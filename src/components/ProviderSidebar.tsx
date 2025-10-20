@@ -1,15 +1,13 @@
 import { NavLink } from "react-router-dom";
 import {
-  LayoutDashboard,
+  Home,
   Users,
-  Package,
-  CreditCard,
+  Briefcase,
   DollarSign,
-  UserPlus,
+  Star,
+  MessageSquare,
   Settings,
   Menu,
-  MessageSquare,
-  TrendingUp,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,15 +23,14 @@ import {
 } from "@/components/ui/sidebar";
 
 const navigationItems = [
-  { title: "Overview", url: "/provider/dashboard", icon: LayoutDashboard },
-  { title: "Clients", url: "/provider/clients", icon: Users },
-  { title: "Service Plans", url: "/provider/plans", icon: Package },
-  { title: "Subscriptions", url: "/provider/subscriptions", icon: CreditCard },
-  { title: "Payments", url: "/provider/payments", icon: DollarSign },
-  { title: "Accounting", url: "/provider/accounting", icon: TrendingUp },
-  { title: "Messages", url: "/provider/messages", icon: MessageSquare },
-  { title: "Team", url: "/provider/team", icon: UserPlus },
-  { title: "Settings", url: "/provider/settings", icon: Settings },
+  { to: "/provider/dashboard", title: "Dashboard", icon: Home },
+  { to: "/provider/clients", title: "Clients", icon: Users },
+  { to: "/provider/service-calls", title: "Service Calls", icon: Briefcase },
+  { to: "/provider/payments", title: "Payments", icon: DollarSign },
+  { to: "/provider/reviews", title: "Reviews", icon: Star },
+  { to: "/provider/team", title: "Team", icon: Users },
+  { to: "/provider/messages", title: "Messages", icon: MessageSquare },
+  { to: "/provider/settings", title: "Settings", icon: Settings },
 ];
 
 export function ProviderSidebar() {
@@ -57,7 +54,7 @@ export function ProviderSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to={item.url}
+                      to={item.to}
                       end
                       className={({ isActive }) =>
                         isActive
