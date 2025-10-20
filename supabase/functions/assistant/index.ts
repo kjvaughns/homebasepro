@@ -50,6 +50,12 @@ serve(async (req) => {
   try {
     const { session_id, message, history = [], context = {} } = await req.json();
     
+    console.log('Request:', { 
+      message: message?.slice(0, 100), 
+      historyLen: history?.length || 0,
+      hasAssistantInHistory: history?.some((m: any) => m.role === 'assistant') 
+    });
+    
     if (!message || typeof message !== 'string') {
       return new Response(JSON.stringify({ error: 'Message required' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -252,8 +258,13 @@ serve(async (req) => {
     ];
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Configuration error. Contact support.' }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     
-    // First LLM call - force no tools on first turn
+    // First LLM call
     let aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
@@ -261,9 +272,16 @@ serve(async (req) => {
         model: 'google/gemini-2.5-flash', 
         messages, 
         tools,
-        tool_choice: hasAssistantHistory ? 'auto' : 'none'
+        tool_choice: 'auto'
       })
     });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error(`LLM gateway error ${aiResponse.status}:`, errorText);
+      return new Response(JSON.stringify({ error: 'llm_gateway', detail: errorText }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     if (aiResponse.status === 429) {
       return new Response(JSON.stringify({ error: 'rate_limit', message: 'Service busy. Try again soon.' }), 
@@ -471,7 +489,7 @@ serve(async (req) => {
       }
 
       // Second LLM call with tool results
-      messages.push({ role: 'assistant', content: '', tool_calls: assistantMessage.tool_calls });
+      messages.push({ role: 'assistant', content: assistantMessage?.content || '', tool_calls: assistantMessage.tool_calls });
       for (let i = 0; i < toolResults.length; i++) {
         messages.push({ 
           role: 'tool', 
