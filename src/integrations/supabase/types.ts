@@ -2135,6 +2135,47 @@ export type Database = {
           },
         ]
       }
+      provider_branding: {
+        Row: {
+          brand_color_primary: string | null
+          brand_color_secondary: string | null
+          cname_verification_token: string | null
+          cname_verified: boolean
+          created_at: string
+          custom_domain: string | null
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          brand_color_primary?: string | null
+          brand_color_secondary?: string | null
+          cname_verification_token?: string | null
+          cname_verified?: boolean
+          created_at?: string
+          custom_domain?: string | null
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          brand_color_primary?: string | null
+          brand_color_secondary?: string | null
+          cname_verification_token?: string | null
+          cname_verified?: boolean
+          created_at?: string
+          custom_domain?: string | null
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_branding_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_capabilities: {
         Row: {
           created_at: string | null
@@ -3051,6 +3092,124 @@ export type Database = {
           {
             foreignKeyName: "services_organization_id_fkey"
             columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      short_link_clicks: {
+        Row: {
+          clicked_at: string
+          country: string | null
+          device_type: string | null
+          id: string
+          ip: unknown | null
+          referrer: string | null
+          region: string | null
+          short_link_id: string
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          ip?: unknown | null
+          referrer?: string | null
+          region?: string | null
+          short_link_id: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          ip?: unknown | null
+          referrer?: string | null
+          region?: string | null
+          short_link_id?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_link_clicks_short_link_id_fkey"
+            columns: ["short_link_id"]
+            isOneToOne: false
+            referencedRelation: "short_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      short_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          domain: string
+          id: string
+          is_active: boolean
+          og_description: string | null
+          og_image_url: string | null
+          og_title: string | null
+          org_id: string
+          slug: string
+          target_url: string
+          theme_color: string | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          domain?: string
+          id?: string
+          is_active?: boolean
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          org_id: string
+          slug: string
+          target_url: string
+          theme_color?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          domain?: string
+          id?: string
+          is_active?: boolean
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          org_id?: string
+          slug?: string
+          target_url?: string
+          theme_color?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_links_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]

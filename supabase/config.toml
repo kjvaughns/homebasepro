@@ -77,3 +77,12 @@ verify_jwt = true
 
 [functions.send-appointment-reminders]
 verify_jwt = false
+
+[functions.short-links-api]
+verify_jwt = true
+
+[functions.generate-qr-code]
+verify_jwt = true
+
+[functions.short-link-redirect]
+verify_jwt = false
