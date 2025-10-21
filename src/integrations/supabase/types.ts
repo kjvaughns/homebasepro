@@ -387,6 +387,85 @@ export type Database = {
           },
         ]
       }
+      client_files: {
+        Row: {
+          category: string | null
+          client_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          uploaded_by: string
+        }
+        Insert: {
+          category?: string | null
+          client_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          uploaded_by: string
+        }
+        Update: {
+          category?: string | null
+          client_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_notes: {
+        Row: {
+          author_profile_id: string
+          body: string
+          client_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          author_profile_id: string
+          body: string
+          client_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          author_profile_id?: string
+          body?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_profiles: {
         Row: {
           contact_preferences: Json | null
@@ -499,46 +578,126 @@ export type Database = {
           },
         ]
       }
+      client_tag_assignments: {
+        Row: {
+          assigned_at: string
+          client_id: string
+          tag_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          client_id: string
+          tag_id: string
+        }
+        Update: {
+          assigned_at?: string
+          client_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_tag_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "client_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_tags_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
+          consent_email: boolean | null
+          consent_sms: boolean | null
           created_at: string
           email: string
           homeowner_profile_id: string | null
           id: string
+          last_contact_at: string | null
+          lifetime_value: number | null
           name: string
           notes: string | null
           organization_id: string
           phone: string | null
           status: string
+          tags: string[] | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           address?: string | null
+          consent_email?: boolean | null
+          consent_sms?: boolean | null
           created_at?: string
           email: string
           homeowner_profile_id?: string | null
           id?: string
+          last_contact_at?: string | null
+          lifetime_value?: number | null
           name: string
           notes?: string | null
           organization_id: string
           phone?: string | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           address?: string | null
+          consent_email?: boolean | null
+          consent_sms?: boolean | null
           created_at?: string
           email?: string
           homeowner_profile_id?: string | null
           id?: string
+          last_contact_at?: string | null
+          lifetime_value?: number | null
           name?: string
           notes?: string | null
           organization_id?: string
           phone?: string | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
           user_id?: string | null
         }
@@ -552,6 +711,57 @@ export type Database = {
           },
           {
             foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comm_logs: {
+        Row: {
+          body: string | null
+          channel: string
+          client_id: string
+          created_at: string
+          direction: string
+          id: string
+          meta: Json | null
+          organization_id: string
+          subject: string | null
+        }
+        Insert: {
+          body?: string | null
+          channel: string
+          client_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          meta?: Json | null
+          organization_id: string
+          subject?: string | null
+        }
+        Update: {
+          body?: string | null
+          channel?: string
+          client_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          meta?: Json | null
+          organization_id?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comm_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comm_logs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
