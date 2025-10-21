@@ -163,6 +163,15 @@ serve(async (req) => {
     // Handle payment intent succeeded (payment completed)
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      
+      // BUG-002 FIX: Confirm booking when payment succeeds
+      if (paymentIntent.metadata.booking_id) {
+        await supabase
+          .from('bookings')
+          .update({ status: 'confirmed', updated_at: new Date().toISOString() })
+          .eq('id', paymentIntent.metadata.booking_id);
+        console.log('Booking confirmed:', paymentIntent.metadata.booking_id);
+      }
       const { org_id, homeowner_id, job_id } = paymentIntent.metadata;
 
       if (org_id) {
