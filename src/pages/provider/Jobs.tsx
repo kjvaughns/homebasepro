@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, LayoutGrid, List as ListIcon, Map as MapIcon, Sparkles } from "lucide-react";
+import { Plus, LayoutGrid, List as ListIcon, Map as MapIcon, Sparkles, Calendar as CalendarIcon } from "lucide-react";
 import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
 import { JobsMap } from "@/components/provider/JobsMap";
+import { JobsCalendar } from "@/components/provider/JobsCalendar";
 import { toast } from "sonner";
 import {
   Select,
@@ -21,7 +22,7 @@ const Jobs = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [groupedJobs, setGroupedJobs] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'list' | 'map' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'kanban' | 'calendar'>('list');
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTimeframe, setFilterTimeframe] = useState<string>("all");
   const [teamMemberFilter, setTeamMemberFilter] = useState<string>("all");
@@ -359,6 +360,13 @@ const Jobs = () => {
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
+          <Button
+            variant={viewMode === 'calendar' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('calendar')}
+          >
+            <CalendarIcon className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -410,6 +418,14 @@ const Jobs = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <JobsCalendar 
+          jobs={jobs}
+          onSelectJob={openJobDetail}
+        />
       )}
 
       <JobDetailDrawer

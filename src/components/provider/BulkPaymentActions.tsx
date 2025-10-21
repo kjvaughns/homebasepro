@@ -17,24 +17,29 @@ export function BulkPaymentActions({
   const { toast } = useToast();
 
   const handleSendReminders = async () => {
-    const overduePayments = payments.filter(p => 
-      selectedIds.has(p.id) && p.status === 'open'
+    const eligiblePayments = payments.filter(p => 
+      selectedIds.has(p.id) && (p.status === 'open' || p.status === 'pending')
     );
 
-    if (overduePayments.length === 0) {
+    if (eligiblePayments.length === 0) {
       toast({
-        title: 'No overdue payments',
-        description: 'Please select overdue invoices to send reminders',
+        title: 'No eligible payments',
+        description: 'Please select open or pending invoices to send reminders',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      // Call edge function to send reminders (placeholder for now)
+      const { data, error } = await supabase.functions.invoke('send-payment-reminders', {
+        body: { payment_ids: Array.from(selectedIds) }
+      });
+
+      if (error) throw error;
+
       toast({
-        title: 'Reminders sent',
-        description: `Sent ${overduePayments.length} payment reminder${overduePayments.length > 1 ? 's' : ''}`,
+        title: 'Reminders Sent',
+        description: data.message || `Sent ${data.count} payment reminder${data.count !== 1 ? 's' : ''}`,
       });
       onClearSelection();
     } catch (error) {

@@ -5,12 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Link2, Receipt, DollarSign, ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentDrawer } from "@/components/provider/PaymentDrawer";
 import { CreatePaymentLinkModal } from "@/components/provider/CreatePaymentLinkModal";
 import { CreateInvoiceModal } from "@/components/provider/CreateInvoiceModal";
 import { DisputeDrawer } from "@/components/provider/DisputeDrawer";
+import { BulkPaymentActions } from "@/components/provider/BulkPaymentActions";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,6 +45,7 @@ export default function PaymentsPage() {
   const [showPaymentLink, setShowPaymentLink] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -118,6 +121,32 @@ export default function PaymentsPage() {
       )
     );
   }, [payments, searchQuery, statusFilter]);
+
+  const selectablePayments = useMemo(() => {
+    return filteredPayments.filter(p => 
+      p.status === 'open' || p.status === 'pending'
+    );
+  }, [filteredPayments]);
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === selectablePayments.length && selectablePayments.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectablePayments.map(p => p.id)));
+    }
+  };
 
   const loadAiSuggestions = async () => {
     try {
@@ -260,6 +289,16 @@ export default function PaymentsPage() {
         </TabsList>
 
         <TabsContent value="transactions" className="mt-4">
+          {selectedIds.size > 0 && (
+            <div className="mb-4">
+              <BulkPaymentActions
+                selectedIds={selectedIds}
+                payments={filteredPayments}
+                onClearSelection={() => setSelectedIds(new Set())}
+              />
+            </div>
+          )}
+          
           <Card>
             <div className="p-3 flex gap-2 items-center border-b">
               <Input
@@ -320,6 +359,13 @@ export default function PaymentsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
+                      <th className="text-left p-2 font-medium">
+                        <Checkbox
+                          checked={selectedIds.size === selectablePayments.length && selectablePayments.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all payments"
+                        />
+                      </th>
                       <TH>Date</TH>
                       <TH>Type</TH>
                       <TH>Status</TH>
@@ -328,19 +374,30 @@ export default function PaymentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredPayments.map((p) => (
-                      <tr
-                        key={p.id}
-                        onClick={() => setSelectedPayment(p)}
-                        className="border-b hover:bg-muted/30 cursor-pointer"
-                      >
-                        <TD>{new Date(p.created_at).toLocaleDateString()}</TD>
-                        <TD><span className="capitalize">{p.type?.replace('_', ' ')}</span></TD>
-                        <TD><StatusBadge s={p.status} /></TD>
-                        <TD>{p.meta?.client_name || '—'}</TD>
-                        <TD className="text-right pr-3 font-medium">{currency(p.amount / 100)}</TD>
-                      </tr>
-                    ))}
+                    {filteredPayments.map((p) => {
+                      const isSelectable = p.status === 'open' || p.status === 'pending';
+                      return (
+                        <tr
+                          key={p.id}
+                          className="border-b hover:bg-muted/30"
+                        >
+                          <td className="p-2">
+                            <Checkbox
+                              checked={selectedIds.has(p.id)}
+                              onCheckedChange={() => toggleSelection(p.id)}
+                              disabled={!isSelectable}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label={`Select payment ${p.id}`}
+                            />
+                          </td>
+                          <TD onClick={() => setSelectedPayment(p)} className="cursor-pointer">{new Date(p.created_at).toLocaleDateString()}</TD>
+                          <TD onClick={() => setSelectedPayment(p)} className="cursor-pointer"><span className="capitalize">{p.type?.replace('_', ' ')}</span></TD>
+                          <TD onClick={() => setSelectedPayment(p)} className="cursor-pointer"><StatusBadge s={p.status} /></TD>
+                          <TD onClick={() => setSelectedPayment(p)} className="cursor-pointer">{p.meta?.client_name || '—'}</TD>
+                          <TD onClick={() => setSelectedPayment(p)} className="cursor-pointer text-right pr-3 font-medium">{currency(p.amount / 100)}</TD>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

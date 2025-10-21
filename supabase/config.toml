@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.send-service-followups]
 verify_jwt = false
+
+[functions.send-payment-reminders]
+verify_jwt = true
