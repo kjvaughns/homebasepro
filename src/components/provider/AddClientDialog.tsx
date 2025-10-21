@@ -63,6 +63,11 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
       const plan = organization.plan || "free";
       
       if (plan === "free" && clientCount >= 5) {
+        toast({
+          title: 'Client limit reached',
+          description: 'Free plan is limited to 5 clients. Upgrade to Growth plan for unlimited clients.',
+          variant: 'destructive',
+        });
         setShowUpgradeModal(true);
         setLoading(false);
         return;

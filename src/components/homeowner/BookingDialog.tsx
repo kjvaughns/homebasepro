@@ -53,6 +53,23 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
         .eq('user_id', user.id)
         .single();
 
+      // Check if customer has payment method before booking
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('stripe_customer_id, default_payment_method')
+        .eq('profile_id', profile?.id)
+        .maybeSingle();
+
+      if (!customer || !customer.default_payment_method) {
+        toast({
+          title: 'Payment method required',
+          description: 'Please add a payment method in Settings before booking.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
       // Check provider availability before booking
       const startTime = new Date(`${formData.date.toDateString()} ${formData.time}`);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Add 1 hour

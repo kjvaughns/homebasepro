@@ -6,6 +6,7 @@ import { useProviderStats, useTodayJobs, useUnpaidInvoices, useUnrepliedMessages
 import { useDashboardInsights } from "./hooks/useDashboardInsights";
 import { AIInsightCard } from "@/components/provider/AIInsightCard";
 import { BalanceWidget } from "@/components/provider/BalanceWidget";
+import { NewProviderWelcome } from "@/components/provider/NewProviderWelcome";
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +22,8 @@ export default function ProviderDashboard() {
   const { threads: unreadThreads } = useUnrepliedMessages();
   const { insights, loading: insightsLoading } = useDashboardInsights();
 
+  const hasAnyData = stats.activeClients > 0 || jobs.length > 0 || invoices.length > 0;
+
   return (
     <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
       <header className="py-4 md:py-6 pt-safe">
@@ -31,6 +34,9 @@ export default function ProviderDashboard() {
           Welcome back! Here's an overview of your business.
         </p>
       </header>
+
+      {/* Welcome state for new providers */}
+      <NewProviderWelcome hasAnyData={hasAnyData} />
 
       {/* KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
