@@ -268,6 +268,9 @@ export type Database = {
           created_at: string
           date_time_end: string
           date_time_start: string
+          deposit_amount: number | null
+          deposit_paid: boolean | null
+          deposit_required: boolean | null
           estimated_price_high: number | null
           estimated_price_low: number | null
           final_price: number | null
@@ -275,6 +278,7 @@ export type Database = {
           homeowner_profile_id: string
           id: string
           notes: string | null
+          payment_captured: boolean | null
           provider_org_id: string
           service_name: string
           status: string
@@ -286,6 +290,9 @@ export type Database = {
           created_at?: string
           date_time_end: string
           date_time_start: string
+          deposit_amount?: number | null
+          deposit_paid?: boolean | null
+          deposit_required?: boolean | null
           estimated_price_high?: number | null
           estimated_price_low?: number | null
           final_price?: number | null
@@ -293,6 +300,7 @@ export type Database = {
           homeowner_profile_id: string
           id?: string
           notes?: string | null
+          payment_captured?: boolean | null
           provider_org_id: string
           service_name: string
           status?: string
@@ -304,6 +312,9 @@ export type Database = {
           created_at?: string
           date_time_end?: string
           date_time_start?: string
+          deposit_amount?: number | null
+          deposit_paid?: boolean | null
+          deposit_required?: boolean | null
           estimated_price_high?: number | null
           estimated_price_low?: number | null
           final_price?: number | null
@@ -311,6 +322,7 @@ export type Database = {
           homeowner_profile_id?: string
           id?: string
           notes?: string | null
+          payment_captured?: boolean | null
           provider_org_id?: string
           service_name?: string
           status?: string
@@ -820,6 +832,44 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          created_at: string | null
+          default_payment_method: string | null
+          id: string
+          profile_id: string | null
+          stripe_customer_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_payment_method?: string | null
+          id?: string
+          profile_id?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_payment_method?: string | null
+          id?: string
+          profile_id?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disputes: {
         Row: {
           amount: number
@@ -1112,6 +1162,76 @@ export type Database = {
         }
         Relationships: []
       }
+      ledger_entries: {
+        Row: {
+          amount_cents: number
+          created_at: string | null
+          currency: string | null
+          direction: string
+          homeowner_id: string | null
+          id: string
+          job_id: string | null
+          metadata: Json | null
+          occurred_at: string
+          party: string
+          provider_id: string | null
+          stripe_ref: string | null
+          type: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string | null
+          currency?: string | null
+          direction: string
+          homeowner_id?: string | null
+          id?: string
+          job_id?: string | null
+          metadata?: Json | null
+          occurred_at?: string
+          party: string
+          provider_id?: string | null
+          stripe_ref?: string | null
+          type: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string | null
+          currency?: string | null
+          direction?: string
+          homeowner_id?: string | null
+          id?: string
+          job_id?: string | null
+          metadata?: Json | null
+          occurred_at?: string
+          party?: string
+          provider_id?: string | null
+          stripe_ref?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_metadata: Json | null
@@ -1229,21 +1349,26 @@ export type Database = {
           city: string | null
           completion_rate: number | null
           created_at: string
+          default_payout_method: string | null
           description: string | null
           email: string | null
           id: string
+          instant_payouts_enabled: boolean | null
           lat: number | null
           lng: number | null
           logo_url: string | null
           name: string
           owner_id: string
           phone: string | null
+          plan: string | null
           service_area: string | null
           service_type: string[] | null
           slug: string
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean | null
           tagline: string | null
+          team_limit: number | null
+          transaction_fee_pct: number | null
           updated_at: string
           verified: boolean | null
         }
@@ -1252,21 +1377,26 @@ export type Database = {
           city?: string | null
           completion_rate?: number | null
           created_at?: string
+          default_payout_method?: string | null
           description?: string | null
           email?: string | null
           id?: string
+          instant_payouts_enabled?: boolean | null
           lat?: number | null
           lng?: number | null
           logo_url?: string | null
           name: string
           owner_id: string
           phone?: string | null
+          plan?: string | null
           service_area?: string | null
           service_type?: string[] | null
           slug: string
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           tagline?: string | null
+          team_limit?: number | null
+          transaction_fee_pct?: number | null
           updated_at?: string
           verified?: boolean | null
         }
@@ -1275,21 +1405,26 @@ export type Database = {
           city?: string | null
           completion_rate?: number | null
           created_at?: string
+          default_payout_method?: string | null
           description?: string | null
           email?: string | null
           id?: string
+          instant_payouts_enabled?: boolean | null
           lat?: number | null
           lng?: number | null
           logo_url?: string | null
           name?: string
           owner_id?: string
           phone?: string | null
+          plan?: string | null
           service_area?: string | null
           service_type?: string[] | null
           slug?: string
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           tagline?: string | null
+          team_limit?: number | null
+          transaction_fee_pct?: number | null
           updated_at?: string
           verified?: boolean | null
         }
@@ -1298,49 +1433,70 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          application_fee_cents: number | null
+          captured: boolean | null
           client_subscription_id: string
           created_at: string
           currency: string | null
           fee_amount: number
+          fee_pct_at_time: number | null
           fee_percent: number
           id: string
           meta: Json | null
           org_id: string | null
           payment_date: string
+          payment_method: string | null
+          refunded_cents: number | null
           status: string
           stripe_payment_intent_id: string | null
+          transfer_destination: string | null
+          transfer_group: string | null
           type: string | null
           url: string | null
         }
         Insert: {
           amount: number
+          application_fee_cents?: number | null
+          captured?: boolean | null
           client_subscription_id: string
           created_at?: string
           currency?: string | null
           fee_amount: number
+          fee_pct_at_time?: number | null
           fee_percent: number
           id?: string
           meta?: Json | null
           org_id?: string | null
           payment_date?: string
+          payment_method?: string | null
+          refunded_cents?: number | null
           status?: string
           stripe_payment_intent_id?: string | null
+          transfer_destination?: string | null
+          transfer_group?: string | null
           type?: string | null
           url?: string | null
         }
         Update: {
           amount?: number
+          application_fee_cents?: number | null
+          captured?: boolean | null
           client_subscription_id?: string
           created_at?: string
           currency?: string | null
           fee_amount?: number
+          fee_pct_at_time?: number | null
           fee_percent?: number
           id?: string
           meta?: Json | null
           org_id?: string | null
           payment_date?: string
+          payment_method?: string | null
+          refunded_cents?: number | null
           status?: string
           stripe_payment_intent_id?: string | null
+          transfer_destination?: string | null
+          transfer_group?: string | null
           type?: string | null
           url?: string | null
         }
@@ -1954,6 +2110,53 @@ export type Database = {
             foreignKeyName: "provider_rates_provider_org_id_fkey"
             columns: ["provider_org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          id: string
+          plan: string
+          provider_id: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_end: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          plan?: string
+          provider_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          id?: string
+          plan?: string
+          provider_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },

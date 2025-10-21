@@ -43,7 +43,207 @@ serve(async (req) => {
 
     const { action, ...payload } = await req.json();
 
-    // Create Stripe customer for client
+    // Helper function to get fee amount based on provider plan
+    const getFeeAmount = (provider: any, jobAmount: number) => {
+      const feePercent = provider.transaction_fee_pct || 0.08;
+      return Math.round(jobAmount * feePercent);
+    };
+
+    // Helper function to insert ledger entry
+    const insertLedgerEntry = async (entry: any) => {
+      await supabase.from('ledger_entries').insert(entry);
+    };
+
+    // HOMEOWNER PAYMENT INTENT (Destination Charge)
+    if (action === 'homeowner-payment-intent') {
+      const { jobId, homeownerId, amount, captureNow = true, tip = 0 } = payload;
+
+      // Get homeowner customer record
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('profile_id', homeownerId)
+        .single();
+
+      if (!customer) {
+        throw new Error('Customer not found - homeowner needs to add payment method first');
+      }
+
+      // Calculate fee
+      const totalAmount = Math.round((amount + tip) * 100);
+      const feeAmount = getFeeAmount(org, totalAmount);
+
+      // Create destination charge with application fee
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: totalAmount,
+        currency: 'usd',
+        customer: customer.stripe_customer_id,
+        payment_method: customer.default_payment_method,
+        confirm: false, // Will be confirmed on frontend with Elements
+        application_fee_amount: feeAmount,
+        transfer_data: { destination: org.stripe_account_id },
+        transfer_group: `job_${jobId}`,
+        capture_method: captureNow ? 'automatic' : 'manual',
+        metadata: {
+          org_id: org.id,
+          homeowner_id: homeownerId,
+          job_id: jobId,
+          tip_amount: tip,
+        },
+      });
+
+      // Insert payment record
+      const { data: payment } = await supabase
+        .from('payments')
+        .insert({
+          org_id: org.id,
+          homeowner_profile_id: homeownerId,
+          job_id: jobId,
+          type: 'job_payment',
+          status: captureNow ? 'pending' : 'authorized',
+          amount: totalAmount,
+          currency: 'usd',
+          stripe_id: paymentIntent.id,
+          transfer_destination: org.stripe_account_id,
+          application_fee_cents: feeAmount,
+          fee_pct_at_time: org.transaction_fee_pct,
+          captured: false,
+          transfer_group: `job_${jobId}`,
+          payment_method: customer.default_payment_method,
+          meta: { tip_amount: tip },
+        })
+        .select()
+        .single();
+
+      return new Response(
+        JSON.stringify({
+          paymentId: payment.id,
+          clientSecret: paymentIntent.client_secret,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // CAPTURE PAYMENT (After job completion)
+    if (action === 'capture-payment') {
+      const { paymentId } = payload;
+
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', paymentId)
+        .eq('org_id', org.id)
+        .single();
+
+      if (!payment) throw new Error('Payment not found');
+      if (payment.captured) throw new Error('Payment already captured');
+
+      await stripe.paymentIntents.capture(payment.stripe_id, {
+        stripeAccount: org.stripe_account_id,
+      });
+
+      await supabase
+        .from('payments')
+        .update({
+          status: 'paid',
+          captured: true,
+          payment_date: new Date().toISOString(),
+        })
+        .eq('id', paymentId);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // INSTANT PAYOUT
+    if (action === 'instant-payout') {
+      const { amount } = payload;
+
+      const payout = await stripe.payouts.create(
+        {
+          amount: Math.round(amount * 100),
+          currency: 'usd',
+        },
+        { stripeAccount: org.stripe_account_id }
+      );
+
+      await insertLedgerEntry({
+        occurred_at: new Date().toISOString(),
+        type: 'payout',
+        direction: 'debit',
+        amount_cents: Math.round(amount * 100),
+        currency: 'usd',
+        stripe_ref: payout.id,
+        party: 'provider',
+        provider_id: org.id,
+        metadata: { type: 'instant' },
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, payoutId: payout.id }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // PROVIDER BALANCE
+    if (action === 'provider-balance') {
+      const balance = await stripe.balance.retrieve({
+        stripeAccount: org.stripe_account_id,
+      });
+
+      return new Response(
+        JSON.stringify({
+          available: balance.available[0]?.amount || 0,
+          pending: balance.pending[0]?.amount || 0,
+          currency: balance.available[0]?.currency || 'usd',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // CREATE HOMEOWNER CUSTOMER
+    if (action === 'create-homeowner-customer') {
+      const { profileId, email, name, paymentMethodId } = payload;
+
+      // Create Stripe customer on platform account
+      const customer = await stripe.customers.create({
+        email,
+        name,
+        metadata: { profile_id: profileId },
+      });
+
+      // Attach payment method
+      if (paymentMethodId) {
+        await stripe.paymentMethods.attach(paymentMethodId, {
+          customer: customer.id,
+        });
+
+        await stripe.customers.update(customer.id, {
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+      }
+
+      // Save to database
+      await supabase
+        .from('customers')
+        .insert({
+          user_id: user.id,
+          profile_id: profileId,
+          stripe_customer_id: customer.id,
+          default_payment_method: paymentMethodId,
+        });
+
+      return new Response(
+        JSON.stringify({ customerId: customer.id }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Stripe customer for client (legacy - for provider-side clients)
     if (action === 'create-customer') {
       const { clientId } = payload;
       const { data: client } = await supabase

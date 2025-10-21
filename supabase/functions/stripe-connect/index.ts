@@ -62,13 +62,19 @@ serve(async (req) => {
       
       let accountId = org.stripe_account_id;
       
-      // Create Stripe Connect account if doesn't exist
+      // Create Stripe Connect Express account if doesn't exist
       if (!accountId) {
         const account = await stripe.accounts.create({
-          type: 'standard',
+          type: 'express',
           email: org.email,
+          country: 'US',
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
           business_profile: {
             name: org.name,
+            support_email: org.email,
           },
         });
         accountId = account.id;
@@ -131,8 +137,10 @@ serve(async (req) => {
       const account = await stripe.accounts.retrieve(org.stripe_account_id);
       const complete = account.charges_enabled && account.payouts_enabled;
       
-      // Update database if complete
-      if (complete && !org.stripe_onboarding_complete) {
+      // Update database with current status
+      if (complete !== org.stripe_onboarding_complete || 
+          account.charges_enabled !== org.charges_enabled || 
+          account.payouts_enabled !== org.payouts_enabled) {
         await fetch(`${supabaseUrl}/rest/v1/organizations?id=eq.${org.id}`, {
           method: 'PATCH',
           headers: {
@@ -142,7 +150,9 @@ serve(async (req) => {
             'Prefer': 'return=minimal',
           },
           body: JSON.stringify({
-            stripe_onboarding_complete: true,
+            stripe_onboarding_complete: complete,
+            charges_enabled: account.charges_enabled,
+            payouts_enabled: account.payouts_enabled,
           }),
         });
       }

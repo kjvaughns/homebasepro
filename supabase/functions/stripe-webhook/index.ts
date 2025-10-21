@@ -30,11 +30,78 @@ serve(async (req) => {
 
     console.log('Webhook event:', event.type);
 
-    // Handle invoice events
+    // Helper function to insert ledger entry
+    const insertLedgerEntry = async (entry: any) => {
+      await supabase.from('ledger_entries').insert(entry);
+    };
+
+    // Handle Express Connect account updates
+    if (event.type === 'account.updated') {
+      const account = event.data.object as Stripe.Account;
+      
+      await supabase
+        .from('organizations')
+        .update({
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+          stripe_onboarding_complete: account.charges_enabled && account.payouts_enabled,
+        })
+        .eq('stripe_account_id', account.id);
+    }
+
+    // Handle payment intent created (authorization)
+    if (event.type === 'payment_intent.created') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const { org_id, homeowner_id, job_id } = paymentIntent.metadata;
+
+      if (org_id) {
+        // Insert ledger entry for charge authorization
+        await insertLedgerEntry({
+          occurred_at: new Date().toISOString(),
+          type: 'charge',
+          direction: 'debit',
+          amount_cents: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          stripe_ref: paymentIntent.id,
+          party: 'customer',
+          job_id: job_id || null,
+          provider_id: org_id || null,
+          homeowner_id: homeowner_id || null,
+          metadata: { status: 'authorized' },
+        });
+      }
+    }
+
+    // Handle provider subscription invoices
     if (event.type === 'invoice.paid') {
       const invoice = event.data.object as Stripe.Invoice;
       const orgId = invoice.metadata.org_id;
 
+      // Check if this is a subscription invoice (provider plan billing)
+      if (invoice.subscription) {
+        const { data: subscription } = await supabase
+          .from('provider_subscriptions')
+          .select('*')
+          .eq('stripe_subscription_id', invoice.subscription)
+          .single();
+
+        if (subscription) {
+          // Insert ledger entry for subscription revenue
+          await insertLedgerEntry({
+            occurred_at: new Date().toISOString(),
+            type: 'subscription_invoice',
+            direction: 'credit',
+            amount_cents: invoice.amount_paid,
+            currency: invoice.currency,
+            stripe_ref: invoice.id,
+            party: 'platform',
+            provider_id: subscription.provider_id,
+            metadata: { plan: subscription.plan },
+          });
+        }
+      }
+
+      // Handle job payment invoices (legacy)
       if (orgId) {
         await supabase
           .from('payments')
@@ -70,16 +137,16 @@ serve(async (req) => {
         .eq('stripe_id', invoice.id);
     }
 
-    // Handle payment intent events
+    // Handle payment intent succeeded (payment completed)
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      const orgId = paymentIntent.metadata.org_id;
+      const { org_id, homeowner_id, job_id } = paymentIntent.metadata;
 
-      if (orgId) {
-        // Check if payment already exists
+      if (org_id) {
+        // Update payment record
         const { data: existing } = await supabase
           .from('payments')
-          .select('id')
+          .select('*')
           .eq('stripe_id', paymentIntent.id)
           .single();
 
@@ -88,29 +155,94 @@ serve(async (req) => {
             .from('payments')
             .update({ 
               status: 'paid',
+              captured: true,
               payment_date: new Date().toISOString(),
             })
             .eq('id', existing.id);
+
+          // Insert ledger entries for destination charge
+          const feeAmount = existing.application_fee_cents || 0;
+          const transferAmount = existing.amount - feeAmount;
+
+          // Platform fee
+          await insertLedgerEntry({
+            occurred_at: new Date().toISOString(),
+            type: 'fee',
+            direction: 'credit',
+            amount_cents: feeAmount,
+            currency: existing.currency,
+            stripe_ref: paymentIntent.id,
+            party: 'platform',
+            job_id: job_id || null,
+            provider_id: org_id || null,
+            homeowner_id: homeowner_id || null,
+            metadata: { fee_pct: existing.fee_pct_at_time },
+          });
+
+          // Provider transfer
+          await insertLedgerEntry({
+            occurred_at: new Date().toISOString(),
+            type: 'transfer',
+            direction: 'credit',
+            amount_cents: transferAmount,
+            currency: existing.currency,
+            stripe_ref: paymentIntent.id,
+            party: 'provider',
+            job_id: job_id || null,
+            provider_id: org_id || null,
+            homeowner_id: homeowner_id || null,
+            metadata: { transfer_group: existing.transfer_group },
+          });
+
+          // Update job status if completed
+          if (job_id) {
+            await supabase
+              .from('bookings')
+              .update({
+                deposit_paid: true,
+                payment_captured: true,
+                status: 'confirmed',
+              })
+              .eq('id', job_id);
+          }
         } else {
-          // Create new payment record
+          // Create new payment record (legacy payment intents)
           await supabase
             .from('payments')
             .insert({
-              org_id: orgId,
-              client_id: paymentIntent.metadata.client_id || null,
-              job_id: paymentIntent.metadata.job_id || null,
+              org_id: org_id,
+              homeowner_profile_id: homeowner_id || null,
+              job_id: job_id || null,
               type: paymentIntent.metadata.type || 'payment_link',
               status: 'paid',
               amount: paymentIntent.amount,
               currency: paymentIntent.currency,
               stripe_id: paymentIntent.id,
               payment_date: new Date().toISOString(),
-              fee_amount: 0,
-              fee_percent: 0,
+              captured: true,
               meta: paymentIntent.metadata,
             });
         }
       }
+    }
+
+    // Handle transfers created
+    if (event.type === 'transfer.created') {
+      const transfer = event.data.object as Stripe.Transfer;
+      
+      await insertLedgerEntry({
+        occurred_at: new Date().toISOString(),
+        type: 'transfer',
+        direction: 'credit',
+        amount_cents: transfer.amount,
+        currency: transfer.currency,
+        stripe_ref: transfer.id,
+        party: 'provider',
+        metadata: {
+          destination: transfer.destination,
+          transfer_group: transfer.transfer_group,
+        },
+      });
     }
 
     // Handle refunds
