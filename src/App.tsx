@@ -98,6 +98,8 @@ import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { MessagingProvider } from "@/contexts/MessagingContext";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
@@ -146,16 +148,17 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AIWidgetWrapper 
-            user={user} 
-            userRole={userRole} 
-            shouldShowAI={shouldShowAI} 
-          />
-          <ErrorBoundary>
-            <Routes>
+        <MessagingProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AIWidgetWrapper 
+              user={user} 
+              userRole={userRole} 
+              shouldShowAI={shouldShowAI} 
+            />
+            <ErrorBoundary>
+              <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<Pricing />} />
@@ -190,6 +193,7 @@ const App = () => {
               <Route path="/homeowner/settings" element={<HomeownerSettings />} />
               <Route path="/homeowner/messages" element={<HomeownerMessages />} />
               <Route path="/homeowner/messages/:id" element={<HomeownerMessages />} />
+              <Route path="/messages" element={<Messages />} />
             </Route>
 
             {/* Provider routes with shared layout */}
@@ -242,6 +246,7 @@ const App = () => {
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
               <Route path="messages" element={<ProviderMessages />} />
               <Route path="messages/:id" element={<ProviderMessages />} />
+              <Route path="/messages" element={<Messages />} />
             </Route>
 
             {/* Demo routes */}
@@ -274,9 +279,10 @@ const App = () => {
 
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-          </ErrorBoundary>
-        </BrowserRouter>
+            </Routes>
+            </ErrorBoundary>
+          </BrowserRouter>
+        </MessagingProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

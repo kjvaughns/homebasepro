@@ -77,21 +77,22 @@ self.addEventListener('push', (event) => {
   const data = event.data?.json() || {
     title: 'HomeBase',
     body: 'You have a new update',
-    url: '/',
+    url: '/messages',
     icon: '/homebase-logo.png'
   };
 
   const options = {
     body: data.body,
     icon: data.icon || '/homebase-logo.png',
-    badge: '/homebase-logo.png',
-    data: { url: data.url || '/' },
+    badge: data.badge || '/homebase-logo.png',
+    data: data.data || { url: data.url || '/messages' },
     actions: [
       { action: 'open', title: 'Open' },
       { action: 'dismiss', title: 'Dismiss' }
     ],
     vibrate: [200, 100, 200],
-    tag: 'homebase-notification'
+    tag: data.tag || 'homebase-notification',
+    requireInteraction: false
   };
 
   event.waitUntil(
@@ -107,14 +108,14 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen = event.notification.data?.url || '/messages';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
         // Focus existing window if available
         for (const client of clientList) {
-          if (client.url === urlToOpen && 'focus' in client) {
+          if (client.url.includes('/messages') && 'focus' in client) {
             return client.focus();
           }
         }

@@ -1,95 +1,75 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.74.0';
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
   try {
-    const { record } = await req.json(); // Database webhook payload
+    const { record } = await req.json();
     const message = record;
     
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    console.log('Processing message for push notification:', message.id);
+    
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
     
     // Get conversation members (exclude sender)
-    const membersRes = await fetch(
-      `${supabaseUrl}/rest/v1/conversation_members?conversation_id=eq.${message.conversation_id}&profile_id=neq.${message.sender_id}&notifications=eq.true`,
-      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
-    );
-    const members = await membersRes.json();
+    const { data: members, error: membersError } = await supabase
+      .from('conversation_members')
+      .select('profile_id, notifications_enabled, profiles!inner(user_id, full_name)')
+      .eq('conversation_id', message.conversation_id)
+      .neq('profile_id', message.sender_profile_id)
+      .eq('notifications_enabled', true);
+    
+    if (membersError) {
+      console.error('Error fetching members:', membersError);
+      return new Response(JSON.stringify({ error: membersError.message }), { status: 500 });
+    }
+    
+    if (!members || members.length === 0) {
+      console.log('No members to notify');
+      return new Response(JSON.stringify({ sent: 0 }), { status: 200 });
+    }
     
     // Get sender info
-    const senderRes = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?id=eq.${message.sender_id}&select=full_name`,
-      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
-    );
-    const [sender] = await senderRes.json();
+    const { data: sender } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', message.sender_profile_id)
+      .single();
     
-    // Get device tokens for recipients
-    const profileIds = members.map((m: any) => m.profile_id);
-    if (profileIds.length === 0) {
-      return new Response(JSON.stringify({ sent: 0 }), { headers: corsHeaders });
-    }
+    const senderName = sender?.full_name || 'Someone';
+    const messagePreview = message.content || '📎 Sent an attachment';
     
-    const devicesRes = await fetch(
-      `${supabaseUrl}/rest/v1/user_devices?profile_id=in.(${profileIds.join(',')})`,
-      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
-    );
-    const devices = await devicesRes.json();
+    // Send push notifications to all members
+    const userIds = members.map((m: any) => m.profiles.user_id);
     
-    // Send push notifications to each recipient
-    let sent = 0;
-    let failed = 0;
-
-    for (const member of members) {
-      if (!member.profile_id) continue;
-
-      try {
-        const notificationRes = await fetch(
-          `${supabaseUrl}/functions/v1/send-push-notification`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseKey}`
-            },
-            body: JSON.stringify({
-              userIds: [member.profile_id],
-              title: sender?.full_name || 'New message',
-              body: message.content || 'Sent an attachment',
-              url: `/messages?conversation=${message.conversation_id}`,
-              icon: '/homebase-logo.png'
-            })
-          }
-        );
-
-        if (notificationRes.ok) {
-          sent++;
-        } else {
-          failed++;
+    console.log('Sending push to users:', userIds);
+    
+    const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
+      body: {
+        userIds,
+        title: senderName,
+        body: messagePreview,
+        url: `/messages?conversation=${message.conversation_id}`,
+        icon: sender?.avatar_url || '/homebase-logo.png',
+        badge: '/homebase-logo.png',
+        tag: `conversation-${message.conversation_id}`,
+        data: {
+          conversationId: message.conversation_id,
+          messageId: message.id
         }
-      } catch (error) {
-        failed++;
-        console.error('Error sending notification:', error);
       }
-    }
-
-    return new Response(
-      JSON.stringify({ sent, failed }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    });
     
+    if (pushError) {
+      console.error('Error sending push notifications:', pushError);
+    }
+    
+    return new Response(JSON.stringify({ sent: userIds.length }), { status: 200 });
   } catch (error) {
-    console.error('push-on-message error:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('Error in push-on-message:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
   }
 });

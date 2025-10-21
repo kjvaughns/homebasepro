@@ -781,14 +781,63 @@ export type Database = {
           },
         ]
       }
+      conversation_members: {
+        Row: {
+          conversation_id: string
+          joined_at: string | null
+          last_read_at: string | null
+          notifications_enabled: boolean | null
+          profile_id: string
+          role: string | null
+          status: string | null
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          notifications_enabled?: boolean | null
+          profile_id: string
+          role?: string | null
+          status?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          notifications_enabled?: boolean | null
+          profile_id?: string
+          role?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
           homeowner_profile_id: string
           id: string
+          job_id: string | null
+          kind: string | null
           last_message_at: string | null
           last_message_preview: string | null
+          metadata: Json | null
           provider_org_id: string
+          title: string | null
           unread_count_homeowner: number | null
           unread_count_provider: number | null
           updated_at: string
@@ -797,9 +846,13 @@ export type Database = {
           created_at?: string
           homeowner_profile_id: string
           id?: string
+          job_id?: string | null
+          kind?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
+          metadata?: Json | null
           provider_org_id: string
+          title?: string | null
           unread_count_homeowner?: number | null
           unread_count_provider?: number | null
           updated_at?: string
@@ -808,9 +861,13 @@ export type Database = {
           created_at?: string
           homeowner_profile_id?: string
           id?: string
+          job_id?: string | null
+          kind?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
+          metadata?: Json | null
           provider_org_id?: string
+          title?: string | null
           unread_count_homeowner?: number | null
           unread_count_provider?: number | null
           updated_at?: string
@@ -1465,6 +1522,7 @@ export type Database = {
           created_at: string
           id: string
           message_type: string | null
+          meta: Json | null
           read: boolean
           sender_profile_id: string
           sender_type: string
@@ -1477,6 +1535,7 @@ export type Database = {
           created_at?: string
           id?: string
           message_type?: string | null
+          meta?: Json | null
           read?: boolean
           sender_profile_id: string
           sender_type: string
@@ -1489,6 +1548,7 @@ export type Database = {
           created_at?: string
           id?: string
           message_type?: string | null
+          meta?: Json | null
           read?: boolean
           sender_profile_id?: string
           sender_type?: string
@@ -3658,6 +3718,42 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      typing_states: {
+        Row: {
+          conversation_id: string
+          is_typing: boolean | null
+          last_typed_at: string | null
+          profile_id: string
+        }
+        Insert: {
+          conversation_id: string
+          is_typing?: boolean | null
+          last_typed_at?: string | null
+          profile_id: string
+        }
+        Update: {
+          conversation_id?: string
+          is_typing?: boolean | null
+          last_typed_at?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "typing_states_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "typing_states_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

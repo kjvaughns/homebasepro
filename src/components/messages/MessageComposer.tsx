@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,14 +19,22 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping }:
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<any>(null);
 
-  const handleTextChange = (value: string) => {
+  const handleTextChange = useCallback((value: string) => {
     setText(value);
     
     // Typing indicator
     onTyping(true);
-    clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => onTyping(false), 1500);
-  };
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Stop typing after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      onTyping(false);
+    }, 3000);
+  }, [onTyping]);
 
   const handleSend = async () => {
     if (!text.trim() || sending) return;
@@ -90,8 +98,9 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping }:
   };
 
   return (
-    <div className="bg-background border-t border-border p-3 safe-bottom">
-      <div className="flex items-end gap-2">
+    <div className="absolute bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t shadow-lg pb-safe">
+      <div className="px-4 py-3">
+        <div className="flex items-end gap-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -103,52 +112,43 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping }:
           }}
         />
         
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 flex-shrink-0"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-        >
-          {uploading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Paperclip className="h-5 w-5" />
-          )}
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 flex-shrink-0 rounded-full"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Paperclip className="h-5 w-5" />
+            )}
+          </Button>
         
-        <Textarea
-          value={text}
-          onChange={(e) => handleTextChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Message..."
-          className="flex-1 min-h-[40px] max-h-[120px] resize-none"
-          rows={1}
-        />
+          <Textarea
+            value={text}
+            onChange={(e) => handleTextChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            className="flex-1 min-h-[44px] max-h-32 resize-none rounded-2xl"
+            rows={1}
+            disabled={sending}
+          />
         
-        <Button
-          onClick={handleSend}
-          disabled={!text.trim() || sending}
-          size="icon"
-          className="h-10 w-10 flex-shrink-0"
-        >
-          {sending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
-      
-      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-        <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-          <ImageIcon className="h-3.5 w-3.5" />
-          <span>Image</span>
-        </button>
-        <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-          <Mic className="h-3.5 w-3.5" />
-          <span>Voice</span>
-        </button>
+          <Button
+            onClick={handleSend}
+            disabled={!text.trim() || sending}
+            size="icon"
+            className="h-11 w-11 flex-shrink-0 rounded-full"
+          >
+            {sending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
