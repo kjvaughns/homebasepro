@@ -16,6 +16,14 @@ import {
   Receipt,
   TrendingUp,
   Wallet,
+  LayoutGrid,
+  Wrench,
+  FileText,
+  Package,
+  User,
+  CreditCard,
+  Plug,
+  Smartphone,
 } from "lucide-react";
 import {
   Sidebar,
@@ -69,7 +77,18 @@ export function ProviderSidebar() {
   const navigationItems = [
     { to: "/provider/dashboard", title: "Dashboard", icon: Home, showFor: "all" },
     { to: "/provider/clients", title: "Clients", icon: Users, showFor: "owner" },
-    { to: "/provider/jobs", title: "Jobs", icon: Briefcase, showFor: "owner" },
+    { 
+      title: "Jobs & Services", 
+      icon: Briefcase, 
+      showFor: "owner",
+      isGroup: true,
+      items: [
+        { to: "/provider/jobs", title: "Job Pipeline", icon: LayoutGrid },
+        { to: "/provider/services", title: "Service Catalog", icon: Wrench },
+        { to: "/provider/service-plans", title: "Service Plans", icon: FileText },
+        { to: "/provider/parts-materials", title: "Parts & Materials", icon: Package },
+      ]
+    },
     { to: "/provider/my-jobs", title: "My Jobs", icon: Briefcase, showFor: "team" },
     { to: "/provider/my-earnings", title: "My Earnings", icon: DollarSign, showFor: "team" },
     { 
@@ -98,13 +117,30 @@ export function ProviderSidebar() {
       ]
     },
     { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
-    { to: "/provider/settings", title: "Settings", icon: Settings, showFor: "all" },
+    { 
+      title: "Settings", 
+      icon: Settings, 
+      showFor: "all",
+      isGroup: true,
+      items: [
+        { to: "/provider/settings/profile", title: "Profile", icon: User },
+        { to: "/provider/settings/billing", title: "Billing", icon: CreditCard },
+        { to: "/provider/settings/payments", title: "Payments", icon: Wallet },
+        { to: "/provider/settings/integrations", title: "Integrations", icon: Plug },
+        { to: "/provider/settings/app", title: "App Settings", icon: Smartphone },
+      ]
+    },
   ];
 
+  const jobsRoutes = ['/provider/jobs', '/provider/services', '/provider/service-plans', '/provider/parts-materials'];
   const financialRoutes = ['/provider/payments', '/provider/accounting', '/provider/analytics', '/provider/balance'];
   const teamRoutes = ['/provider/team', '/provider/time-tracking', '/provider/approve-time', '/provider/payroll', '/provider/commission-rules'];
+  const settingsRoutes = ['/provider/settings'];
+  
+  const isJobsRouteActive = jobsRoutes.some(route => location.pathname.startsWith(route));
   const isFinancialRouteActive = financialRoutes.some(route => location.pathname.startsWith(route));
   const isTeamRouteActive = teamRoutes.some(route => location.pathname.startsWith(route));
+  const isSettingsRouteActive = settingsRoutes.some(route => location.pathname.startsWith(route));
 
   const filteredItems = navigationItems.filter(item => {
     if (item.showFor === "all") return true;
@@ -128,7 +164,11 @@ export function ProviderSidebar() {
             <SidebarMenu>
               {filteredItems.map((item) => {
                 if (item.isGroup) {
-                  const isGroupActive = item.title === "Team" ? isTeamRouteActive : isFinancialRouteActive;
+                  const isGroupActive = 
+                    item.title === "Jobs & Services" ? isJobsRouteActive :
+                    item.title === "Team" ? isTeamRouteActive : 
+                    item.title === "Settings" ? isSettingsRouteActive :
+                    isFinancialRouteActive;
                   return (
                     <Collapsible
                       key={item.title}

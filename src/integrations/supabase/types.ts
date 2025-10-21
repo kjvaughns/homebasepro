@@ -1129,6 +1129,50 @@ export type Database = {
           },
         ]
       }
+      integrations: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          id: string
+          integration_type: string
+          is_connected: boolean | null
+          last_sync_at: string | null
+          organization_id: string
+          provider: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_type: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          organization_id: string
+          provider: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_type?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          organization_id?: string
+          provider?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           body_md: string
@@ -1429,6 +1473,65 @@ export type Database = {
           verified?: boolean | null
         }
         Relationships: []
+      }
+      parts_materials: {
+        Row: {
+          category: string | null
+          cost_price: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          markup_percentage: number | null
+          name: string
+          organization_id: string
+          quantity_on_hand: number | null
+          sell_price: number | null
+          sku: string | null
+          supplier: string | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          markup_percentage?: number | null
+          name: string
+          organization_id: string
+          quantity_on_hand?: number | null
+          sell_price?: number | null
+          sku?: string | null
+          supplier?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          markup_percentage?: number | null
+          name?: string
+          organization_id?: string
+          quantity_on_hand?: number | null
+          sell_price?: number | null
+          sku?: string | null
+          supplier?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parts_materials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -2661,6 +2764,59 @@ export type Database = {
             columns: ["service_request_id"]
             isOneToOne: false
             referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          default_price: number | null
+          description: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          pricing_type: string | null
+          required_skills: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          default_price?: number | null
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          pricing_type?: string | null
+          required_skills?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          default_price?: number | null
+          description?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          pricing_type?: string | null
+          required_skills?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

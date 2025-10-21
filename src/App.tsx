@@ -59,6 +59,14 @@ import HomeownerSettings from "./pages/homeowner/Settings";
 import Messages from "./pages/Messages";
 import Jobs from "@/pages/provider/Jobs";
 import MyJobs from "@/pages/provider/MyJobs";
+import ServiceCatalog from "@/pages/provider/ServiceCatalog";
+import PartsMaterials from "@/pages/provider/PartsMaterials";
+import ServicePlans from "@/pages/provider/ServicePlans";
+import ProfileSettings from "@/pages/provider/settings/ProfileSettings";
+import BillingSettings from "@/pages/provider/settings/BillingSettings";
+import PaymentSettings from "@/pages/provider/settings/PaymentSettings";
+import IntegrationSettings from "@/pages/provider/settings/IntegrationSettings";
+import AppSettings from "@/pages/provider/settings/AppSettings";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
@@ -165,6 +173,9 @@ const App = () => {
               <Route path="clients/import" element={<ImportClients />} />
               <Route path="clients/:id" element={<ClientDetail />} />
               <Route path="jobs" element={<Jobs />} />
+              <Route path="services" element={<ServiceCatalog />} />
+              <Route path="service-plans" element={<ServicePlans />} />
+              <Route path="parts-materials" element={<PartsMaterials />} />
               <Route path="my-jobs" element={<MyJobs />} />
               <Route path="payments" element={<Payments />} />
               <Route path="accounting" element={<Accounting />} />
@@ -177,6 +188,11 @@ const App = () => {
               <Route path="approve-time" element={<ApproveTime />} />
               <Route path="technician-home" element={<TechnicianHome />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="settings/profile" element={<ProfileSettings />} />
+              <Route path="settings/billing" element={<BillingSettings />} />
+              <Route path="settings/payments" element={<PaymentSettings />} />
+              <Route path="settings/integrations" element={<IntegrationSettings />} />
+              <Route path="settings/app" element={<AppSettings />} />
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
               <Route path="messages" element={<Messages />} />
           <Route path="messages/:id" element={<Messages />} />
