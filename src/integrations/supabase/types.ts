@@ -933,6 +933,39 @@ export type Database = {
           },
         ]
       }
+      favorites: {
+        Row: {
+          created_at: string
+          homeowner_profile_id: string
+          provider_org_id: string
+        }
+        Insert: {
+          created_at?: string
+          homeowner_profile_id: string
+          provider_org_id: string
+        }
+        Update: {
+          created_at?: string
+          homeowner_profile_id?: string
+          provider_org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_homeowner_profile_id_fkey"
+            columns: ["homeowner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follow_up_actions: {
         Row: {
           action_type: string
@@ -1537,12 +1570,15 @@ export type Database = {
       organizations: {
         Row: {
           avg_response_time_hours: number | null
+          base_zip: string | null
           city: string | null
           completion_rate: number | null
+          cover_image_url: string | null
           created_at: string
           default_payout_method: string | null
           description: string | null
           email: string | null
+          hero_image_url: string | null
           id: string
           instant_payouts_enabled: boolean | null
           lat: number | null
@@ -1552,9 +1588,13 @@ export type Database = {
           owner_id: string
           phone: string | null
           plan: string | null
+          rating_avg: number | null
+          rating_count: number | null
           service_area: string | null
+          service_radius_miles: number | null
           service_type: string[] | null
           slug: string
+          socials: Json | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean | null
           tagline: string | null
@@ -1568,12 +1608,15 @@ export type Database = {
         }
         Insert: {
           avg_response_time_hours?: number | null
+          base_zip?: string | null
           city?: string | null
           completion_rate?: number | null
+          cover_image_url?: string | null
           created_at?: string
           default_payout_method?: string | null
           description?: string | null
           email?: string | null
+          hero_image_url?: string | null
           id?: string
           instant_payouts_enabled?: boolean | null
           lat?: number | null
@@ -1583,9 +1626,13 @@ export type Database = {
           owner_id: string
           phone?: string | null
           plan?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
           service_area?: string | null
+          service_radius_miles?: number | null
           service_type?: string[] | null
           slug: string
+          socials?: Json | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           tagline?: string | null
@@ -1599,12 +1646,15 @@ export type Database = {
         }
         Update: {
           avg_response_time_hours?: number | null
+          base_zip?: string | null
           city?: string | null
           completion_rate?: number | null
+          cover_image_url?: string | null
           created_at?: string
           default_payout_method?: string | null
           description?: string | null
           email?: string | null
+          hero_image_url?: string | null
           id?: string
           instant_payouts_enabled?: boolean | null
           lat?: number | null
@@ -1614,9 +1664,13 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           plan?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
           service_area?: string | null
+          service_radius_miles?: number | null
           service_type?: string[] | null
           slug?: string
+          socials?: Json | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           tagline?: string | null
@@ -2303,6 +2357,53 @@ export type Database = {
           },
         ]
       }
+      provider_portfolio: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_featured: boolean | null
+          org_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_featured?: boolean | null
+          org_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_featured?: boolean | null
+          org_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_portfolio_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_promotions: {
         Row: {
           created_at: string | null
@@ -2712,6 +2813,79 @@ export type Database = {
             columns: ["provider_org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          homeowner_profile_id: string
+          id: string
+          is_verified: boolean | null
+          is_visible: boolean | null
+          provider_org_id: string
+          provider_responded_at: string | null
+          provider_response: string | null
+          rating: number
+          sentiment: string | null
+          service_visit_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          homeowner_profile_id: string
+          id?: string
+          is_verified?: boolean | null
+          is_visible?: boolean | null
+          provider_org_id: string
+          provider_responded_at?: string | null
+          provider_response?: string | null
+          rating: number
+          sentiment?: string | null
+          service_visit_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          homeowner_profile_id?: string
+          id?: string
+          is_verified?: boolean | null
+          is_visible?: boolean | null
+          provider_org_id?: string
+          provider_responded_at?: string | null
+          provider_response?: string | null
+          rating?: number
+          sentiment?: string | null
+          service_visit_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_homeowner_profile_id_fkey"
+            columns: ["homeowner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_service_visit_id_fkey"
+            columns: ["service_visit_id"]
+            isOneToOne: false
+            referencedRelation: "service_visits"
             referencedColumns: ["id"]
           },
         ]
