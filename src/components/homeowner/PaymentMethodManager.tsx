@@ -81,18 +81,24 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
 
         if (error) throw error;
       } else {
-        // Add payment method to existing customer
-        const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+        // Confirm SetupIntent for existing customer
+        const { error: confirmError, setupIntent } = await stripe.confirmSetup({
           elements,
+          redirect: 'if_required',
         });
 
-        if (pmError) throw pmError;
+        if (confirmError) throw confirmError;
 
-        // Attach to customer (would need a new action in payments-api)
-        toast({
-          title: 'Payment method added',
-          description: 'Your payment method has been saved',
+        // Attach payment method to customer
+        const { error: attachError } = await supabase.functions.invoke('payments-api', {
+          body: {
+            action: 'attach-payment-method',
+            profileId: profile?.id,
+            paymentMethodId: setupIntent?.payment_method,
+          },
         });
+
+        if (attachError) throw attachError;
       }
 
       onSuccess();
@@ -170,7 +176,7 @@ export function PaymentMethodManager() {
 
   const handleAddPaymentMethod = async () => {
     try {
-      // Create setup intent for adding payment method
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -180,16 +186,28 @@ export function PaymentMethodManager() {
         .eq('user_id', user.id)
         .single();
 
-      // For now, we'll use the payment intent flow
-      // In production, you'd want to use SetupIntent for saving cards without charging
+      // Create SetupIntent
+      const { data, error } = await supabase.functions.invoke('payments-api', {
+        body: {
+          action: 'create-setup-intent',
+          profileId: profile?.id,
+          email: user.email,
+          name: profile?.full_name,
+        },
+      });
+
+      if (error) throw error;
+
+      setSetupIntent(data.clientSecret);
       setShowAddDialog(true);
-      setSetupIntent('setup_intent_client_secret'); // Placeholder
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -260,10 +278,24 @@ export function PaymentMethodManager() {
               Your card will be securely saved for future payments. You won't be charged now.
             </p>
 
-            {/* In production, use SetupIntent */}
-            <div className="text-center py-8 text-muted-foreground">
-              Payment method form will appear here with Stripe SetupIntent
-            </div>
+            {setupIntent && stripePromise ? (
+              <Elements stripe={stripePromise} options={{ clientSecret: setupIntent }}>
+                <AddPaymentMethodForm
+                  onSuccess={() => {
+                    setShowAddDialog(false);
+                    loadCustomer();
+                    toast({
+                      title: 'Payment method added',
+                      description: 'Your payment method has been saved successfully',
+                    });
+                  }}
+                />
+              </Elements>
+            ) : (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

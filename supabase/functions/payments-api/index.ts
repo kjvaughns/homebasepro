@@ -54,6 +54,81 @@ serve(async (req) => {
       await supabase.from('ledger_entries').insert(entry);
     };
 
+    // CREATE SETUP INTENT (For saving payment method)
+    if (action === 'create-setup-intent') {
+      const { profileId, email, name } = payload;
+
+      // Check if customer exists
+      let { data: customer } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('profile_id', profileId)
+        .single();
+
+      let customerId = customer?.stripe_customer_id;
+
+      // Create customer if doesn't exist
+      if (!customerId) {
+        const stripeCustomer = await stripe.customers.create({
+          email,
+          name,
+          metadata: { profile_id: profileId },
+        });
+        customerId = stripeCustomer.id;
+
+        await supabase
+          .from('customers')
+          .insert({
+            user_id: user.id,
+            profile_id: profileId,
+            stripe_customer_id: customerId,
+          });
+      }
+
+      // Create SetupIntent
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        metadata: { profile_id: profileId },
+      });
+
+      return new Response(
+        JSON.stringify({ clientSecret: setupIntent.client_secret }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ATTACH PAYMENT METHOD (After SetupIntent confirmation)
+    if (action === 'attach-payment-method') {
+      const { profileId, paymentMethodId } = payload;
+
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('profile_id', profileId)
+        .single();
+
+      if (!customer) throw new Error('Customer not found');
+
+      // Set as default payment method
+      await stripe.customers.update(customer.stripe_customer_id, {
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
+
+      // Update in database
+      await supabase
+        .from('customers')
+        .update({ default_payment_method: paymentMethodId })
+        .eq('profile_id', profileId);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // HOMEOWNER PAYMENT INTENT (Destination Charge)
     if (action === 'homeowner-payment-intent') {
       const { jobId, homeownerId, amount, captureNow = true, tip = 0 } = payload;
@@ -69,9 +144,18 @@ serve(async (req) => {
         throw new Error('Customer not found - homeowner needs to add payment method first');
       }
 
-      // Calculate fee
+      // CRITICAL: Re-fetch org record to ensure fee is current
+      const { data: currentOrg } = await supabase
+        .from('organizations')
+        .select('transaction_fee_pct')
+        .eq('id', org.id)
+        .single();
+
+      if (!currentOrg) throw new Error('Organization not found');
+
+      // Calculate fee with current rate
       const totalAmount = Math.round((amount + tip) * 100);
-      const feeAmount = getFeeAmount(org, totalAmount);
+      const feeAmount = getFeeAmount(currentOrg, totalAmount);
 
       // Create destination charge with application fee
       const paymentIntent = await stripe.paymentIntents.create({

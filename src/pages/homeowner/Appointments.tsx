@@ -179,8 +179,15 @@ export default function Appointments() {
         <TabsContent value="past" className="space-y-4">
           {pastVisits.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">No past appointments</p>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No past appointments</h3>
+                <p className="text-sm text-muted-foreground mb-4 text-center">
+                  Your completed service history will appear here
+                </p>
+                <Button onClick={() => navigate("/homeowner/browse")}>
+                  Browse Providers
+                </Button>
               </CardContent>
             </Card>
           ) : (
