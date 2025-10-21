@@ -35,10 +35,12 @@ import ClientDrawer from "@/components/provider/ClientDrawer";
 import { AddClientDialog } from "@/components/provider/AddClientDialog";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMobileLayout } from "@/hooks/useMobileLayout";
 
 export default function Clients() {
   const navigate = useNavigate();
   const { clients, loading, refetch } = useClientsList();
+  const { isMobile } = useMobileLayout();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -140,7 +142,7 @@ export default function Clients() {
 
   return (
     <>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -258,7 +260,7 @@ export default function Clients() {
           Showing {filteredClients.length} of {clients.length} clients
         </div>
 
-        {/* Clients Table */}
+        {/* Clients Table/Cards */}
         <Card className="overflow-hidden">
           {filteredClients.length === 0 ? (
             <div className="p-12 text-center">
@@ -284,7 +286,57 @@ export default function Clients() {
                 </div>
               )}
             </div>
+          ) : isMobile ? (
+            // Mobile Card View
+            <div className="p-3 space-y-3">
+              {filteredClients.map((client) => (
+                <Card
+                  key={client.id}
+                  className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => setSelectedClient(client)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base truncate">{client.name}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{client.phone}</p>
+                    </div>
+                    {client.unread_count > 0 && (
+                      <Badge variant="secondary">{client.unread_count}</Badge>
+                    )}
+                  </div>
+
+                  {client.property_address && (
+                    <p className="text-sm text-muted-foreground truncate mb-2">
+                      {client.property_address}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="text-sm">
+                      {client.plan_name ? (
+                        <Badge>{client.plan_name}</Badge>
+                      ) : (
+                        <Badge variant="outline">No Plan</Badge>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">${client.lifetime_value.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">LTV</p>
+                    </div>
+                  </div>
+
+                  {client.outstanding_balance > 0 && (
+                    <div className="mt-2 pt-2 border-t">
+                      <p className="text-sm text-destructive font-medium">
+                        Balance Due: ${client.outstanding_balance.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
           ) : (
+            // Desktop Table View
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 border-b">

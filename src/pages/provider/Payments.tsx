@@ -11,6 +11,7 @@ import { PaymentDrawer } from "@/components/provider/PaymentDrawer";
 import { CreatePaymentLinkModal } from "@/components/provider/CreatePaymentLinkModal";
 import { CreateInvoiceModal } from "@/components/provider/CreateInvoiceModal";
 import { DisputeDrawer } from "@/components/provider/DisputeDrawer";
+import { useMobileLayout } from "@/hooks/useMobileLayout";
 
 interface Payment {
   id: string;
@@ -27,6 +28,7 @@ interface Payment {
 }
 
 export default function PaymentsPage() {
+  const { isMobile } = useMobileLayout();
   const [metrics, setMetrics] = useState<any>({});
   const [payments, setPayments] = useState<Payment[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
@@ -162,7 +164,7 @@ export default function PaymentsPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-6">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold">Payments</h1>
         <p className="text-muted-foreground">Track your revenue and transactions</p>
@@ -255,7 +257,35 @@ export default function PaymentsPage() {
               <div className="p-8 text-center text-muted-foreground">Loading...</div>
             ) : filteredPayments.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">No transactions found</div>
+            ) : isMobile ? (
+              // Mobile Card View
+              <div className="p-3 space-y-3">
+                {filteredPayments.map((p) => (
+                  <Card
+                    key={p.id}
+                    className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                    onClick={() => setSelectedPayment(p)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <StatusBadge s={p.status} />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(p.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {currency(p.amount / 100)}
+                      </p>
+                    </div>
+                    <p className="text-sm font-medium capitalize">{p.type?.replace('_', ' ')}</p>
+                    {p.meta?.client_name && (
+                      <p className="text-sm text-muted-foreground">{p.meta.client_name}</p>
+                    )}
+                  </Card>
+                ))}
+              </div>
             ) : (
+              // Desktop Table View
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">

@@ -233,7 +233,7 @@ const Jobs = () => {
   }
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 space-y-6 pb-20 md:pb-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Jobs</h1>
@@ -362,9 +362,9 @@ const Jobs = () => {
 
       {/* Kanban View */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-3 xl:grid-cols-5 mobile-scroll-x">
           {columns.map(col => (
-            <div key={col.key} className="bg-muted/30 rounded-xl p-3">
+            <div key={col.key} className="bg-muted/30 rounded-xl p-3 min-w-[280px] snap-start md:min-w-0">
               <div className="font-semibold mb-3 flex items-center justify-between">
                 <span>{col.label}</span>
                 <Badge variant="secondary">{groupedJobs[col.key]?.length || 0}</Badge>

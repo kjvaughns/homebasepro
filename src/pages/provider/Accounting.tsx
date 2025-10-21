@@ -11,6 +11,7 @@ import { DollarSign, TrendingUp, TrendingDown, Receipt, FileText, Plus } from "l
 import { MobileFeatureNotice } from "@/components/provider/MobileFeatureNotice";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useMobileLayout } from "@/hooks/useMobileLayout";
 
 interface Transaction {
   id: string;
@@ -24,6 +25,7 @@ interface Transaction {
 
 export default function Accounting() {
   const { toast } = useToast();
+  const { isMobile } = useMobileLayout();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -144,7 +146,7 @@ export default function Accounting() {
   }
 
   return (
-    <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">Accounting</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Track income, expenses, and financial reports</p>
@@ -320,54 +322,94 @@ export default function Accounting() {
                 </Card>
               )}
 
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs sm:text-sm">Date</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Type</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Category</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Description</TableHead>
-                      <TableHead className="text-right text-xs sm:text-sm">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
-                          No transactions yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      transactions.map((transaction) => (
-                        <TableRow key={transaction.id}>
-                          <TableCell className="text-xs sm:text-sm">
-                            {new Date(transaction.transaction_date).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
+              {isMobile ? (
+                // Mobile Card View
+                <div className="space-y-3">
+                  {transactions.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                      No transactions yet
+                    </div>
+                  ) : (
+                    transactions.map((transaction) => (
+                      <Card key={transaction.id} className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
                             <Badge
                               variant={transaction.type === "income" ? "default" : "secondary"}
                               className="text-xs"
                             >
                               {transaction.type}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs sm:text-sm">{transaction.category}</TableCell>
-                          <TableCell className="text-xs sm:text-sm text-muted-foreground">
-                            {transaction.description || "—"}
-                          </TableCell>
-                          <TableCell className={`text-right font-medium text-xs sm:text-sm ${
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(transaction.transaction_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <p className={`text-lg font-semibold ${
                             transaction.type === "income" ? "text-green-600" : "text-red-600"
                           }`}>
                             {transaction.type === "income" ? "+" : "-"}$
                             {(transaction.amount / 100).toFixed(2)}
+                          </p>
+                        </div>
+                        <p className="text-sm font-medium">{transaction.category}</p>
+                        {transaction.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{transaction.description}</p>
+                        )}
+                      </Card>
+                    ))
+                  )}
+                </div>
+              ) : (
+                // Desktop Table View
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                        <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                        <TableHead className="text-xs sm:text-sm">Category</TableHead>
+                        <TableHead className="text-xs sm:text-sm">Description</TableHead>
+                        <TableHead className="text-right text-xs sm:text-sm">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">
+                            No transactions yet
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                      ) : (
+                        transactions.map((transaction) => (
+                          <TableRow key={transaction.id}>
+                            <TableCell className="text-xs sm:text-sm">
+                              {new Date(transaction.transaction_date).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={transaction.type === "income" ? "default" : "secondary"}
+                                className="text-xs"
+                              >
+                                {transaction.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm">{transaction.category}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">
+                              {transaction.description || "—"}
+                            </TableCell>
+                            <TableCell className={`text-right font-medium text-xs sm:text-sm ${
+                              transaction.type === "income" ? "text-green-600" : "text-red-600"
+                            }`}>
+                              {transaction.type === "income" ? "+" : "-"}$
+                              {(transaction.amount / 100).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

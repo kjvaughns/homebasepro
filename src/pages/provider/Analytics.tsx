@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useMobileLayout } from "@/hooks/useMobileLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -31,6 +32,7 @@ import {
 export default function Analytics() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isMobile } = useMobileLayout();
   const [loading, setLoading] = useState(true);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<"30d" | "90d" | "1y">("30d");
@@ -231,7 +233,7 @@ export default function Analytics() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
@@ -344,7 +346,7 @@ export default function Analytics() {
             <CardDescription>Monthly revenue over time</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
               <LineChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
@@ -369,7 +371,7 @@ export default function Analytics() {
             <CardDescription>Active clients over time</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
               <BarChart data={clientGrowthData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
@@ -394,8 +396,8 @@ export default function Analytics() {
           <CardDescription>Distribution of revenue across service categories</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={300}>
+          <div className="w-full overflow-hidden">
+            <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
               <PieChart>
                 <Pie
                   data={serviceTypeData}
