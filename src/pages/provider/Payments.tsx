@@ -385,14 +385,18 @@ export default function PaymentsPage() {
 
       <CreatePaymentLinkModal
         open={showPaymentLink}
-        onOpenChange={setShowPaymentLink}
-        onSuccess={loadData}
+        onClose={() => {
+          setShowPaymentLink(false);
+          loadData();
+        }}
       />
 
       <CreateInvoiceModal
         open={showInvoice}
-        onOpenChange={setShowInvoice}
-        onSuccess={loadData}
+        onClose={() => {
+          setShowInvoice(false);
+          loadData();
+        }}
       />
     </div>
   );
