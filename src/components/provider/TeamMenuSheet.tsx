@@ -25,21 +25,21 @@ export function TeamMenuSheet({ open, onOpenChange }: TeamMenuSheetProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-3xl border-0 pb-safe">
-        <SheetHeader className="pb-2">
-          <SheetTitle className="text-center text-base">Team Management</SheetTitle>
+      <SheetContent side="bottom" className="h-auto max-h-[40vh] rounded-t-3xl border-0 pb-safe">
+        <SheetHeader className="pb-1">
+          <SheetTitle className="text-center text-sm font-semibold">Team Management</SheetTitle>
         </SheetHeader>
-        <div className="grid gap-1 py-2 px-2">
+        <div className="grid gap-0.5 py-1 px-3">
           {menuItems.map((item) => (
             <button
               key={item.href}
               onClick={() => handleNavigate(item.href)}
-              className="flex items-center gap-4 p-4 rounded-xl hover:bg-accent/50 active:bg-accent transition-colors text-left min-h-[56px]"
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/50 active:bg-accent transition-colors text-left min-h-[48px]"
             >
-              <div className="shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <item.icon className="h-5 w-5 text-primary" />
+              <div className="shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                <item.icon className="h-4 w-4 text-primary" />
               </div>
-              <span className="font-medium text-base">{item.title}</span>
+              <span className="font-medium text-sm">{item.title}</span>
             </button>
           ))}
         </div>
