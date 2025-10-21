@@ -38,9 +38,11 @@ const UserManagement = () => {
     fetchData();
   }, []);
 
+  // BUG-008 FIX: Include email in user search filter
   const filteredUsers = users.filter((user) =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone?.includes(searchTerm)
+    user.phone?.includes(searchTerm) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredProviders = providers.filter((provider) =>
@@ -77,7 +79,7 @@ const UserManagement = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name or phone..."
+                  placeholder="Search by name, email, or phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"

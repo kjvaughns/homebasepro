@@ -82,7 +82,24 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
       });
 
       if (error) throw error;
-      setSubscription(data.subscription);
+      
+      // BUG-007 FIX: Fetch full subscription details from Stripe if available
+      if (data?.subscription?.stripe_subscription_id) {
+        const { data: stripeData } = await supabase.functions.invoke('provider-subscription', {
+          body: { 
+            action: 'get-stripe-subscription',
+            subscriptionId: data.subscription.stripe_subscription_id,
+          },
+        });
+        
+        // Merge Stripe data with DB data
+        setSubscription({
+          ...data.subscription,
+          cancel_at_period_end: stripeData?.subscription?.cancel_at_period_end,
+        });
+      } else {
+        setSubscription(data?.subscription);
+      }
     } catch (error) {
       console.error('Failed to load subscription:', error);
     } finally {
@@ -162,16 +179,23 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
             <div className="p-6 bg-muted rounded-lg space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold">{current.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-2xl font-bold">{current.name}</h3>
+                    {subscription?.cancel_at_period_end ? (
+                      <Badge variant="destructive">Canceling</Badge>
+                    ) : (
+                      <Badge variant={current.id === 'free' ? 'secondary' : 'default'}>Current Plan</Badge>
+                    )}
+                  </div>
                   {current.price > 0 && (
                     <p className="text-muted-foreground">
-                      ${current.price}/month
+                      {subscription?.cancel_at_period_end 
+                        ? `Active until ${new Date(subscription.current_period_end).toLocaleDateString()}`
+                        : `$${current.price}/month`
+                      }
                     </p>
                   )}
                 </div>
-                <Badge variant={current.id === 'free' ? 'secondary' : 'default'}>
-                  Current Plan
-                </Badge>
               </div>
 
               <div className="grid gap-3">

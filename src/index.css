@@ -133,6 +133,13 @@ All colors MUST be HSL.
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* BUG-005 FIX: Safe area insets for iOS */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
     background: hsl(var(--background));
   }
 

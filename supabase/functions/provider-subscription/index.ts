@@ -200,6 +200,37 @@ serve(async (req) => {
       );
     }
 
+    if (action === 'get-stripe-subscription') {
+      const { subscriptionId } = await req.json();
+      const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+      return new Response(
+        JSON.stringify({ subscription: { cancel_at_period_end: stripeSub.cancel_at_period_end } }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // BUG-007 FIX: Get full Stripe subscription details
+    if (action === 'get-stripe-subscription') {
+      const { subscriptionId } = await req.json();
+      
+      if (!subscriptionId) {
+        throw new Error('Subscription ID required');
+      }
+
+      const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+
+      return new Response(
+        JSON.stringify({ 
+          subscription: {
+            cancel_at_period_end: stripeSub.cancel_at_period_end,
+            current_period_end: stripeSub.current_period_end,
+            status: stripeSub.status,
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     throw new Error('Invalid action');
 
   } catch (error) {

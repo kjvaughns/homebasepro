@@ -384,7 +384,7 @@ export default function HomeownerMessages() {
                   style={{
                     backgroundImage:
                       "repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted) / 0.02) 10px, hsl(var(--muted) / 0.02) 20px)",
-                    paddingBottom: "calc(120px + env(safe-area-inset-bottom))",
+                    paddingBottom: "140px", // BUG-005 FIX: Increased padding for safe area
                   }}
                 >
                   {messages.length === 0 ? (
@@ -412,8 +412,8 @@ export default function HomeownerMessages() {
                   </Button>
                 )}
 
-                {/* Fixed Bottom Section */}
-                <div className="absolute bottom-[0px] md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
+                {/* Fixed Bottom Section - BUG-005 FIX: Added safe area support */}
+                <div className="absolute bottom-[0px] md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm pb-safe">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
                     <div className="border-b px-4 py-2 bg-card/50">

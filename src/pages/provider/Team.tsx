@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Laptop, DollarSign } from "lucide-react";
+import { Plus, Laptop, DollarSign, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -39,6 +39,8 @@ export default function Team() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showCompensationDialog, setShowCompensationDialog] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [teamLimit, setTeamLimit] = useState(0);
+  const [canInviteMore, setCanInviteMore] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,16 +61,16 @@ export default function Team() {
       if (!organization) return;
       setOrganizationId(organization.id);
 
-      // Load subscription tier
-      const { data: subscription } = await supabase
-        .from("organization_subscriptions")
-        .select("plan_tier")
-        .eq("organization_id", organization.id)
-        .eq("status", "active")
+      // BUG-004 FIX: Load organization team limits
+      const { data: orgData } = await supabase
+        .from("organizations")
+        .select("plan, team_limit")
+        .eq("id", organization.id)
         .single();
 
-      if (subscription) {
-        setPlanTier(subscription.plan_tier);
+      if (orgData) {
+        setPlanTier(orgData.plan || '');
+        setTeamLimit(orgData.team_limit || 0);
       }
 
       // Load team members
@@ -92,6 +94,10 @@ export default function Team() {
         compensationMap[comp.team_member_id] = comp;
       });
       setCompensations(compensationMap);
+      
+      // BUG-004 FIX: Check if can invite more based on current count vs limit
+      const activeCount = (data || []).filter(m => m.status === 'invited' || m.status === 'active').length;
+      setCanInviteMore(activeCount < (teamLimit || 0));
     } catch (error) {
       console.error("Error loading team:", error);
       toast({
@@ -124,6 +130,23 @@ export default function Team() {
         <div className="flex gap-2 w-full sm:w-auto">
           {isTeamFeatureAvailable && (
             <>
+              {canInviteMore ? (
+                <Button
+                  onClick={() => setShowInviteDialog(true)}
+                  className="flex-1 sm:flex-none"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Invite Team Member
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => navigate('/provider/settings/billing')}
+                  variant="default"
+                  className="flex-1 sm:flex-none"
+                >
+                  Upgrade Plan
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 className="flex-1 sm:flex-none"

@@ -133,15 +133,27 @@ serve(async (req) => {
     if (action === 'homeowner-payment-intent') {
       const { jobId, homeownerId, amount, captureNow = true, tip = 0 } = payload;
 
-      // Get homeowner customer record
-      const { data: customer } = await supabase
+      // BUG-001 FIX: Get or create homeowner customer record
+      let { data: customer } = await supabase
         .from('customers')
         .select('*')
         .eq('profile_id', homeownerId)
-        .single();
+        .maybeSingle();
 
       if (!customer) {
-        throw new Error('Customer not found - homeowner needs to add payment method first');
+        console.log('Creating Stripe customer for homeowner:', homeownerId);
+        const { data: profile } = await supabase.from('profiles').select('full_name, user_id').eq('id', homeownerId).single();
+        const { data: authUser } = await supabase.auth.admin.getUserById(profile?.user_id || '');
+        const stripeCustomer = await stripe.customers.create({
+          email: authUser?.user?.email,
+          name: profile?.full_name,
+          metadata: { profile_id: homeownerId },
+        });
+        const { data: newCustomer } = await supabase.from('customers').insert({
+          profile_id: homeownerId,
+          stripe_customer_id: stripeCustomer.id,
+        }).select().single();
+        customer = newCustomer;
       }
 
       // CRITICAL: Re-fetch org record to ensure fee is current
@@ -172,6 +184,7 @@ serve(async (req) => {
           org_id: org.id,
           homeowner_id: homeownerId,
           job_id: jobId,
+          booking_id: jobId, // BUG-002 FIX: Add booking_id for webhook handler
           tip_amount: tip,
         },
       });
