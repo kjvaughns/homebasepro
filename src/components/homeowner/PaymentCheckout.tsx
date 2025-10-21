@@ -14,7 +14,17 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Dynamically load Stripe with publishable key from backend
+const getStripePromise = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-stripe-config');
+    if (error) throw error;
+    return loadStripe(data.publishableKey);
+  } catch (error) {
+    console.error('Failed to load Stripe:', error);
+    return null;
+  }
+};
 
 interface PaymentCheckoutProps {
   jobId: string;
@@ -147,10 +157,16 @@ function CheckoutForm({ jobId, amount, description, onSuccess }: { jobId: string
 export function PaymentCheckout({ jobId, providerId, amount, description, onSuccess, onCancel }: PaymentCheckoutProps) {
   const [clientSecret, setClientSecret] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    createPaymentIntent();
+    const init = async () => {
+      const stripe = await getStripePromise();
+      setStripePromise(Promise.resolve(stripe));
+      await createPaymentIntent();
+    };
+    init();
   }, []);
 
   const createPaymentIntent = async () => {
@@ -200,7 +216,7 @@ export function PaymentCheckout({ jobId, providerId, amount, description, onSucc
     );
   }
 
-  if (!clientSecret) {
+  if (!clientSecret || !stripePromise) {
     return (
       <Card>
         <CardContent className="py-12">

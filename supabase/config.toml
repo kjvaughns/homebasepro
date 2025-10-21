@@ -62,3 +62,6 @@ verify_jwt = true
 
 [functions.provider-subscription]
 verify_jwt = true
+
+[functions.get-stripe-config]
+verify_jwt = false

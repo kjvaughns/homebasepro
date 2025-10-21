@@ -15,7 +15,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Dynamically load Stripe with publishable key from backend
+const getStripePromise = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-stripe-config');
+    if (error) throw error;
+    return loadStripe(data.publishableKey);
+  } catch (error) {
+    console.error('Failed to load Stripe:', error);
+    return null;
+  }
+};
 
 function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
   const stripe = useStripe();
@@ -121,10 +131,16 @@ export function PaymentMethodManager() {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [setupIntent, setSetupIntent] = useState<string>('');
+  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadCustomer();
+    const init = async () => {
+      const stripe = await getStripePromise();
+      setStripePromise(Promise.resolve(stripe));
+      await loadCustomer();
+    };
+    init();
   }, []);
 
   const loadCustomer = async () => {
