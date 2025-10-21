@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PWASettingsCard } from "@/components/pwa/PWASettingsCard";
+import { PaymentMethodManager } from "@/components/homeowner/PaymentMethodManager";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AvatarUpload } from "@/components/AvatarUpload";
-import { PWASettingsCard } from "@/components/pwa/PWASettingsCard";
 
 export default function HomeownerSettings() {
   const navigate = useNavigate();
@@ -108,28 +109,17 @@ export default function HomeownerSettings() {
       )}
 
       <Tabs defaultValue="profile" className="space-y-4">
-        {/* 🔧 FIXED TAB GRID LAYOUT */}
-        <TabsList
-          className="
-    !grid h-auto w-full grid-cols-2 md:grid-cols-4 gap-2 mb-3
-    p-0 bg-transparent border-0
-    data-[orientation=horizontal]:!flex-none
-  "
-        >
+        <TabsList className="!grid h-auto w-full grid-cols-2 md:grid-cols-4 gap-2 mb-3 p-0 bg-transparent border-0 data-[orientation=horizontal]:!flex-none">
           {[
             { value: "profile", label: "Profile" },
-            { value: "notifications", label: "Notifs" },
+            { value: "payments", label: "Payments" },
             { value: "security", label: "Security" },
             { value: "pwa", label: "App" },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="
-                w-full min-w-0 min-h-[46px] justify-center text-[15px]
-                rounded-lg border bg-card hover:bg-accent transition-colors
-                data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary
-              "
+              className="w-full min-w-0 min-h-[46px] justify-center text-[15px] rounded-lg border bg-card hover:bg-accent transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
             >
               {tab.label}
             </TabsTrigger>
@@ -184,20 +174,10 @@ export default function HomeownerSettings() {
           </Card>
         </TabsContent>
 
-        {/* === NOTIFICATIONS TAB === */}
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Manage how you receive notifications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Notification preferences coming soon</p>
-            </CardContent>
-          </Card>
+        <TabsContent value="payments">
+          <PaymentMethodManager />
         </TabsContent>
 
-        {/* === SECURITY TAB === */}
         <TabsContent value="security">
           <Card>
             <CardHeader>

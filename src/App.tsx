@@ -33,6 +33,7 @@ import Payments from "./pages/provider/Payments";
 import Reviews from "./pages/provider/Reviews";
 import Team from "./pages/provider/Team";
 import Settings from "./pages/provider/Settings";
+import StripeOnboarding from "./pages/provider/StripeOnboarding";
 import NotFound from "./pages/NotFound";
 import ProviderLayout from "./layouts/ProviderLayout";
 import HomeownerLayout from "./layouts/HomeownerLayout";
@@ -159,7 +160,8 @@ const App = () => {
               <Route path="payments" element={<Payments />} />
               <Route path="team" element={<Team />} />
               <Route path="settings" element={<Settings />} />
-          <Route path="messages" element={<Messages />} />
+              <Route path="stripe-onboarding" element={<StripeOnboarding />} />
+              <Route path="messages" element={<Messages />} />
           <Route path="messages/:id" element={<Messages />} />
             </Route>
 
