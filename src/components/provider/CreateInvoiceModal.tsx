@@ -1,305 +1,256 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, ExternalLink } from "lucide-react";
-
-interface LineItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-}
+import { toast } from "sonner";
+import { Plus, Trash2, Send } from "lucide-react";
 
 interface CreateInvoiceModalProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onClose: () => void;
+  clientId?: string;
+  jobId?: string;
 }
 
-export function CreateInvoiceModal({ open, onOpenChange, onSuccess }: CreateInvoiceModalProps) {
-  const [clients, setClients] = useState<any[]>([]);
+interface LineItem {
+  description: string;
+  quantity: number;
+  rate: number;
+}
+
+export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInvoiceModalProps) {
   const [loading, setLoading] = useState(false);
-  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  const [formData, setFormData] = useState({
-    clientId: "",
-    jobId: "",
-    dueDate: "",
-    notes: "",
-    sendNow: true,
-  });
-
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState(clientId || "");
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { id: "1", description: "", quantity: 1, unitPrice: 0 },
+    { description: "", quantity: 1, rate: 0 }
   ]);
+  const [notes, setNotes] = useState("");
+  const [dueDate, setDueDate] = useState("");
 
   useEffect(() => {
     if (open) {
       loadClients();
-      setInvoiceUrl(null);
-      setLineItems([{ id: "1", description: "", quantity: 1, unitPrice: 0 }]);
     }
   }, [open]);
 
   const loadClients = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org) return;
+
+    const { data } = await supabase
+      .from("clients")
+      .select("id, name, email")
+      .eq("organization_id", org.id)
+      .order("name");
+
+    setClients(data || []);
+  };
+
+  const addLineItem = () => {
+    setLineItems([...lineItems, { description: "", quantity: 1, rate: 0 }]);
+  };
+
+  const removeLineItem = (index: number) => {
+    setLineItems(lineItems.filter((_, i) => i !== index));
+  };
+
+  const updateLineItem = (index: number, field: keyof LineItem, value: any) => {
+    const updated = [...lineItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setLineItems(updated);
+  };
+
+  const calculateTotal = () => {
+    return lineItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+  };
+
+  const handleCreate = async (sendEmail: boolean) => {
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('owner_id', user.id)
+        .from("organizations")
+        .select("id, name, email")
+        .eq("owner_id", user.id)
         .single();
 
       if (!org) return;
 
-      const { data } = await supabase
-        .from('clients')
-        .select('id, name')
-        .eq('organization_id', org.id)
-        .eq('status', 'active')
-        .order('name');
+      const total = calculateTotal();
+      const invoiceNumber = `INV-${Date.now()}`;
 
-      setClients(data || []);
-    } catch (error) {
-      console.error('Error loading clients:', error);
-    }
-  };
-
-  const addLineItem = () => {
-    setLineItems([
-      ...lineItems,
-      { id: Date.now().toString(), description: "", quantity: 1, unitPrice: 0 },
-    ]);
-  };
-
-  const removeLineItem = (id: string) => {
-    if (lineItems.length > 1) {
-      setLineItems(lineItems.filter((item) => item.id !== id));
-    }
-  };
-
-  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
-    setLineItems(
-      lineItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
-
-  const total = lineItems.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
-    0
-  );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('payments-api', {
-        body: {
-          action: 'invoice',
-          clientId: formData.clientId,
-          jobId: formData.jobId || undefined,
-          lineItems: lineItems.map(item => ({
-            description: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-          })),
-          dueDate: formData.dueDate || undefined,
-          notes: formData.notes,
-          sendNow: formData.sendNow,
-        },
-      });
+      const { error } = await (supabase as any)
+        .from("invoices")
+        .insert({
+          organization_id: org.id,
+          client_id: selectedClient,
+          job_id: jobId,
+          invoice_number: invoiceNumber,
+          amount: total,
+          due_date: dueDate,
+          line_items: lineItems,
+          notes: notes,
+          status: "pending",
+        });
 
       if (error) throw error;
 
-      setInvoiceUrl(data.url);
-      toast({
-        title: "Invoice created",
-        description: formData.sendNow ? "Invoice sent to client" : "Invoice created successfully",
-      });
-      onSuccess();
-    } catch (error: any) {
-      console.error('Error creating invoice:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create invoice",
-        variant: "destructive",
-      });
+      toast.success(sendEmail ? "Invoice created and sent!" : "Invoice created!");
+      handleClose();
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      toast.error("Failed to create invoice");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    setSelectedClient(clientId || "");
+    setLineItems([{ description: "", quantity: 1, rate: 0 }]);
+    setNotes("");
+    setDueDate("");
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Invoice</DialogTitle>
         </DialogHeader>
 
-        {invoiceUrl ? (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Invoice created successfully!
-            </p>
-            <div className="flex gap-2">
-              <Button onClick={() => window.open(invoiceUrl, '_blank')} className="flex-1">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Invoice
-              </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
-              </Button>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Client</Label>
+              <Select value={selectedClient} onValueChange={setSelectedClient}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Due Date</Label>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </div>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="client">Client *</Label>
-                <Select
-                  value={formData.clientId}
-                  onValueChange={(value) => setFormData({ ...formData, clientId: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div>
-                <Label htmlFor="dueDate">Due Date</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <Label>Line Items</Label>
-              <div className="space-y-2 mt-2">
-                {lineItems.map((item, index) => (
-                  <div key={item.id} className="flex gap-2 items-start">
-                    <Input
-                      placeholder="Description"
-                      value={item.description}
-                      onChange={(e) =>
-                        updateLineItem(item.id, "description", e.target.value)
-                      }
-                      className="flex-1"
-                      required
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Qty"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateLineItem(item.id, "quantity", parseInt(e.target.value) || 1)
-                      }
-                      className="w-20"
-                      min="1"
-                      required
-                    />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Price"
-                      value={item.unitPrice}
-                      onChange={(e) =>
-                        updateLineItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)
-                      }
-                      className="w-28"
-                      min="0"
-                      required
-                    />
-                    {lineItems.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeLineItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+              <Button size="sm" variant="outline" onClick={addLineItem}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            </div>
+
+            {lineItems.map((item, index) => (
+              <div key={index} className="grid grid-cols-12 gap-2 items-start">
+                <div className="col-span-6">
+                  <Input
+                    placeholder="Description"
+                    value={item.description}
+                    onChange={(e) => updateLineItem(index, "description", e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Input
+                    type="number"
+                    placeholder="Qty"
+                    value={item.quantity}
+                    onChange={(e) => updateLineItem(index, "quantity", parseFloat(e.target.value))}
+                  />
+                </div>
+                <div className="col-span-3">
+                  <Input
+                    type="number"
+                    placeholder="Rate"
+                    value={item.rate}
+                    onChange={(e) => updateLineItem(index, "rate", parseFloat(e.target.value))}
+                  />
+                </div>
+                <div className="col-span-1 flex items-center justify-center">
+                  {lineItems.length > 1 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeLineItem(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addLineItem}
-                className="mt-2"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Line Item
-              </Button>
-            </div>
+            ))}
+          </div>
 
-            <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-              <span className="font-medium">Total:</span>
-              <span className="text-xl font-bold">${total.toFixed(2)}</span>
+          <div className="flex justify-end">
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold">${calculateTotal().toFixed(2)}</p>
             </div>
+          </div>
 
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Additional notes or terms..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>Notes (Optional)</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any additional notes or payment terms"
+              rows={3}
+            />
+          </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="sendNow"
-                checked={formData.sendNow}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, sendNow: checked as boolean })
-                }
-              />
-              <Label htmlFor="sendNow" className="cursor-pointer">
-                Send invoice to client now
-              </Label>
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Invoice
-              </Button>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
+          <div className="flex gap-2 pt-4">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleCreate(false)}
+              disabled={loading || !selectedClient}
+              className="flex-1"
+              variant="outline"
+            >
+              {loading ? "Creating..." : "Save Draft"}
+            </Button>
+            <Button
+              onClick={() => handleCreate(true)}
+              disabled={loading || !selectedClient}
+              className="flex-1"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {loading ? "Sending..." : "Create & Send"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

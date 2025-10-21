@@ -59,8 +59,13 @@ export function ProviderSidebar() {
     { to: "/provider/clients", title: "Clients", icon: Users, showFor: "owner" },
     { to: "/provider/jobs", title: "Jobs", icon: Briefcase, showFor: "owner" },
     { to: "/provider/my-jobs", title: "My Jobs", icon: Briefcase, showFor: "team" },
+    { to: "/provider/my-earnings", title: "My Earnings", icon: DollarSign, showFor: "team" },
     { to: "/provider/payments", title: "Payments", icon: DollarSign, showFor: "owner" },
     { to: "/provider/team", title: "Team", icon: Users, showFor: "owner" },
+    { to: "/provider/time-tracking", title: "Time Tracking", icon: Users, showFor: "owner" },
+    { to: "/provider/approve-time", title: "Approve Time", icon: Users, showFor: "owner" },
+    { to: "/provider/payroll", title: "Payroll", icon: DollarSign, showFor: "owner" },
+    { to: "/provider/commission-rules", title: "Commission", icon: DollarSign, showFor: "owner" },
     { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
     { to: "/provider/settings", title: "Settings", icon: Settings, showFor: "all" },
   ];

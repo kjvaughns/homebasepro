@@ -1,256 +1,184 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, Check } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { Copy } from "lucide-react";
 
 interface CreatePaymentLinkModalProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onClose: () => void;
+  clientId?: string;
+  jobId?: string;
 }
 
-export function CreatePaymentLinkModal({ open, onOpenChange, onSuccess }: CreatePaymentLinkModalProps) {
-  const [clients, setClients] = useState<any[]>([]);
-  const [jobs, setJobs] = useState<any[]>([]);
+export function CreatePaymentLinkModal({ open, onClose, clientId, jobId }: CreatePaymentLinkModalProps) {
   const [loading, setLoading] = useState(false);
-  const [createdLink, setCreatedLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
-
   const [formData, setFormData] = useState({
-    clientId: "",
-    jobId: "",
-    amount: "",
     description: "",
-    type: "payment_link",
+    amount: "",
+    requireDeposit: false,
+    depositAmount: "",
+    expiresIn: "7",
   });
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      loadClients();
-      setCreatedLink(null);
-      setCopied(false);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (formData.clientId) {
-      loadClientJobs(formData.clientId);
-    }
-  }, [formData.clientId]);
-
-  const loadClients = async () => {
+  const handleCreate = async () => {
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('owner_id', user.id)
+        .from("organizations")
+        .select("id")
+        .eq("owner_id", user.id)
         .single();
 
       if (!org) return;
 
-      const { data } = await supabase
-        .from('clients')
-        .select('id, name')
-        .eq('organization_id', org.id)
-        .eq('status', 'active')
-        .order('name');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + parseInt(formData.expiresIn));
 
-      setClients(data || []);
-    } catch (error) {
-      console.error('Error loading clients:', error);
-    }
-  };
-
-  const loadClientJobs = async (clientId: string) => {
-    try {
-      const { data } = await supabase
-        .from('bookings')
-        .select('id, service_name, date_time_start')
-        .eq('homeowner_profile_id', clientId)
-        .in('status', ['pending', 'confirmed'])
-        .order('date_time_start', { ascending: false });
-
-      setJobs(data || []);
-    } catch (error) {
-      console.error('Error loading jobs:', error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('payments-api', {
-        body: {
-          action: 'payment-link',
-          clientId: formData.clientId,
-          jobId: formData.jobId || undefined,
-          amount: parseFloat(formData.amount),
+      const { data, error } = await (supabase as any)
+        .from("payment_links")
+        .insert({
+          organization_id: org.id,
+          client_id: clientId,
+          job_id: jobId,
           description: formData.description,
-          type: formData.type,
-        },
-      });
+          amount: parseInt(formData.amount),
+          deposit_required: formData.requireDeposit,
+          deposit_amount: formData.requireDeposit ? parseInt(formData.depositAmount) : null,
+          expires_at: expiresAt.toISOString(),
+          status: "active",
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setCreatedLink(data.url);
-      toast({
-        title: "Payment link created",
-        description: "Share this link with your client",
-      });
-      onSuccess();
-    } catch (error: any) {
-      console.error('Error creating payment link:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create payment link",
-        variant: "destructive",
-      });
+      const link = `${window.location.origin}/pay/${data.id}`;
+      setGeneratedLink(link);
+
+      toast.success("Payment link created!");
+    } catch (error) {
+      console.error("Error creating payment link:", error);
+      toast.error("Failed to create payment link");
     } finally {
       setLoading(false);
     }
   };
 
-  const copyLink = () => {
-    if (createdLink) {
-      navigator.clipboard.writeText(createdLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Link copied",
-        description: "Payment link copied to clipboard",
-      });
+  const handleCopy = () => {
+    if (generatedLink) {
+      navigator.clipboard.writeText(generatedLink);
+      toast.success("Link copied to clipboard!");
     }
   };
 
+  const handleClose = () => {
+    setFormData({
+      description: "",
+      amount: "",
+      requireDeposit: false,
+      depositAmount: "",
+      expiresIn: "7",
+    });
+    setGeneratedLink(null);
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Create Payment Link</DialogTitle>
         </DialogHeader>
 
-        {createdLink ? (
+        {!generatedLink ? (
           <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm font-mono break-all">{createdLink}</p>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Service description"
+              />
             </div>
-            <div className="flex gap-2">
-              <Button onClick={copyLink} className="flex-1">
-                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                {copied ? "Copied!" : "Copy Link"}
+
+            <div className="space-y-2">
+              <Label>Amount ($)</Label>
+              <Input
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                placeholder="100.00"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label>Require Deposit</Label>
+              <Switch
+                checked={formData.requireDeposit}
+                onCheckedChange={(checked) => setFormData({ ...formData, requireDeposit: checked })}
+              />
+            </div>
+
+            {formData.requireDeposit && (
+              <div className="space-y-2">
+                <Label>Deposit Amount ($)</Label>
+                <Input
+                  type="number"
+                  value={formData.depositAmount}
+                  onChange={(e) => setFormData({ ...formData, depositAmount: e.target.value })}
+                  placeholder="25.00"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Link Expires In (Days)</Label>
+              <Input
+                type="number"
+                value={formData.expiresIn}
+                onChange={(e) => setFormData({ ...formData, expiresIn: e.target.value })}
+                placeholder="7"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={handleClose} className="flex-1">
+                Cancel
               </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
+              <Button onClick={handleCreate} disabled={loading} className="flex-1">
+                {loading ? "Creating..." : "Create Link"}
               </Button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="client">Client *</Label>
-              <Select
-                value={formData.clientId}
-                onValueChange={(value) => setFormData({ ...formData, clientId: value })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {jobs.length > 0 && (
-              <div>
-                <Label htmlFor="job">Job (optional)</Label>
-                <Select
-                  value={formData.jobId}
-                  onValueChange={(value) => setFormData({ ...formData, jobId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select job" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jobs.map((j) => (
-                      <SelectItem key={j.id} value={j.id}>
-                        {j.service_name} - {new Date(j.date_time_start).toLocaleDateString()}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm font-medium mb-2">Payment Link Created!</p>
+              <div className="flex items-center gap-2">
+                <Input value={generatedLink} readOnly className="text-xs" />
+                <Button size="sm" variant="outline" onClick={handleCopy}>
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-
-            <div>
-              <Label htmlFor="type">Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="payment_link">Payment Link</SelectItem>
-                  <SelectItem value="deposit">Deposit</SelectItem>
-                  <SelectItem value="invoice">Invoice</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
-            <div>
-              <Label htmlFor="amount">Amount *</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                required
-              />
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Share this link with your client. They can pay via card and the payment will be tracked automatically.
+            </p>
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="What is this payment for?"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Link
-              </Button>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
+            <Button onClick={handleClose} className="w-full">
+              Done
+            </Button>
+          </div>
         )}
       </DialogContent>
     </Dialog>
