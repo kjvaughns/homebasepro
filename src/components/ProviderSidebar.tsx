@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,6 +9,10 @@ import {
   MessageSquare,
   Settings,
   Menu,
+  Clock,
+  CheckCircle,
+  Percent,
+  ChevronRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,12 +23,17 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export function ProviderSidebar() {
   const { open } = useSidebar();
+  const location = useLocation();
   const [isOwner, setIsOwner] = useState(true);
   const [isTeamMember, setIsTeamMember] = useState(false);
 
@@ -61,14 +70,25 @@ export function ProviderSidebar() {
     { to: "/provider/my-jobs", title: "My Jobs", icon: Briefcase, showFor: "team" },
     { to: "/provider/my-earnings", title: "My Earnings", icon: DollarSign, showFor: "team" },
     { to: "/provider/payments", title: "Payments", icon: DollarSign, showFor: "owner" },
-    { to: "/provider/team", title: "Team", icon: Users, showFor: "owner" },
-    { to: "/provider/time-tracking", title: "Time Tracking", icon: Users, showFor: "owner" },
-    { to: "/provider/approve-time", title: "Approve Time", icon: Users, showFor: "owner" },
-    { to: "/provider/payroll", title: "Payroll", icon: DollarSign, showFor: "owner" },
-    { to: "/provider/commission-rules", title: "Commission", icon: DollarSign, showFor: "owner" },
+    { 
+      title: "Team", 
+      icon: Users, 
+      showFor: "owner",
+      isGroup: true,
+      items: [
+        { to: "/provider/team", title: "Team Members", icon: Users },
+        { to: "/provider/time-tracking", title: "Time Tracking", icon: Clock },
+        { to: "/provider/approve-time", title: "Approve Time", icon: CheckCircle },
+        { to: "/provider/payroll", title: "Payroll", icon: DollarSign },
+        { to: "/provider/commission-rules", title: "Commission", icon: Percent },
+      ]
+    },
     { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
     { to: "/provider/settings", title: "Settings", icon: Settings, showFor: "all" },
   ];
+
+  const teamRoutes = ['/provider/team', '/provider/time-tracking', '/provider/approve-time', '/provider/payroll', '/provider/commission-rules'];
+  const isTeamRouteActive = teamRoutes.some(route => location.pathname.startsWith(route));
 
   const filteredItems = navigationItems.filter(item => {
     if (item.showFor === "all") return true;
@@ -90,24 +110,68 @@ export function ProviderSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.to}
-                      end
-                      className={({ isActive }) =>
-                        isActive
-                          ? "bg-secondary text-foreground font-medium rounded-lg"
-                          : "text-foreground hover:bg-muted/50 rounded-lg"
-                      }
+              {filteredItems.map((item) => {
+                if (item.isGroup) {
+                  return (
+                    <Collapsible
+                      key={item.title}
+                      defaultOpen={isTeamRouteActive}
+                      className="group/collapsible"
                     >
-                      <item.icon className="h-5 w-5" />
-                      {open && <span className="text-sm ml-3">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton>
+                            <item.icon className="h-5 w-5" />
+                            {open && <span className="text-sm ml-3">{item.title}</span>}
+                            {open && <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
+                            {item.items.map((subItem) => (
+                              <SidebarMenuSubItem key={subItem.title}>
+                                <SidebarMenuSubButton asChild>
+                                  <NavLink
+                                    to={subItem.to}
+                                    end
+                                    className={({ isActive }) =>
+                                      isActive
+                                        ? "bg-secondary text-foreground font-medium rounded-lg"
+                                        : "text-foreground hover:bg-muted/50 rounded-lg"
+                                    }
+                                  >
+                                    <subItem.icon className="h-4 w-4" />
+                                    {open && <span className="text-sm ml-3">{subItem.title}</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            ))}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  );
+                }
+                
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.to}
+                        end
+                        className={({ isActive }) =>
+                          isActive
+                            ? "bg-secondary text-foreground font-medium rounded-lg"
+                            : "text-foreground hover:bg-muted/50 rounded-lg"
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {open && <span className="text-sm ml-3">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
