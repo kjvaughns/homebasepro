@@ -79,16 +79,17 @@ export function InviteTeamMemberDialog({
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Not authenticated");
 
-      const { data: organization } = await supabase
+      const orgQuery = await (supabase as any)
         .from("organizations")
         .select("id, seats_limit, seats_used")
         .eq("owner_user_id", user.user.id)
         .single();
 
-      if (!organization) throw new Error("Organization not found");
+      const organization = orgQuery.data;
+      if (orgQuery.error || !organization) throw new Error("Organization not found");
 
       // Check seat limit
-      if (organization.seats_used >= organization.seats_limit) {
+      if ((organization.seats_used || 0) >= (organization.seats_limit || 1)) {
         toast({
           title: "Seat Limit Reached",
           description: "Upgrade your plan to invite more team members",
@@ -99,12 +100,14 @@ export function InviteTeamMemberDialog({
       }
 
       // Check if email is already invited
-      const { data: existing } = await supabase
+      const existingQuery = await (supabase as any)
         .from("team_members")
         .select("id")
         .eq("organization_id", organization.id)
         .eq("email", formData.email.toLowerCase())
         .maybeSingle();
+      
+      const existing = existingQuery.data;
 
       if (existing) {
         toast({
@@ -116,7 +119,6 @@ export function InviteTeamMemberDialog({
         return;
       }
 
-      // Generate invite token
       const inviteToken = crypto.randomUUID();
       const inviteExpiresAt = new Date();
       inviteExpiresAt.setDate(inviteExpiresAt.getDate() + 7);
@@ -135,42 +137,44 @@ export function InviteTeamMemberDialog({
           zones: formData.zones.length > 0 ? formData.zones : null,
           invite_token: inviteToken,
           invite_expires_at: inviteExpiresAt.toISOString(),
-        })
+        } as any)
         .select()
         .single();
 
       if (insertError) throw insertError;
 
       // Create compensation record if pay info provided
-      if (formData.pay_rate && parseFloat(formData.pay_rate) > 0) {
+      if (formData.pay_rate && parseFloat(formData.pay_rate) > 0 && teamMember) {
         await supabase.from("team_member_compensation").insert({
           team_member_id: teamMember.id,
           organization_id: organization.id,
           pay_type: formData.pay_type,
           pay_rate: parseFloat(formData.pay_rate),
-        });
+        } as any);
       }
 
       // Send invitation email via edge function
-      const { error: inviteError } = await supabase.functions.invoke("send-team-invite", {
-        body: {
-          teamMemberId: teamMember.id,
-          email: formData.email,
-          name: formData.full_name,
-          role: formData.team_role,
-          inviteToken,
-        },
-      });
+      if (teamMember) {
+        const { error: inviteError } = await supabase.functions.invoke("send-team-invite", {
+          body: {
+            teamMemberId: teamMember.id,
+            email: formData.email,
+            name: formData.full_name,
+            role: formData.team_role,
+            inviteToken,
+          },
+        });
 
-      if (inviteError) {
-        console.error("Error sending invite email:", inviteError);
-        // Don't fail the whole operation if email fails
+        if (inviteError) {
+          console.error("Error sending invite email:", inviteError);
+          // Don't fail the whole operation if email fails
+        }
       }
 
       // Increment seats used
       await supabase
         .from("organizations")
-        .update({ seats_used: (organization.seats_used || 1) + 1 })
+        .update({ seats_used: (organization.seats_used || 1) + 1 } as any)
         .eq("id", organization.id);
 
       toast({

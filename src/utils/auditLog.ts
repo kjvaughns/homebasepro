@@ -29,7 +29,7 @@ export async function logAuditEvent({
     };
 
     // Get IP address (this will be null client-side, but Edge Functions can populate it)
-    await supabase.from("audit_log").insert({
+    await (supabase as any).from("audit_log").insert({
       organization_id: organizationId,
       actor_user_id: user.user?.id,
       actor_name: user.user?.email,

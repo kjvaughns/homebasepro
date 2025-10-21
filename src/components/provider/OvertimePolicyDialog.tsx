@@ -95,14 +95,14 @@ export function OvertimePolicyDialog({
       };
 
       if (policy?.id) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("overtime_policies")
           .update(policyData)
           .eq("id", policy.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("overtime_policies")
           .insert(policyData);
 

@@ -20,7 +20,7 @@ interface SeatLimitModalProps {
 }
 
 const PLAN_DETAILS = {
-  free: { name: "Free", seats: 1, price: 0 },
+  free: { name: "Free", seats: 1, price: 0, additionalSeat: 0 },
   growth: { name: "Growth", seats: 3, price: 49, additionalSeat: 15 },
   pro: { name: "Pro", seats: 10, price: 149, additionalSeat: 15 },
   scale: { name: "Scale", seats: 25, price: 299, additionalSeat: 20 },

@@ -43,23 +43,23 @@ export function PermissionsEditor({
   const loadPermissions = async () => {
     try {
       // Load all available permissions
-      const { data: permissions } = await supabase
+      const { data: permissions } = await (supabase as any)
         .from("team_permissions")
         .select("*")
         .order("category, key");
 
       if (permissions) {
-        setAllPermissions(permissions);
+        setAllPermissions(permissions as Permission[]);
       }
 
       // Load member's current permissions
-      const { data: memberPerms } = await supabase
+      const { data: memberPerms } = await (supabase as any)
         .from("team_member_permissions")
         .select("permission_key, allowed")
         .eq("team_member_id", teamMemberId);
 
       const permsMap: { [key: string]: boolean } = {};
-      memberPerms?.forEach((perm) => {
+      memberPerms?.forEach((perm: any) => {
         permsMap[perm.permission_key] = perm.allowed;
       });
       setMemberPermissions(permsMap);
@@ -86,7 +86,7 @@ export function PermissionsEditor({
     setSaving(true);
     try {
       // Delete all existing permissions for this member
-      await supabase
+      await (supabase as any)
         .from("team_member_permissions")
         .delete()
         .eq("team_member_id", teamMemberId);
@@ -101,7 +101,7 @@ export function PermissionsEditor({
         }));
 
       if (permissionsToInsert.length > 0) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("team_member_permissions")
           .insert(permissionsToInsert);
 
@@ -109,7 +109,7 @@ export function PermissionsEditor({
       }
 
       // Log audit trail
-      await supabase.from("audit_log").insert({
+      await (supabase as any).from("audit_log").insert({
         action: "permissions_updated",
         target_type: "team_member",
         target_id: teamMemberId,
