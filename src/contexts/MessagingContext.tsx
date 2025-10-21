@@ -29,6 +29,8 @@ interface Conversation {
   title?: string;
   last_message_at?: string;
   last_message_preview?: string;
+  homeowner_profile_id?: string;
+  provider_org_id?: string;
   members: ConversationMember[];
   otherMember?: {
     full_name: string;
@@ -113,7 +115,9 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
             kind,
             title,
             last_message_at,
-            last_message_preview
+            last_message_preview,
+            homeowner_profile_id,
+            provider_org_id
           )
         `)
         .eq('profile_id', userProfileId)
@@ -133,25 +137,25 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
           title: item.conversations.title,
           last_message_at: item.conversations.last_message_at,
           last_message_preview: item.conversations.last_message_preview,
+          homeowner_profile_id: item.conversations.homeowner_profile_id,
+          provider_org_id: item.conversations.provider_org_id,
           members: [],
           last_read_at: item.last_read_at
         }));
         
         // Fetch other members' profiles for each conversation
         for (const convo of convos) {
-          // First, get the other member's profile_id
+          // First, get the other member's profile_id (removed status filter to include NULL)
           const { data: member, error: memberError } = await supabase
             .from('conversation_members')
             .select('profile_id')
             .eq('conversation_id', convo.id)
             .neq('profile_id', userProfileId)
-            .eq('status', 'active')
             .limit(1)
             .single();
           
-          if (memberError) {
+          if (memberError && memberError.code !== 'PGRST116') {
             console.error('Error fetching member:', memberError);
-            continue;
           }
           
           if (member?.profile_id) {
@@ -162,16 +166,44 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
               .eq('id', member.profile_id)
               .single();
             
-            if (profileError) {
-              console.error('Error fetching profile:', profileError);
-              continue;
-            }
-            
-            if (profileData) {
+            if (!profileError && profileData) {
               convo.otherMember = {
                 full_name: profileData.full_name,
                 avatar_url: profileData.avatar_url
               };
+            }
+          }
+          
+          // Fallback: use conversation metadata if other member not found
+          if (!convo.otherMember) {
+            if (userProfileId === (convo as any).homeowner_profile_id) {
+              // Current user is homeowner, fetch provider org
+              const { data: org } = await supabase
+                .from('organizations')
+                .select('name, logo_url')
+                .eq('id', (convo as any).provider_org_id)
+                .single();
+              
+              if (org) {
+                convo.otherMember = {
+                  full_name: org.name,
+                  avatar_url: org.logo_url
+                };
+              }
+            } else {
+              // Current user is provider, fetch homeowner profile
+              const { data: homeowner } = await supabase
+                .from('profiles')
+                .select('full_name, avatar_url')
+                .eq('id', (convo as any).homeowner_profile_id)
+                .single();
+              
+              if (homeowner) {
+                convo.otherMember = {
+                  full_name: homeowner.full_name,
+                  avatar_url: homeowner.avatar_url
+                };
+              }
             }
           }
         }
