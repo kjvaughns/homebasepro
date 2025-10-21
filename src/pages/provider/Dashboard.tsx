@@ -1,170 +1,213 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Users, DollarSign, Package, Calendar } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, Bot, MapPin, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useProviderStats, useTodayJobs, useUnpaidInvoices, useUnrepliedMessages } from "./hooks/useDashboardData";
 
 export default function ProviderDashboard() {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    activeClients: 0,
-    monthlyRevenue: 0,
-    activeSubscriptions: 0,
-    upcomingAppointments: 0,
-  });
-
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get organization
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (!org) return;
-
-      // Get active subscriptions
-      const { data: subscriptions } = await supabase
-        .from('homeowner_subscriptions')
-        .select('*')
-        .eq('provider_org_id', org.id)
-        .eq('status', 'active');
-
-      // Calculate monthly revenue
-      const monthlyRevenue = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) || 0;
-
-      // Get unique clients
-      const uniqueClients = new Set(subscriptions?.map(sub => sub.homeowner_id));
-
-      // Get upcoming appointments (next 7 days)
-      const today = new Date();
-      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      
-      const { data: appointments } = await supabase
-        .from('service_visits')
-        .select('*')
-        .eq('provider_org_id', org.id)
-        .gte('scheduled_date', today.toISOString())
-        .lte('scheduled_date', nextWeek.toISOString())
-        .in('status', ['scheduled', 'confirmed']);
-
-      setStats({
-        activeClients: uniqueClients.size,
-        monthlyRevenue,
-        activeSubscriptions: subscriptions?.length || 0,
-        upcomingAppointments: appointments?.length || 0,
-      });
-    } catch (error) {
-      console.error('Error loading dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-64 mb-2" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const navigate = useNavigate();
+  const { stats, loading: kpiLoading } = useProviderStats();
+  const { jobs } = useTodayJobs();
+  const { invoices } = useUnpaidInvoices();
+  const { threads: unreadThreads } = useUnrepliedMessages();
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-[120px] md:pb-8">
+      <header className="py-4 md:py-6">
+        <h1 className="font-bold tracking-tight" style={{ fontSize: "clamp(20px, 2.6vw, 32px)" }}>
+          Dashboard
+        </h1>
+        <p className="text-sm md:text-base text-muted-foreground">
           Welcome back! Here's an overview of your business.
         </p>
-      </div>
+      </header>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeClients}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Clients with active subscriptions
-            </p>
-          </CardContent>
-        </Card>
+      {/* KPIs */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <KpiCard title="Active Clients" value={stats.activeClients} loading={kpiLoading} />
+        <KpiCard title="Monthly Revenue" value={`$${stats.mrr.toLocaleString()}`} loading={kpiLoading} />
+        <KpiCard title="Upcoming (7d)" value={stats.upcoming7d} loading={kpiLoading} />
+        <KpiCard title="Unpaid Invoices" value={invoices.length} loading={kpiLoading} />
+      </section>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${stats.monthlyRevenue.toLocaleString()}
+      <div className="h-4 md:h-6" />
+
+      {/* Primary panels */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Today's route & jobs (2 cols) */}
+        <Card className="lg:col-span-2 rounded-2xl">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <h3 className="font-semibold text-sm md:text-base">Today's Jobs & Route</h3>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate("/provider/jobs")}
+                >
+                  <MapPin className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">View Map</span>
+                </Button>
+                <Button size="sm" onClick={() => navigate("/provider/jobs")}>
+                  <Bot className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">Optimize route</span>
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              From active subscriptions
-            </p>
+            <div className="mt-4 space-y-2">
+              {jobs.slice(0, 6).map((j) => (
+                <TodayJobRow key={j.id} job={j} onOpen={() => navigate(`/provider/jobs`)} />
+              ))}
+              {jobs.length === 0 && <EmptyRow text="No jobs scheduled today." />}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Plans</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeSubscriptions}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total subscriptions
-            </p>
+        {/* AI insights */}
+        <Card className="rounded-2xl">
+          <CardContent className="p-4 md:p-6">
+            <h3 className="font-semibold text-sm md:text-base">HomeBase AI · Insights</h3>
+            <div className="mt-3 space-y-2">
+              <InsightRow text="You can add 2 jobs near Madison between 1–3pm." />
+              <InsightRow text="Send unpaid reminders to 2 clients? (~$450)" />
+              <InsightRow text="Your lawn mowing rate is below market by ~8% in 39208." />
+            </div>
+            <div className="mt-4">
+              <Button className="w-full" size="sm">Ask HomeBase AI</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <div className="h-4 md:h-6" />
+
+      {/* Secondary panels */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2 rounded-2xl">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm md:text-base">Unreplied Messages</h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => navigate("/provider/messages")}
+              >
+                View all <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+            <div className="mt-3 space-y-2">
+              {unreadThreads.slice(0, 5).map((t) => (
+                <MessageThreadRow
+                  key={t.id}
+                  thread={t}
+                  onOpen={() => navigate(`/provider/messages/${t.id}`)}
+                />
+              ))}
+              {unreadThreads.length === 0 && <EmptyRow text="You're all caught up." />}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.upcomingAppointments}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Next 7 days
-            </p>
+        <Card className="rounded-2xl">
+          <CardContent className="p-4 md:p-6">
+            <h3 className="font-semibold text-sm md:text-base">Quick Links</h3>
+            <div className="mt-3 grid gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate("/provider/settings")}>
+                Set service rates
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/provider/settings")}>
+                Connect calendar
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/provider/team")}>
+                Invite teammate
+              </Button>
+            </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Business Assistant Prompt */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Need Help Managing Your Business?</CardTitle>
-          <CardDescription>
-            Ask HomeBase AI to help prioritize jobs, check your schedule, assist with quotes, or analyze your business performance.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Click the chat button in the bottom right to get started with your AI business assistant.
-          </p>
-        </CardContent>
-      </Card>
+      </section>
     </div>
   );
+}
+
+function KpiCard({ title, value, loading }: { title: string; value: React.ReactNode; loading?: boolean }) {
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4 md:p-5">
+        <p className="text-xs text-muted-foreground">{title}</p>
+        {loading ? (
+          <Loader2 className="h-5 w-5 animate-spin mt-1" />
+        ) : (
+          <p className="text-xl md:text-2xl font-semibold mt-1">{value}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TodayJobRow({ job, onOpen }: { job: any; onOpen: () => void }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-3 gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="font-medium truncate text-sm">{job.service_name}</p>
+        <p className="text-xs text-muted-foreground truncate">
+          {job.address || "Address not available"}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="text-right hidden md:block">
+          <p className="text-sm">{formatWindow(job)}</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={onOpen}>
+          Open
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function InsightRow({ text }: { text: string }) {
+  return (
+    <div className="rounded-lg border p-3 text-sm flex items-start gap-2">
+      <Bot className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+      <span className="flex-1 text-xs md:text-sm">{text}</span>
+    </div>
+  );
+}
+
+function MessageThreadRow({ thread, onOpen }: { thread: any; onOpen: () => void }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-3 gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="font-medium truncate text-sm">{thread.title || "Conversation"}</p>
+        <p className="text-xs text-muted-foreground truncate">
+          {thread.last_message_preview || "No preview available"}
+        </p>
+      </div>
+      <Button size="sm" variant="outline" onClick={onOpen} className="shrink-0">
+        Open
+      </Button>
+    </div>
+  );
+}
+
+function EmptyRow({ text }: { text: string }) {
+  return (
+    <div className="rounded-lg border p-3 text-sm text-muted-foreground text-center">
+      {text}
+    </div>
+  );
+}
+
+function formatWindow(j: any) {
+  try {
+    const a = new Date(j.date_time_start);
+    const b = new Date(j.date_time_end);
+    return `${a.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}–${b.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    })}`;
+  } catch {
+    return "—";
+  }
 }

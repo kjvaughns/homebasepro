@@ -73,17 +73,17 @@ export function ProviderSidebar() {
   });
 
   return (
-    <Sidebar className={open ? "w-60" : "w-14"} collapsible="icon">
-      <div className="p-4 flex items-center justify-between border-b">
-        {open && <h2 className="font-semibold text-lg">Provider Portal</h2>}
+    <Sidebar className={open ? "w-60 bg-black text-white" : "w-14 bg-black text-white"} collapsible="icon">
+      <div className="p-4 flex items-center justify-between border-b border-white/10">
+        {open && <h2 className="font-semibold text-base text-white">Provider Portal</h2>}
         <SidebarTrigger>
-          <Menu className="h-5 w-5" />
+          <Menu className="h-5 w-5 text-white" />
         </SidebarTrigger>
       </div>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-white/60 text-xs">Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredItems.map((item) => (
@@ -94,12 +94,12 @@ export function ProviderSidebar() {
                       end
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-muted text-primary font-medium"
-                          : "hover:bg-muted/50"
+                          ? "bg-white/10 text-white font-medium hover:bg-white/15"
+                          : "text-white/80 hover:bg-white/5"
                       }
                     >
                       <item.icon className="mr-2 h-4 w-4" />
-                      {open && <span>{item.title}</span>}
+                      {open && <span className="text-sm">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

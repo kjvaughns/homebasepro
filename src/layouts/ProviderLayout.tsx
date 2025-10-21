@@ -191,10 +191,9 @@ const ProviderLayout = () => {
         {/* Main — scroller between header and tab bar */}
         <main
           ref={mainRef}
-          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto")}
+          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto", "pb-[120px] md:pb-8")}
           style={{
             height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)))`,
-            paddingBottom: 12, // tiny breathing room
           }}
         >
           <Outlet />
@@ -311,19 +310,17 @@ const ProviderLayout = () => {
       {/* Sidebar + Main fixed layout */}
       <div className="fixed left-0 top-14 right-0 bottom-0 grid" style={{ gridTemplateColumns: "16rem 1fr" }}>
         <SidebarProvider>
-          <aside className="border-r overflow-y-auto">
+          <aside className="bg-black overflow-y-auto">
             <ProviderSidebar />
           </aside>
         </SidebarProvider>
 
         <main
           ref={mainRef}
-          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto")}
+          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto", "pb-[120px] md:pb-8")}
           style={{ height: "calc(100vh - 56px)" }}
         >
-          <div className="container mx-auto p-6">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
 

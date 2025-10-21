@@ -65,8 +65,8 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
         className={cn(
           "fixed z-50 h-14 w-14 rounded-full shadow-lg transition-all active:scale-95",
           "bg-primary hover:bg-primary/90",
-          "bottom-6 right-6",
-          "md:bottom-8 md:right-8"
+          "bottom-[calc(88px+env(safe-area-inset-bottom))] right-4",
+          "md:bottom-6 md:right-6"
         )}
         aria-label="Open AI Assistant"
       >
