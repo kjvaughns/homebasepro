@@ -1,11 +1,23 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const AssistantRequestSchema = z.object({
+  session_id: z.string().min(1).optional(),
+  message: z.string().min(1).max(10000),
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.string(),
+  })).optional(),
+  context: z.record(z.any()).optional(),
+});
 
 const SYSTEM_PROMPT = `
 You are **HomeBase AI**, the assistant for the HomeBase platform.
@@ -76,18 +88,29 @@ serve(async (req) => {
   }
 
   try {
-    const { session_id, message, history = [], context = {} } = await req.json();
+    const requestBody = await req.json();
+    
+    // Validate input
+    try {
+      AssistantRequestSchema.parse(requestBody);
+    } catch (validationError) {
+      console.error('Input validation failed:', validationError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationError instanceof z.ZodError ? validationError.errors : 'Validation failed' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { session_id, message, history = [], context = {} } = requestBody;
     
     console.log('Request:', { 
       message: message?.slice(0, 100), 
       historyLen: history?.length || 0,
       hasAssistantInHistory: history?.some((m: any) => m.role === 'assistant') 
     });
-    
-    if (!message || typeof message !== 'string') {
-      return new Response(JSON.stringify({ error: 'Message required' }), 
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {

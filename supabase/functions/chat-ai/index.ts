@@ -1,10 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const ChatAIRequestSchema = z.object({
+  conversation_id: z.string().uuid(),
+  action: z.enum(['summarize', 'suggest', 'make_quote', 'extract_intent']),
+  service_name: z.string().max(255).optional(),
+  low: z.number().int().positive().max(10000000).optional(),
+  high: z.number().int().positive().max(10000000).optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,7 +22,23 @@ serve(async (req) => {
   }
 
   try {
-    const { conversation_id, action, ...params } = await req.json();
+    const requestBody = await req.json();
+    
+    // Validate input
+    try {
+      ChatAIRequestSchema.parse(requestBody);
+    } catch (validationError) {
+      console.error('Input validation failed:', validationError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationError instanceof z.ZodError ? validationError.errors : 'Validation failed' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { conversation_id, action, ...params } = requestBody;
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

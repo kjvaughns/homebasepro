@@ -1,11 +1,56 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const SetupIntentSchema = z.object({
+  action: z.literal('create-setup-intent'),
+  profileId: z.string().uuid(),
+  email: z.string().email(),
+  name: z.string().min(1).max(255),
+});
+
+const AttachPaymentMethodSchema = z.object({
+  action: z.literal('attach-payment-method'),
+  profileId: z.string().uuid(),
+  paymentMethodId: z.string().min(1),
+});
+
+const PaymentIntentSchema = z.object({
+  action: z.literal('homeowner-payment-intent'),
+  jobId: z.string().uuid(),
+  homeownerId: z.string().uuid(),
+  amount: z.number().int().positive().max(10000000), // Max $100k
+  captureNow: z.boolean().optional(),
+  tip: z.number().int().nonnegative().max(1000000).optional(), // Max $10k tip
+});
+
+const CapturePaymentSchema = z.object({
+  action: z.literal('capture-payment'),
+  paymentIntentId: z.string().min(1),
+  jobId: z.string().uuid(),
+});
+
+const CreateInvoiceSchema = z.object({
+  action: z.literal('create-invoice'),
+  jobId: z.string().uuid(),
+  clientId: z.string().uuid(),
+  amount: z.number().int().positive().max(10000000),
+  description: z.string().min(1).max(1000),
+  dueDate: z.string().datetime().optional(),
+});
+
+const PayoutSchema = z.object({
+  action: z.literal('create-payout'),
+  amount: z.number().int().positive().max(10000000),
+  description: z.string().max(1000).optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -41,7 +86,41 @@ serve(async (req) => {
       throw new Error('Stripe account not connected');
     }
 
-    const { action, ...payload } = await req.json();
+    const requestBody = await req.json();
+    const { action, ...payload } = requestBody;
+
+    // Validate input based on action
+    try {
+      switch (action) {
+        case 'create-setup-intent':
+          SetupIntentSchema.parse(requestBody);
+          break;
+        case 'attach-payment-method':
+          AttachPaymentMethodSchema.parse(requestBody);
+          break;
+        case 'homeowner-payment-intent':
+          PaymentIntentSchema.parse(requestBody);
+          break;
+        case 'capture-payment':
+          CapturePaymentSchema.parse(requestBody);
+          break;
+        case 'create-invoice':
+          CreateInvoiceSchema.parse(requestBody);
+          break;
+        case 'create-payout':
+          PayoutSchema.parse(requestBody);
+          break;
+      }
+    } catch (validationError) {
+      console.error('Input validation failed:', validationError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationError instanceof z.ZodError ? validationError.errors : 'Validation failed' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Helper function to get fee amount based on provider plan
     const getFeeAmount = (provider: any, jobAmount: number) => {

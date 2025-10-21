@@ -1,10 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const SuggestActionsSchema = z.object({
+  action: z.literal('suggest_actions'),
+});
+
+const ForecastSchema = z.object({
+  action: z.literal('forecast'),
+  horizonDays: z.number().int().positive().max(365).optional(),
+});
+
+const ChaseUnpaidSchema = z.object({
+  action: z.literal('chase_unpaid'),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,7 +48,34 @@ serve(async (req) => {
 
     if (!org) throw new Error('Organization not found');
 
-    const { action } = await req.json();
+    const requestBody = await req.json();
+    const { action } = requestBody;
+
+    // Validate input based on action
+    try {
+      switch (action) {
+        case 'suggest_actions':
+          SuggestActionsSchema.parse(requestBody);
+          break;
+        case 'forecast':
+          ForecastSchema.parse(requestBody);
+          break;
+        case 'chase_unpaid':
+          ChaseUnpaidSchema.parse(requestBody);
+          break;
+        default:
+          throw new Error('Invalid action');
+      }
+    } catch (validationError) {
+      console.error('Input validation failed:', validationError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationError instanceof z.ZodError ? validationError.errors : 'Validation failed' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Suggest actions based on payment data
     if (action === 'suggest_actions') {
