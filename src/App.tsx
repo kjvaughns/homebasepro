@@ -32,6 +32,9 @@ import ClientDetail from "./pages/provider/ClientDetail";
 import Payments from "./pages/provider/Payments";
 import Reviews from "./pages/provider/Reviews";
 import Team from "./pages/provider/Team";
+import Analytics from "./pages/provider/Analytics";
+import Accounting from "./pages/provider/Accounting";
+import Balance from "./pages/provider/Balance";
 import Payroll from "./pages/provider/Payroll";
 import CommissionRules from "./pages/provider/CommissionRules";
 import TimeTracking from "./pages/provider/TimeTracking";
@@ -164,6 +167,9 @@ const App = () => {
               <Route path="jobs" element={<Jobs />} />
               <Route path="my-jobs" element={<MyJobs />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="accounting" element={<Accounting />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="balance" element={<Balance />} />
               <Route path="team" element={<Team />} />
               <Route path="payroll" element={<Payroll />} />
               <Route path="commission-rules" element={<CommissionRules />} />

@@ -71,15 +71,6 @@ export default function ProviderDashboard() {
           </CardContent>
         </Card>
 
-      <Card className="rounded-2xl">
-        <CardContent className="p-4 md:p-6">
-          <h3 className="font-semibold text-sm md:text-base">Balance & Payouts</h3>
-          <div className="mt-4">
-            <BalanceWidget />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* AI insights */}
         <Card className="rounded-2xl">
           <CardContent className="p-4 md:p-6">

@@ -13,6 +13,9 @@ import {
   CheckCircle,
   Percent,
   ChevronRight,
+  Receipt,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -69,7 +72,18 @@ export function ProviderSidebar() {
     { to: "/provider/jobs", title: "Jobs", icon: Briefcase, showFor: "owner" },
     { to: "/provider/my-jobs", title: "My Jobs", icon: Briefcase, showFor: "team" },
     { to: "/provider/my-earnings", title: "My Earnings", icon: DollarSign, showFor: "team" },
-    { to: "/provider/payments", title: "Payments", icon: DollarSign, showFor: "owner" },
+    { 
+      title: "Financial", 
+      icon: DollarSign, 
+      showFor: "owner",
+      isGroup: true,
+      items: [
+        { to: "/provider/payments", title: "Payments", icon: Receipt },
+        { to: "/provider/accounting", title: "Accounting", icon: Receipt },
+        { to: "/provider/analytics", title: "Analytics", icon: TrendingUp },
+        { to: "/provider/balance", title: "Balance", icon: Wallet },
+      ]
+    },
     { 
       title: "Team", 
       icon: Users, 
@@ -87,7 +101,9 @@ export function ProviderSidebar() {
     { to: "/provider/settings", title: "Settings", icon: Settings, showFor: "all" },
   ];
 
+  const financialRoutes = ['/provider/payments', '/provider/accounting', '/provider/analytics', '/provider/balance'];
   const teamRoutes = ['/provider/team', '/provider/time-tracking', '/provider/approve-time', '/provider/payroll', '/provider/commission-rules'];
+  const isFinancialRouteActive = financialRoutes.some(route => location.pathname.startsWith(route));
   const isTeamRouteActive = teamRoutes.some(route => location.pathname.startsWith(route));
 
   const filteredItems = navigationItems.filter(item => {
@@ -112,10 +128,11 @@ export function ProviderSidebar() {
             <SidebarMenu>
               {filteredItems.map((item) => {
                 if (item.isGroup) {
+                  const isGroupActive = item.title === "Team" ? isTeamRouteActive : isFinancialRouteActive;
                   return (
                     <Collapsible
                       key={item.title}
-                      defaultOpen={isTeamRouteActive}
+                      defaultOpen={isGroupActive}
                       className="group/collapsible"
                     >
                       <SidebarMenuItem>
