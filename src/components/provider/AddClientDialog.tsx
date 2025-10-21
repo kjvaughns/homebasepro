@@ -47,6 +47,26 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
 
       if (!organization) throw new Error("Organization not found");
 
+      // TODO: Add subscription tier enforcement after types update
+      // Currently limiting free tier to 5 clients
+      const { data: existingClients } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("organization_id", organization.id);
+
+      const clientCount = existingClients?.length || 0;
+      const freeClientLimit = 5;
+
+      if (clientCount >= freeClientLimit) {
+        toast({
+          title: "Client Limit Reached",
+          description: `Free plan allows ${freeClientLimit} clients. Contact support to add more.`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.from("clients").insert({
         organization_id: organization.id,
         name: formData.name,

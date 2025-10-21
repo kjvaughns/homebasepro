@@ -190,7 +190,7 @@ const ProviderLayout = () => {
         {/* Main — scroller between header and tab bar */}
         <main
           ref={mainRef}
-          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-[120px] md:pb-8")}
+          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-4")}
           style={{
             height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)))`,
           }}

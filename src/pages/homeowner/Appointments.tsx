@@ -7,11 +7,13 @@ import { Calendar as CalendarIcon, Clock, Home, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AppointmentReceiptButton } from "@/components/homeowner/AppointmentReceiptButton";
 
 export default function Appointments() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [visits, setVisits] = useState<any[]>([]);
+  const [homeownerName, setHomeownerName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,11 +30,13 @@ export default function Appointments() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id")
+        .select("id, full_name")
         .eq("user_id", user.id)
         .single();
 
       if (!profile) return;
+      
+      setHomeownerName(profile.full_name || "Customer");
 
       const { data, error } = await supabase
         .from("service_visits")
@@ -126,6 +130,7 @@ export default function Appointments() {
             Technician: {visit.technician_name}
           </p>
         )}
+        <AppointmentReceiptButton visit={visit} homeownerName={homeownerName} />
       </CardContent>
     </Card>
   );
