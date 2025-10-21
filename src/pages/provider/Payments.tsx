@@ -164,7 +164,7 @@ export default function PaymentsPage() {
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-6">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-6 overflow-x-hidden">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold">Payments</h1>
         <p className="text-muted-foreground">Track your revenue and transactions</p>
@@ -199,23 +199,23 @@ export default function PaymentsPage() {
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" onClick={loadAiSuggestions}>
-            <Sparkles className="h-4 w-4 mr-1" />
-            AI Insights
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
+          <Button variant="outline" size="sm" onClick={loadAiSuggestions} className="flex-1 sm:flex-initial">
+            <Sparkles className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">AI Insights</span>
           </Button>
-          <Button onClick={() => setShowPaymentLink(true)}>
-            <Link2 className="h-4 w-4 mr-1" />
-            Payment Link
+          <Button size="sm" onClick={() => setShowPaymentLink(true)} className="flex-1 sm:flex-initial">
+            <Link2 className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Payment Link</span>
           </Button>
-          <Button onClick={() => setShowInvoice(true)}>
-            <Receipt className="h-4 w-4 mr-1" />
-            Invoice
+          <Button size="sm" onClick={() => setShowInvoice(true)} className="flex-1 sm:flex-initial">
+            <Receipt className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Invoice</span>
           </Button>
-          <Button variant="outline" onClick={exportCsv}>
-            <Download className="h-4 w-4 mr-1" />
-            Export
+          <Button variant="outline" size="sm" onClick={exportCsv} className="flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
         </div>
       </div>

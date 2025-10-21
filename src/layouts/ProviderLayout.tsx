@@ -104,6 +104,7 @@ const ProviderLayout = () => {
       }
       setOrganization(org);
       setIsOwner(org.owner_id === user.id);
+      console.log('Owner check:', { orgOwnerId: org.owner_id, userId: user.id, isOwner: org.owner_id === user.id });
     };
     load();
   }, [navigate, toast]);
@@ -188,7 +189,7 @@ const ProviderLayout = () => {
         {/* Main — scroller between header and tab bar */}
         <main
           ref={mainRef}
-          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto", "pb-[120px] md:pb-8")}
+          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-[120px] md:pb-8")}
           style={{
             height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)))`,
           }}
@@ -198,7 +199,7 @@ const ProviderLayout = () => {
 
         {/* Bottom Navigation (Mobile) */}
         <nav
-          className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-card"
+          className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-card"
           style={{
             height: `calc(${TABBAR_H}px + env(safe-area-inset-bottom))`,
             paddingBottom: "env(safe-area-inset-bottom)",
@@ -319,7 +320,7 @@ const ProviderLayout = () => {
 
         <main
           ref={mainRef}
-          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto", "pb-[120px] md:pb-8")}
+          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-[120px] md:pb-8")}
           style={{ height: "calc(100vh - 56px)" }}
         >
           <Outlet />

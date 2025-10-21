@@ -80,13 +80,22 @@ export default function ProviderDashboard() {
             <h3 className="font-semibold text-sm md:text-base">HomeBase AI · Insights</h3>
             <div className="mt-3 space-y-2">
               {insightsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading insights...</p>
+                <div className="space-y-2">
+                  <div className="animate-pulse rounded-md bg-muted h-16 w-full" />
+                  <div className="animate-pulse rounded-md bg-muted h-16 w-full" />
+                </div>
               ) : insights.length > 0 ? (
                 insights.map((insight, idx) => (
                   <AIInsightCard key={idx} message={insight.text} type={insight.type} />
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">No insights available</p>
+                <div className="text-center py-4">
+                  <Bot className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">No AI insights yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Insights will appear as you build your business
+                  </p>
+                </div>
               )}
             </div>
             <div className="mt-4">

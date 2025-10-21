@@ -142,7 +142,7 @@ export default function Clients() {
 
   return (
     <>
-      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 space-y-6">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 space-y-6 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -151,15 +151,16 @@ export default function Clients() {
               Manage your client relationships
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
+              className="w-full sm:w-auto"
               onClick={() => navigate("/provider/clients/import")}
             >
               <Upload className="h-4 w-4 mr-2" />
               Import CSV
             </Button>
-            <Button onClick={() => setShowAddDialog(true)}>
+            <Button className="w-full sm:w-auto" onClick={() => setShowAddDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Client
             </Button>
@@ -225,23 +226,23 @@ export default function Clients() {
         {/* Bulk Actions Bar */}
         {selectedIds.size > 0 && (
           <Card className="p-3 bg-secondary/20">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-sm font-medium">
                 {selectedIds.size} client{selectedIds.size > 1 ? "s" : ""}{" "}
                 selected
               </span>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Tag className="h-4 w-4 mr-1" />
-                  Add Tag
+              <div className="flex flex-wrap gap-2 sm:ml-auto">
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-initial">
+                  <Tag className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Add Tag</span>
                 </Button>
-                <Button variant="outline" size="sm">
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                  Send Campaign
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-initial">
+                  <MessageSquare className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Campaign</span>
                 </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-1" />
-                  Export CSV
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-initial">
+                  <Download className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Export</span>
                 </Button>
                 <Button
                   variant="ghost"

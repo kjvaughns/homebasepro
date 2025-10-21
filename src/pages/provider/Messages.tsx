@@ -270,7 +270,7 @@ export default function ProviderMessages() {
   };
 
   return (
-    <div className="flex flex-col bg-background overflow-hidden h-full">
+    <div className="flex flex-col bg-background h-[calc(100vh-56px)] md:h-full">
       {/* Page Header - Only on desktop */}
       <div className="hidden md:block border-b p-4 bg-card shrink-0">
         <h1 className="text-2xl font-bold">Messages</h1>
@@ -398,7 +398,7 @@ export default function ProviderMessages() {
                 )}
 
                 {/* Fixed Bottom Section */}
-                <div className="absolute bottom-[0px] md:bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-sm">
+                <div className="absolute bottom-[0px] md:bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t shadow-sm">
                   {/* Attachment Preview */}
                   {attachmentPreview && (
                     <div className="border-b px-4 py-2 bg-card/50">
