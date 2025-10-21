@@ -14,7 +14,7 @@ export function TeamMenuSheet({ open, onOpenChange }: TeamMenuSheetProps) {
     { title: "Team Members", href: "/provider/team", icon: Users },
     { title: "Time Tracking", href: "/provider/time-tracking", icon: Clock },
     { title: "Approve Time", href: "/provider/approve-time", icon: CheckCircle },
-    { title: "Payroll", href: "/provider/payroll", icon: DollarSign },
+    { title: "Earnings Ledger", href: "/provider/earnings", icon: DollarSign },
     { title: "Commission Rules", href: "/provider/commission-rules", icon: Percent },
   ];
 

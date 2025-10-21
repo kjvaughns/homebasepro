@@ -165,14 +165,14 @@ export default function Appointments() {
           <h1 className="text-3xl font-bold tracking-tight">Appointments</h1>
           <p className="text-muted-foreground">View and manage your service appointments</p>
         </div>
-        <Button onClick={() => navigate("/homeowner/browse")}>
+        <Button onClick={() => navigate("/homeowner/browse")} size="default" className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Schedule Service
         </Button>
       </div>
 
       <Tabs defaultValue="upcoming" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upcoming">
             Upcoming ({upcomingVisits.length})
           </TabsTrigger>

@@ -29,7 +29,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 
-  const navigation = [
+  const mobileNavigation = [
+    { name: "Home", href: "/dashboard", icon: Home },
+    { name: "Explore", href: "/homeowner/browse", icon: Search },
+    { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
+    { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
+    { name: "Properties", href: "/homeowner/homes", icon: Building2 },
+  ];
+
+  const desktopNavigation = [
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "Properties", href: "/homeowner/homes", icon: Building2 },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
@@ -148,8 +156,8 @@ export default function HomeownerLayout() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/homeowner/settings")}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Account Settings</span>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
                 </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
@@ -200,7 +208,7 @@ export default function HomeownerLayout() {
           }}
         >
           <div className="flex items-center justify-around" style={{ height: `${TABBAR_H}px` }}>
-            {navigation.map((item) => {
+            {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
@@ -224,7 +232,7 @@ export default function HomeownerLayout() {
       {!isMobile && (
         <aside className="fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)] w-64 border-r bg-background">
           <nav className="flex flex-col gap-1 p-4">
-            {navigation.map((item) => {
+            {desktopNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link

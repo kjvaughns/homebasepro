@@ -36,6 +36,8 @@ import Analytics from "./pages/provider/Analytics";
 import Accounting from "./pages/provider/Accounting";
 import Balance from "./pages/provider/Balance";
 import Payroll from "./pages/provider/Payroll";
+import EarningsLedger from "./pages/provider/EarningsLedger";
+import PayTemplates from "./pages/provider/PayTemplates";
 import CommissionRules from "./pages/provider/CommissionRules";
 import TimeTracking from "./pages/provider/TimeTracking";
 import ApproveTime from "./pages/provider/ApproveTime";
@@ -179,16 +181,19 @@ const App = () => {
               <Route path="parts-materials" element={<PartsMaterials />} />
               <Route path="my-jobs" element={<MyJobs />} />
               <Route path="payments" element={<Payments />} />
-              <Route path="refund-requests" element={<RefundRequests />} />
+              <Route path="refund-requests" element={<Navigate to="/provider/payments?tab=disputes" replace />} />
               <Route path="accounting" element={<Accounting />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="balance" element={<Balance />} />
               <Route path="team" element={<Team />} />
-              <Route path="payroll" element={<Payroll />} />
+              <Route path="payroll" element={<Navigate to="/provider/earnings" replace />} />
+              <Route path="earnings" element={<EarningsLedger />} />
+              <Route path="pay-templates" element={<PayTemplates />} />
               <Route path="commission-rules" element={<CommissionRules />} />
               <Route path="time-tracking" element={<TimeTracking />} />
               <Route path="approve-time" element={<ApproveTime />} />
               <Route path="technician-home" element={<TechnicianHome />} />
+              <Route path="my-earnings" element={<MyEarnings />} />
               <Route path="settings" element={<Settings />} />
               <Route path="settings/profile" element={<ProfileSettings />} />
               <Route path="settings/billing" element={<BillingSettings />} />
