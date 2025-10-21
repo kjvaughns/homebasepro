@@ -51,7 +51,7 @@ export default function Payroll() {
       if (!org) return;
       setOrganizationId(org.id);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("payroll_runs")
         .select("*")
         .eq("organization_id", org.id)

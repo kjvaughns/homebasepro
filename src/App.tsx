@@ -32,6 +32,12 @@ import ClientDetail from "./pages/provider/ClientDetail";
 import Payments from "./pages/provider/Payments";
 import Reviews from "./pages/provider/Reviews";
 import Team from "./pages/provider/Team";
+import Payroll from "./pages/provider/Payroll";
+import CommissionRules from "./pages/provider/CommissionRules";
+import TimeTracking from "./pages/provider/TimeTracking";
+import ApproveTime from "./pages/provider/ApproveTime";
+import TechnicianHome from "./pages/provider/TechnicianHome";
+import MyEarnings from "./pages/provider/MyEarnings";
 import Settings from "./pages/provider/Settings";
 import StripeOnboarding from "./pages/provider/StripeOnboarding";
 import NotFound from "./pages/NotFound";
@@ -159,6 +165,11 @@ const App = () => {
               <Route path="my-jobs" element={<MyJobs />} />
               <Route path="payments" element={<Payments />} />
               <Route path="team" element={<Team />} />
+              <Route path="payroll" element={<Payroll />} />
+              <Route path="commission-rules" element={<CommissionRules />} />
+              <Route path="time-tracking" element={<TimeTracking />} />
+              <Route path="approve-time" element={<ApproveTime />} />
+              <Route path="technician-home" element={<TechnicianHome />} />
               <Route path="settings" element={<Settings />} />
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
               <Route path="messages" element={<Messages />} />
