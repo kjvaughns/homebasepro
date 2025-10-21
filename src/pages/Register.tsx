@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Mail, Lock, User2, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { registerRateLimiter } from "@/utils/rateLimiter";
+import { createSafeErrorToast } from "@/utils/errorHandler";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -21,6 +23,18 @@ const Register = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    if (!registerRateLimiter.canAttempt('register', 3, 3600000)) {
+      const minutes = registerRateLimiter.getResetMinutes('register', 3600000);
+      toast({
+        title: 'Too many attempts',
+        description: `Please wait ${minutes} minutes before trying again.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -62,6 +76,9 @@ const Register = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Reset rate limiter on successful registration
+        registerRateLimiter.reset('register');
+        
         // Mark beta invite as accepted if it exists
         await supabase
           .from('beta_access')
@@ -82,11 +99,7 @@ const Register = () => {
         }
       }
     } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast(createSafeErrorToast('Registration', error));
     } finally {
       setLoading(false);
     }

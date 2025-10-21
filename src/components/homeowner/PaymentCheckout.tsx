@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getStripeErrorMessage, getStripeErrorTitle } from '@/utils/stripeErrorMessages';
+import { logError } from '@/utils/errorHandler';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,7 +93,7 @@ function CheckoutForm({ jobId, amount, description, onSuccess, onCancel }: Check
         onSuccess();
       }
     } catch (error: any) {
-      console.error('Payment error:', error);
+      logError('Payment', error);
       toast({
         title: getStripeErrorTitle(error),
         description: getStripeErrorMessage(error),
@@ -251,7 +252,7 @@ export function PaymentCheckout({ jobId, providerId, amount, description, onSucc
 
       setClientSecret(data.clientSecret);
     } catch (error) {
-      console.error('Failed to create payment intent:', error);
+      logError('Payment Intent Creation', error);
       toast({
         title: 'Setup failed',
         description: 'Failed to initialize payment. Please try again.',

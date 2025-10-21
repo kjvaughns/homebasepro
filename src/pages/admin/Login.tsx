@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Loader2, Mail, Lock, Phone, User2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { adminLoginRateLimiter } from "@/utils/rateLimiter";
+import { createSafeErrorToast } from "@/utils/errorHandler";
 
 type Mode = "email" | "signin" | "signup";
 
@@ -124,6 +126,17 @@ const AdminLogin = () => {
 
   const handleSignin = async () => {
     try {
+      // Rate limiting check
+      if (!adminLoginRateLimiter.canAttempt('admin-login', 5, 900000)) {
+        const minutes = adminLoginRateLimiter.getResetMinutes('admin-login', 900000);
+        toast({
+          title: 'Too many attempts',
+          description: `Please wait ${minutes} minutes before trying again.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       setLoading(true);
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
@@ -138,6 +151,7 @@ const AdminLogin = () => {
         ]);
         if (roleError) throw roleError;
         
+        adminLoginRateLimiter.reset('admin-login');
         toast({ title: "Success", description: "You are now the admin!" });
         navigate("/admin/dashboard");
         return;
@@ -156,6 +170,7 @@ const AdminLogin = () => {
         });
         if (inviteErr) throw inviteErr;
 
+        adminLoginRateLimiter.reset('admin-login');
         toast({ title: "Success", description: "Your admin access has been activated!" });
         navigate("/admin/dashboard");
         return;
@@ -173,9 +188,10 @@ const AdminLogin = () => {
         throw new Error("You do not have admin access");
       }
 
+      adminLoginRateLimiter.reset('admin-login');
       navigate("/admin/dashboard");
     } catch (error: any) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      toast(createSafeErrorToast('Admin login', error));
     } finally {
       setLoading(false);
     }

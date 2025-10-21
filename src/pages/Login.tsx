@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Mail, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { loginRateLimiter } from "@/utils/rateLimiter";
+import { createSafeErrorToast } from "@/utils/errorHandler";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,55 +43,46 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    if (!loginRateLimiter.canAttempt('login', 5, 900000)) {
+      const minutes = loginRateLimiter.getResetMinutes('login', 900000);
+      toast({
+        title: 'Too many attempts',
+        description: `Please wait ${minutes} minutes before trying again.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email,
         password,
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Check user profile to redirect to correct dashboard
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("user_type")
-          .eq("user_id", data.user.id)
-          .maybeSingle();
+        // Reset rate limiter on successful login
+        loginRateLimiter.reset('login');
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('user_id', data.user.id)
+          .single();
 
-        if (profileError) {
-          console.error("Profile fetch error:", profileError);
-        }
-
-        // Redirect based on user type
         if (profile?.user_type === "provider") {
           navigate("/provider/dashboard");
-        } else if (profile?.user_type === "homeowner") {
-          navigate("/dashboard");
         } else {
-          // No profile found - this shouldn't happen with the trigger, but fallback to homeowner
-          toast({
-            title: "Profile not found",
-            description: "Please complete your registration.",
-            variant: "destructive",
-          });
-          navigate("/register");
-          return;
+          navigate("/dashboard");
         }
-
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully signed in.",
-        });
       }
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast(createSafeErrorToast('Login', error));
     } finally {
       setLoading(false);
     }
