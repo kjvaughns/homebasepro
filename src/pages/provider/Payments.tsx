@@ -12,6 +12,7 @@ import { CreatePaymentLinkModal } from "@/components/provider/CreatePaymentLinkM
 import { CreateInvoiceModal } from "@/components/provider/CreateInvoiceModal";
 import { DisputeDrawer } from "@/components/provider/DisputeDrawer";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Payment {
   id: string;
@@ -162,6 +163,35 @@ export default function PaymentsPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-6 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <Card>
+          <div className="p-6 space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-6 overflow-x-hidden">

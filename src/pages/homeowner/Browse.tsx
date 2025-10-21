@@ -8,6 +8,7 @@ import { Search, MapPin, Calendar, SlidersHorizontal, Star, Droplet } from "luci
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { FloatingAIAssistant } from "@/components/marketplace/FloatingAIAssistant";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Browse() {
   const navigate = useNavigate();
@@ -68,8 +69,34 @@ export default function Browse() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-gradient-to-b from-primary to-primary/90">
+        <div className="px-4 pt-6 pb-8 space-y-4">
+          <Skeleton className="h-14 w-full rounded-2xl" />
+          <div className="flex gap-3">
+            <Skeleton className="h-12 flex-1 rounded-xl" />
+            <Skeleton className="h-12 flex-1 rounded-xl" />
+          </div>
+          <div className="flex gap-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-10 w-24 rounded-full" />
+            ))}
+          </div>
+        </div>
+        <div className="bg-background rounded-t-[2rem] min-h-[calc(100vh-20rem)] px-4 py-6 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="border-0 shadow-md rounded-2xl">
+              <Skeleton className="h-48 w-full rounded-t-2xl" />
+              <div className="p-4 space-y-3">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

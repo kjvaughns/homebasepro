@@ -114,14 +114,6 @@ export default function Team() {
 
   return (
     <div className="p-4 sm:p-8 space-y-6">
-      {/* Desktop Feature Notice */}
-      <Alert className="bg-primary/5 border-primary/20 lg:hidden">
-        <Laptop className="h-4 w-4" />
-        <AlertDescription>
-          Full team management features including compensation and payroll are best accessed on desktop or tablet.
-        </AlertDescription>
-      </Alert>
-
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Team Management</h1>

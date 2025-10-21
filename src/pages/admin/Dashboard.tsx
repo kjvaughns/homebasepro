@@ -8,6 +8,7 @@ import { DashboardFilters } from "@/components/admin/DashboardFilters";
 import { useToast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
+import { useMobileLayout } from "@/hooks/useMobileLayout";
 
 interface DashboardStats {
   totalWaitlist: number;
@@ -24,6 +25,7 @@ interface DashboardStats {
 }
 
 const Dashboard = () => {
+  const { isMobile } = useMobileLayout();
   const [stats, setStats] = useState<DashboardStats>({
     totalWaitlist: 0,
     totalUsers: 0,
@@ -263,13 +265,13 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>User Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className={isMobile ? "h-[250px]" : "h-[300px]"}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -277,8 +279,8 @@ const Dashboard = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
+                    label={({ name, percent }) => isMobile ? `${(percent * 100).toFixed(0)}%` : `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={isMobile ? 60 : 80}
                     fill="#8884d8"
                     dataKey="value"
                   >

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Home, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import homebaseLogo from "@/assets/homebase-logo.png";
+import { PaymentMethodManager } from "@/components/homeowner/PaymentMethodManager";
 
 const OnboardingHomeowner = () => {
   const navigate = useNavigate();
@@ -49,6 +50,10 @@ const OnboardingHomeowner = () => {
     setStep(step + 1);
   };
 
+  const handleSkipPayment = () => {
+    setStep(4);
+  };
+
   const handleComplete = () => {
     toast({
       title: "Success!",
@@ -69,9 +74,10 @@ const OnboardingHomeowner = () => {
           <div className="flex justify-between items-center mb-4">
             <div className={`flex-1 h-2 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
             <div className={`flex-1 h-2 rounded-full mx-2 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`flex-1 h-2 rounded-full ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex-1 h-2 rounded-full mx-2 ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex-1 h-2 rounded-full ${step >= 4 ? 'bg-primary' : 'bg-muted'}`} />
           </div>
-          <p className="text-center text-muted-foreground">Step {step} of 3</p>
+          <p className="text-center text-muted-foreground">Step {step} of 4</p>
         </div>
 
         {step === 1 && (
@@ -172,6 +178,18 @@ const OnboardingHomeowner = () => {
         )}
 
         {step === 3 && (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold mb-2">Payment Method</h2>
+              <p className="text-muted-foreground">
+                Add a payment method to book services faster (optional)
+              </p>
+            </div>
+            <PaymentMethodManager />
+          </div>
+        )}
+
+        {step === 4 && (
           <div className="space-y-6 text-center">
             <div className="bg-primary/10 rounded-full h-24 w-24 mx-auto flex items-center justify-center mb-4">
               <Home className="h-12 w-12 text-primary" />
@@ -184,7 +202,7 @@ const OnboardingHomeowner = () => {
         )}
 
         <div className="flex gap-4 mt-8">
-          {step > 1 && step < 3 && (
+          {step > 1 && step < 4 && (
             <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1">
               Back
             </Button>
@@ -193,9 +211,18 @@ const OnboardingHomeowner = () => {
             <Button onClick={handleNext} className="flex-1">
               Next
             </Button>
+          ) : step === 3 ? (
+            <>
+              <Button variant="outline" onClick={handleSkipPayment} className="flex-1">
+                Skip for Now
+              </Button>
+              <Button onClick={() => setStep(4)} className="flex-1">
+                Continue
+              </Button>
+            </>
           ) : (
             <Button onClick={handleComplete} className="flex-1">
-              Create Account
+              Go to Dashboard
             </Button>
           )}
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Plus, LayoutGrid, List as ListIcon, Map as MapIcon, Sparkles } from "lucide-react";
 import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Jobs = () => {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -229,7 +231,36 @@ const Jobs = () => {
   ].filter(c => !c.hidden);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Loading...</div>;
+    return (
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 space-y-6 pb-20 md:pb-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-9 w-20" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <Skeleton className="h-6 w-1/3" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

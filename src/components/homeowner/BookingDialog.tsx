@@ -148,16 +148,18 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Preferred Date *</Label>
-                  <Calendar
-                    mode="single"
-                    selected={formData.date}
-                    onSelect={(date) => date && setFormData({ ...formData, date })}
-                    disabled={(date) => date < new Date()}
-                    className="rounded-md border"
-                  />
+                  <div className="w-full overflow-x-auto">
+                    <Calendar
+                      mode="single"
+                      selected={formData.date}
+                      onSelect={(date) => date && setFormData({ ...formData, date })}
+                      disabled={(date) => date < new Date()}
+                      className="rounded-md border max-w-full mx-auto"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">

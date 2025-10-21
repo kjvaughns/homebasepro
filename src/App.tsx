@@ -85,6 +85,7 @@ import AdminUsersAccess from "./pages/admin/UsersAccess";
 import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -130,7 +131,8 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
+          <ErrorBoundary>
+            <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<Pricing />} />
@@ -229,6 +231,7 @@ const App = () => {
           </Routes>
           
           {user && <FloatingAIAssistant userRole={userRole} />}
+          </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
