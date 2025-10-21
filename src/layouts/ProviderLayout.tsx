@@ -310,7 +310,7 @@ const ProviderLayout = () => {
       {/* Sidebar + Main fixed layout */}
       <div className="fixed left-0 top-14 right-0 bottom-0 grid" style={{ gridTemplateColumns: "16rem 1fr" }}>
         <SidebarProvider>
-          <aside className="bg-black overflow-y-auto">
+          <aside className="border-r bg-background overflow-y-auto">
             <ProviderSidebar />
           </aside>
         </SidebarProvider>
