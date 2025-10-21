@@ -139,26 +139,40 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
         
         // Fetch other members' profiles for each conversation
         for (const convo of convos) {
-          const { data: members, error: membersError } = await supabase
+          // First, get the other member's profile_id
+          const { data: member, error: memberError } = await supabase
             .from('conversation_members')
-            .select(`
-              profile_id,
-              profiles:profile_id(full_name, avatar_url)
-            `)
+            .select('profile_id')
             .eq('conversation_id', convo.id)
             .neq('profile_id', userProfileId)
             .eq('status', 'active')
-            .limit(1);
+            .limit(1)
+            .single();
           
-          if (membersError) {
-            console.error('Error fetching member profile:', membersError);
+          if (memberError) {
+            console.error('Error fetching member:', memberError);
+            continue;
           }
           
-          if (members && members.length > 0 && members[0].profiles) {
-            convo.otherMember = {
-              full_name: members[0].profiles.full_name,
-              avatar_url: members[0].profiles.avatar_url
-            };
+          if (member?.profile_id) {
+            // Then fetch the profile data separately
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('full_name, avatar_url')
+              .eq('id', member.profile_id)
+              .single();
+            
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              continue;
+            }
+            
+            if (profileData) {
+              convo.otherMember = {
+                full_name: profileData.full_name,
+                avatar_url: profileData.avatar_url
+              };
+            }
           }
         }
         
