@@ -19,20 +19,20 @@ import {
   Eye,
   LayoutDashboard,
   Users,
-  Package,
   MessageSquare,
   Settings,
   DollarSign,
-  BarChart3,
-  Receipt,
-  UserPlus,
   Briefcase,
+  CreditCard,
 } from "lucide-react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
+import { JobsMenuSheet } from "@/components/provider/JobsMenuSheet";
+import { TeamMenuSheet } from "@/components/provider/TeamMenuSheet";
+import { FinancialMenuSheet } from "@/components/provider/FinancialMenuSheet";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
@@ -40,8 +40,9 @@ const TABBAR_H = 80;
 const mobileNavigation = [
   { name: "Dashboard", href: "/provider/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/provider/clients", icon: Users },
-  { name: "Jobs", href: "/provider/jobs", icon: Briefcase },
-  { name: "Payments", href: "/provider/payments", icon: DollarSign },
+  { name: "Jobs", href: "/provider/jobs", icon: Briefcase, hasSubmenu: true },
+  { name: "Messages", href: "/provider/messages", icon: MessageSquare },
+  { name: "Financial", href: "/provider/payments", icon: CreditCard, hasSubmenu: true },
 ];
 
 const ProviderLayout = () => {
@@ -52,7 +53,11 @@ const ProviderLayout = () => {
 
   const [organization, setOrganization] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [jobsSheetOpen, setJobsSheetOpen] = useState(false);
+  const [teamSheetOpen, setTeamSheetOpen] = useState(false);
+  const [financialSheetOpen, setFinancialSheetOpen] = useState(false);
 
   const isMessagesRoute = location.pathname.startsWith("/provider/messages");
   const mainRef = useRef<HTMLDivElement>(null);
@@ -98,6 +103,7 @@ const ProviderLayout = () => {
         return;
       }
       setOrganization(org);
+      setIsOwner(org.owner_id === user.id);
     };
     load();
   }, [navigate, toast]);
@@ -146,36 +152,27 @@ const ProviderLayout = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-background z-50">
-                  <DropdownMenuItem onClick={() => navigate("/provider/dashboard")}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/provider/analytics")}>
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    <span>Analytics</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/provider/accounting")}>
-                    <Receipt className="mr-2 h-4 w-4" />
-                    <span>Accounting</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/provider/payroll")}>
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    <span>Payroll</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/provider/team")}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    <span>Team</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  {isOwner && (
+                    <>
+                      <DropdownMenuItem onClick={() => setTeamSheetOpen(true)}>
+                        <Users className="mr-2 h-4 w-4" />
+                        <span>Team</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Account Settings</span>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
                   </DropdownMenuItem>
                   {isAdmin && (
-                    <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      <span>Admin Portal</span>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        <span>Admin Portal</span>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
@@ -211,11 +208,20 @@ const ProviderLayout = () => {
         >
           <div className="flex items-center justify-around" style={{ height: `${TABBAR_H}px` }}>
             {mobileNavigation.map((item) => {
-              const isActive = location.pathname === item.href;
+              const isActive = location.pathname === item.href || 
+                (item.hasSubmenu && location.pathname.startsWith(item.href.split('/').slice(0, 3).join('/')));
+              
               return (
-                <Link
+                <button
                   key={item.name}
-                  to={item.href}
+                  onClick={() => {
+                    if (item.hasSubmenu) {
+                      if (item.name === 'Jobs') setJobsSheetOpen(true);
+                      else if (item.name === 'Financial') setFinancialSheetOpen(true);
+                    } else {
+                      navigate(item.href);
+                    }
+                  }}
                   className={cn(
                     "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1",
                     isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
@@ -223,11 +229,16 @@ const ProviderLayout = () => {
                 >
                   <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
                   <span className="text-[11.5px] font-medium leading-tight">{item.name}</span>
-                </Link>
+                </button>
               );
             })}
           </div>
         </nav>
+
+        {/* Sheet Menus */}
+        <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />
+        {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
+        <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
 
         {/* Floating AI Assistant */}
         <FloatingAIAssistant 
@@ -265,36 +276,27 @@ const ProviderLayout = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background z-50">
-                <DropdownMenuItem onClick={() => navigate("/provider/dashboard")}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
-                  <span>Dashboard</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/provider/analytics")}>
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  <span>Analytics</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/provider/accounting")}>
-                  <Receipt className="mr-2 h-4 w-4" />
-                  <span>Accounting</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/provider/payroll")}>
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  <span>Payroll</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/provider/team")}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  <span>Team</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {isOwner && (
+                  <>
+                    <DropdownMenuItem onClick={() => setTeamSheetOpen(true)}>
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Team</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Account Settings</span>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
                 </DropdownMenuItem>
                 {isAdmin && (
-                  <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    <span>Admin Portal</span>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      <span>Admin Portal</span>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
@@ -329,6 +331,11 @@ const ProviderLayout = () => {
         userRole="provider"
         context={{ userId: userProfile?.user_id, orgId: organization?.id }}
       />
+
+      {/* Sheet Menus (Desktop) */}
+      <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />
+      {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
+      <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
     </>
   );
 };
