@@ -74,6 +74,9 @@ import ShareLinkAnalytics from "@/pages/provider/ShareLinkAnalytics";
 import ShortLinkRedirect from "@/pages/ShortLinkRedirect";
 import Portfolio from "@/pages/provider/Portfolio";
 import Favorites from "@/pages/homeowner/Favorites";
+import AccountIndex from "@/pages/provider/account";
+import AccountProfile from "@/pages/provider/account/Profile";
+import AccountSocial from "@/pages/provider/account/Social";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
@@ -212,18 +215,32 @@ const App = () => {
               <Route path="approve-time" element={<ApproveTime />} />
               <Route path="technician-home" element={<TechnicianHome />} />
               <Route path="my-earnings" element={<MyEarnings />} />
+              
+              {/* Account Routes */}
+              <Route path="account" element={<AccountIndex />} />
+              <Route path="account/profile" element={<AccountProfile />} />
+              <Route path="account/portfolio" element={<Portfolio />} />
+              <Route path="account/reviews" element={<Reviews />} />
+              <Route path="account/share-links" element={<ShareLinks />} />
+              <Route path="account/share-links/:id/analytics" element={<ShareLinkAnalytics />} />
+              <Route path="account/social" element={<AccountSocial />} />
+              
+              {/* Settings Routes */}
               <Route path="settings" element={<Settings />} />
-              <Route path="settings/profile" element={<ProfileSettings />} />
               <Route path="settings/billing" element={<BillingSettings />} />
               <Route path="settings/payments" element={<PaymentSettings />} />
               <Route path="settings/integrations" element={<IntegrationSettings />} />
               <Route path="settings/app" element={<AppSettings />} />
-              <Route path="share-links" element={<ShareLinks />} />
-              <Route path="share-links/:id/analytics" element={<ShareLinkAnalytics />} />
-              <Route path="portfolio" element={<Portfolio />} />
+              
+              {/* Legacy Routes - Redirect to Account */}
+              <Route path="portfolio" element={<Navigate to="/provider/account/portfolio" replace />} />
+              <Route path="share-links" element={<Navigate to="/provider/account/share-links" replace />} />
+              <Route path="reviews" element={<Navigate to="/provider/account/reviews" replace />} />
+              <Route path="settings/profile" element={<Navigate to="/provider/account/profile" replace />} />
+              
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
               <Route path="messages" element={<Messages />} />
-          <Route path="messages/:id" element={<Messages />} />
+              <Route path="messages/:id" element={<Messages />} />
             </Route>
 
             {/* Demo routes */}

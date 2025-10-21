@@ -216,130 +216,13 @@ export default function Settings() {
         <RoleSwitcher />
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 max-w-full">
-          <TabsTrigger value="profile" className="text-xs sm:text-sm">Profile</TabsTrigger>
-          <TabsTrigger value="share" className="text-xs sm:text-sm">Share</TabsTrigger>
+      <Tabs defaultValue="billing" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 max-w-full">
           <TabsTrigger value="billing" className="text-xs sm:text-sm">Billing</TabsTrigger>
           <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>
+          <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
           <TabsTrigger value="pwa" className="text-xs sm:text-sm">App</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="profile" className="space-y-6">
-          {profile && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Profile</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AvatarUpload
-                  avatarUrl={profile.avatar_url}
-                  fullName={profile.full_name}
-                  userId={profile.user_id}
-                  onAvatarUpdate={(url) => setProfile({ ...profile, avatar_url: url })}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Organization Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Business Name</Label>
-                <Input
-                  id="name"
-                  value={organization.name}
-                  onChange={(e) =>
-                    setOrganization({ ...organization, name: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={organization.description || ""}
-                  onChange={(e) =>
-                    setOrganization({ ...organization, description: e.target.value })
-                  }
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="email">Contact Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={organization.email || ""}
-                  onChange={(e) =>
-                    setOrganization({ ...organization, email: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={organization.phone || ""}
-                  onChange={(e) =>
-                    setOrganization({ ...organization, phone: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="service_type">Service Types (comma-separated)</Label>
-                <Input
-                  id="service_type"
-                  value={Array.isArray(organization.service_type) ? organization.service_type.join(", ") : ""}
-                  onChange={(e) =>
-                    setOrganization({
-                      ...organization,
-                      service_type: e.target.value.split(",").map(s => s.trim()).filter(Boolean),
-                    })
-                  }
-                  placeholder="e.g., HVAC, Plumbing, Electrical"
-                />
-                <p className="text-xs text-muted-foreground">Separate multiple services with commas</p>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="service_area">Service Area</Label>
-                <Input
-                  id="service_area"
-                  value={organization.service_area || ""}
-                  onChange={(e) =>
-                    setOrganization({
-                      ...organization,
-                      service_area: e.target.value,
-                    })
-                  }
-                  placeholder="e.g., Miami, FL"
-                />
-              </div>
-
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="share" className="space-y-6">
-          <PublicProfileCard
-            organizationId={organization.id}
-            organizationSlug={organization.slug}
-            organizationName={organization.name}
-            organizationLogo={organization.logo_url}
-          />
-        </TabsContent>
 
         <TabsContent value="billing">
           <SubscriptionManager 
@@ -437,6 +320,22 @@ export default function Settings() {
                 <Button variant="outline" size="sm" disabled>
                   Coming Soon
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integrations</CardTitle>
+              <CardDescription>
+                Connect third-party services to enhance your workflow
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Coming soon: QuickBooks, Zapier, and more</p>
               </div>
             </CardContent>
           </Card>

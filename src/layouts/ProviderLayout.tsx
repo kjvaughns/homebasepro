@@ -174,6 +174,10 @@ const ProviderLayout = () => {
                       <DropdownMenuSeparator />
                     </>
                   )}
+                  <DropdownMenuItem onClick={() => navigate("/provider/account")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Account</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/provider/settings")}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>

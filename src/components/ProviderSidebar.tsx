@@ -78,6 +78,7 @@ export function ProviderSidebar() {
 
   const navigationItems = [
     { to: "/provider/dashboard", title: "Dashboard", icon: Home, showFor: "all" },
+    { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
     { to: "/provider/clients", title: "Clients", icon: Users, showFor: "owner" },
     { 
       title: "Jobs & Services", 
@@ -86,12 +87,26 @@ export function ProviderSidebar() {
       isGroup: true,
       items: [
         { to: "/provider/jobs", title: "Job Pipeline", icon: LayoutGrid },
+        { to: "/provider/my-jobs", title: "My Jobs", icon: Briefcase },
         { to: "/provider/services", title: "Services", icon: Wrench },
         { to: "/provider/parts-materials", title: "Parts & Materials", icon: Package },
       ]
     },
     { to: "/provider/my-jobs", title: "My Jobs", icon: Briefcase, showFor: "team" },
     { to: "/provider/my-earnings", title: "My Earnings", icon: DollarSign, showFor: "team" },
+    { 
+      title: "Account", 
+      icon: User, 
+      showFor: "owner",
+      isGroup: true,
+      items: [
+        { to: "/provider/account/profile", title: "Profile", icon: User },
+        { to: "/provider/account/portfolio", title: "Portfolio", icon: Package },
+        { to: "/provider/account/reviews", title: "Reviews", icon: TrendingUp },
+        { to: "/provider/account/share-links", title: "Share Links", icon: Share2 },
+        { to: "/provider/account/social", title: "Social Links", icon: Share2 },
+      ]
+    },
     { 
       title: "Financial", 
       icon: DollarSign, 
@@ -100,11 +115,9 @@ export function ProviderSidebar() {
       items: [
         { to: "/provider/payments", title: "Payments", icon: Receipt },
         { to: "/provider/accounting", title: "Accounting", icon: Receipt },
-        { to: "/provider/analytics", title: "Analytics", icon: TrendingUp },
         { to: "/provider/balance", title: "Balance", icon: Wallet },
       ]
     },
-    { to: "/provider/share-links", title: "Share Links", icon: Share2, showFor: "owner" },
     { 
       title: "Team", 
       icon: Users, 
@@ -114,32 +127,33 @@ export function ProviderSidebar() {
         { to: "/provider/team", title: "Team Members", icon: Users },
         { to: "/provider/time-tracking", title: "Time Tracking", icon: Clock },
         { to: "/provider/approve-time", title: "Approve Time", icon: CheckCircle },
-        { to: "/provider/payroll", title: "Payroll", icon: DollarSign },
+        { to: "/provider/earnings", title: "Earnings", icon: DollarSign },
         { to: "/provider/commission-rules", title: "Commission", icon: Percent },
       ]
     },
-    { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
+    { to: "/provider/analytics", title: "Analytics", icon: BarChart, showFor: "owner" },
     { 
       title: "Settings", 
       icon: Settings, 
-      showFor: "all",
+      showFor: "owner",
       isGroup: true,
       items: [
-        { to: "/provider/settings/profile", title: "Profile", icon: User },
         { to: "/provider/settings/billing", title: "Billing", icon: CreditCard },
         { to: "/provider/settings/payments", title: "Payments", icon: Wallet },
         { to: "/provider/settings/integrations", title: "Integrations", icon: Plug },
-        { to: "/provider/settings/app", title: "App Settings", icon: Smartphone },
+        { to: "/provider/settings/app", title: "App", icon: Smartphone },
       ]
     },
   ];
 
-  const jobsRoutes = ['/provider/jobs', '/provider/services', '/provider/parts-materials'];
-  const financialRoutes = ['/provider/payments', '/provider/accounting', '/provider/analytics', '/provider/balance'];
-  const teamRoutes = ['/provider/team', '/provider/time-tracking', '/provider/approve-time', '/provider/payroll', '/provider/commission-rules'];
+  const jobsRoutes = ['/provider/jobs', '/provider/my-jobs', '/provider/services', '/provider/parts-materials'];
+  const accountRoutes = ['/provider/account'];
+  const financialRoutes = ['/provider/payments', '/provider/accounting', '/provider/balance'];
+  const teamRoutes = ['/provider/team', '/provider/time-tracking', '/provider/approve-time', '/provider/earnings', '/provider/commission-rules'];
   const settingsRoutes = ['/provider/settings'];
   
   const isJobsRouteActive = jobsRoutes.some(route => location.pathname.startsWith(route));
+  const isAccountRouteActive = accountRoutes.some(route => location.pathname.startsWith(route));
   const isFinancialRouteActive = financialRoutes.some(route => location.pathname.startsWith(route));
   const isTeamRouteActive = teamRoutes.some(route => location.pathname.startsWith(route));
   const isSettingsRouteActive = settingsRoutes.some(route => location.pathname.startsWith(route));
