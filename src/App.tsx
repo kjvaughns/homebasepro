@@ -191,7 +191,7 @@ const App = () => {
               <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
               <Route path="/homeowner/favorites" element={<Favorites />} />
             <Route path="/homeowner/settings" element={<HomeownerSettings />} />
-            <Route path="messages" element={<Messages role="homeowner" />} />
+            <Route path="/homeowner/messages" element={<Messages role="homeowner" />} />
             </Route>
 
             {/* Provider routes with shared layout */}
@@ -242,7 +242,7 @@ const App = () => {
               <Route path="settings/profile" element={<Navigate to="/provider/account/profile" replace />} />
               
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
-              <Route path="messages" element={<Messages role="provider" />} />
+              <Route path="/provider/messages" element={<Messages role="provider" />} />
             </Route>
 
             {/* Demo routes */}
