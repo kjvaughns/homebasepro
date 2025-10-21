@@ -820,6 +820,69 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          amount: number
+          charge_id: string | null
+          created_at: string | null
+          currency: string | null
+          due_by: string | null
+          evidence: Json | null
+          id: string
+          org_id: string
+          payment_id: string | null
+          reason: string | null
+          status: string | null
+          stripe_dispute_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          charge_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          due_by?: string | null
+          evidence?: Json | null
+          id?: string
+          org_id: string
+          payment_id?: string | null
+          reason?: string | null
+          status?: string | null
+          stripe_dispute_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          charge_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          due_by?: string | null
+          evidence?: Json | null
+          id?: string
+          org_id?: string
+          payment_id?: string | null
+          reason?: string | null
+          status?: string | null
+          stripe_dispute_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fraud_checks: {
         Row: {
           check_result: string
@@ -1178,6 +1241,8 @@ export type Database = {
           service_area: string | null
           service_type: string[] | null
           slug: string
+          stripe_account_id: string | null
+          stripe_onboarding_complete: boolean | null
           tagline: string | null
           updated_at: string
           verified: boolean | null
@@ -1199,6 +1264,8 @@ export type Database = {
           service_area?: string | null
           service_type?: string[] | null
           slug: string
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean | null
           tagline?: string | null
           updated_at?: string
           verified?: boolean | null
@@ -1220,6 +1287,8 @@ export type Database = {
           service_area?: string | null
           service_type?: string[] | null
           slug?: string
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean | null
           tagline?: string | null
           updated_at?: string
           verified?: boolean | null
@@ -1231,34 +1300,49 @@ export type Database = {
           amount: number
           client_subscription_id: string
           created_at: string
+          currency: string | null
           fee_amount: number
           fee_percent: number
           id: string
+          meta: Json | null
+          org_id: string | null
           payment_date: string
           status: string
           stripe_payment_intent_id: string | null
+          type: string | null
+          url: string | null
         }
         Insert: {
           amount: number
           client_subscription_id: string
           created_at?: string
+          currency?: string | null
           fee_amount: number
           fee_percent: number
           id?: string
+          meta?: Json | null
+          org_id?: string | null
           payment_date?: string
           status?: string
           stripe_payment_intent_id?: string | null
+          type?: string | null
+          url?: string | null
         }
         Update: {
           amount?: number
           client_subscription_id?: string
           created_at?: string
+          currency?: string | null
           fee_amount?: number
           fee_percent?: number
           id?: string
+          meta?: Json | null
+          org_id?: string | null
           payment_date?: string
           status?: string
           stripe_payment_intent_id?: string | null
+          type?: string | null
+          url?: string | null
         }
         Relationships: [
           {
@@ -1266,6 +1350,54 @@ export type Database = {
             columns: ["client_subscription_id"]
             isOneToOne: false
             referencedRelation: "client_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payouts: {
+        Row: {
+          amount: number
+          arrival_date: string | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          org_id: string
+          status: string | null
+          stripe_payout_id: string | null
+        }
+        Insert: {
+          amount: number
+          arrival_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          org_id: string
+          status?: string | null
+          stripe_payout_id?: string | null
+        }
+        Update: {
+          amount?: number
+          arrival_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          org_id?: string
+          status?: string | null
+          stripe_payout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2785,6 +2917,10 @@ export type Database = {
           provider_org_id: string
           trust_score: number
         }[]
+      }
+      payments_kpis: {
+        Args: { org_uuid: string }
+        Returns: Json
       }
       reset_unread_count: {
         Args: { conv_id: string; user_type: string }

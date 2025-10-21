@@ -1,74 +1,101 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, TrendingUp, CreditCard } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Download, Link2, Receipt, DollarSign, ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { RecordPaymentDialog } from "@/components/provider/RecordPaymentDialog";
+import { PaymentDrawer } from "@/components/provider/PaymentDrawer";
+import { CreatePaymentLinkModal } from "@/components/provider/CreatePaymentLinkModal";
+import { CreateInvoiceModal } from "@/components/provider/CreateInvoiceModal";
+import { DisputeDrawer } from "@/components/provider/DisputeDrawer";
 
 interface Payment {
   id: string;
-  amount: number;
-  fee_amount: number;
-  fee_percent: number;
+  type: string;
   status: string;
-  payment_date: string;
-  client_subscriptions: {
-    clients: { name: string };
-  };
+  amount: number;
+  currency: string;
+  created_at: string;
+  url?: string;
+  stripe_id?: string;
+  meta?: any;
+  client_id?: string;
+  job_id?: string;
 }
 
-export default function Payments() {
+export default function PaymentsPage() {
+  const [metrics, setMetrics] = useState<any>({});
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showRecordDialog, setShowRecordDialog] = useState(false);
+  const [tab, setTab] = useState("transactions");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [selectedDispute, setSelectedDispute] = useState<any | null>(null);
+  const [showPaymentLink, setShowPaymentLink] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadPayments();
+    loadData();
   }, []);
 
-  const loadPayments = async () => {
+  const loadData = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      const { data: organization } = await supabase
-        .from("organizations")
-        .select("id")
-        .eq("owner_id", user.user.id)
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('owner_id', user.id)
         .single();
 
-      if (!organization) return;
+      if (!org) return;
 
-      const { data, error } = await supabase
-        .from("payments")
-        .select(`
-          *,
-          client_subscriptions!inner (
-            clients!inner (name, organization_id)
-          )
-        `)
-        .eq("client_subscriptions.clients.organization_id", organization.id)
-        .order("payment_date", { ascending: false });
+      // Load KPIs
+      const { data: kpis } = await supabase.rpc('payments_kpis', { org_uuid: org.id });
+      setMetrics(kpis || {});
 
-      if (error) throw error;
-      setPayments(data || []);
+      // Load payments
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('org_id', org.id)
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      setPayments(paymentsData || []);
+
+      // Load payouts
+      const { data: payoutsData } = await supabase
+        .from('payouts')
+        .select('*')
+        .eq('org_id', org.id)
+        .order('created_at', { ascending: false });
+
+      setPayouts(payoutsData || []);
+
+      // Load disputes
+      const { data: disputesData } = await supabase
+        .from('disputes')
+        .select('*')
+        .eq('org_id', org.id)
+        .order('created_at', { ascending: false });
+
+      setDisputes(disputesData || []);
+
     } catch (error) {
-      console.error("Error loading payments:", error);
+      console.error('Error loading payments:', error);
       toast({
         title: "Error",
-        description: "Failed to load payments",
+        description: "Failed to load payment data",
         variant: "destructive",
       });
     } finally {
@@ -76,126 +103,331 @@ export default function Payments() {
     }
   };
 
-  const totalRevenue = payments
-    .filter((p) => p.status === "completed")
-    .reduce((sum, p) => sum + p.amount, 0);
+  const filteredPayments = useMemo(() => {
+    const s = searchQuery.toLowerCase();
+    return payments.filter(p =>
+      (statusFilter === "all" || p.status === statusFilter) &&
+      (
+        p.type?.toLowerCase().includes(s) ||
+        p.status?.toLowerCase().includes(s) ||
+        p.meta?.client_name?.toLowerCase().includes(s) ||
+        p.meta?.description?.toLowerCase().includes(s)
+      )
+    );
+  }, [payments, searchQuery, statusFilter]);
 
-  const totalFees = payments
-    .filter((p) => p.status === "completed")
-    .reduce((sum, p) => sum + p.fee_amount, 0);
+  const loadAiSuggestions = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('payments-ai', {
+        body: { action: 'suggest_actions' }
+      });
 
-  const netRevenue = totalRevenue - totalFees;
+      if (error) throw error;
+      setAiSuggestions(data.suggestions || []);
+      
+      toast({
+        title: "AI Suggestions Ready",
+        description: `Found ${data.suggestions?.length || 0} actionable insights`,
+      });
+    } catch (error) {
+      console.error('AI suggestions error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load AI suggestions",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exportCsv = () => {
+    const header = ['Date', 'Type', 'Status', 'Client', 'Amount', 'Fee', 'Net'];
+    const rows = filteredPayments.map(p => [
+      new Date(p.created_at).toLocaleDateString(),
+      p.type,
+      p.status,
+      p.meta?.client_name || '—',
+      currency(p.amount / 100),
+      '—',
+      currency(p.amount / 100),
+    ]);
+
+    const csv = [header, ...rows].map(row => row.join(',')).join('\\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payments-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Payments</h1>
-          <p className="text-muted-foreground">Track your revenue and transactions</p>
-        </div>
-        <Button onClick={() => setShowRecordDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Record Payment
-        </Button>
-      </div>
+    <div className="p-4 md:p-8 space-y-6">
+      <header>
+        <h1 className="text-2xl md:text-3xl font-bold">Payments</h1>
+        <p className="text-muted-foreground">Track your revenue and transactions</p>
+      </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${(totalRevenue / 100).toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPIs */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <KPI label="Total Revenue" value={currency((metrics.total || 0) / 100)} icon={<DollarSign className="h-4 w-4" />} />
+        <KPI label="Platform Fees" value={currency((metrics.fees || 0) / 100)} icon={<Receipt className="h-4 w-4" />} />
+        <KPI label="Net Revenue" value={currency((metrics.net || 0) / 100)} icon={<ArrowUpRight className="h-4 w-4" />} />
+        <KPI label="Unpaid (AR)" value={currency((metrics.ar || 0) / 100)} icon={<TrendingUp className="h-4 w-4" />} />
+      </section>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Platform Fees</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${(totalFees / 100).toFixed(2)}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${(netRevenue / 100).toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-12">Loading...</div>
-      ) : payments.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">No payments yet</h3>
-          <p className="text-muted-foreground">
-            Payment history will appear here once you start receiving payments
-          </p>
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Fee</TableHead>
-              <TableHead>Net</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {payments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell>
-                  {new Date(payment.payment_date).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  {payment.client_subscriptions.clients.name}
-                </TableCell>
-                <TableCell>${(payment.amount / 100).toFixed(2)}</TableCell>
-                <TableCell className="text-destructive">
-                  -${(payment.fee_amount / 100).toFixed(2)}
-                </TableCell>
-                <TableCell className="font-medium">
-                  ${((payment.amount - payment.fee_amount) / 100).toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      payment.status === "completed"
-                        ? "default"
-                        : payment.status === "pending"
-                        ? "secondary"
-                        : "destructive"
-                    }
-                  >
-                    {payment.status}
-                  </Badge>
-                </TableCell>
-              </TableRow>
+      {/* AI Suggestions */}
+      {aiSuggestions.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">AI Suggestions</h3>
+          <div className="grid gap-2">
+            {aiSuggestions.map((s, i) => (
+              <Card key={i} className="bg-primary/5">
+                <CardContent className="p-3 flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{s.title}</p>
+                    <p className="text-xs text-muted-foreground">{s.description}</p>
+                  </div>
+                  <Button size="sm" variant="outline">{s.action}</Button>
+                </CardContent>
+              </Card>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </div>
       )}
 
-      <RecordPaymentDialog
-        open={showRecordDialog}
-        onOpenChange={setShowRecordDialog}
-        onSuccess={loadPayments}
+      {/* Actions */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" onClick={loadAiSuggestions}>
+            <Sparkles className="h-4 w-4 mr-1" />
+            AI Insights
+          </Button>
+          <Button onClick={() => setShowPaymentLink(true)}>
+            <Link2 className="h-4 w-4 mr-1" />
+            Payment Link
+          </Button>
+          <Button onClick={() => setShowInvoice(true)}>
+            <Receipt className="h-4 w-4 mr-1" />
+            Invoice
+          </Button>
+          <Button variant="outline" onClick={exportCsv}>
+            <Download className="h-4 w-4 mr-1" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="invoices">Invoices</TabsTrigger>
+          <TabsTrigger value="payouts">Payouts</TabsTrigger>
+          <TabsTrigger value="disputes">Disputes ({disputes.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="transactions" className="mt-4">
+          <Card>
+            <div className="p-3 flex gap-2 items-center border-b">
+              <Input
+                placeholder="Search transactions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-sm"
+              />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                  <SelectItem value="disputed">Disputed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {loading ? (
+              <div className="p-8 text-center text-muted-foreground">Loading...</div>
+            ) : filteredPayments.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">No transactions found</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <TH>Date</TH>
+                      <TH>Type</TH>
+                      <TH>Status</TH>
+                      <TH>Client</TH>
+                      <TH className="text-right pr-3">Amount</TH>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPayments.map((p) => (
+                      <tr
+                        key={p.id}
+                        onClick={() => setSelectedPayment(p)}
+                        className="border-b hover:bg-muted/30 cursor-pointer"
+                      >
+                        <TD>{new Date(p.created_at).toLocaleDateString()}</TD>
+                        <TD><span className="capitalize">{p.type?.replace('_', ' ')}</span></TD>
+                        <TD><StatusBadge s={p.status} /></TD>
+                        <TD>{p.meta?.client_name || '—'}</TD>
+                        <TD className="text-right pr-3 font-medium">{currency(p.amount / 100)}</TD>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="invoices">
+          <Card className="p-6">
+            <p className="text-sm text-muted-foreground">
+              Invoices view - filtered transactions with type='invoice'
+            </p>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payouts">
+          <Card>
+            {payouts.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">No payouts yet</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <TH>Date</TH>
+                      <TH>Amount</TH>
+                      <TH>Arrival Date</TH>
+                      <TH>Status</TH>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payouts.map((p) => (
+                      <tr key={p.id} className="border-b">
+                        <TD>{new Date(p.created_at).toLocaleDateString()}</TD>
+                        <TD className="font-medium">{currency(p.amount)}</TD>
+                        <TD>{p.arrival_date ? new Date(p.arrival_date).toLocaleDateString() : '—'}</TD>
+                        <TD><StatusBadge s={p.status} /></TD>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="disputes">
+          <Card>
+            {disputes.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">No disputes</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <TH>Date</TH>
+                      <TH>Amount</TH>
+                      <TH>Reason</TH>
+                      <TH>Status</TH>
+                      <TH>Due By</TH>
+                      <TH></TH>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {disputes.map((d) => (
+                      <tr key={d.id} className="border-b hover:bg-muted/30">
+                        <TD>{new Date(d.created_at).toLocaleDateString()}</TD>
+                        <TD className="font-medium">{currency(d.amount)}</TD>
+                        <TD><span className="capitalize">{d.reason?.replace('_', ' ')}</span></TD>
+                        <TD><StatusBadge s={d.status} /></TD>
+                        <TD>{d.due_by ? new Date(d.due_by).toLocaleDateString() : '—'}</TD>
+                        <TD>
+                          <Button size="sm" variant="ghost" onClick={() => setSelectedDispute(d)}>
+                            View
+                          </Button>
+                        </TD>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {selectedPayment && (
+        <PaymentDrawer
+          payment={selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+          onRefresh={loadData}
+        />
+      )}
+
+      {selectedDispute && (
+        <DisputeDrawer
+          dispute={selectedDispute}
+          onClose={() => setSelectedDispute(null)}
+          onRefresh={loadData}
+        />
+      )}
+
+      <CreatePaymentLinkModal
+        open={showPaymentLink}
+        onOpenChange={setShowPaymentLink}
+        onSuccess={loadData}
+      />
+
+      <CreateInvoiceModal
+        open={showInvoice}
+        onOpenChange={setShowInvoice}
+        onSuccess={loadData}
       />
     </div>
   );
 }
+
+function KPI({ label, value, icon }: any) {
+  return (
+    <Card>
+      <CardContent className="p-4 md:p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <span className="text-muted-foreground">{icon}</span>
+        </div>
+        <p className="text-xl md:text-2xl font-semibold mt-1">{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusBadge({ s }: { s: string }) {
+  const map: any = {
+    paid: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    completed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    open: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    pending: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    refunded: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+    disputed: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+  };
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${map[s] || "bg-muted text-foreground/70"}`}>
+      {s || "—"}
+    </span>
+  );
+}
+
+const TH = (p: any) => <th className="px-3 py-2 text-left font-medium">{p.children}</th>;
+const TD = (p: any) => <td className="px-3 py-3">{p.children}</td>;
+const currency = (n: number = 0) => `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
