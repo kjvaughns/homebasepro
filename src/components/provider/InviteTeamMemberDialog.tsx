@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SeatLimitModal } from "./SeatLimitModal";
 
 interface InviteTeamMemberDialogProps {
   open: boolean;
@@ -35,6 +36,10 @@ export function InviteTeamMemberDialog({
   onSuccess,
 }: InviteTeamMemberDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [orgPlan, setOrgPlan] = useState("free");
+  const [seatsUsed, setSeatsUsed] = useState(0);
+  const [seatsLimit, setSeatsLimit] = useState(0);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -79,22 +84,30 @@ export function InviteTeamMemberDialog({
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Not authenticated");
 
-      const orgQuery = await (supabase as any)
+      const orgQuery = await supabase
         .from("organizations")
-        .select("id, seats_limit, seats_used")
-        .eq("owner_user_id", user.user.id)
+        .select("id, plan, team_limit")
+        .eq("owner_id", user.user.id)
         .single();
 
       const organization = orgQuery.data;
       if (orgQuery.error || !organization) throw new Error("Organization not found");
 
-      // Check seat limit
-      if ((organization.seats_used || 0) >= (organization.seats_limit || 1)) {
-        toast({
-          title: "Seat Limit Reached",
-          description: "Upgrade your plan to invite more team members",
-          variant: "destructive",
-        });
+      setOrgPlan(organization.plan || "free");
+      setSeatsLimit(organization.team_limit || 0);
+
+      // Count current team members for early feedback
+      const { count: currentCount } = await supabase
+        .from("team_members")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", organization.id)
+        .in("status", ["invited", "active"]);
+
+      setSeatsUsed(currentCount || 0);
+
+      // Early check for better UX
+      if (currentCount && currentCount >= (organization.team_limit || 0)) {
+        setShowUpgradeModal(true);
         setLoading(false);
         return;
       }
@@ -123,7 +136,7 @@ export function InviteTeamMemberDialog({
       const inviteExpiresAt = new Date();
       inviteExpiresAt.setDate(inviteExpiresAt.getDate() + 7);
 
-      // Create team member record
+      // Create team member record - database trigger will enforce limits
       const { data: teamMember, error: insertError } = await supabase
         .from("team_members")
         .insert({
@@ -141,7 +154,15 @@ export function InviteTeamMemberDialog({
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Check if error is from database trigger
+        if (insertError.message?.includes("Team seat limit reached")) {
+          setShowUpgradeModal(true);
+          setLoading(false);
+          return;
+        }
+        throw insertError;
+      }
 
       // Create compensation record if pay info provided
       if (formData.pay_rate && parseFloat(formData.pay_rate) > 0 && teamMember) {
@@ -170,12 +191,6 @@ export function InviteTeamMemberDialog({
           // Don't fail the whole operation if email fails
         }
       }
-
-      // Increment seats used
-      await supabase
-        .from("organizations")
-        .update({ seats_used: (organization.seats_used || 1) + 1 } as any)
-        .eq("id", organization.id);
 
       toast({
         title: "Success",
@@ -207,8 +222,17 @@ export function InviteTeamMemberDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <>
+      <SeatLimitModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        currentPlan={orgPlan}
+        seatsUsed={seatsUsed}
+        seatsLimit={seatsLimit}
+      />
+      
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Invite Team Member</DialogTitle>
@@ -398,5 +422,6 @@ export function InviteTeamMemberDialog({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

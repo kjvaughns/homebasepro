@@ -86,6 +86,29 @@ serve(async (req) => {
           .single();
 
         if (subscription) {
+          // CRITICAL: Update organization with new plan tier and limits
+          const planConfig = {
+            free: { team_limit: 0, transaction_fee_pct: 0.08 },
+            growth: { team_limit: 3, transaction_fee_pct: 0.025 },
+            pro: { team_limit: 10, transaction_fee_pct: 0.02 },
+            scale: { team_limit: 25, transaction_fee_pct: 0.02 },
+          };
+          
+          const config = planConfig[subscription.plan as keyof typeof planConfig];
+          
+          if (config) {
+            await supabase
+              .from('organizations')
+              .update({
+                plan: subscription.plan,
+                team_limit: config.team_limit,
+                transaction_fee_pct: config.transaction_fee_pct,
+              })
+              .eq('id', subscription.provider_id);
+            
+            console.log(`Synced ${subscription.plan} plan to org ${subscription.provider_id}`);
+          }
+
           // Insert ledger entry for subscription revenue
           await insertLedgerEntry({
             occurred_at: new Date().toISOString(),
@@ -280,6 +303,68 @@ serve(async (req) => {
           }, {
             onConflict: 'stripe_payout_id'
           });
+      }
+    }
+
+    // Handle subscription updates (downgrades/upgrades)
+    if (event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object as Stripe.Subscription;
+      
+      const { data: providerSub } = await supabase
+        .from('provider_subscriptions')
+        .select('*, organizations(plan)')
+        .eq('stripe_subscription_id', subscription.id)
+        .single();
+      
+      if (providerSub && providerSub.organizations) {
+        const oldPlan = (providerSub.organizations as any).plan;
+        const newPlan = providerSub.plan;
+        
+        // Check if plan changed (downgrade or upgrade)
+        const planOrder = ['free', 'growth', 'pro', 'scale'];
+        const oldIndex = planOrder.indexOf(oldPlan);
+        const newIndex = planOrder.indexOf(newPlan);
+        
+        if (oldIndex !== newIndex) {
+          console.log(`Provider ${providerSub.provider_id} plan change: ${oldPlan} -> ${newPlan}`);
+          
+          // Get new limits
+          const planConfig = {
+            free: { team_limit: 0, transaction_fee_pct: 0.08 },
+            growth: { team_limit: 3, transaction_fee_pct: 0.025 },
+            pro: { team_limit: 10, transaction_fee_pct: 0.02 },
+            scale: { team_limit: 25, transaction_fee_pct: 0.02 },
+          };
+          
+          const newLimits = planConfig[newPlan as keyof typeof planConfig];
+          
+          if (newLimits) {
+            // Update org with new plan and limits
+            await supabase
+              .from('organizations')
+              .update({
+                plan: newPlan,
+                team_limit: newLimits.team_limit,
+                transaction_fee_pct: newLimits.transaction_fee_pct,
+              })
+              .eq('id', providerSub.provider_id);
+            
+            // If downgrading, check if over team limit
+            if (newIndex < oldIndex) {
+              const { count } = await supabase
+                .from('team_members')
+                .select('*', { count: 'exact', head: true })
+                .eq('organization_id', providerSub.provider_id)
+                .in('status', ['invited', 'active']);
+              
+              if (count && count > newLimits.team_limit) {
+                console.warn(`⚠️  Provider ${providerSub.provider_id} has ${count} team members but limit is now ${newLimits.team_limit}`);
+                // Future: Send email notification to provider
+                // Future: Create admin notification for manual review
+              }
+            }
+          }
+        }
       }
     }
 

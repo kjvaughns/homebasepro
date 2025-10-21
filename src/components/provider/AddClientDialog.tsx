@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { SeatLimitModal } from "./SeatLimitModal";
 
 interface AddClientDialogProps {
   open: boolean;
@@ -22,6 +23,8 @@ interface AddClientDialogProps {
 
 export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [orgPlan, setOrgPlan] = useState("free");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -41,28 +44,26 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
 
       const { data: organization } = await supabase
         .from("organizations")
-        .select("id")
+        .select("id, plan")
         .eq("owner_id", user.user.id)
         .single();
 
       if (!organization) throw new Error("Organization not found");
 
-      // TODO: Add subscription tier enforcement after types update
-      // Currently limiting free tier to 5 clients
+      setOrgPlan(organization.plan || "free");
+
+      // Database trigger will enforce limits, this is just for early feedback
       const { data: existingClients } = await supabase
         .from("clients")
         .select("id")
-        .eq("organization_id", organization.id);
+        .eq("organization_id", organization.id)
+        .eq("status", "active");
 
       const clientCount = existingClients?.length || 0;
-      const freeClientLimit = 5;
-
-      if (clientCount >= freeClientLimit) {
-        toast({
-          title: "Client Limit Reached",
-          description: `Free plan allows ${freeClientLimit} clients. Contact support to add more.`,
-          variant: "destructive",
-        });
+      const plan = organization.plan || "free";
+      
+      if (plan === "free" && clientCount >= 5) {
+        setShowUpgradeModal(true);
         setLoading(false);
         return;
       }
@@ -76,7 +77,15 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
         notes: formData.notes || null,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is from database trigger
+        if (error.message?.includes("Client limit reached")) {
+          setShowUpgradeModal(true);
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -99,8 +108,17 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <>
+      <SeatLimitModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        currentPlan={orgPlan}
+        seatsUsed={0}
+        seatsLimit={5}
+      />
+      
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Add New Client</DialogTitle>
@@ -166,5 +184,6 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
