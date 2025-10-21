@@ -86,25 +86,26 @@ const ProviderLayout = () => {
       setUserProfile(profile);
 
       const { data: admin } = await supabase.rpc("is_admin");
-      if (admin) {
-        setIsAdmin(true);
-        return;
-      }
+      setIsAdmin(!!admin);
 
       const { data: org } = await supabase.from("organizations").select("*").eq("owner_id", user.id).maybeSingle();
 
       if (!org) {
-        toast({
-          title: "Setup Required",
-          description: "Please complete your provider onboarding",
-          variant: "destructive",
-        });
-        navigate("/become-provider");
-        return;
+        // Only redirect to onboarding if not an admin
+        if (!admin) {
+          toast({
+            title: "Setup Required",
+            description: "Please complete your provider onboarding",
+            variant: "destructive",
+          });
+          navigate("/become-provider");
+          return;
+        }
+        // Admin with no org can still access portal, just no Team features
+      } else {
+        setOrganization(org);
+        setIsOwner(org.owner_id === user.id);
       }
-      setOrganization(org);
-      setIsOwner(org.owner_id === user.id);
-      console.log('Owner check:', { orgOwnerId: org.owner_id, userId: user.id, isOwner: org.owner_id === user.id });
     };
     load();
   }, [navigate, toast]);
