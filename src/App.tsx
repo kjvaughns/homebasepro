@@ -45,10 +45,10 @@ import SubscriptionDetail from "./pages/homeowner/SubscriptionDetail";
 import Appointments from "./pages/homeowner/Appointments";
 import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
-import HomeownerMessages from "./pages/homeowner/Messages";
+import Messages from "./pages/Messages";
 import Jobs from "@/pages/provider/Jobs";
 import MyJobs from "@/pages/provider/MyJobs";
-import ProviderMessages from "./pages/provider/Messages";
+
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -155,7 +155,8 @@ const App = () => {
               <Route path="payments" element={<Payments />} />
               <Route path="team" element={<Team />} />
               <Route path="settings" element={<Settings />} />
-              <Route path="messages" element={<ProviderMessages />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="messages/:id" element={<Messages />} />
             </Route>
 
             {/* Demo routes */}
