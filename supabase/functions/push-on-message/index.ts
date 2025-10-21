@@ -43,25 +43,45 @@ serve(async (req) => {
     );
     const devices = await devicesRes.json();
     
-    // Send push notifications (Expo Push API format)
-    const notifications = devices.map((device: any) => ({
-      to: device.token,
-      sound: 'default',
-      title: sender?.full_name || 'New message',
-      body: message.content || message.body || 'Sent an attachment',
-      data: {
-        conversationId: message.conversation_id,
-        messageId: message.id,
-        screen: 'Messages'
+    // Send push notifications to each recipient
+    let sent = 0;
+    let failed = 0;
+
+    for (const member of members) {
+      if (!member.profile_id) continue;
+
+      try {
+        const notificationRes = await fetch(
+          `${supabaseUrl}/functions/v1/send-push-notification`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`
+            },
+            body: JSON.stringify({
+              userIds: [member.profile_id],
+              title: sender?.full_name || 'New message',
+              body: message.content || 'Sent an attachment',
+              url: `/messages?conversation=${message.conversation_id}`,
+              icon: '/homebase-logo.png'
+            })
+          }
+        );
+
+        if (notificationRes.ok) {
+          sent++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        failed++;
+        console.error('Error sending notification:', error);
       }
-    }));
-    
-    // In production, send to Expo Push Notification service or FCM/APNS
-    // For now, just log
-    console.log('Would send notifications:', notifications);
-    
+    }
+
     return new Response(
-      JSON.stringify({ sent: notifications.length }),
+      JSON.stringify({ sent, failed }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     

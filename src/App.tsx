@@ -68,6 +68,7 @@ import BillingSettings from "@/pages/provider/settings/BillingSettings";
 import PaymentSettings from "@/pages/provider/settings/PaymentSettings";
 import IntegrationSettings from "@/pages/provider/settings/IntegrationSettings";
 import AppSettings from "@/pages/provider/settings/AppSettings";
+import ProviderNotificationSettings from "./pages/provider/NotificationSettings";
 import RefundRequests from "@/pages/provider/RefundRequests";
 
 import AdminLayout from "./layouts/AdminLayout";
