@@ -3158,6 +3158,7 @@ export type Database = {
           domain: string
           id: string
           is_active: boolean
+          is_default: boolean | null
           og_description: string | null
           og_image_url: string | null
           og_title: string | null
@@ -3176,6 +3177,7 @@ export type Database = {
           domain?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean | null
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null
@@ -3194,6 +3196,7 @@ export type Database = {
           domain?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean | null
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null

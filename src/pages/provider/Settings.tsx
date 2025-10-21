@@ -16,6 +16,7 @@ import { CardDescription } from "@/components/ui/card";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { PWASettingsCard } from "@/components/pwa/PWASettingsCard";
 import { SubscriptionManager } from "@/components/provider/SubscriptionManager";
+import { PublicProfileCard } from "@/components/provider/PublicProfileCard";
 
 interface Organization {
   id: string;
@@ -26,6 +27,7 @@ interface Organization {
   phone: string | null;
   service_area: string | null;
   service_type: string[] | null;
+  logo_url?: string | null;
   plan?: string;
 }
 
@@ -213,8 +215,9 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-full">
+        <TabsList className="grid w-full grid-cols-5 max-w-full">
           <TabsTrigger value="profile" className="text-xs sm:text-sm">Profile</TabsTrigger>
+          <TabsTrigger value="share" className="text-xs sm:text-sm">Share</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs sm:text-sm">Billing</TabsTrigger>
           <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>
           <TabsTrigger value="pwa" className="text-xs sm:text-sm">App</TabsTrigger>
@@ -325,6 +328,15 @@ export default function Settings() {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="share" className="space-y-6">
+          <PublicProfileCard
+            organizationId={organization.id}
+            organizationSlug={organization.slug}
+            organizationName={organization.name}
+            organizationLogo={organization.logo_url}
+          />
         </TabsContent>
 
         <TabsContent value="billing">

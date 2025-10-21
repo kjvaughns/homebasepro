@@ -25,6 +25,7 @@ export default function ShareLinks() {
   const [utmCampaign, setUtmCampaign] = useState("");
   const [showUtm, setShowUtm] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [organization, setOrganization] = useState<any>(null);
   const [clicksData, setClicksData] = useState([]);
   const [topSources, setTopSources] = useState([]);
 
@@ -39,13 +40,40 @@ export default function ShareLinks() {
 
       const { data: org } = await supabase
         .from("organizations")
-        .select("id")
+        .select("id, name, slug")
         .eq("owner_id", user.id)
+        .single();
+
+      if (!org) return;
+      setOrgId(org.id);
+      setOrganization(org);
+
+      // Check for default link, create if doesn't exist
+      const { data: defaultLink } = await supabase
+        .from("short_links")
+        .select("id")
+        .eq("org_id", org.id)
+        .eq("is_default", true)
         .maybeSingle();
 
-      if (!org?.id) return;
-      setOrgId(org.id);
+      if (!defaultLink) {
+        // Auto-create default short link using org slug
+        try {
+          await supabase.functions.invoke("short-links-api", {
+            body: {
+              slug: org.slug,
+              org_id: org.id,
+              target_url: `${window.location.origin}/homeowner/browse/${org.id}`,
+              is_default: true,
+            },
+          });
+        } catch (err) {
+          console.error("Error auto-creating default link:", err);
+          // Continue even if auto-create fails
+        }
+      }
 
+      // Load active links with click counts
       const { data: linksData, error } = await supabase
         .from("short_links")
         .select(`

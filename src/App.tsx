@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { registerServiceWorker } from "@/utils/serviceWorker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -131,12 +131,23 @@ const App = () => {
     }
   }, []);
 
+  // Helper to determine if AI widget should show
+  const shouldShowAI = (pathname: string) => {
+    const appRoutes = ['/homeowner', '/provider', '/admin'];
+    return appRoutes.some(route => pathname.startsWith(route));
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AIWidgetWrapper 
+            user={user} 
+            userRole={userRole} 
+            shouldShowAI={shouldShowAI} 
+          />
           <ErrorBoundary>
             <Routes>
             {/* Public routes */}
@@ -242,13 +253,30 @@ const App = () => {
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-          
-          {user && <FloatingAIAssistant userRole={userRole} />}
           </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
 };
+
+// Wrapper component to access useLocation inside BrowserRouter
+function AIWidgetWrapper({ 
+  user, 
+  userRole, 
+  shouldShowAI 
+}: { 
+  user: any; 
+  userRole: 'homeowner' | 'provider' | null; 
+  shouldShowAI: (pathname: string) => boolean;
+}) {
+  const location = useLocation();
+  
+  if (!user || !shouldShowAI(location.pathname)) {
+    return null;
+  }
+  
+  return <FloatingAIAssistant userRole={userRole} />;
+}
 
 export default App;
