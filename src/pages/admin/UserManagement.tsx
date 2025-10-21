@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProviderVerificationCard } from "@/components/admin/ProviderVerificationCard";
-import { Search, Building2 } from "lucide-react";
+import { Search, Building2, CheckCircle2, XCircle } from "lucide-react";
 
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -94,6 +94,7 @@ const UserManagement = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Joined</TableHead>
@@ -103,7 +104,8 @@ const UserManagement = () => {
                   <TableBody>
                     {filteredUsers.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.full_name}</TableCell>
+                        <TableCell className="font-medium">{user.full_name || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{user.email || "—"}</TableCell>
                         <TableCell>
                           <Badge variant={user.user_type === "homeowner" ? "default" : "secondary"}>
                             {user.user_type}

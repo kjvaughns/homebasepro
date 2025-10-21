@@ -89,6 +89,22 @@ export const BookingDialog = ({
       const endDateTime = new Date(selectedDate);
       endDateTime.setHours(timeRange.end, 0, 0);
 
+      // Check provider availability before booking
+      const { data: isAvailable, error: availError } = await supabase.rpc('check_provider_availability', {
+        p_provider_id: provider.provider_id,
+        p_start_time: startDateTime.toISOString(),
+        p_end_time: endDateTime.toISOString(),
+      });
+
+      if (availError) {
+        console.error('Error checking availability:', availError);
+        // Continue anyway - don't block on availability check failure
+      } else if (!isAvailable) {
+        toast.error("This time slot is already booked. Please choose a different time.");
+        setIsBooking(false);
+        return;
+      }
+
       const { error } = await supabase.from('bookings').insert({
         homeowner_profile_id: profile.id,
         provider_org_id: provider.provider_id,
@@ -105,12 +121,12 @@ export const BookingDialog = ({
 
       if (error) throw error;
 
-      toast.success("Booking request sent! The provider will confirm shortly.");
+      toast.success("Appointment request sent! The provider will confirm shortly.");
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Booking error:', error);
-      toast.error("Failed to create booking. Please try again.");
+      toast.error("Failed to create appointment. Please try again.");
     } finally {
       setIsBooking(false);
     }

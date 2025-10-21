@@ -51,6 +51,29 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
         .eq('user_id', user.id)
         .single();
 
+      // Check provider availability before booking
+      const startTime = new Date(`${formData.date.toDateString()} ${formData.time}`);
+      const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Add 1 hour
+
+      const { data: isAvailable, error: availError } = await supabase.rpc('check_provider_availability', {
+        p_provider_id: provider.id,
+        p_start_time: startTime.toISOString(),
+        p_end_time: endTime.toISOString(),
+      });
+
+      if (availError) {
+        console.error('Error checking availability:', availError);
+        // Continue anyway - don't block on availability check failure
+      } else if (!isAvailable) {
+        toast({
+          title: 'Time slot unavailable',
+          description: 'This time slot is already booked. Please choose a different time.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
       // Create booking
       const { data: newBooking, error } = await supabase
         .from('bookings')
@@ -76,8 +99,8 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
     } catch (error: any) {
       console.error('Booking error:', error);
       toast({
-        title: 'Booking failed',
-        description: error.message || 'Failed to create booking',
+        title: 'Appointment failed',
+        description: error.message || 'Failed to create appointment',
         variant: 'destructive',
       });
     } finally {
@@ -88,7 +111,7 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
   const handlePaymentSuccess = async () => {
     toast({
       title: 'Payment successful',
-      description: 'Your booking is confirmed!',
+      description: 'Your appointment is confirmed!',
     });
 
     // Update booking status

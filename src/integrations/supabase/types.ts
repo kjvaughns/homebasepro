@@ -3406,6 +3406,14 @@ export type Database = {
         Args: { account_type: string; user_email: string }
         Returns: boolean
       }
+      check_provider_availability: {
+        Args: {
+          p_end_time: string
+          p_provider_id: string
+          p_start_time: string
+        }
+        Returns: boolean
+      }
       generate_referral_code: {
         Args: Record<PropertyKey, never>
         Returns: string

@@ -1,11 +1,17 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Bot, MapPin, ArrowRight } from "lucide-react";
+import { Loader2, Bot, MapPin, ArrowRight, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProviderStats, useTodayJobs, useUnpaidInvoices, useUnrepliedMessages } from "./hooks/useDashboardData";
 import { useDashboardInsights } from "./hooks/useDashboardInsights";
 import { AIInsightCard } from "@/components/provider/AIInsightCard";
 import { BalanceWidget } from "@/components/provider/BalanceWidget";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function ProviderDashboard() {
   const navigate = useNavigate();
@@ -28,10 +34,10 @@ export default function ProviderDashboard() {
 
       {/* KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <KpiCard title="Active Clients" value={stats.activeClients} loading={kpiLoading} />
-        <KpiCard title="Monthly Revenue" value={`$${stats.mrr.toLocaleString()}`} loading={kpiLoading} />
-        <KpiCard title="Upcoming (7d)" value={stats.upcoming7d} loading={kpiLoading} />
-        <KpiCard title="Unpaid Invoices" value={invoices.length} loading={kpiLoading} />
+        <KpiCard title="Active Clients" value={stats.activeClients} loading={kpiLoading} helpText="Number of clients with active subscriptions or recent jobs" />
+        <KpiCard title="Monthly Revenue" value={`$${stats.mrr.toLocaleString()}`} loading={kpiLoading} helpText="Total revenue expected this month from subscriptions and jobs" />
+        <KpiCard title="Upcoming (7d)" value={stats.upcoming7d} loading={kpiLoading} helpText="Number of jobs scheduled in the next 7 days" />
+        <KpiCard title="Unpaid Invoices" value={invoices.length} loading={kpiLoading} helpText="Number of outstanding invoices awaiting payment" />
       </section>
 
       <div className="h-4 md:h-6" />
@@ -156,11 +162,30 @@ export default function ProviderDashboard() {
   );
 }
 
-function KpiCard({ title, value, loading }: { title: string; value: React.ReactNode; loading?: boolean }) {
+function KpiCard({ title, value, loading, helpText }: { 
+  title: string; 
+  value: React.ReactNode; 
+  loading?: boolean;
+  helpText?: string;
+}) {
   return (
     <Card className="rounded-2xl">
       <CardContent className="p-4 md:p-5">
-        <p className="text-xs text-muted-foreground">{title}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground">{title}</p>
+          {helpText && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs text-xs">{helpText}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         {loading ? (
           <Loader2 className="h-5 w-5 animate-spin mt-1" />
         ) : (

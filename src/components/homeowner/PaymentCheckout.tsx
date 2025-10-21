@@ -13,6 +13,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { getStripeErrorMessage, getStripeErrorTitle } from '@/utils/stripeErrorMessages';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Dynamically load Stripe with publishable key from backend
 const getStripePromise = async () => {
@@ -35,12 +46,21 @@ interface PaymentCheckoutProps {
   onCancel: () => void;
 }
 
-function CheckoutForm({ jobId, amount, description, onSuccess }: { jobId: string; amount: number; description: string; onSuccess: () => void }) {
+interface CheckoutFormProps {
+  jobId: string;
+  amount: number;
+  description: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+function CheckoutForm({ jobId, amount, description, onSuccess, onCancel }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [tip, setTip] = useState(0);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const total = amount + tip;
   const platformFee = Math.round(total * 0.03 * 100) / 100; // 3% platform fee shown to homeowner
@@ -64,23 +84,32 @@ function CheckoutForm({ jobId, amount, description, onSuccess }: { jobId: string
 
       if (error) {
         toast({
-          title: 'Payment failed',
-          description: error.message,
+          title: getStripeErrorTitle(error),
+          description: getStripeErrorMessage(error),
           variant: 'destructive',
         });
       } else {
         onSuccess();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error);
       toast({
-        title: 'Payment error',
-        description: 'Failed to process payment',
+        title: getStripeErrorTitle(error),
+        description: getStripeErrorMessage(error),
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    onCancel();
   };
 
   return (
@@ -131,25 +160,52 @@ function CheckoutForm({ jobId, amount, description, onSuccess }: { jobId: string
         <PaymentElement />
       </div>
 
-      <Button
-        type="submit"
-        disabled={!stripe || isLoading}
-        className="w-full"
-        size="lg"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          `Pay $${(total + platformFee).toFixed(2)}`
-        )}
-      </Button>
+      <div className="flex gap-3">
+        <Button
+          type="submit"
+          disabled={!stripe || isLoading}
+          className="flex-1"
+          size="lg"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            `Pay $${(total + platformFee).toFixed(2)}`
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCancel}
+          disabled={isLoading}
+          className="flex-1"
+          size="lg"
+        >
+          Cancel
+        </Button>
+      </div>
 
       <p className="text-xs text-muted-foreground text-center">
         By confirming, you authorize HomeBase to charge your payment method for this service.
       </p>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this payment? You'll return to the booking screen and will need to complete payment later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continue Payment</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel}>Yes, Cancel</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }
@@ -242,6 +298,7 @@ export function PaymentCheckout({ jobId, providerId, amount, description, onSucc
             amount={amount}
             description={description}
             onSuccess={onSuccess}
+            onCancel={onCancel}
           />
         </Elements>
       </CardContent>

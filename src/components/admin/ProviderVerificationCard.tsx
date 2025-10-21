@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, XCircle, Clock, Building2 } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Building2, CreditCard, AlertCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProviderVerificationCardProps {
   provider: any;
@@ -108,6 +114,34 @@ export function ProviderVerificationCard({ provider, onUpdate }: ProviderVerific
           <div>
             <p className="text-muted-foreground">Service Area</p>
             <p className="font-medium">{provider.service_area || "—"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Payment Status</p>
+            <div className="flex items-center gap-2">
+              {provider.stripe_account_id ? (
+                <Badge variant="default" className="bg-emerald-600">
+                  <CreditCard className="h-3 w-3 mr-1" />
+                  Connected
+                </Badge>
+              ) : (
+                <Badge variant="secondary">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Not Connected
+                </Badge>
+              )}
+              {provider.stripe_account_id && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <span className="text-xs text-muted-foreground cursor-help">ℹ️</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">ID: {provider.stripe_account_id}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </div>
         </div>
 

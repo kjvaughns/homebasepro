@@ -66,6 +66,26 @@ export default function CreateJobModal({
       const startDate = new Date(formData.scheduled_date);
       const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Add 1 hour
 
+      // Check provider availability before creating job
+      const { data: isAvailable, error: availError } = await supabase.rpc('check_provider_availability', {
+        p_provider_id: org.id,
+        p_start_time: startDate.toISOString(),
+        p_end_time: endDate.toISOString(),
+      });
+
+      if (availError) {
+        console.error('Error checking availability:', availError);
+        // Continue anyway - don't block on availability check failure
+      } else if (!isAvailable) {
+        toast({
+          title: 'Time slot unavailable',
+          description: 'This time slot is already booked. Please choose a different time.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.from("bookings").insert({
         provider_org_id: org.id,
         homeowner_profile_id: client.homeowner_profile_id,

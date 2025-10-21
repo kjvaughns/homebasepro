@@ -29,13 +29,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 
-const navigation = [
-  { name: "Home", href: "/dashboard", icon: Home },
-  { name: "Properties", href: "/homeowner/homes", icon: Building2 },
-  { name: "Explore", href: "/homeowner/browse", icon: Search },
-  { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
-  { name: "Settings", href: "/homeowner/settings", icon: Settings },
-];
+  const navigation = [
+    { name: "Home", href: "/dashboard", icon: Home },
+    { name: "Properties", href: "/homeowner/homes", icon: Building2 },
+    { name: "Explore", href: "/homeowner/browse", icon: Search },
+    { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
+    { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
+    { name: "Settings", href: "/homeowner/settings", icon: Settings },
+  ];
 
 // bottom tab bar content height (icons + label)
 const TABBAR_H = 80;
