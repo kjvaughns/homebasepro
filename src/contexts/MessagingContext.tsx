@@ -139,18 +139,26 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
         
         // Fetch other members' profiles for each conversation
         for (const convo of convos) {
-          const { data: members } = await supabase
+          const { data: members, error: membersError } = await supabase
             .from('conversation_members')
             .select(`
               profile_id,
-              profiles!inner(full_name, avatar_url)
+              profiles:profile_id(full_name, avatar_url)
             `)
             .eq('conversation_id', convo.id)
             .neq('profile_id', userProfileId)
+            .eq('status', 'active')
             .limit(1);
           
-          if (members && members.length > 0) {
-            convo.otherMember = members[0].profiles as any;
+          if (membersError) {
+            console.error('Error fetching member profile:', membersError);
+          }
+          
+          if (members && members.length > 0 && members[0].profiles) {
+            convo.otherMember = {
+              full_name: members[0].profiles.full_name,
+              avatar_url: members[0].profiles.avatar_url
+            };
           }
         }
         
