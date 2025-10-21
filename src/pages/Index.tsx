@@ -153,7 +153,8 @@ const Index = () => {
             <div className="relative animate-fade-in">
               <img 
                 src={heroProviderImage} 
-                alt="Professional HomeBase service provider with equipment" 
+                alt="Professional HomeBase service provider with equipment ready to provide quality home maintenance services" 
+                loading="lazy"
                 className="rounded-2xl shadow-2xl w-full"
               />
             </div>
@@ -407,7 +408,8 @@ const Index = () => {
             <Card className="p-6 overflow-hidden">
               <img 
                 src={homeownerMockup} 
-                alt="Homeowner Mobile App" 
+                alt="Homeowner mobile app showing calendar view with scheduled maintenance appointments and service provider details" 
+                loading="lazy"
                 className="w-full h-auto rounded-lg shadow-lg mb-4"
               />
               <h3 className="text-xl font-semibold mb-2">Homeowner App</h3>
@@ -418,7 +420,8 @@ const Index = () => {
             <Card className="p-6 overflow-hidden">
               <img 
                 src={providerMockup} 
-                alt="Provider Dashboard" 
+                alt="Provider dashboard mockup showing calendar view, client list, and revenue tracking analytics" 
+                loading="lazy"
                 className="w-full h-auto rounded-lg shadow-lg mb-4"
               />
               <h3 className="text-xl font-semibold mb-2">Provider Dashboard</h3>

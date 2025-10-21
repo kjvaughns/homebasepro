@@ -46,7 +46,8 @@ export default function DemoHomeowner() {
         <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-8">
           <img 
             src={homeownerMockup} 
-            alt="HomeBase app on mobile device" 
+            alt="HomeBase mobile app showing home management dashboard with maintenance reminders and provider connections" 
+            loading="lazy"
             className="max-h-[500px] w-auto object-contain animate-fade-in hover-scale"
           />
         </div>

@@ -47,7 +47,8 @@ export default function DemoProvider() {
         <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-8">
           <img 
             src={providerDashboard} 
-            alt="HomeBase provider dashboard" 
+            alt="HomeBase provider dashboard showing client management, scheduling calendar, and revenue analytics" 
+            loading="lazy"
             className="max-h-[500px] w-auto object-contain animate-fade-in hover-scale"
           />
         </div>

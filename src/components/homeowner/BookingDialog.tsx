@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -13,8 +13,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';
-import { PaymentCheckout } from './PaymentCheckout';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, CreditCard } from 'lucide-react';
+
+const PaymentCheckout = lazy(() => import('./PaymentCheckout').then(m => ({ default: m.PaymentCheckout })));
 
 interface BookingDialogProps {
   open: boolean;
@@ -257,14 +259,16 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
             </DialogHeader>
 
             <div className="mt-4">
-              <PaymentCheckout
-                jobId={booking?.id}
-                providerId={provider.id}
-                amount={(booking?.deposit_amount || 5000) / 100}
-                description={`Deposit for ${formData.service_name}`}
-                onSuccess={handlePaymentSuccess}
-                onCancel={handleCancel}
-              />
+              <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+                <PaymentCheckout
+                  jobId={booking?.id}
+                  providerId={provider.id}
+                  amount={(booking?.deposit_amount || 5000) / 100}
+                  description={`Deposit for ${formData.service_name}`}
+                  onSuccess={handlePaymentSuccess}
+                  onCancel={handleCancel}
+                />
+              </Suspense>
             </div>
           </>
         )}

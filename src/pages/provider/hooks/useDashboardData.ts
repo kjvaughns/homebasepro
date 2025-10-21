@@ -23,33 +23,37 @@ export function useProviderStats() {
 
         if (!org) return;
 
-        // Active clients
-        const { count: activeClients } = await supabase
-          .from("clients")
-          .select("*", { count: "exact", head: true })
-          .eq("organization_id", org.id)
-          .eq("status", "active");
-
-        // Monthly revenue
-        const { data: subscriptions } = await supabase
-          .from("homeowner_subscriptions")
-          .select("billing_amount")
-          .eq("provider_org_id", org.id)
-          .eq("status", "active");
-
-        const mrr = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) || 0;
-
-        // Upcoming 7 days
         const sevenDaysFromNow = new Date();
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
-        const { count: upcoming7d } = await supabase
-          .from("bookings")
-          .select("*", { count: "exact", head: true })
-          .eq("provider_org_id", org.id)
-          .gte("date_time_start", new Date().toISOString())
-          .lte("date_time_start", sevenDaysFromNow.toISOString())
-          .neq("status", "cancelled");
+        // Parallelize all queries for better performance
+        const [
+          { count: activeClients },
+          { data: subscriptions },
+          { count: upcoming7d }
+        ] = await Promise.all([
+          supabase
+            .from("clients")
+            .select("*", { count: "exact", head: true })
+            .eq("organization_id", org.id)
+            .eq("status", "active"),
+          
+          supabase
+            .from("homeowner_subscriptions")
+            .select("billing_amount")
+            .eq("provider_org_id", org.id)
+            .eq("status", "active"),
+          
+          supabase
+            .from("bookings")
+            .select("*", { count: "exact", head: true })
+            .eq("provider_org_id", org.id)
+            .gte("date_time_start", new Date().toISOString())
+            .lte("date_time_start", sevenDaysFromNow.toISOString())
+            .neq("status", "cancelled")
+        ]);
+
+        const mrr = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) || 0;
 
         setStats({
           activeClients: activeClients || 0,

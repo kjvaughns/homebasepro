@@ -110,7 +110,6 @@ export default function HomeownerLayout() {
 
   return (
     <div className="min-h-[100svh] overflow-hidden bg-background flex flex-col">
-      {/* Header (56px) */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
