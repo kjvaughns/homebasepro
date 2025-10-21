@@ -42,7 +42,7 @@ const mobileNavigation = [
   { name: "Dashboard", href: "/provider/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/provider/clients", icon: Users },
   { name: "Jobs", href: "/provider/jobs", icon: Briefcase, hasSubmenu: true },
-  { name: "Messages", href: "/provider/messages", icon: MessageSquare },
+  { name: "Messages", href: "/messages", icon: MessageSquare },
   { name: "Financial", href: "/provider/payments", icon: CreditCard, hasSubmenu: true },
 ];
 
@@ -60,7 +60,7 @@ const ProviderLayout = () => {
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
   const [financialSheetOpen, setFinancialSheetOpen] = useState(false);
 
-  const isMessagesRoute = location.pathname.startsWith("/provider/messages");
+  const isMessagesRoute = location.pathname.startsWith("/messages");
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

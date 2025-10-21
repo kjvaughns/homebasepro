@@ -195,6 +195,10 @@ const App = () => {
             
             {/* Unified Messages Route */}
             <Route path="/messages" element={<Messages />} />
+            
+            {/* Legacy message route redirects */}
+            <Route path="/homeowner/messages" element={<Navigate to="/messages" replace />} />
+            <Route path="/homeowner/messages/:id" element={<Navigate to="/messages" replace />} />
 
             {/* Provider routes with shared layout */}
             <Route path="/provider" element={<ProviderLayout />}>
@@ -245,6 +249,10 @@ const App = () => {
               
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
             </Route>
+            
+            {/* Legacy provider message route redirects */}
+            <Route path="/provider/messages" element={<Navigate to="/messages" replace />} />
+            <Route path="/provider/messages/:id" element={<Navigate to="/messages" replace />} />
 
             {/* Demo routes */}
             <Route path="/demo/homeowner" element={<DemoHomeowner />} />

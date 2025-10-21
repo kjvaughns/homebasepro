@@ -33,7 +33,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
-    { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
+    { name: "Messages", href: "/messages", icon: MessageSquare },
     { name: "Properties", href: "/homeowner/homes", icon: Building2 },
   ];
 
@@ -42,7 +42,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
     { name: "Properties", href: "/homeowner/homes", icon: Building2 },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
-    { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
+    { name: "Messages", href: "/messages", icon: MessageSquare },
     { name: "Settings", href: "/homeowner/settings", icon: Settings },
   ];
 
@@ -107,7 +107,7 @@ export default function HomeownerLayout() {
           .toUpperCase()
           .slice(0, 2);
 
-  const isMessagesRoute = location.pathname.startsWith("/homeowner/messages");
+  const isMessagesRoute = location.pathname.startsWith("/messages");
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
