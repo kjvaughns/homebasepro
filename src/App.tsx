@@ -27,6 +27,7 @@ import HomeownerDashboard from "./pages/homeowner/Dashboard";
 import ProviderDashboard from "./pages/provider/Dashboard";
 import BecomeProvider from "./pages/BecomeProvider";
 import Clients from "./pages/provider/Clients";
+import ImportClients from "./pages/provider/ImportClients";
 import ClientDetail from "./pages/provider/ClientDetail";
 import Payments from "./pages/provider/Payments";
 import Reviews from "./pages/provider/Reviews";
@@ -150,6 +151,7 @@ const App = () => {
             <Route path="/provider" element={<ProviderLayout />}>
               <Route path="dashboard" element={<ProviderDashboard />} />
               <Route path="clients" element={<Clients />} />
+              <Route path="clients/import" element={<ImportClients />} />
               <Route path="clients/:id" element={<ClientDetail />} />
               <Route path="jobs" element={<Jobs />} />
               <Route path="my-jobs" element={<MyJobs />} />
