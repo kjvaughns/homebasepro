@@ -15,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { CardDescription } from "@/components/ui/card";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { PWASettingsCard } from "@/components/pwa/PWASettingsCard";
+import { SubscriptionManager } from "@/components/provider/SubscriptionManager";
 
 interface Organization {
   id: string;
@@ -25,6 +26,7 @@ interface Organization {
   phone: string | null;
   service_area: string | null;
   service_type: string[] | null;
+  plan?: string;
 }
 
 export default function Settings() {
@@ -326,56 +328,10 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="billing">
-          {plan ? (
-            <Card className="p-4 sm:p-6 border-2 border-primary/20 max-w-full">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="w-full md:flex-1">
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
-                    <h2 className="text-xl sm:text-2xl font-bold">{plan.name}</h2>
-                    <Badge className={getTierColor(plan.tier)}>
-                      {plan.tier.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {plan.client_limit
-                      ? `Up to ${plan.client_limit} clients`
-                      : "Unlimited clients"}{" "}
-                    • {plan.transaction_fee_percent}% fee
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                    {plan.tier !== "scale" && (
-                      <Button
-                        onClick={() => navigate("/pricing")}
-                        variant="default"
-                        size="sm"
-                        className="w-full sm:w-auto"
-                      >
-                        <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Upgrade
-                      </Button>
-                    )}
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Billing
-                    </Button>
-                  </div>
-                </div>
-                <div className="text-left md:text-right w-full md:w-auto">
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">
-                    Monthly Price
-                  </p>
-                  <p className="text-2xl sm:text-3xl font-bold">
-                    ${(plan.price_monthly / 100).toFixed(0)}
-                    <span className="text-base sm:text-lg text-muted-foreground">/mo</span>
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ) : (
-            <Card className="p-6">
-              <p className="text-muted-foreground">No active subscription</p>
-            </Card>
-          )}
+          <SubscriptionManager 
+            currentPlan={organization?.plan || 'free'}
+            onPlanChanged={loadOrganization}
+          />
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6">

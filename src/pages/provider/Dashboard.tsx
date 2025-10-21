@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Bot, MapPin, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProviderStats, useTodayJobs, useUnpaidInvoices, useUnrepliedMessages } from "./hooks/useDashboardData";
+import { BalanceWidget } from "@/components/provider/BalanceWidget";
 
 export default function ProviderDashboard() {
   const navigate = useNavigate();
@@ -34,6 +35,13 @@ export default function ProviderDashboard() {
 
       {/* Primary panels */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Balance Widget */}
+        <Card className="rounded-2xl">
+          <CardContent className="p-4 md:p-6">
+            <BalanceWidget />
+          </CardContent>
+        </Card>
+
         {/* Today's route & jobs (2 cols) */}
         <Card className="lg:col-span-2 rounded-2xl">
           <CardContent className="p-4 md:p-6">
@@ -63,7 +71,16 @@ export default function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        {/* AI insights */}
+      <Card className="rounded-2xl">
+        <CardContent className="p-4 md:p-6">
+          <h3 className="font-semibold text-sm md:text-base">Balance & Payouts</h3>
+          <div className="mt-4">
+            <BalanceWidget />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* AI insights */}
         <Card className="rounded-2xl">
           <CardContent className="p-4 md:p-6">
             <h3 className="font-semibold text-sm md:text-base">HomeBase AI · Insights</h3>

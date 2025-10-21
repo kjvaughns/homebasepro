@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Database, Users, TrendingUp, Settings, Shield, Home, UserCircle, DollarSign, Gift } from "lucide-react";
+import { LayoutDashboard, Database, Users, TrendingUp, Settings, Shield, Home, UserCircle, DollarSign, Gift, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AdminSidebar = () => {
@@ -7,6 +7,7 @@ const AdminSidebar = () => {
     { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/admin/analytics", icon: TrendingUp, label: "Analytics & Revenue" },
     { to: "/admin/commerce", icon: DollarSign, label: "Commerce" },
+    { to: "/admin/ledger", icon: FileText, label: "Ledger" },
     { to: "/admin/users-access", icon: Users, label: "Users & Access" },
     { to: "/admin/data", icon: Database, label: "Data Browser" },
     { to: "/admin/settings", icon: Settings, label: "Settings" },

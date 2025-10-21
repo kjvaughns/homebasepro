@@ -54,6 +54,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminRevenue from "./pages/admin/Revenue";
+import AdminLedger from "./pages/admin/Ledger";
 import AdminData from "./pages/admin/DataManagement";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminTeam from "./pages/admin/TeamManagement";
@@ -171,6 +172,7 @@ const App = () => {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="ledger" element={<AdminLedger />} />
               <Route path="data" element={<AdminData />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="team" element={<AdminTeam />} />
