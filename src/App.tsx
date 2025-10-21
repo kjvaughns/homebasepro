@@ -58,7 +58,8 @@ import SubscriptionDetail from "./pages/homeowner/SubscriptionDetail";
 import Appointments from "./pages/homeowner/Appointments";
 import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
-import Messages from "./pages/Messages";
+import HomeownerMessages from "./pages/homeowner/Messages";
+import ProviderMessages from "./pages/provider/Messages";
 import Jobs from "@/pages/provider/Jobs";
 import MyJobs from "@/pages/provider/MyJobs";
 import Services from "@/pages/provider/Services";
@@ -187,8 +188,8 @@ const App = () => {
               <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
               <Route path="/homeowner/favorites" element={<Favorites />} />
               <Route path="/homeowner/settings" element={<HomeownerSettings />} />
-              <Route path="/homeowner/messages" element={<Messages />} />
-              <Route path="/homeowner/messages/:id" element={<Messages />} />
+              <Route path="/homeowner/messages" element={<HomeownerMessages />} />
+              <Route path="/homeowner/messages/:id" element={<HomeownerMessages />} />
             </Route>
 
             {/* Provider routes with shared layout */}
@@ -239,8 +240,8 @@ const App = () => {
               <Route path="settings/profile" element={<Navigate to="/provider/account/profile" replace />} />
               
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
-              <Route path="messages" element={<Messages />} />
-              <Route path="messages/:id" element={<Messages />} />
+              <Route path="messages" element={<ProviderMessages />} />
+              <Route path="messages/:id" element={<ProviderMessages />} />
             </Route>
 
             {/* Demo routes */}

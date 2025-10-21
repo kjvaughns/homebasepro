@@ -66,75 +66,173 @@ export default function ProviderMessages() {
 
   const loadConversations = async () => {
     try {
+      console.log("[Provider Messages] Starting loadConversations...");
+      
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      
       if (!user) {
+        console.error("[Provider Messages] No authenticated user found");
         navigate("/auth");
         return;
       }
 
-      const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
+      console.log("[Provider Messages] Authenticated user:", user.id);
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profileError) {
+        console.error("[Provider Messages] Profile fetch error:", profileError);
+        toast({
+          title: "Database Error",
+          description: `Failed to load profile: ${profileError.message}`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       if (!profile) {
+        console.error("[Provider Messages] No profile found for user");
+        toast({
+          title: "Profile Not Found",
+          description: "Please complete your profile setup first.",
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
 
+      console.log("[Provider Messages] Profile loaded:", profile.id);
       setUserProfile(profile);
 
-      const { data: org } = await supabase.from("organizations").select("*").eq("owner_id", user.id).single();
+      const { data: org, error: orgError } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("owner_id", user.id)
+        .single();
 
-      if (!org) {
+      if (orgError) {
+        console.error("[Provider Messages] Organization fetch error:", orgError);
+        toast({
+          title: "Database Error",
+          description: `Failed to load organization: ${orgError.message}`,
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
+
+      if (!org) {
+        console.error("[Provider Messages] No organization found");
+        toast({
+          title: "Organization Not Found",
+          description: "Please complete your business setup first.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log("[Provider Messages] Organization loaded:", org.id);
 
       const { data: convos, error } = await supabase
         .from("conversations")
         .select(
           `
           *,
-          profiles:homeowner_profile_id(full_name)
+          profiles!homeowner_profile_id(full_name, avatar_url)
         `,
         )
         .eq("provider_org_id", org.id)
         .order("last_message_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Provider Messages] Conversations fetch error:", error);
+        toast({
+          title: "Database Error",
+          description: `Failed to load conversations: ${error.message}`,
+          variant: "destructive",
+        });
+        throw error;
+      }
 
+      console.log("[Provider Messages] Conversations loaded:", convos?.length || 0);
       setConversations(convos || []);
       // Only auto-select on desktop
       if (convos && convos.length > 0 && window.innerWidth >= 768) {
         setSelectedConversation(convos[0]);
       }
       // On mobile, start with inbox view (null selection)
-    } catch (error) {
-      console.error("Error loading conversations:", error);
+    } catch (error: any) {
+      console.error("[Provider Messages] Critical error in loadConversations:", error);
+      toast({
+        title: "Critical Error",
+        description: error?.message || "Failed to load messaging system. Please refresh the page.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
+      console.log("[Provider Messages] Loading complete");
     }
   };
 
   const loadMessages = async (conversationId: string) => {
-    const { data: messagesData } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
+    try {
+      console.log("[Provider Messages] Loading messages for conversation:", conversationId);
+      
+      const { data: messagesData, error: messagesError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
 
-    setMessages(messagesData || []);
+      if (messagesError) {
+        console.error("[Provider Messages] Error loading messages:", messagesError);
+        toast({
+          title: "Error",
+          description: `Failed to load messages: ${messagesError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
 
-    await supabase
-      .from("messages")
-      .update({ read: true })
-      .eq("conversation_id", conversationId)
-      .eq("sender_type", "homeowner");
+      console.log("[Provider Messages] Loaded messages:", messagesData?.length || 0);
+      setMessages(messagesData || []);
 
-    await supabase.rpc("reset_unread_count", {
-      conv_id: conversationId,
-      user_type: "provider",
-    });
+      // Mark messages as read
+      const { error: updateError } = await supabase
+        .from("messages")
+        .update({ read: true })
+        .eq("conversation_id", conversationId)
+        .eq("sender_type", "homeowner");
+
+      if (updateError) {
+        console.error("[Provider Messages] Error marking messages as read:", updateError);
+      }
+
+      // Reset unread count
+      const { error: rpcError } = await supabase.rpc("reset_unread_count", {
+        conv_id: conversationId,
+        user_type: "provider",
+      });
+
+      if (rpcError) {
+        console.error("[Provider Messages] Error resetting unread count:", rpcError);
+      }
+    } catch (error: any) {
+      console.error("[Provider Messages] Critical error loading messages:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load messages. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const subscribeToMessages = (conversationId: string) => {

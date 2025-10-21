@@ -68,21 +68,49 @@ export default function HomeownerMessages() {
 
   const loadConversations = async () => {
     try {
+      console.log("[Messages] Starting loadConversations...");
+      
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      
       if (!user) {
+        console.error("[Messages] No authenticated user found");
         navigate("/auth");
         return;
       }
 
-      const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
+      console.log("[Messages] Authenticated user:", user.id);
 
-      if (!profile) {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profileError) {
+        console.error("[Messages] Profile fetch error:", profileError);
+        toast({
+          title: "Database Error",
+          description: `Failed to load profile: ${profileError.message}`,
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
 
+      if (!profile) {
+        console.error("[Messages] No profile found for user");
+        toast({
+          title: "Profile Not Found",
+          description: "Please complete your profile setup first.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log("[Messages] Profile loaded:", profile.id);
       setUserProfile(profile);
 
       const { data: convos, error } = await supabase
@@ -90,14 +118,23 @@ export default function HomeownerMessages() {
         .select(
           `
           *,
-          organizations:provider_org_id(name)
+          organizations!provider_org_id(name, logo_url)
         `,
         )
         .eq("homeowner_profile_id", profile.id)
         .order("last_message_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Messages] Conversations fetch error:", error);
+        toast({
+          title: "Database Error",
+          description: `Failed to load conversations: ${error.message}`,
+          variant: "destructive",
+        });
+        throw error;
+      }
 
+      console.log("[Messages] Conversations loaded:", convos?.length || 0);
       setConversations(convos || []);
 
       const targetConvoId = location.state?.conversationId;
@@ -112,37 +149,70 @@ export default function HomeownerMessages() {
         setSelectedConversation(convos[0]);
       }
       // On mobile, selectedConversation remains null, showing inbox list
-    } catch (error) {
-      console.error("Error loading conversations:", error);
+    } catch (error: any) {
+      console.error("[Messages] Critical error in loadConversations:", error);
       toast({
-        title: "Error",
-        description: "Failed to load conversations",
+        title: "Critical Error",
+        description: error?.message || "Failed to load messaging system. Please refresh the page.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+      console.log("[Messages] Loading complete");
     }
   };
 
   const loadMessages = async (conversationId: string) => {
-    const { data: messagesData } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
+    try {
+      console.log("[Messages] Loading messages for conversation:", conversationId);
+      
+      const { data: messagesData, error: messagesError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
 
-    setMessages(messagesData || []);
+      if (messagesError) {
+        console.error("[Messages] Error loading messages:", messagesError);
+        toast({
+          title: "Error",
+          description: `Failed to load messages: ${messagesError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
 
-    await supabase
-      .from("messages")
-      .update({ read: true })
-      .eq("conversation_id", conversationId)
-      .eq("sender_type", "provider");
+      console.log("[Messages] Loaded messages:", messagesData?.length || 0);
+      setMessages(messagesData || []);
 
-    await supabase.rpc("reset_unread_count", {
-      conv_id: conversationId,
-      user_type: "homeowner",
-    });
+      // Mark messages as read
+      const { error: updateError } = await supabase
+        .from("messages")
+        .update({ read: true })
+        .eq("conversation_id", conversationId)
+        .eq("sender_type", "provider");
+
+      if (updateError) {
+        console.error("[Messages] Error marking messages as read:", updateError);
+      }
+
+      // Reset unread count
+      const { error: rpcError } = await supabase.rpc("reset_unread_count", {
+        conv_id: conversationId,
+        user_type: "homeowner",
+      });
+
+      if (rpcError) {
+        console.error("[Messages] Error resetting unread count:", rpcError);
+      }
+    } catch (error: any) {
+      console.error("[Messages] Critical error loading messages:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load messages. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const subscribeToMessages = (conversationId: string) => {
