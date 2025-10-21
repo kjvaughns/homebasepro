@@ -93,7 +93,7 @@ export function ProviderSidebar() {
                       end
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-secondary text-primary font-medium rounded-lg"
+                          ? "bg-secondary text-foreground font-medium rounded-lg"
                           : "text-foreground hover:bg-muted/50 rounded-lg"
                       }
                     >
