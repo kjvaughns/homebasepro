@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
+import { useMobileLayout } from "@/hooks/useMobileLayout";
 
 interface Service {
   id: string;
@@ -32,6 +34,7 @@ export default function Services() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const { toast } = useToast();
+  const { isMobile } = useMobileLayout();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -214,15 +217,15 @@ export default function Services() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 pb-safe">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Services</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold">Services</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Manage one-time services and recurring subscriptions
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
+        <Button onClick={() => handleOpenDialog()} className="touch-manipulation">
           <Plus className="mr-2 h-4 w-4" />
           Create Service
         </Button>
@@ -240,11 +243,11 @@ export default function Services() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
             <Card
               key={service.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className="cursor-pointer hover:shadow-lg transition-shadow touch-manipulation"
               onClick={() => handleOpenDialog(service)}
             >
               <CardHeader>
@@ -286,162 +289,171 @@ export default function Services() {
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingService ? "Edit Service" : "Create New Service"}
-            </DialogTitle>
-          </DialogHeader>
+      {isMobile ? (
+        <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+          <SheetContent side="bottom" className="h-[90vh]">
+            <SheetHeader>
+              <SheetTitle>
+                {editingService ? "Edit Service" : "Create New Service"}
+              </SheetTitle>
+            </SheetHeader>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Service Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., AC Tune-up, Lawn Care"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the service..."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 mt-4 overflow-y-auto pb-20" style={{ maxHeight: 'calc(90vh - 100px)' }}>
               <div>
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="name">Service Name</Label>
                 <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., HVAC, Plumbing"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., AC Tune-up, Lawn Care"
+                  className="touch-manipulation"
                 />
               </div>
 
               <div>
-                <Label htmlFor="price">Price ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.default_price}
-                  onChange={(e) => setFormData({ ...formData, default_price: e.target.value })}
-                  placeholder="0.00"
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe the service..."
+                  className="touch-manipulation"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pricing_type">Pricing Type</Label>
-                <Select
-                  value={formData.pricing_type}
-                  onValueChange={(value) => setFormData({ ...formData, pricing_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="flat">Flat Rate</SelectItem>
-                    <SelectItem value="hourly">Hourly</SelectItem>
-                    <SelectItem value="per_unit">Per Unit</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="duration">Est. Duration (minutes)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={formData.estimated_duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, estimated_duration_minutes: e.target.value })}
-                  placeholder="60"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="recurring"
-                checked={formData.is_recurring}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
-              />
-              <Label htmlFor="recurring">Recurring Subscription Service</Label>
-            </div>
-
-            {formData.is_recurring && (
-              <>
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor="billing_frequency">Billing Frequency</Label>
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="e.g., HVAC, Plumbing"
+                    className="touch-manipulation"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="price">Price ($)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    value={formData.default_price}
+                    onChange={(e) => setFormData({ ...formData, default_price: e.target.value })}
+                    placeholder="0.00"
+                    className="touch-manipulation"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="pricing_type">Pricing Type</Label>
                   <Select
-                    value={formData.billing_frequency}
-                    onValueChange={(value) => setFormData({ ...formData, billing_frequency: value })}
+                    value={formData.pricing_type}
+                    onValueChange={(value) => setFormData({ ...formData, pricing_type: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="touch-manipulation">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="annual">Annual</SelectItem>
+                      <SelectItem value="flat">Flat Rate</SelectItem>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="per_unit">Per Unit</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label>Included Features</Label>
-                  <div className="space-y-2">
-                    {formData.includes_features.map((feature, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Input value={feature} disabled />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeFeature(index)}
-                        >
-                          Remove
+                  <Label htmlFor="duration">Est. Duration (minutes)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    inputMode="numeric"
+                    value={formData.estimated_duration_minutes}
+                    onChange={(e) => setFormData({ ...formData, estimated_duration_minutes: e.target.value })}
+                    placeholder="60"
+                    className="touch-manipulation"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="recurring"
+                  checked={formData.is_recurring}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
+                />
+                <Label htmlFor="recurring">Recurring Subscription Service</Label>
+              </div>
+
+              {formData.is_recurring && (
+                <>
+                  <div>
+                    <Label htmlFor="billing_frequency">Billing Frequency</Label>
+                    <Select
+                      value={formData.billing_frequency}
+                      onValueChange={(value) => setFormData({ ...formData, billing_frequency: value })}
+                    >
+                      <SelectTrigger className="touch-manipulation">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="annual">Annual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Included Features</Label>
+                    <div className="space-y-2">
+                      {formData.includes_features.map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input value={feature} disabled className="flex-1" />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeFeature(index)}
+                            className="touch-manipulation"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <div className="flex gap-2">
+                        <Input
+                          value={newFeature}
+                          onChange={(e) => setNewFeature(e.target.value)}
+                          placeholder="Add a feature..."
+                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())}
+                          className="flex-1 touch-manipulation"
+                        />
+                        <Button type="button" onClick={addFeature} className="touch-manipulation">
+                          Add
                         </Button>
                       </div>
-                    ))}
-                    <div className="flex gap-2">
-                      <Input
-                        value={newFeature}
-                        onChange={(e) => setNewFeature(e.target.value)}
-                        placeholder="Add a feature..."
-                        onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())}
-                      />
-                      <Button type="button" onClick={addFeature}>
-                        Add
-                      </Button>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-              />
-              <Label htmlFor="active">Active</Label>
-            </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="active">Active</Label>
+              </div>
 
-            <div className="flex justify-between gap-2 pt-4">
-              <div>
+              <div className="flex flex-col gap-2 pt-4">
                 {editingService && (
                   <Button
                     type="button"
@@ -450,23 +462,206 @@ export default function Services() {
                       setDialogOpen(false);
                       handleDelete(editingService.id);
                     }}
+                    className="w-full touch-manipulation"
                   >
                     Delete
                   </Button>
                 )}
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave}>
-                  {editingService ? "Save Changes" : "Create Service"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="flex-1 touch-manipulation">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} className="flex-1 touch-manipulation">
+                    {editingService ? "Save Changes" : "Create Service"}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingService ? "Edit Service" : "Create New Service"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Service Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., AC Tune-up, Lawn Care"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe the service..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    placeholder="e.g., HVAC, Plumbing"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="price">Price ($)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.default_price}
+                    onChange={(e) => setFormData({ ...formData, default_price: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="pricing_type">Pricing Type</Label>
+                  <Select
+                    value={formData.pricing_type}
+                    onValueChange={(value) => setFormData({ ...formData, pricing_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="flat">Flat Rate</SelectItem>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="per_unit">Per Unit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="duration">Est. Duration (minutes)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={formData.estimated_duration_minutes}
+                    onChange={(e) => setFormData({ ...formData, estimated_duration_minutes: e.target.value })}
+                    placeholder="60"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="recurring"
+                  checked={formData.is_recurring}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
+                />
+                <Label htmlFor="recurring">Recurring Subscription Service</Label>
+              </div>
+
+              {formData.is_recurring && (
+                <>
+                  <div>
+                    <Label htmlFor="billing_frequency">Billing Frequency</Label>
+                    <Select
+                      value={formData.billing_frequency}
+                      onValueChange={(value) => setFormData({ ...formData, billing_frequency: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="annual">Annual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Included Features</Label>
+                    <div className="space-y-2">
+                      {formData.includes_features.map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input value={feature} disabled />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeFeature(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <div className="flex gap-2">
+                        <Input
+                          value={newFeature}
+                          onChange={(e) => setNewFeature(e.target.value)}
+                          placeholder="Add a feature..."
+                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())}
+                        />
+                        <Button type="button" onClick={addFeature}>
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="active">Active</Label>
+              </div>
+
+              <div className="flex justify-between gap-2 pt-4">
+                <div>
+                  {editingService && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => {
+                        setDialogOpen(false);
+                        handleDelete(editingService.id);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave}>
+                    {editingService ? "Save Changes" : "Create Service"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

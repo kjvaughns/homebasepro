@@ -1,12 +1,13 @@
 {
-  "name": "HomeBase - Home Service Management",
+  "name": "HomeBase Pro - Service Management",
   "short_name": "HomeBase",
-  "description": "Manage all your home services, subscriptions, and maintenance in one place",
+  "description": "Professional home service management platform for providers and homeowners",
   "start_url": "/pwa-launch",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#22c55e",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
       "src": "/homebase-logo.png",
@@ -21,6 +22,9 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["lifestyle", "productivity"],
-  "prefer_related_applications": false
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
+  "display_override": ["standalone", "fullscreen"],
+  "lang": "en-US",
+  "dir": "ltr"
 }

@@ -16,8 +16,8 @@ export default function ProviderDashboard() {
   const { insights, loading: insightsLoading } = useDashboardInsights();
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-[120px] md:pb-8">
-      <header className="py-4 md:py-6">
+    <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
+      <header className="py-4 md:py-6 pt-safe">
         <h1 className="font-bold tracking-tight" style={{ fontSize: "clamp(20px, 2.6vw, 32px)" }}>
           Dashboard
         </h1>
