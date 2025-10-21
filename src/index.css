@@ -176,6 +176,13 @@ All colors MUST be HSL.
   .safe-area-inset-top {
     padding-top: env(safe-area-inset-top);
   }
+
+  /* Dynamic viewport height fallbacks for iOS */
+  .h-\[100dvh\] {
+    height: 100vh;
+    height: -webkit-fill-available;
+    height: 100dvh;
+  }
   
   /* Touch optimization */
   .touch-manipulation {

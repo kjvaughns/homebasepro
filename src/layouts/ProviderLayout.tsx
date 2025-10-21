@@ -51,6 +51,7 @@ const ProviderLayout = () => {
   const location = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const isMessagesPage = location.pathname.startsWith('/provider/messages');
 
   const [organization, setOrganization] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -258,10 +259,12 @@ const ProviderLayout = () => {
         <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
 
         {/* Floating AI Assistant */}
-        <FloatingAIAssistant 
-          userRole="provider"
-          context={{ userId: userProfile?.user_id, orgId: organization?.id }}
-        />
+        {!isMessagesPage && (
+          <FloatingAIAssistant 
+            userRole="provider"
+            context={{ userId: userProfile?.user_id, orgId: organization?.id }}
+          />
+        )}
       </div>
     );
   }
@@ -347,10 +350,12 @@ const ProviderLayout = () => {
       </div>
 
       {/* Floating AI Assistant */}
-      <FloatingAIAssistant 
-        userRole="provider"
-        context={{ userId: userProfile?.user_id, orgId: organization?.id }}
-      />
+      {!isMessagesPage && (
+        <FloatingAIAssistant 
+          userRole="provider"
+          context={{ userId: userProfile?.user_id, orgId: organization?.id }}
+        />
+      )}
 
       {/* Sheet Menus (Desktop) */}
       <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />

@@ -4,20 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Paperclip, Mic, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 
 interface MessageComposerProps {
   conversationId: string;
   profileId: string;
   onSend: (content: string, type?: string, meta?: any) => Promise<void>;
   onTyping: (isTyping: boolean) => void;
+  onFocus?: () => void;
 }
 
-export function MessageComposer({ conversationId, profileId, onSend, onTyping }: MessageComposerProps) {
+export function MessageComposer({ conversationId, profileId, onSend, onTyping, onFocus }: MessageComposerProps) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<any>(null);
+  const keyboardHeight = useKeyboardHeight();
 
   const handleTextChange = useCallback((value: string) => {
     setText(value);
@@ -97,8 +100,19 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping }:
     }
   };
 
+  const handleFocus = () => {
+    setTimeout(() => {
+      onFocus?.();
+    }, 0);
+  };
+
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t shadow-lg pb-safe">
+    <div 
+      className="sticky bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t shadow-lg"
+      style={{
+        paddingBottom: `calc(max(env(safe-area-inset-bottom, 0px), ${keyboardHeight}px) + 12px)`
+      }}
+    >
       <div className="px-4 py-3">
         <div className="flex items-end gap-2">
         <input
@@ -130,10 +144,15 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping }:
             value={text}
             onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
             placeholder="Type a message..."
             className="flex-1 min-h-[44px] max-h-32 resize-none rounded-2xl"
             rows={1}
             disabled={sending}
+            inputMode="text"
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            enterKeyHint="send"
           />
         
           <Button

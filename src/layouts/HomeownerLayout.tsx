@@ -52,6 +52,7 @@ const TABBAR_H = 80;
 export default function HomeownerLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const isMessagesPage = location.pathname.startsWith('/homeowner/messages');
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -253,10 +254,12 @@ export default function HomeownerLayout() {
       )}
 
       {/* Floating AI Assistant */}
-      <FloatingAIAssistant 
-        userRole="homeowner"
-        context={{ userId: userProfile?.user_id }}
-      />
+      {!isMessagesPage && (
+        <FloatingAIAssistant 
+          userRole="homeowner"
+          context={{ userId: userProfile?.user_id }}
+        />
+      )}
     </div>
   );
 }

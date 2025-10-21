@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Phone, Video, Info, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isSameDay } from 'date-fns';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MessagesProps {
   role: 'homeowner' | 'provider';
@@ -39,6 +41,7 @@ export default function Messages({ role }: MessagesProps) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(conversationIdFromUrl);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const keyboardHeight = useKeyboardHeight();
   
   useEffect(() => {
     if (conversationIdFromUrl && conversationIdFromUrl !== selectedConversationId) {
@@ -56,14 +59,25 @@ export default function Messages({ role }: MessagesProps) {
     }
   }, [selectedConversationId, loadMessages, markAsRead, setSearchParams]);
   
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages[selectedConversationId || '']]);
-  
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
   const conversationMessages = messages[selectedConversationId || ''] || [];
   const typingInConversation = typingUsers[selectedConversationId || ''] || [];
+  
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (conversationMessages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 0);
+    }
+  }, [conversationMessages.length]);
+
+  // Handle composer focus - scroll to bottom
+  const handleComposerFocus = () => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+  };
   
   // Get conversation display name
   const getConversationName = (convo: typeof selectedConversation) => {
@@ -79,7 +93,7 @@ export default function Messages({ role }: MessagesProps) {
   };
   
   // Mobile: Show conversation list OR messages view
-  const isMobile = window.innerWidth < 768;
+  const isMobile = useIsMobile();
   const showConversationList = !selectedConversationId || !isMobile;
   const showMessagesView = selectedConversationId;
   
@@ -130,9 +144,9 @@ export default function Messages({ role }: MessagesProps) {
     return elements;
   };
   
-  const containerHeight = isHomeowner 
-    ? 'h-[calc(100dvh-56px)]' 
-    : 'h-[calc(100dvh-64px)]';
+  const containerHeight = 'h-[100dvh] md:' + (isHomeowner 
+    ? 'h-[calc(100dvh-56px)]'
+    : 'h-[calc(100dvh-64px)]');
   
   if (loading) {
     return (
@@ -252,7 +266,9 @@ export default function Messages({ role }: MessagesProps) {
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/10"
               style={{
-                paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))'
+                paddingBottom: `calc(120px + ${keyboardHeight}px + env(safe-area-inset-bottom, 0px))`,
+                overscrollBehaviorY: 'contain',
+                WebkitOverflowScrolling: 'touch'
               }}
             >
               {renderMessages()}
@@ -263,12 +279,13 @@ export default function Messages({ role }: MessagesProps) {
             </div>
             
             {/* Message Composer */}
-            <MessageComposer
-              conversationId={selectedConversationId}
-              profileId={userProfileId || ''}
-              onSend={handleSendMessage}
-              onTyping={handleTyping}
-            />
+          <MessageComposer
+            conversationId={selectedConversationId}
+            profileId={userProfileId || ''}
+            onSend={handleSendMessage}
+            onTyping={handleTyping}
+            onFocus={handleComposerFocus}
+          />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
