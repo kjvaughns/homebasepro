@@ -35,6 +35,9 @@ export function ManageCompensationDialog({
   const [loading, setLoading] = useState(false);
   const [payType, setPayType] = useState(currentCompensation?.pay_type || "hourly");
   const [payRate, setPayRate] = useState(currentCompensation?.pay_rate?.toString() || "");
+  const [commissionPct, setCommissionPct] = useState("");
+  const [overtimeRate, setOvertimeRate] = useState("");
+  const [bonusEligible, setBonusEligible] = useState(false);
   const [directDepositEnabled, setDirectDepositEnabled] = useState(
     currentCompensation?.direct_deposit_enabled || false
   );
@@ -57,6 +60,9 @@ export function ManageCompensationDialog({
         organization_id: organizationId,
         pay_type: payType,
         pay_rate: parseFloat(payRate),
+        commission_pct: commissionPct ? parseFloat(commissionPct) : null,
+        overtime_rate: overtimeRate ? parseFloat(overtimeRate) : null,
+        bonus_eligible: bonusEligible,
         direct_deposit_enabled: directDepositEnabled,
         bank_account_last4: bankLast4 || null,
       };

@@ -18,6 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface InviteTeamMemberDialogProps {
@@ -33,10 +36,40 @@ export function InviteTeamMemberDialog({
 }: InviteTeamMemberDialogProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    full_name: "",
     email: "",
-    role: "member",
+    phone: "",
+    team_role: "technician",
+    pay_type: "hourly",
+    pay_rate: "",
+    skills: [] as string[],
+    zones: [] as string[],
   });
+  const [skillInput, setSkillInput] = useState("");
+  const [zoneInput, setZoneInput] = useState("");
   const { toast } = useToast();
+
+  const addSkill = () => {
+    if (skillInput.trim() && !formData.skills.includes(skillInput.trim())) {
+      setFormData({ ...formData, skills: [...formData.skills, skillInput.trim()] });
+      setSkillInput("");
+    }
+  };
+
+  const removeSkill = (skill: string) => {
+    setFormData({ ...formData, skills: formData.skills.filter(s => s !== skill) });
+  };
+
+  const addZone = () => {
+    if (zoneInput.trim() && !formData.zones.includes(zoneInput.trim())) {
+      setFormData({ ...formData, zones: [...formData.zones, zoneInput.trim()] });
+      setZoneInput("");
+    }
+  };
+
+  const removeZone = (zone: string) => {
+    setFormData({ ...formData, zones: formData.zones.filter(z => z !== zone) });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,19 +81,30 @@ export function InviteTeamMemberDialog({
 
       const { data: organization } = await supabase
         .from("organizations")
-        .select("id")
-        .eq("owner_id", user.user.id)
+        .select("id, seats_limit, seats_used")
+        .eq("owner_user_id", user.user.id)
         .single();
 
       if (!organization) throw new Error("Organization not found");
+
+      // Check seat limit
+      if (organization.seats_used >= organization.seats_limit) {
+        toast({
+          title: "Seat Limit Reached",
+          description: "Upgrade your plan to invite more team members",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       // Check if email is already invited
       const { data: existing } = await supabase
         .from("team_members")
         .select("id")
         .eq("organization_id", organization.id)
-        .eq("invited_email", formData.email.toLowerCase())
-        .single();
+        .eq("email", formData.email.toLowerCase())
+        .maybeSingle();
 
       if (existing) {
         toast({
@@ -72,23 +116,77 @@ export function InviteTeamMemberDialog({
         return;
       }
 
-      const { error } = await supabase.from("team_members").insert({
-        organization_id: organization.id,
-        invited_email: formData.email.toLowerCase(),
-        role: formData.role,
-        status: "pending",
+      // Generate invite token
+      const inviteToken = crypto.randomUUID();
+      const inviteExpiresAt = new Date();
+      inviteExpiresAt.setDate(inviteExpiresAt.getDate() + 7);
+
+      // Create team member record
+      const { data: teamMember, error: insertError } = await supabase
+        .from("team_members")
+        .insert({
+          organization_id: organization.id,
+          full_name: formData.full_name,
+          email: formData.email.toLowerCase(),
+          phone: formData.phone || null,
+          team_role: formData.team_role,
+          status: "invited",
+          skills: formData.skills.length > 0 ? formData.skills : null,
+          zones: formData.zones.length > 0 ? formData.zones : null,
+          invite_token: inviteToken,
+          invite_expires_at: inviteExpiresAt.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Create compensation record if pay info provided
+      if (formData.pay_rate && parseFloat(formData.pay_rate) > 0) {
+        await supabase.from("team_member_compensation").insert({
+          team_member_id: teamMember.id,
+          organization_id: organization.id,
+          pay_type: formData.pay_type,
+          pay_rate: parseFloat(formData.pay_rate),
+        });
+      }
+
+      // Send invitation email via edge function
+      const { error: inviteError } = await supabase.functions.invoke("send-team-invite", {
+        body: {
+          teamMemberId: teamMember.id,
+          email: formData.email,
+          name: formData.full_name,
+          role: formData.team_role,
+          inviteToken,
+        },
       });
 
-      if (error) throw error;
+      if (inviteError) {
+        console.error("Error sending invite email:", inviteError);
+        // Don't fail the whole operation if email fails
+      }
+
+      // Increment seats used
+      await supabase
+        .from("organizations")
+        .update({ seats_used: (organization.seats_used || 1) + 1 })
+        .eq("id", organization.id);
 
       toast({
         title: "Success",
-        description: "Team member invitation sent",
+        description: "Team member invitation sent successfully",
       });
 
       setFormData({
+        full_name: "",
         email: "",
-        role: "member",
+        phone: "",
+        team_role: "technician",
+        pay_type: "hourly",
+        pay_rate: "",
+        skills: [],
+        zones: [],
       });
       onOpenChange(false);
       onSuccess();
@@ -106,7 +204,7 @@ export function InviteTeamMemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Invite Team Member</DialogTitle>
@@ -115,6 +213,19 @@ export function InviteTeamMemberDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="full_name">Full Name *</Label>
+              <Input
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) =>
+                  setFormData({ ...formData, full_name: e.target.value })
+                }
+                placeholder="John Doe"
+                required
+              />
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="email">Email Address *</Label>
               <Input
@@ -128,25 +239,144 @@ export function InviteTeamMemberDialog({
                 required
               />
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="role">Role *</Label>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                placeholder="+1 (555) 123-4567"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="team_role">Role *</Label>
               <Select
-                value={formData.role}
+                value={formData.team_role}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, role: value })
+                  setFormData({ ...formData, team_role: value })
                 }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="owner">Owner</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="dispatcher">Dispatcher</SelectItem>
+                  <SelectItem value="technician">Technician</SelectItem>
+                  <SelectItem value="estimator">Estimator/Sales</SelectItem>
+                  <SelectItem value="accountant">Accountant</SelectItem>
+                  <SelectItem value="support">Support</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Members can view and manage clients. Admins have full access.
+                Role determines permissions and access level
               </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="pay_type">Pay Type</Label>
+                <Select
+                  value={formData.pay_type}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, pay_type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                    <SelectItem value="per_job">Per Job</SelectItem>
+                    <SelectItem value="commission">Commission</SelectItem>
+                    <SelectItem value="salary">Salary</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="pay_rate">Pay Rate ($)</Label>
+                <Input
+                  id="pay_rate"
+                  type="number"
+                  step="0.01"
+                  value={formData.pay_rate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pay_rate: e.target.value })
+                  }
+                  placeholder="25.00"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="skills">Skills</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="skills"
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  placeholder="e.g., Plumbing, HVAC"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSkill();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={addSkill}>
+                  Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.skills.map((skill) => (
+                  <Badge key={skill} variant="secondary">
+                    {skill}
+                    <X
+                      className="ml-1 h-3 w-3 cursor-pointer"
+                      onClick={() => removeSkill(skill)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="zones">Service Zones</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="zones"
+                  value={zoneInput}
+                  onChange={(e) => setZoneInput(e.target.value)}
+                  placeholder="e.g., Downtown, North Side"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addZone();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={addZone}>
+                  Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.zones.map((zone) => (
+                  <Badge key={zone} variant="secondary">
+                    {zone}
+                    <X
+                      className="ml-1 h-3 w-3 cursor-pointer"
+                      onClick={() => removeZone(zone)}
+                    />
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
