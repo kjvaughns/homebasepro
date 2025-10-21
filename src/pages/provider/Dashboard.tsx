@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Bot, MapPin, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProviderStats, useTodayJobs, useUnpaidInvoices, useUnrepliedMessages } from "./hooks/useDashboardData";
+import { useDashboardInsights } from "./hooks/useDashboardInsights";
+import { AIInsightCard } from "@/components/provider/AIInsightCard";
 import { BalanceWidget } from "@/components/provider/BalanceWidget";
 
 export default function ProviderDashboard() {
@@ -11,6 +13,7 @@ export default function ProviderDashboard() {
   const { jobs } = useTodayJobs();
   const { invoices } = useUnpaidInvoices();
   const { threads: unreadThreads } = useUnrepliedMessages();
+  const { insights, loading: insightsLoading } = useDashboardInsights();
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-[120px] md:pb-8">
@@ -76,9 +79,15 @@ export default function ProviderDashboard() {
           <CardContent className="p-4 md:p-6">
             <h3 className="font-semibold text-sm md:text-base">HomeBase AI · Insights</h3>
             <div className="mt-3 space-y-2">
-              <InsightRow text="You can add 2 jobs near Madison between 1–3pm." />
-              <InsightRow text="Send unpaid reminders to 2 clients? (~$450)" />
-              <InsightRow text="Your lawn mowing rate is below market by ~8% in 39208." />
+              {insightsLoading ? (
+                <p className="text-sm text-muted-foreground">Loading insights...</p>
+              ) : insights.length > 0 ? (
+                insights.map((insight, idx) => (
+                  <AIInsightCard key={idx} message={insight.text} type={insight.type} />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No insights available</p>
+              )}
             </div>
             <div className="mt-4">
               <Button className="w-full" size="sm">Ask HomeBase AI</Button>

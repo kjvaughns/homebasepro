@@ -25,9 +25,9 @@ export function useProviderStats() {
 
         // Active clients
         const { count: activeClients } = await supabase
-          .from("homeowner_subscriptions")
-          .select("homeowner_id", { count: "exact", head: true })
-          .eq("provider_org_id", org.id)
+          .from("clients")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", org.id)
           .eq("status", "active");
 
         // Monthly revenue
@@ -44,12 +44,12 @@ export function useProviderStats() {
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
         const { count: upcoming7d } = await supabase
-          .from("service_visits")
+          .from("bookings")
           .select("*", { count: "exact", head: true })
           .eq("provider_org_id", org.id)
-          .gte("scheduled_date", new Date().toISOString())
-          .lte("scheduled_date", sevenDaysFromNow.toISOString())
-          .in("status", ["scheduled", "confirmed"]);
+          .gte("date_time_start", new Date().toISOString())
+          .lte("date_time_start", sevenDaysFromNow.toISOString())
+          .neq("status", "cancelled");
 
         setStats({
           activeClients: activeClients || 0,
@@ -196,8 +196,6 @@ export function useUnrepliedMessages() {
           .from("conversations")
           .select(`
             id,
-            title,
-            kind,
             last_message_preview,
             last_message_at,
             unread_count_provider

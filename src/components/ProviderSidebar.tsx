@@ -84,8 +84,7 @@ export function ProviderSidebar() {
       isGroup: true,
       items: [
         { to: "/provider/jobs", title: "Job Pipeline", icon: LayoutGrid },
-        { to: "/provider/services", title: "Service Catalog", icon: Wrench },
-        { to: "/provider/service-plans", title: "Service Plans", icon: FileText },
+        { to: "/provider/services", title: "Services", icon: Wrench },
         { to: "/provider/parts-materials", title: "Parts & Materials", icon: Package },
       ]
     },
@@ -132,7 +131,7 @@ export function ProviderSidebar() {
     },
   ];
 
-  const jobsRoutes = ['/provider/jobs', '/provider/services', '/provider/service-plans', '/provider/parts-materials'];
+  const jobsRoutes = ['/provider/jobs', '/provider/services', '/provider/parts-materials'];
   const financialRoutes = ['/provider/payments', '/provider/accounting', '/provider/analytics', '/provider/balance'];
   const teamRoutes = ['/provider/team', '/provider/time-tracking', '/provider/approve-time', '/provider/payroll', '/provider/commission-rules'];
   const settingsRoutes = ['/provider/settings'];

@@ -2770,13 +2770,16 @@ export type Database = {
       }
       services: {
         Row: {
+          billing_frequency: string | null
           category: string | null
           created_at: string | null
           default_price: number | null
           description: string | null
           estimated_duration_minutes: number | null
           id: string
+          includes_features: string[] | null
           is_active: boolean | null
+          is_recurring: boolean | null
           name: string
           organization_id: string
           pricing_type: string | null
@@ -2784,13 +2787,16 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          billing_frequency?: string | null
           category?: string | null
           created_at?: string | null
           default_price?: number | null
           description?: string | null
           estimated_duration_minutes?: number | null
           id?: string
+          includes_features?: string[] | null
           is_active?: boolean | null
+          is_recurring?: boolean | null
           name: string
           organization_id: string
           pricing_type?: string | null
@@ -2798,13 +2804,16 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          billing_frequency?: string | null
           category?: string | null
           created_at?: string | null
           default_price?: number | null
           description?: string | null
           estimated_duration_minutes?: number | null
           id?: string
+          includes_features?: string[] | null
           is_active?: boolean | null
+          is_recurring?: boolean | null
           name?: string
           organization_id?: string
           pricing_type?: string | null

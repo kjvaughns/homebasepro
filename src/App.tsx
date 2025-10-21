@@ -59,9 +59,8 @@ import HomeownerSettings from "./pages/homeowner/Settings";
 import Messages from "./pages/Messages";
 import Jobs from "@/pages/provider/Jobs";
 import MyJobs from "@/pages/provider/MyJobs";
-import ServiceCatalog from "@/pages/provider/ServiceCatalog";
+import Services from "@/pages/provider/Services";
 import PartsMaterials from "@/pages/provider/PartsMaterials";
-import ServicePlans from "@/pages/provider/ServicePlans";
 import ProfileSettings from "@/pages/provider/settings/ProfileSettings";
 import BillingSettings from "@/pages/provider/settings/BillingSettings";
 import PaymentSettings from "@/pages/provider/settings/PaymentSettings";
@@ -173,8 +172,7 @@ const App = () => {
               <Route path="clients/import" element={<ImportClients />} />
               <Route path="clients/:id" element={<ClientDetail />} />
               <Route path="jobs" element={<Jobs />} />
-              <Route path="services" element={<ServiceCatalog />} />
-              <Route path="service-plans" element={<ServicePlans />} />
+              <Route path="services" element={<Services />} />
               <Route path="parts-materials" element={<PartsMaterials />} />
               <Route path="my-jobs" element={<MyJobs />} />
               <Route path="payments" element={<Payments />} />

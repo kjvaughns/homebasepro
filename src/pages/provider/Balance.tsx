@@ -40,9 +40,7 @@ export default function Balance() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("payments-api", {
-        body: { action: "get_balance" },
-      });
+      const { data, error } = await supabase.functions.invoke("get-balance");
 
       if (error) throw error;
       if (data?.balance) {
