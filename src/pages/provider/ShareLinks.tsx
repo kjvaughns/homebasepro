@@ -37,14 +37,14 @@ export default function ShareLinks() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .single();
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
 
-      if (!profile?.organization_id) return;
-      setOrgId(profile.organization_id);
+      if (!org?.id) return;
+      setOrgId(org.id);
 
       const { data: linksData, error } = await supabase
         .from("short_links")
@@ -53,7 +53,7 @@ export default function ShareLinks() {
           organizations(name, logo_url),
           short_link_clicks(count)
         `)
-        .eq("org_id", profile.organization_id)
+        .eq("org_id", org.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
@@ -76,7 +76,7 @@ export default function ShareLinks() {
         .in("short_link_id", processedLinks.map(l => l.id));
 
       // Process clicks by day
-      const clicksByDay = {};
+      const clicksByDay: Record<string, number> = {};
       clicksData?.forEach(click => {
         const day = format(new Date(click.clicked_at), "MMM dd");
         clicksByDay[day] = (clicksByDay[day] || 0) + 1;
@@ -89,7 +89,7 @@ export default function ShareLinks() {
       setClicksData(chartData);
 
       // Process top sources
-      const sourceCount = {};
+      const sourceCount: Record<string, number> = {};
       clicksData?.forEach(click => {
         const source = click.referrer ? new URL(click.referrer).hostname : "Direct";
         sourceCount[source] = (sourceCount[source] || 0) + 1;
@@ -186,8 +186,9 @@ export default function ShareLinks() {
   const downloadQR = async (linkId: string, format: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/generate-qr-code/${linkId}?format=${format}`,
+        `${supabaseUrl}/functions/v1/generate-qr-code/${linkId}?format=${format}`,
         {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
@@ -361,7 +362,7 @@ export default function ShareLinks() {
                         </DialogHeader>
                         <div className="flex flex-col items-center gap-4 py-4">
                           <img
-                            src={`${supabase.supabaseUrl}/functions/v1/generate-qr-code/${link.id}?format=png`}
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-qr-code/${link.id}?format=png`}
                             alt="QR Code"
                             className="w-64 h-64"
                           />

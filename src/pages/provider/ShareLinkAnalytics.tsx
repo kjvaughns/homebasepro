@@ -70,7 +70,7 @@ export default function ShareLinkAnalytics() {
 
       // Process timeline data (last 30 days)
       const thirtyDaysAgo = subDays(new Date(), 30);
-      const clicksByDay = {};
+      const clicksByDay: Record<string, number> = {};
       clicksData?.forEach((click) => {
         if (new Date(click.clicked_at) >= thirtyDaysAgo) {
           const day = format(new Date(click.clicked_at), "MMM dd");
@@ -85,7 +85,7 @@ export default function ShareLinkAnalytics() {
       setTimelineData(timeline);
 
       // Process sources
-      const sourceCount = {};
+      const sourceCount: Record<string, number> = {};
       clicksData?.forEach((click) => {
         let source = "Direct";
         if (click.referrer) {
@@ -104,7 +104,7 @@ export default function ShareLinkAnalytics() {
       setSourcesData(sources);
 
       // Process device types
-      const deviceCount = {};
+      const deviceCount: Record<string, number> = {};
       clicksData?.forEach((click) => {
         const device = click.device_type || "Unknown";
         deviceCount[device] = (deviceCount[device] || 0) + 1;
@@ -117,7 +117,7 @@ export default function ShareLinkAnalytics() {
       setDeviceData(devices);
 
       // Process UTM data
-      const utmCount = {};
+      const utmCount: Record<string, number> = {};
       clicksData?.forEach((click) => {
         if (click.utm_campaign || click.utm_source || click.utm_medium) {
           const key = `${click.utm_campaign || "No Campaign"} / ${

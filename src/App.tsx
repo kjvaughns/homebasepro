@@ -69,6 +69,9 @@ import PaymentSettings from "@/pages/provider/settings/PaymentSettings";
 import IntegrationSettings from "@/pages/provider/settings/IntegrationSettings";
 import AppSettings from "@/pages/provider/settings/AppSettings";
 import RefundRequests from "@/pages/provider/RefundRequests";
+import ShareLinks from "@/pages/provider/ShareLinks";
+import ShareLinkAnalytics from "@/pages/provider/ShareLinkAnalytics";
+import ShortLinkRedirect from "@/pages/ShortLinkRedirect";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
@@ -148,6 +151,7 @@ const App = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/l/:slug" element={<ShortLinkRedirect />} />
             <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
             <Route path="/onboarding/provider" element={<OnboardingProvider />} />
 
@@ -200,6 +204,8 @@ const App = () => {
               <Route path="settings/payments" element={<PaymentSettings />} />
               <Route path="settings/integrations" element={<IntegrationSettings />} />
               <Route path="settings/app" element={<AppSettings />} />
+              <Route path="share-links" element={<ShareLinks />} />
+              <Route path="share-links/:id/analytics" element={<ShareLinkAnalytics />} />
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
               <Route path="messages" element={<Messages />} />
           <Route path="messages/:id" element={<Messages />} />

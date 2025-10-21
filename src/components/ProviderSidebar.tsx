@@ -24,6 +24,8 @@ import {
   CreditCard,
   Plug,
   Smartphone,
+  Share2,
+  BarChart,
 } from "lucide-react";
 import {
   Sidebar,
@@ -102,6 +104,7 @@ export function ProviderSidebar() {
         { to: "/provider/balance", title: "Balance", icon: Wallet },
       ]
     },
+    { to: "/provider/share-links", title: "Share Links", icon: Share2, showFor: "owner" },
     { 
       title: "Team", 
       icon: Users, 
