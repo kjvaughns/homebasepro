@@ -198,12 +198,15 @@ function ConversationView() {
         .order("created_at", { ascending: true });
       setMessages(data || []);
       
-      // Mark as read
+      // Mark as read - update conversation_members directly
       if (profile?.id) {
-        await supabase.rpc('mark_conversation_read', {
-          p_conversation_id: conversationId,
-          p_profile_id: profile.id
-        }).catch(() => {}); // Silently fail if RPC doesn't exist yet
+        const { error } = await supabase
+          .from("conversation_members" as any)
+          .update({ last_read_at: new Date().toISOString() })
+          .eq("conversation_id", conversationId)
+          .eq("profile_id", profile.id);
+        
+        if (error) console.log('Read receipt update failed:', error);
       }
     };
     
@@ -267,11 +270,16 @@ function ConversationView() {
   const handleTyping = async (isTyping: boolean) => {
     if (!conversationId || !profile?.id) return;
     
-    await supabase.rpc('update_typing_state', {
-      p_conversation_id: conversationId,
-      p_profile_id: profile.id,
-      p_is_typing: isTyping
-    }).catch(() => {}); // Silently fail if RPC doesn't exist yet
+    const { error } = await supabase
+      .from("typing_states" as any)
+      .upsert({
+        conversation_id: conversationId,
+        profile_id: profile.id,
+        is_typing: isTyping,
+        updated_at: new Date().toISOString()
+      });
+    
+    if (error) console.log('Typing indicator update failed:', error);
   };
 
   return (

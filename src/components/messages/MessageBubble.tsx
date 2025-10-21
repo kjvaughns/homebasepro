@@ -1,106 +1,121 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
-
-interface Message {
-  id: string;
-  content: string;
-  sender_type: string;
-  created_at: string;
-  message_type?: string;
-  attachment_url?: string;
-  attachment_metadata?: {
-    filename: string;
-    size: number;
-    mimeType: string;
-  };
-  read?: boolean;
-}
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, ExternalLink } from "lucide-react";
 
 interface MessageBubbleProps {
-  message: Message;
-  isOwn: boolean;
-  showAvatar: boolean;
-  senderName?: string;
-  avatarUrl?: string;
+  message: any;
+  isSender: boolean;
 }
 
-export const MessageBubble = ({ 
-  message, 
-  isOwn, 
-  showAvatar,
-  senderName,
-  avatarUrl 
-}: MessageBubbleProps) => {
-  const isImage = message.message_type === 'image' && message.attachment_url;
-  const isFile = message.message_type === 'file' && message.attachment_url;
-
+export function MessageBubble({ message, isSender }: MessageBubbleProps) {
   return (
-    <div className={cn("flex gap-2 mb-0.5", isOwn ? "justify-end" : "justify-start")}>
-      {!isOwn && (
-        <Avatar className={cn("h-8 w-8 shrink-0", !showAvatar && "invisible")}>
-          <AvatarImage src={avatarUrl} />
-          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-            {senderName?.charAt(0) || "U"}
-          </AvatarFallback>
-        </Avatar>
-      )}
-      
-      <div className={cn("flex flex-col max-w-[70%] sm:max-w-[65%]", isOwn && "items-end")}>
-        <div
-          className={cn(
-            "rounded-2xl px-3 py-2 shadow-sm max-w-full",
-            isOwn
-              ? "bg-primary text-primary-foreground rounded-br-md"
-              : "bg-card border rounded-bl-md"
-          )}
-        >
-          {isImage && (
-            <img
-              src={message.attachment_url}
-              alt="Attachment"
-              className="rounded-lg max-w-full h-auto mb-2 cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => window.open(message.attachment_url, '_blank')}
-            />
-          )}
-          
-          {isFile && message.attachment_metadata && (
-            <a
-              href={message.attachment_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 p-2 rounded bg-background/10 hover:bg-background/20 transition-colors"
-            >
-              <span className="text-2xl">📎</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">
-                  {message.attachment_metadata.filename}
-                </div>
-                <div className="text-xs opacity-70">
-                  {(message.attachment_metadata.size / 1024).toFixed(1)} KB
-                </div>
-              </div>
-            </a>
-          )}
-          
-          {message.content && (
-            <p className="text-base whitespace-pre-wrap break-words leading-relaxed">
-              {message.content}
-            </p>
-          )}
-        </div>
+    <div className={`flex ${isSender ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-2.5 ${
+          isSender
+            ? "bg-primary text-primary-foreground rounded-br-sm"
+            : "bg-muted text-foreground rounded-bl-sm"
+        }`}
+      >
+        {message.meta?.card && (
+          <MessageCard card={message.meta.card} />
+        )}
         
-        <div className="flex items-center gap-1 mt-0.5 px-1">
-          <span className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-          </span>
-          {isOwn && (
-            <span className="text-xs text-muted-foreground">
-              {message.read ? "✓✓" : "✓"}
-            </span>
-          )}
-        </div>
+        {message.message_type === "image" && message.attachment_url && (
+          <img
+            src={message.attachment_url}
+            alt="Attachment"
+            className="rounded-xl mb-1 max-w-full h-auto max-h-[300px] object-cover"
+          />
+        )}
+        
+        {message.message_type === "file" && message.attachment_url && (
+          <a
+            href={message.attachment_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm hover:underline"
+          >
+            <FileText className="h-4 w-4" />
+            <span>{message.attachment_metadata?.name || "Download file"}</span>
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
+        
+        {message.content && (
+          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+            {message.content}
+          </p>
+        )}
+        
+        <p
+          className={`text-[10px] mt-1 ${
+            isSender ? "text-primary-foreground/60" : "text-muted-foreground"
+          }`}
+        >
+          {new Date(message.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
       </div>
     </div>
   );
-};
+}
+
+function MessageCard({ card }: { card: any }) {
+  if (card.type === 'quote') {
+    return (
+      <Card className="bg-background/90 border border-border/50 mb-2">
+        <CardHeader className="p-3 pb-2">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Quote</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 pt-0 space-y-2">
+          <div className="text-sm font-medium">{card.service_name}</div>
+          <div className="text-lg font-bold">${card.low}–${card.high}</div>
+          {card.note && <div className="text-xs text-muted-foreground">{card.note}</div>}
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" className="h-7 text-xs">View</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (card.type === 'job') {
+    return (
+      <Card className="bg-background/90 border border-border/50 mb-2">
+        <CardHeader className="p-3 pb-2">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Job</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 pt-0 space-y-2">
+          <div className="text-sm font-medium">{card.service_name}</div>
+          <div className="text-xs text-muted-foreground">{card.address}</div>
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" className="h-7 text-xs">Open Job</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (card.type === 'invoice') {
+    return (
+      <Card className="bg-background/90 border border-border/50 mb-2">
+        <CardHeader className="p-3 pb-2">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Invoice</CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 pt-0 space-y-2">
+          <div className="text-sm">Amount Due</div>
+          <div className="text-lg font-bold">${card.amount}</div>
+          <div className="text-xs text-muted-foreground">{card.status || 'Unpaid'}</div>
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" className="h-7 text-xs">View & Pay</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  return null;
+}

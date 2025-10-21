@@ -269,11 +269,7 @@ export default function HomeownerMessages() {
         <MessageBubble
           key={message.id}
           message={message}
-          isOwn={message.sender_type === "homeowner"}
-          showAvatar={showAvatar}
-          senderName={
-            message.sender_type === "provider" ? selectedConversation?.organizations?.name : userProfile?.full_name
-          }
+          isSender={message.sender_type === "homeowner"}
         />,
       );
     });

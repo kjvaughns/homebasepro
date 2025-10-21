@@ -261,11 +261,7 @@ export default function ProviderMessages() {
         <MessageBubble
           key={message.id}
           message={message}
-          isOwn={message.sender_type === "provider"}
-          showAvatar={showAvatar}
-          senderName={
-            message.sender_type === "homeowner" ? selectedConversation?.profiles?.full_name : userProfile?.full_name
-          }
+          isSender={message.sender_type === "provider"}
         />,
       );
     });

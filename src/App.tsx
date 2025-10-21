@@ -142,7 +142,8 @@ const App = () => {
               <Route path="/homeowner/appointments" element={<Appointments />} />
               <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
               <Route path="/homeowner/settings" element={<HomeownerSettings />} />
-              <Route path="/homeowner/messages" element={<HomeownerMessages />} />
+              <Route path="/homeowner/messages" element={<Messages />} />
+              <Route path="/homeowner/messages/:id" element={<Messages />} />
             </Route>
 
             {/* Provider routes with shared layout */}
