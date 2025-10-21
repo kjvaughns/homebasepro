@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useProviderStats() {
   const [stats, setStats] = useState({
-    activeClients: 0,
+    totalClients: 0,
+    activeSubscribers: 0,
     mrr: 0,
     upcoming7d: 0,
   });
@@ -28,8 +29,8 @@ export function useProviderStats() {
 
         // Parallelize all queries for better performance
         const [
-          { count: activeClients },
-          { data: subscriptions },
+          { count: totalClients },
+          { data: subscriptions, count: activeSubscribers },
           { count: upcoming7d }
         ] = await Promise.all([
           supabase
@@ -40,7 +41,7 @@ export function useProviderStats() {
           
           supabase
             .from("homeowner_subscriptions")
-            .select("billing_amount")
+            .select("billing_amount", { count: "exact" })
             .eq("provider_org_id", org.id)
             .eq("status", "active"),
           
@@ -56,7 +57,8 @@ export function useProviderStats() {
         const mrr = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) || 0;
 
         setStats({
-          activeClients: activeClients || 0,
+          totalClients: totalClients || 0,
+          activeSubscribers: activeSubscribers || 0,
           mrr,
           upcoming7d: upcoming7d || 0,
         });

@@ -22,7 +22,7 @@ export default function ProviderDashboard() {
   const { threads: unreadThreads } = useUnrepliedMessages();
   const { insights, loading: insightsLoading } = useDashboardInsights();
 
-  const hasAnyData = stats.activeClients > 0 || jobs.length > 0 || invoices.length > 0;
+  const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
@@ -40,10 +40,10 @@ export default function ProviderDashboard() {
 
       {/* KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <KpiCard title="Active Clients" value={stats.activeClients} loading={kpiLoading} helpText="Number of clients with active subscriptions or recent jobs" />
+        <KpiCard title="Active Subscribers" value={stats.activeSubscribers} loading={kpiLoading} helpText="Homeowners with active subscriptions to your services" />
+        <KpiCard title="Total Clients" value={stats.totalClients} loading={kpiLoading} helpText="All clients in your database (subscribers + non-subscribers)" />
         <KpiCard title="Monthly Revenue" value={`$${stats.mrr.toLocaleString()}`} loading={kpiLoading} helpText="Total revenue expected this month from subscriptions and jobs" />
         <KpiCard title="Upcoming (7d)" value={stats.upcoming7d} loading={kpiLoading} helpText="Number of jobs scheduled in the next 7 days" />
-        <KpiCard title="Unpaid Invoices" value={invoices.length} loading={kpiLoading} helpText="Number of outstanding invoices awaiting payment" />
       </section>
 
       <div className="h-4 md:h-6" />
