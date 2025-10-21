@@ -54,7 +54,7 @@ export function useProviderStats() {
             .neq("status", "cancelled")
         ]);
 
-        const mrr = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) || 0;
+        const mrr = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) / 100 || 0;
 
         setStats({
           totalClients: totalClients || 0,
