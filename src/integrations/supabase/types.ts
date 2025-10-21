@@ -2604,6 +2604,77 @@ export type Database = {
         }
         Relationships: []
       }
+      refund_requests: {
+        Row: {
+          amount_requested: number
+          booking_id: string
+          created_at: string
+          homeowner_profile_id: string
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          provider_org_id: string
+          reason: string
+          status: string
+        }
+        Insert: {
+          amount_requested: number
+          booking_id: string
+          created_at?: string
+          homeowner_profile_id: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          provider_org_id: string
+          reason: string
+          status?: string
+        }
+        Update: {
+          amount_requested?: number
+          booking_id?: string
+          created_at?: string
+          homeowner_profile_id?: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          provider_org_id?: string
+          reason?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_homeowner_profile_id_fkey"
+            columns: ["homeowner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rewards_ledger: {
         Row: {
           amount: number | null

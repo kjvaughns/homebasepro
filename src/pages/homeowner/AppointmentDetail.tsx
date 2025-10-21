@@ -3,9 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, Home, MapPin, User } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Home, MapPin, User, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { RefundRequestDialog } from "@/components/homeowner/RefundRequestDialog";
 
 export default function AppointmentDetail() {
   const { id } = useParams();
@@ -13,10 +14,26 @@ export default function AppointmentDetail() {
   const { toast } = useToast();
   const [visit, setVisit] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     loadVisitDetails();
+    loadUserProfile();
   }, [id]);
+
+  const loadUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    setUserProfile(profile);
+  };
 
   const loadVisitDetails = async () => {
     try {
@@ -222,6 +239,41 @@ export default function AppointmentDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Refund Request */}
+      {visit.status === 'completed' && userProfile && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Request a Refund</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              If you're not satisfied with the service, you can request a refund
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setRefundDialogOpen(true)}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Request Refund
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Refund Request Dialog */}
+      {userProfile && visit && (
+        <RefundRequestDialog
+          open={refundDialogOpen}
+          onOpenChange={setRefundDialogOpen}
+          bookingId={visit.id}
+          homeownerProfileId={userProfile.id}
+          providerOrgId={visit.organizations?.id}
+          bookingAmount={5000} // TODO: Get actual booking amount from payment record
+          onSuccess={loadVisitDetails}
+        />
+      )}
     </div>
   );
 }

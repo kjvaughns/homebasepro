@@ -66,6 +66,7 @@ import BillingSettings from "@/pages/provider/settings/BillingSettings";
 import PaymentSettings from "@/pages/provider/settings/PaymentSettings";
 import IntegrationSettings from "@/pages/provider/settings/IntegrationSettings";
 import AppSettings from "@/pages/provider/settings/AppSettings";
+import RefundRequests from "@/pages/provider/RefundRequests";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
@@ -178,6 +179,7 @@ const App = () => {
               <Route path="parts-materials" element={<PartsMaterials />} />
               <Route path="my-jobs" element={<MyJobs />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="refund-requests" element={<RefundRequests />} />
               <Route path="accounting" element={<Accounting />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="balance" element={<Balance />} />

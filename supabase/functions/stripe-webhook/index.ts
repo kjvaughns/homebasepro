@@ -30,8 +30,22 @@ serve(async (req) => {
 
     console.log('Webhook event:', event.type);
 
-    // Helper function to insert ledger entry
+    // Helper function to insert ledger entry with idempotency check
     const insertLedgerEntry = async (entry: any) => {
+      // Check if ledger entry already exists to prevent duplicates from webhook retries
+      if (entry.stripe_ref) {
+        const { data: existing } = await supabase
+          .from('ledger_entries')
+          .select('id')
+          .eq('stripe_ref', entry.stripe_ref)
+          .maybeSingle();
+        
+        if (existing) {
+          console.log(`Ledger entry already exists for ${entry.stripe_ref}, skipping`);
+          return;
+        }
+      }
+      
       await supabase.from('ledger_entries').insert(entry);
     };
 

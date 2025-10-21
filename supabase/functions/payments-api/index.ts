@@ -156,20 +156,41 @@ serve(async (req) => {
         customer = newCustomer;
       }
 
-      // CRITICAL: Re-fetch org record to ensure fee is current
-      const { data: currentOrg } = await supabase
+      // Get provider organization with Stripe account
+      const { data: providerOrg, error: orgError } = await supabase
         .from('organizations')
-        .select('transaction_fee_pct')
+        .select('stripe_account_id, transaction_fee_pct')
         .eq('id', org.id)
         .single();
 
-      if (!currentOrg) throw new Error('Organization not found');
+      if (orgError || !providerOrg) {
+        throw new Error('Provider organization not found');
+      }
 
-      // Calculate fee with current rate
+      // Get active subscription to validate fee percentage
+      const { data: subscription } = await supabase
+        .from('provider_subscriptions')
+        .select('plan, status')
+        .eq('provider_id', org.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      // Calculate fee based on active subscription plan, fallback to org record
+      const planFeeMap: Record<string, number> = {
+        free: 0.08,
+        growth: 0.025,
+        pro: 0.02,
+        scale: 0.02,
+      };
+
+      const feePercent = subscription?.plan && planFeeMap[subscription.plan]
+        ? planFeeMap[subscription.plan]
+        : providerOrg.transaction_fee_pct;
+
       const totalAmount = Math.round((amount + tip) * 100);
-      const feeAmount = getFeeAmount(currentOrg, totalAmount);
+      const feeAmount = Math.round(totalAmount * feePercent);
 
-      // Create destination charge with application fee
+      // Create destination charge with application fee and idempotency key
       const paymentIntent = await stripe.paymentIntents.create({
         amount: totalAmount,
         currency: 'usd',
@@ -177,7 +198,7 @@ serve(async (req) => {
         payment_method: customer.default_payment_method,
         confirm: false, // Will be confirmed on frontend with Elements
         application_fee_amount: feeAmount,
-        transfer_data: { destination: org.stripe_account_id },
+        transfer_data: { destination: providerOrg.stripe_account_id },
         transfer_group: `job_${jobId}`,
         capture_method: captureNow ? 'automatic' : 'manual',
         metadata: {
@@ -187,6 +208,8 @@ serve(async (req) => {
           booking_id: jobId, // BUG-002 FIX: Add booking_id for webhook handler
           tip_amount: tip,
         },
+      }, {
+        idempotencyKey: `booking_${jobId}_payment_${Date.now()}`,
       });
 
       // Insert payment record

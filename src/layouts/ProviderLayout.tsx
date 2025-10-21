@@ -24,6 +24,7 @@ import {
   DollarSign,
   Briefcase,
   CreditCard,
+  RotateCcw,
 } from "lucide-react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import homebaseLogo from "@/assets/homebase-logo.png";
@@ -167,6 +168,10 @@ const ProviderLayout = () => {
                         <Users className="mr-2 h-4 w-4" />
                         <span>Team</span>
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/provider/refund-requests")}>
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        <span>Refund Requests</span>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
                   )}
@@ -290,6 +295,10 @@ const ProviderLayout = () => {
                     <DropdownMenuItem onClick={() => setTeamSheetOpen(true)}>
                       <Users className="mr-2 h-4 w-4" />
                       <span>Team</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/provider/refund-requests")}>
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      <span>Refund Requests</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
