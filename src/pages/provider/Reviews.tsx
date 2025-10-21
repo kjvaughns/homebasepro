@@ -33,9 +33,13 @@ const Reviews = () => {
       if (!org) return;
 
       const { data: reviewsData } = await supabase
-        .from("reviews" as any)
-        .select("*, clients(name, email)")
+        .from("reviews")
+        .select(`
+          *,
+          homeowner:profiles!reviews_homeowner_profile_id_fkey(full_name, avatar_url)
+        `)
         .eq("provider_org_id", org.id)
+        .eq("is_visible", true)
         .order("created_at", { ascending: false });
 
       if (reviewsData) {
@@ -62,10 +66,10 @@ const Reviews = () => {
 
     try {
       const { error } = await supabase
-        .from("reviews" as any)
+        .from("reviews")
         .update({
           provider_response: response,
-          responded_at: new Date().toISOString(),
+          provider_responded_at: new Date().toISOString(),
         })
         .eq("id", reviewId);
 
@@ -177,7 +181,7 @@ const Reviews = () => {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{review.clients?.name}</CardTitle>
+                      <CardTitle className="text-lg">{review.homeowner?.full_name || 'Anonymous'}</CardTitle>
                       {review.sentiment && getSentimentIcon(review.sentiment)}
                     </div>
                     <div className="flex gap-1">
@@ -198,9 +202,11 @@ const Reviews = () => {
                   <div className="bg-muted p-4 rounded-lg space-y-2">
                     <p className="text-sm font-medium">Your Response:</p>
                     <p className="text-sm">{review.provider_response}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(review.responded_at), 'MMM d, yyyy')}
-                    </p>
+                    {review.provider_responded_at && (
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(review.provider_responded_at), 'MMM d, yyyy')}
+                      </p>
+                    )}
                   </div>
                 ) : respondingTo === review.id ? (
                   <div className="space-y-2">

@@ -16,6 +16,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { FavoriteToggle } from "@/components/homeowner/FavoriteToggle";
+import { PortfolioGallery } from "@/components/provider/PortfolioGallery";
+import { SubmitReviewDialog } from "@/components/homeowner/SubmitReviewDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProviderDetail() {
   const { id } = useParams();
@@ -24,11 +28,15 @@ export default function ProviderDetail() {
   const [provider, setProvider] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [homes, setHomes] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [profileId, setProfileId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [selectedHome, setSelectedHome] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [startingConversation, setStartingConversation] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
@@ -37,6 +45,8 @@ export default function ProviderDetail() {
   useEffect(() => {
     loadProviderDetails();
     loadUserHomes();
+    loadReviews();
+    loadPortfolio();
   }, [id]);
 
   const loadProviderDetails = async () => {
@@ -83,6 +93,7 @@ export default function ProviderDetail() {
         .single();
 
       if (!profile) return;
+      setProfileId(profile.id);
 
       const { data: homesData } = await supabase
         .from("homes")
@@ -93,6 +104,41 @@ export default function ProviderDetail() {
       setHomes(homesData || []);
     } catch (error) {
       console.error("Error loading homes:", error);
+    }
+  };
+
+  const loadReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          homeowner:profiles!reviews_homeowner_profile_id_fkey(full_name, avatar_url)
+        `)
+        .eq('provider_org_id', id)
+        .eq('is_visible', true)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setReviews(data || []);
+    } catch (error) {
+      console.error("Error loading reviews:", error);
+    }
+  };
+
+  const loadPortfolio = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('provider_portfolio')
+        .select('*')
+        .eq('org_id', id)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      setPortfolio(data || []);
+    } catch (error) {
+      console.error("Error loading portfolio:", error);
     }
   };
 
@@ -327,9 +373,12 @@ export default function ProviderDetail() {
             <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md hover:bg-muted">
               <Share2 className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md hover:bg-muted">
-              <Heart className="h-4 w-4" />
-            </Button>
+            <FavoriteToggle 
+              providerId={id!}
+              variant="outline"
+              size="icon"
+              className="rounded-full bg-background shadow-md hover:bg-muted"
+            />
           </div>
         </div>
 
@@ -350,10 +399,19 @@ export default function ProviderDetail() {
           <div className="flex items-center gap-2">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                <Star 
+                  key={star} 
+                  className={`h-5 w-5 ${
+                    star <= Math.round(provider.rating_avg || 0)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground"
+                  }`}
+                />
               ))}
             </div>
-            <span className="text-muted-foreground">(150 reviews)</span>
+            <span className="text-muted-foreground">
+              ({provider.rating_count || 0} review{provider.rating_count !== 1 ? 's' : ''})
+            </span>
           </div>
         </div>
 
@@ -558,19 +616,101 @@ export default function ProviderDetail() {
           </TabsContent>
 
           <TabsContent value="reviews">
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Reviews coming soon</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">
+                  Customer Reviews ({reviews.length})
+                </h3>
+                {profileId && (
+                  <Button onClick={() => setReviewDialogOpen(true)}>
+                    Write a Review
+                  </Button>
+                )}
+              </div>
+
+              {reviews.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <p className="text-muted-foreground">No reviews yet</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <Card key={review.id}>
+                      <CardContent className="p-6 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage src={review.homeowner?.avatar_url} />
+                              <AvatarFallback>
+                                {review.homeowner?.full_name?.[0] || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-semibold">
+                                {review.homeowner?.full_name || 'Anonymous'}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`h-4 w-4 ${
+                                        star <= review.rating
+                                          ? "fill-yellow-400 text-yellow-400"
+                                          : "text-muted-foreground"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                {review.is_verified && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Verified
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(review.created_at), 'MMM d, yyyy')}
+                          </span>
+                        </div>
+
+                        {review.title && (
+                          <h4 className="font-semibold">{review.title}</h4>
+                        )}
+                        
+                        {review.comment && (
+                          <p className="text-muted-foreground">{review.comment}</p>
+                        )}
+
+                        {review.provider_response && (
+                          <div className="mt-4 pl-4 border-l-2 border-primary/20">
+                            <p className="text-sm font-medium mb-1">Provider Response:</p>
+                            <p className="text-sm text-muted-foreground">
+                              {review.provider_response}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <SubmitReviewDialog
+              open={reviewDialogOpen}
+              onOpenChange={setReviewDialogOpen}
+              providerOrgId={id!}
+              providerName={provider.name}
+              homeownerProfileId={profileId}
+            />
           </TabsContent>
 
           <TabsContent value="portfolio">
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Portfolio coming soon</p>
-              </CardContent>
-            </Card>
+            <PortfolioGallery images={portfolio} />
           </TabsContent>
 
           <TabsContent value="about">

@@ -17,6 +17,8 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import { PWASettingsCard } from "@/components/pwa/PWASettingsCard";
 import { SubscriptionManager } from "@/components/provider/SubscriptionManager";
 import { PublicProfileCard } from "@/components/provider/PublicProfileCard";
+import { HeroImageUpload } from "@/components/provider/HeroImageUpload";
+import { SocialLinksEditor } from "@/components/provider/SocialLinksEditor";
 
 interface Organization {
   id: string;

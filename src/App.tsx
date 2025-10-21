@@ -72,6 +72,8 @@ import RefundRequests from "@/pages/provider/RefundRequests";
 import ShareLinks from "@/pages/provider/ShareLinks";
 import ShareLinkAnalytics from "@/pages/provider/ShareLinkAnalytics";
 import ShortLinkRedirect from "@/pages/ShortLinkRedirect";
+import Portfolio from "@/pages/provider/Portfolio";
+import Favorites from "@/pages/homeowner/Favorites";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
@@ -180,6 +182,7 @@ const App = () => {
               <Route path="/homeowner/subscriptions/:id" element={<SubscriptionDetail />} />
               <Route path="/homeowner/appointments" element={<Appointments />} />
               <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
+              <Route path="/homeowner/favorites" element={<Favorites />} />
               <Route path="/homeowner/settings" element={<HomeownerSettings />} />
               <Route path="/homeowner/messages" element={<Messages />} />
               <Route path="/homeowner/messages/:id" element={<Messages />} />
@@ -217,6 +220,7 @@ const App = () => {
               <Route path="settings/app" element={<AppSettings />} />
               <Route path="share-links" element={<ShareLinks />} />
               <Route path="share-links/:id/analytics" element={<ShareLinkAnalytics />} />
+              <Route path="portfolio" element={<Portfolio />} />
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
               <Route path="messages" element={<Messages />} />
           <Route path="messages/:id" element={<Messages />} />

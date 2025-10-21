@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Calendar, SlidersHorizontal, Star, Droplet } from "lucide-react";
+import { Search, MapPin, Calendar, SlidersHorizontal, Star, Droplet, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { FloatingAIAssistant } from "@/components/marketplace/FloatingAIAssistant";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FavoriteToggle } from "@/components/homeowner/FavoriteToggle";
 
 export default function Browse() {
   const navigate = useNavigate();
@@ -189,7 +190,13 @@ export default function Browse() {
               >
                 {/* Provider Image */}
                 <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <FavoriteToggle 
+                      providerId={provider.id}
+                      variant="default"
+                      size="icon"
+                      className="bg-background hover:bg-background/90 text-foreground rounded-full shadow-lg"
+                    />
                     <Button 
                       size="sm" 
                       className="bg-background hover:bg-background/90 text-foreground rounded-full px-6 shadow-lg"
