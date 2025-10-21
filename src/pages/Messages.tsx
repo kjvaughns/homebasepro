@@ -13,7 +13,12 @@ import { ArrowLeft, Phone, Video, Info, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isSameDay } from 'date-fns';
 
-export default function Messages() {
+interface MessagesProps {
+  role: 'homeowner' | 'provider';
+}
+
+export default function Messages({ role }: MessagesProps) {
+  const isHomeowner = role === 'homeowner';
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const conversationIdFromUrl = searchParams.get('conversation');
@@ -59,6 +64,19 @@ export default function Messages() {
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
   const conversationMessages = messages[selectedConversationId || ''] || [];
   const typingInConversation = typingUsers[selectedConversationId || ''] || [];
+  
+  // Get conversation display name
+  const getConversationName = (convo: typeof selectedConversation) => {
+    if (!convo) return 'Conversation';
+    if (convo.title) return convo.title;
+    if (convo.otherMember?.full_name) return convo.otherMember.full_name;
+    return isHomeowner ? 'Provider' : 'Homeowner';
+  };
+  
+  const getConversationAvatar = (convo: typeof selectedConversation) => {
+    if (!convo) return '';
+    return convo.otherMember?.avatar_url || '';
+  };
   
   // Mobile: Show conversation list OR messages view
   const isMobile = window.innerWidth < 768;
@@ -112,9 +130,13 @@ export default function Messages() {
     return elements;
   };
   
+  const containerHeight = isHomeowner 
+    ? 'h-[calc(100dvh-56px)]' 
+    : 'h-[calc(100dvh-64px)]';
+  
   if (loading) {
     return (
-      <div className="flex h-[calc(100dvh-56px)] bg-background">
+      <div className={cn("flex bg-background", containerHeight)}>
         <div className="w-full md:w-80 lg:w-96 border-r flex flex-col bg-muted/30">
           <div className="border-b p-4 bg-card/95">
             <Skeleton className="h-8 w-32" />
@@ -136,7 +158,7 @@ export default function Messages() {
   }
   
   return (
-    <div className="flex h-[calc(100dvh-56px)] bg-background">
+    <div className={cn("flex bg-background", containerHeight)}>
       {/* Conversation List */}
       <div
         className={cn(
@@ -161,11 +183,11 @@ export default function Messages() {
             conversations.map(convo => (
               <ConversationListItem
                 key={convo.id}
-                name={convo.title || 'Conversation'}
+                name={getConversationName(convo)}
                 lastMessage={convo.last_message_preview || 'No messages yet'}
                 lastMessageAt={convo.last_message_at}
                 unreadCount={unreadCounts[convo.id] || 0}
-                avatarUrl=""
+                avatarUrl={getConversationAvatar(convo)}
                 isSelected={convo.id === selectedConversationId}
                 onClick={() => handleConversationSelect(convo.id)}
               />
@@ -195,14 +217,15 @@ export default function Messages() {
               </Button>
               
               <Avatar className="h-11 w-11">
+                <AvatarImage src={getConversationAvatar(selectedConversation)} />
                 <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                  {selectedConversation.title?.[0] || 'C'}
+                  {getConversationName(selectedConversation)[0]}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1 min-w-0">
                 <h2 className="font-semibold text-base truncate">
-                  {selectedConversation.title || 'Conversation'}
+                  {getConversationName(selectedConversation)}
                 </h2>
                 {typingInConversation.length > 0 && (
                   <p className="text-xs text-muted-foreground">
@@ -229,7 +252,7 @@ export default function Messages() {
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/10"
               style={{
-                paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))'
+                paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))'
               }}
             >
               {renderMessages()}

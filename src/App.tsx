@@ -190,15 +190,9 @@ const App = () => {
               <Route path="/homeowner/appointments" element={<Appointments />} />
               <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
               <Route path="/homeowner/favorites" element={<Favorites />} />
-              <Route path="/homeowner/settings" element={<HomeownerSettings />} />
+            <Route path="/homeowner/settings" element={<HomeownerSettings />} />
+            <Route path="messages" element={<Messages role="homeowner" />} />
             </Route>
-            
-            {/* Unified Messages Route */}
-            <Route path="/messages" element={<Messages />} />
-            
-            {/* Legacy message route redirects */}
-            <Route path="/homeowner/messages" element={<Navigate to="/messages" replace />} />
-            <Route path="/homeowner/messages/:id" element={<Navigate to="/messages" replace />} />
 
             {/* Provider routes with shared layout */}
             <Route path="/provider" element={<ProviderLayout />}>
@@ -248,11 +242,8 @@ const App = () => {
               <Route path="settings/profile" element={<Navigate to="/provider/account/profile" replace />} />
               
               <Route path="stripe-onboarding" element={<StripeOnboarding />} />
+              <Route path="messages" element={<Messages role="provider" />} />
             </Route>
-            
-            {/* Legacy provider message route redirects */}
-            <Route path="/provider/messages" element={<Navigate to="/messages" replace />} />
-            <Route path="/provider/messages/:id" element={<Navigate to="/messages" replace />} />
 
             {/* Demo routes */}
             <Route path="/demo/homeowner" element={<DemoHomeowner />} />

@@ -30,6 +30,10 @@ interface Conversation {
   last_message_at?: string;
   last_message_preview?: string;
   members: ConversationMember[];
+  otherMember?: {
+    full_name: string;
+    avatar_url?: string;
+  };
 }
 
 interface TypingState {
@@ -132,6 +136,23 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
           members: [],
           last_read_at: item.last_read_at
         }));
+        
+        // Fetch other members' profiles for each conversation
+        for (const convo of convos) {
+          const { data: members } = await supabase
+            .from('conversation_members')
+            .select(`
+              profile_id,
+              profiles!inner(full_name, avatar_url)
+            `)
+            .eq('conversation_id', convo.id)
+            .neq('profile_id', userProfileId)
+            .limit(1);
+          
+          if (members && members.length > 0) {
+            convo.otherMember = members[0].profiles as any;
+          }
+        }
         
         // Sort by last_message_at
         convos.sort((a, b) => {
