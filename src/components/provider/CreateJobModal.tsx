@@ -54,22 +54,29 @@ export default function CreateJobModal({
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error("Not authenticated");
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("organization_id")
-        .eq("id", user.id)
-        .single();
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
 
-      if (!profile?.organization_id) throw new Error("Organization not found");
+      if (!org) throw new Error("Organization not found");
+
+      // Convert datetime-local to ISO format and create end time (1 hour later)
+      const startDate = new Date(formData.scheduled_date);
+      const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Add 1 hour
 
       const { error } = await supabase.from("bookings").insert({
-        provider_organization_id: profile.organization_id,
+        provider_org_id: org.id,
         homeowner_profile_id: client.homeowner_profile_id,
         service_name: formData.service_name,
-        scheduled_date: formData.scheduled_date,
-        status: formData.status,
-        quote_amount: formData.quote_amount ? parseFloat(formData.quote_amount) : null,
-        notes: formData.notes || null,
+        date_time_start: startDate.toISOString(),
+        date_time_end: endDate.toISOString(),
+        address: client.property_address || client.address || "",
+        status: formData.status === "quoted" ? "pending" : formData.status,
+        estimated_price_low: formData.quote_amount ? parseFloat(formData.quote_amount) : undefined,
+        estimated_price_high: formData.quote_amount ? parseFloat(formData.quote_amount) : undefined,
+        notes: formData.notes || undefined,
       });
 
       if (error) throw error;

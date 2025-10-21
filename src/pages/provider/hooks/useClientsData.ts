@@ -35,14 +35,20 @@ export function useClientsList() {
     try {
       setLoading(true);
       
-      // Get user's organization
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("organization_id")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
-        .single();
+      // Get user's organization through organizations table
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        setClients([]);
+        return;
+      }
 
-      if (!profile?.organization_id) {
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      if (!org) {
         setClients([]);
         return;
       }
@@ -50,23 +56,8 @@ export function useClientsList() {
       // Fetch all clients for the organization
       const { data: clientsData, error } = await supabase
         .from("clients")
-        .select(`
-          *,
-          homeowner_subscriptions (
-            id,
-            service_plan:service_plans (
-              name,
-              price_per_visit
-            ),
-            status
-          ),
-          homes (
-            address_line_1,
-            city,
-            state
-          )
-        `)
-        .eq("organization_id", profile.organization_id)
+        .select("*")
+        .eq("organization_id", org.id)
         .order("name");
 
       if (error) throw error;
@@ -74,37 +65,99 @@ export function useClientsList() {
       // Enrich with additional data
       const enriched = await Promise.all(
         (clientsData || []).map(async (client) => {
-          // Get latest subscription
-          const subscription = client.homeowner_subscriptions?.[0];
+          if (!client.homeowner_profile_id) {
+            return {
+              id: client.id,
+              name: client.name,
+              email: client.email,
+              phone: client.phone,
+              address: client.address,
+              status: client.status,
+              organization_id: client.organization_id,
+              homeowner_profile_id: null,
+              lifetime_value: client.lifetime_value || 0,
+              last_contact_at: client.last_contact_at,
+              tags: client.tags || [],
+              plan_name: null,
+              plan_amount: 0,
+              plan_status: null,
+              property_address: null,
+              property_city: null,
+              property_state: null,
+              next_visit: null,
+              last_job_date: null,
+              total_jobs: 0,
+              outstanding_balance: 0,
+              unread_count: 0,
+            };
+          }
+
+          // Get subscription info
+          const { data: subscriptions } = await supabase
+            .from("homeowner_subscriptions")
+            .select(`
+              status,
+              billing_amount,
+              service_plans (
+                name
+              )
+            `)
+            .eq("homeowner_id", client.homeowner_profile_id)
+            .eq("provider_org_id", org.id)
+            .limit(1);
+
+          const subscription = subscriptions?.[0];
           
-          // Get job stats
+          // Get property info
+          const { data: homes } = await supabase
+            .from("homes")
+            .select("address, city, state")
+            .eq("owner_id", client.homeowner_profile_id)
+            .limit(1);
+
+          const home = homes?.[0];
+
+          // Get job stats using date_time_start
           const { data: jobs } = await supabase
             .from("bookings")
-            .select("scheduled_date, status")
+            .select("date_time_start, status")
             .eq("homeowner_profile_id", client.homeowner_profile_id)
-            .order("scheduled_date", { ascending: false });
+            .eq("provider_org_id", org.id)
+            .order("date_time_start", { ascending: false });
 
           const completedJobs = jobs?.filter(j => j.status === "completed") || [];
           const upcomingJobs = jobs?.filter(j => 
             j.status === "scheduled" && 
-            new Date(j.scheduled_date) > new Date()
+            new Date(j.date_time_start) > new Date()
           ) || [];
 
-          // Get payment stats
-          const { data: payments } = await supabase
-            .from("payments")
-            .select("amount, status")
-            .eq("homeowner_profile_id", client.homeowner_profile_id);
+          // Get payment stats - payments are linked through subscriptions
+          let outstandingBalance = 0;
+          if (subscription) {
+            const { data: subIds } = await supabase
+              .from("client_subscriptions")
+              .select("id")
+              .eq("client_id", client.id);
 
-          const unpaidPayments = payments?.filter(p => p.status !== "completed") || [];
-          const outstandingBalance = unpaidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+            if (subIds && subIds.length > 0) {
+              const { data: payments } = await supabase
+                .from("payments")
+                .select("amount, status")
+                .in("client_subscription_id", subIds.map(s => s.id));
+
+              const unpaid = payments?.filter(p => p.status !== "completed") || [];
+              outstandingBalance = unpaid.reduce((sum, p) => sum + (p.amount || 0), 0);
+            }
+          }
 
           // Get unread message count
-          const { count: unreadCount } = await supabase
+          const { data: convos } = await supabase
             .from("conversations")
-            .select("id", { count: "exact", head: true })
-            .eq("client_id", client.id)
-            .eq("unread_by_provider", true);
+            .select("unread_count_provider")
+            .eq("homeowner_profile_id", client.homeowner_profile_id)
+            .eq("provider_org_id", org.id);
+
+          const unreadCount = convos?.[0]?.unread_count_provider || 0;
 
           return {
             id: client.id,
@@ -118,17 +171,17 @@ export function useClientsList() {
             lifetime_value: client.lifetime_value || 0,
             last_contact_at: client.last_contact_at,
             tags: client.tags || [],
-            plan_name: subscription?.service_plan?.name || null,
-            plan_amount: subscription?.service_plan?.price_per_visit || 0,
+            plan_name: (subscription as any)?.service_plans?.name || null,
+            plan_amount: subscription?.billing_amount || 0,
             plan_status: subscription?.status || null,
-            property_address: client.homes?.[0]?.address_line_1 || null,
-            property_city: client.homes?.[0]?.city || null,
-            property_state: client.homes?.[0]?.state || null,
-            next_visit: upcomingJobs[0]?.scheduled_date || null,
-            last_job_date: completedJobs[0]?.scheduled_date || null,
+            property_address: home?.address || null,
+            property_city: home?.city || null,
+            property_state: home?.state || null,
+            next_visit: upcomingJobs[0]?.date_time_start || null,
+            last_job_date: completedJobs[0]?.date_time_start || null,
             total_jobs: completedJobs.length,
             outstanding_balance: outstandingBalance,
-            unread_count: unreadCount || 0,
+            unread_count: unreadCount,
           };
         })
       );
@@ -175,137 +228,109 @@ export function useClientDetail(clientId: string | null) {
     try {
       setLoading(true);
 
-      // Fetch client with all related data
+      // Fetch client base data
       const { data: clientData, error } = await supabase
         .from("clients")
-        .select(`
-          *,
-          client_notes (
-            id,
-            body,
-            created_at,
-            author:profiles (
-              id,
-              full_name
-            )
-          ),
-          client_files (
-            id,
-            file_name,
-            file_path,
-            file_type,
-            file_size,
-            category,
-            created_at
-          ),
-          comm_logs (
-            id,
-            channel,
-            direction,
-            subject,
-            body,
-            created_at
-          ),
-          homeowner_subscriptions (
-            id,
-            status,
-            next_billing_date,
-            service_plan:service_plans (
-              name,
-              price_per_visit,
-              description
-            )
-          ),
-          homes (
-            id,
-            address_line_1,
-            address_line_2,
-            city,
-            state,
-            zip_code,
-            square_footage,
-            lot_size,
-            notes
-          ),
-          client_tag_assignments (
-            tag:client_tags (
-              id,
-              name,
-              color
-            )
-          )
-        `)
+        .select("*")
         .eq("id", clientId)
         .single();
 
       if (error) throw error;
 
-      // Fetch jobs (bookings)
-      const { data: jobs } = await supabase
-        .from("bookings")
-        .select(`
-          id,
-          service_name,
-          scheduled_date,
-          status,
-          notes,
-          quote_amount
-        `)
-        .eq("homeowner_profile_id", clientData.homeowner_profile_id)
-        .order("scheduled_date", { ascending: false });
+      // Fetch related data separately
+      const [notes, files, commLogs, subscriptions, properties, tags, jobs] = await Promise.all([
+        supabase.from("client_notes").select("*, author:author_profile_id(full_name)").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("client_files").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("comm_logs").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+        clientData.homeowner_profile_id 
+          ? supabase.from("homeowner_subscriptions").select("*, service_plans(*)").eq("homeowner_id", clientData.homeowner_profile_id)
+          : Promise.resolve({ data: [] }),
+        clientData.homeowner_profile_id
+          ? supabase.from("homes").select("*").eq("owner_id", clientData.homeowner_profile_id)
+          : Promise.resolve({ data: [] }),
+        supabase.from("client_tag_assignments").select("client_tags(*)").eq("client_id", clientId),
+        clientData.homeowner_profile_id
+          ? supabase.from("bookings").select("*").eq("homeowner_profile_id", clientData.homeowner_profile_id).order("date_time_start", { ascending: false })
+          : Promise.resolve({ data: [] }),
+      ]);
 
-      // Fetch payments
-      const { data: payments } = await supabase
-        .from("payments")
-        .select("*")
-        .eq("homeowner_profile_id", clientData.homeowner_profile_id)
-        .order("created_at", { ascending: false });
+      // Fetch payments through subscriptions
+      let paymentsData: any[] = [];
+      if (clientData.homeowner_profile_id) {
+        const { data: subIds } = await supabase
+          .from("client_subscriptions")
+          .select("id")
+          .eq("client_id", clientId);
 
-      // Get or create conversation
-      let conversationId = null;
-      const { data: conversation } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("client_id", clientId)
-        .maybeSingle();
-
-      if (conversation) {
-        conversationId = conversation.id;
-      } else {
-        // Create conversation for this client
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id, organization_id")
-          .eq("id", (await supabase.auth.getUser()).data.user?.id)
-          .single();
-
-        if (profile && clientData.homeowner_profile_id) {
-          const { data: newConv } = await supabase
-            .from("conversations")
-            .insert({
-              provider_profile_id: profile.id,
-              homeowner_profile_id: clientData.homeowner_profile_id,
-              client_id: clientId,
-              organization_id: profile.organization_id,
-            })
-            .select("id")
-            .single();
-
-          conversationId = newConv?.id || null;
+        if (subIds && subIds.length > 0) {
+          const { data } = await supabase
+            .from("payments")
+            .select("*")
+            .in("client_subscription_id", subIds.map(s => s.id))
+            .order("created_at", { ascending: false });
+          paymentsData = data || [];
         }
       }
 
-      // Calculate stats for the list item fields
-      const completedJobs = jobs?.filter(j => j.status === "completed") || [];
-      const upcomingJobs = jobs?.filter(j => 
-        j.status === "scheduled" && 
-        new Date(j.scheduled_date) > new Date()
-      ) || [];
+      // Get or create conversation
+      let conversationId = null;
+      if (clientData.homeowner_profile_id) {
+        const user = (await supabase.auth.getUser()).data.user;
+        if (user) {
+          const { data: org } = await supabase
+            .from("organizations")
+            .select("id")
+            .eq("owner_id", user.id)
+            .maybeSingle();
 
-      const unpaidPayments = payments?.filter(p => p.status !== "completed") || [];
+          if (org) {
+            const { data: conversation } = await supabase
+              .from("conversations")
+              .select("id")
+              .eq("homeowner_profile_id", clientData.homeowner_profile_id)
+              .eq("provider_org_id", org.id)
+              .maybeSingle();
+
+            if (conversation) {
+              conversationId = conversation.id;
+            } else {
+              // Create conversation
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("user_id", user.id)
+                .maybeSingle();
+
+              if (profile) {
+                const { data: newConv } = await supabase
+                  .from("conversations")
+                  .insert({
+                    homeowner_profile_id: clientData.homeowner_profile_id,
+                    provider_org_id: org.id,
+                  })
+                  .select("id")
+                  .maybeSingle();
+
+                conversationId = newConv?.id || null;
+              }
+            }
+          }
+        }
+      }
+
+      // Calculate stats
+      const jobsList = jobs.data || [];
+      const completedJobs = jobsList.filter(j => j.status === "completed");
+      const upcomingJobs = jobsList.filter(j => 
+        j.status === "scheduled" && 
+        new Date(j.date_time_start) > new Date()
+      );
+
+      const unpaidPayments = paymentsData.filter(p => p.status !== "completed");
       const outstandingBalance = unpaidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
-      const subscription = clientData.homeowner_subscriptions?.[0];
+      const subscription = subscriptions.data?.[0];
+      const home = properties.data?.[0];
 
       setClient({
         // Base fields
@@ -320,26 +345,26 @@ export function useClientDetail(clientId: string | null) {
         lifetime_value: clientData.lifetime_value || 0,
         last_contact_at: clientData.last_contact_at,
         tags: clientData.tags || [],
-        plan_name: subscription?.service_plan?.name || null,
-        plan_amount: subscription?.service_plan?.price_per_visit || 0,
+        plan_name: (subscription as any)?.service_plans?.name || null,
+        plan_amount: subscription?.billing_amount || 0,
         plan_status: subscription?.status || null,
-        property_address: clientData.homes?.[0]?.address_line_1 || null,
-        property_city: clientData.homes?.[0]?.city || null,
-        property_state: clientData.homes?.[0]?.state || null,
-        next_visit: upcomingJobs[0]?.scheduled_date || null,
-        last_job_date: completedJobs[0]?.scheduled_date || null,
+        property_address: home?.address || null,
+        property_city: home?.city || null,
+        property_state: home?.state || null,
+        next_visit: upcomingJobs[0]?.date_time_start || null,
+        last_job_date: completedJobs[0]?.date_time_start || null,
         total_jobs: completedJobs.length,
         outstanding_balance: outstandingBalance,
         unread_count: 0,
         // Detail fields
-        notes: clientData.client_notes || [],
-        files: clientData.client_files || [],
-        comm_logs: clientData.comm_logs || [],
-        subscriptions: clientData.homeowner_subscriptions || [],
-        properties: clientData.homes || [],
-        jobs: jobs || [],
-        payments: payments || [],
-        client_tags: clientData.client_tag_assignments?.map((a: any) => a.tag) || [],
+        notes: notes.data || [],
+        files: files.data || [],
+        comm_logs: commLogs.data || [],
+        subscriptions: subscriptions.data || [],
+        properties: properties.data || [],
+        jobs: jobsList,
+        payments: paymentsData,
+        client_tags: tags.data?.map((t: any) => t.client_tags).filter(Boolean) || [],
         conversation_id: conversationId,
       });
     } catch (error) {
@@ -394,39 +419,42 @@ export function useClientActivity(clientId: string | null) {
           return;
         }
 
+        // Get subscription IDs for payment lookup
+        const { data: subIds } = await supabase
+          .from("client_subscriptions")
+          .select("id")
+          .eq("client_id", clientId);
+
         // Fetch all activity types
         const [jobs, payments, commLogs, notes] = await Promise.all([
           supabase
             .from("bookings")
             .select("*")
             .eq("homeowner_profile_id", client.homeowner_profile_id),
-          supabase
-            .from("payments")
-            .select("*")
-            .eq("homeowner_profile_id", client.homeowner_profile_id),
+          subIds && subIds.length > 0
+            ? supabase
+                .from("payments")
+                .select("*")
+                .in("client_subscription_id", subIds.map(s => s.id))
+            : Promise.resolve({ data: [] }),
           supabase
             .from("comm_logs")
             .select("*")
             .eq("client_id", clientId),
           supabase
             .from("client_notes")
-            .select(`
-              *,
-              author:profiles (
-                full_name
-              )
-            `)
+            .select("*, author:author_profile_id(full_name)")
             .eq("client_id", clientId),
         ]);
 
         const items: ActivityItem[] = [];
 
-        // Add jobs
+        // Add jobs using date_time_start
         jobs.data?.forEach((job) => {
           items.push({
             id: job.id,
             type: "job",
-            date: job.scheduled_date || job.created_at,
+            date: job.date_time_start || job.created_at,
             title: job.service_name,
             description: job.notes,
             status: job.status,
@@ -465,7 +493,7 @@ export function useClientActivity(clientId: string | null) {
             id: note.id,
             type: "note",
             date: note.created_at,
-            title: `Note by ${note.author?.full_name || "Unknown"}`,
+            title: `Note by ${(note.author as any)?.full_name || "Unknown"}`,
             description: note.body.substring(0, 100),
             metadata: note,
           });
@@ -524,31 +552,39 @@ export function useClientStats(clientId: string | null) {
 
         if (!client?.homeowner_profile_id) return;
 
-        // Get job stats
+        // Get job stats using date_time_start
         const { data: jobs } = await supabase
           .from("bookings")
-          .select("scheduled_date, status")
+          .select("date_time_start, status")
           .eq("homeowner_profile_id", client.homeowner_profile_id);
 
         const completedJobs = jobs?.filter(j => j.status === "completed") || [];
         const lastService = completedJobs.sort((a, b) => 
-          new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime()
+          new Date(b.date_time_start).getTime() - new Date(a.date_time_start).getTime()
         )[0];
 
-        // Get payment stats
-        const { data: payments } = await supabase
-          .from("payments")
-          .select("amount, status")
-          .eq("homeowner_profile_id", client.homeowner_profile_id);
+        // Get payment stats through subscriptions
+        const { data: subIds } = await supabase
+          .from("client_subscriptions")
+          .select("id")
+          .eq("client_id", clientId);
 
-        const unpaid = payments?.filter(p => p.status !== "completed") || [];
-        const outstandingBalance = unpaid.reduce((sum, p) => sum + (p.amount || 0), 0);
+        let outstandingBalance = 0;
+        if (subIds && subIds.length > 0) {
+          const { data: payments } = await supabase
+            .from("payments")
+            .select("amount, status")
+            .in("client_subscription_id", subIds.map(s => s.id));
+
+          const unpaid = payments?.filter(p => p.status !== "completed") || [];
+          outstandingBalance = unpaid.reduce((sum, p) => sum + (p.amount || 0), 0);
+        }
 
         setStats({
           lifetimeValue: client.lifetime_value || 0,
           totalJobs: completedJobs.length,
           avgRating: 0, // TODO: Implement when reviews exist
-          lastServiceDate: lastService?.scheduled_date || null,
+          lastServiceDate: lastService?.date_time_start || null,
           outstandingBalance,
         });
       } catch (error) {
