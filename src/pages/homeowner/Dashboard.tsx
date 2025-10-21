@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, ChevronRight, Plus, Clock, CheckCircle2, MessageCircle, Bot, Wrench, Droplet, Zap, Leaf, Sparkles, Home as HomeIcon } from "lucide-react";
+import { Calendar, ChevronRight, Plus, Clock, CheckCircle2, Bot, Wrench, Droplet, Zap, Leaf, Sparkles, Home as HomeIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import HomeBaseAI from "@/components/ai/HomeBaseAI";
+import { RemindersWidget } from "@/components/homeowner/RemindersWidget";
+import { FollowUpDialog } from "@/components/homeowner/FollowUpDialog";
 
 export default function HomeownerDashboard() {
   const navigate = useNavigate();
@@ -138,6 +140,9 @@ export default function HomeownerDashboard() {
         <h1 className="text-2xl sm:text-3xl font-bold">Welcome Back</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Your home, simplified</p>
       </div>
+
+      {/* Reminders Widget */}
+      <RemindersWidget />
 
       {/* AI Search - Primary CTA */}
       <Card 
@@ -373,6 +378,9 @@ export default function HomeownerDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Follow-up Dialog */}
+      <FollowUpDialog />
     </div>
   );
 }

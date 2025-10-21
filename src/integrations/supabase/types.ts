@@ -933,6 +933,80 @@ export type Database = {
           },
         ]
       }
+      follow_up_actions: {
+        Row: {
+          action_type: string
+          booking_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          homeowner_id: string
+          id: string
+          provider_org_id: string
+          response_data: Json | null
+          scheduled_for: string
+          sent_at: string | null
+          service_visit_id: string | null
+          status: string | null
+        }
+        Insert: {
+          action_type: string
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          homeowner_id: string
+          id?: string
+          provider_org_id: string
+          response_data?: Json | null
+          scheduled_for: string
+          sent_at?: string | null
+          service_visit_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          action_type?: string
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          homeowner_id?: string
+          id?: string
+          provider_org_id?: string
+          response_data?: Json | null
+          scheduled_for?: string
+          sent_at?: string | null
+          service_visit_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_actions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_actions_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_actions_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_actions_service_visit_id_fkey"
+            columns: ["service_visit_id"]
+            isOneToOne: false
+            referencedRelation: "service_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fraud_checks: {
         Row: {
           check_result: string
@@ -1276,6 +1350,79 @@ export type Database = {
           },
         ]
       }
+      maintenance_reminders: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          dismissed_at: string | null
+          due_date: string
+          home_id: string
+          homeowner_id: string
+          id: string
+          last_service_date: string | null
+          priority: string | null
+          reminder_type: string
+          scheduled_booking_id: string | null
+          service_category: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          dismissed_at?: string | null
+          due_date: string
+          home_id: string
+          homeowner_id: string
+          id?: string
+          last_service_date?: string | null
+          priority?: string | null
+          reminder_type: string
+          scheduled_booking_id?: string | null
+          service_category: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          dismissed_at?: string | null
+          due_date?: string
+          home_id?: string
+          homeowner_id?: string
+          id?: string
+          last_service_date?: string | null
+          priority?: string | null
+          reminder_type?: string
+          scheduled_booking_id?: string | null
+          service_category?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_reminders_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_reminders_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_reminders_scheduled_booking_id_fkey"
+            columns: ["scheduled_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_metadata: Json | null
@@ -1414,7 +1561,10 @@ export type Database = {
           team_limit: number | null
           transaction_fee_pct: number | null
           updated_at: string
+          verification_notes: string | null
+          verification_status: string | null
           verified: boolean | null
+          verified_at: string | null
         }
         Insert: {
           avg_response_time_hours?: number | null
@@ -1442,7 +1592,10 @@ export type Database = {
           team_limit?: number | null
           transaction_fee_pct?: number | null
           updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string | null
           verified?: boolean | null
+          verified_at?: string | null
         }
         Update: {
           avg_response_time_hours?: number | null
@@ -1470,7 +1623,10 @@ export type Database = {
           team_limit?: number | null
           transaction_fee_pct?: number | null
           updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string | null
           verified?: boolean | null
+          verified_at?: string | null
         }
         Relationships: []
       }
