@@ -241,7 +241,7 @@ export default function WaitlistThankYou() {
             {state?.account_type === "provider" && (
               <Button
                 variant="outline"
-                onClick={() => navigate("/demo/serviceprovider")}
+                onClick={() => navigate("/demo/provider")}
                 className="w-full"
               >
                 🏢 View Provider Demo

@@ -142,7 +142,7 @@ const Index = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate("/demo/serviceprovider")}
+                    onClick={() => navigate("/demo/provider")}
                     className="text-sm"
                   >
                     🏢 Provider Demo
