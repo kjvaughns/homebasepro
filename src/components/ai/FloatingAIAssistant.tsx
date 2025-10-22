@@ -89,6 +89,8 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
             "md:inset-auto md:bottom-24 md:right-8",
             "md:h-[600px] md:w-[420px] md:rounded-lg"
           )}
+          data-vaul-no-drag
+          style={{ touchAction: 'auto' }}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-muted/30">

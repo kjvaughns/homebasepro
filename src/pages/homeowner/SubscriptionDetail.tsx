@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar as CalendarIcon, DollarSign, Home, Phone, Mail, X, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -333,11 +333,12 @@ export default function SubscriptionDetail() {
       </Card>
 
       {/* Danger Zone - Cancel Subscription */}
-      {subscription.status === "active" && (
-        <Card className="border-destructive/50">
-          <CardHeader>
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          </CardHeader>
+        {subscription.status === "active" && (
+          <Card className="border-muted">
+            <CardHeader>
+              <CardTitle className="text-base">Subscription Management</CardTitle>
+              <CardDescription>Cancel or modify your subscription</CardDescription>
+            </CardHeader>
           <CardContent className="space-y-3">
             <AlertDialog>
               <AlertDialogTrigger asChild>

@@ -10,6 +10,7 @@ import {
   Eye,
   Building2,
   DollarSign,
+  Users,
 } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,14 +34,15 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
+    { name: "Providers", href: "/homeowner/providers", icon: Users },
     { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
-    { name: "Properties", href: "/homeowner/homes", icon: Building2 },
   ];
 
   const desktopNavigation = [
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "Properties", href: "/homeowner/homes", icon: Building2 },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
+    { name: "My Providers", href: "/homeowner/providers", icon: Users },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
     { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
     { name: "Settings", href: "/homeowner/settings", icon: Settings },

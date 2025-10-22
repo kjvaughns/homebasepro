@@ -86,3 +86,9 @@ verify_jwt = true
 
 [functions.short-link-redirect]
 verify_jwt = false
+
+[functions.get-homeowner-insights]
+verify_jwt = true
+
+[functions.auto-renew-subscriptions]
+verify_jwt = false
