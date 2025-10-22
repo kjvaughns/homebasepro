@@ -194,15 +194,16 @@ export function RemindersWidget() {
             <div className="animate-pulse rounded-md bg-muted h-16 w-full" />
           </div>
         ) : aiInsights.length > 0 ? (
-          <div className="space-y-2">
-            {aiInsights.map((insight, idx) => (
-              <AIInsightCard 
-                key={idx} 
-                message={insight.description} 
-                type={insight.type}
-              />
-            ))}
-          </div>
+        <div className="space-y-2">
+          {aiInsights.map((insight, idx) => (
+            <AIInsightCard 
+              key={idx} 
+              title={insight.title}
+              description={insight.description} 
+              type={insight.type}
+            />
+          ))}
+        </div>
         ) : (
           <div className="text-center py-4 text-muted-foreground text-sm">
             <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />

@@ -1,9 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, AlertCircle, TrendingUp } from "lucide-react";
+import { Lightbulb, AlertCircle, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 interface AIInsightCardProps {
-  message: string;
+  title: string;
+  description: string;
   type?: 'tip' | 'alert' | 'suggestion';
   actionLabel?: string;
   onAction?: () => void;
@@ -27,18 +29,35 @@ const typeConfig = {
   },
 };
 
-export const AIInsightCard = ({ message, type = 'tip', actionLabel, onAction }: AIInsightCardProps) => {
+export const AIInsightCard = ({ title, description, type = 'tip', actionLabel, onAction }: AIInsightCardProps) => {
   const Icon = typeConfig[type].icon;
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <Card className={typeConfig[type].bgColor}>
       <CardContent className="p-4">
-        <div className="flex items-start gap-3">
+        <div 
+          className="flex items-start gap-3 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           <Icon className={`h-5 w-5 ${typeConfig[type].color} flex-shrink-0 mt-0.5`} />
           <div className="flex-1 space-y-2">
-            <p className="text-sm">{message}</p>
-            {actionLabel && onAction && (
-              <Button size="sm" variant="outline" onClick={onAction}>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm font-medium">{title}</p>
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4 flex-shrink-0 mt-0.5 opacity-50" />
+              ) : (
+                <ChevronDown className="h-4 w-4 flex-shrink-0 mt-0.5 opacity-50" />
+              )}
+            </div>
+            {isExpanded && (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            )}
+            {actionLabel && onAction && isExpanded && (
+              <Button size="sm" variant="outline" onClick={(e) => {
+                e.stopPropagation();
+                onAction();
+              }}>
                 {actionLabel}
               </Button>
             )}

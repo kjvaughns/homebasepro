@@ -141,9 +141,6 @@ export default function HomeownerDashboard() {
         <p className="text-sm sm:text-base text-muted-foreground">Your home, simplified</p>
       </div>
 
-      {/* Reminders Widget */}
-      <RemindersWidget />
-
       {/* AI Search - Primary CTA */}
       <Card 
         className="mb-6 cursor-pointer hover:shadow-lg transition-all border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent active:scale-[0.98]"
@@ -268,6 +265,9 @@ export default function HomeownerDashboard() {
           </div>
         )}
       </div>
+
+      {/* HomeBase AI Insights */}
+      <RemindersWidget />
 
       {/* Schedule Now CTA */}
       <Button

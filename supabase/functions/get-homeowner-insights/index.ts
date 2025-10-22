@@ -37,7 +37,8 @@ Provide insights in this exact JSON format:
 {
   "insights": [
     {
-      "description": "Detailed explanation and recommendation in one clear sentence",
+      "title": "Short actionable title (max 10 words)",
+      "description": "Detailed explanation and recommendation with context",
       "type": "tip|alert|suggestion",
       "priority": "high|normal|low",
       "category": "HVAC|Plumbing|Electrical|Exterior|Interior|Landscaping"
@@ -57,7 +58,7 @@ Focus on:
 4. Cost-saving tips (type: "suggestion")
 5. Safety concerns (type: "alert")
 
-Return ONLY valid JSON, no markdown. Keep descriptions concise but actionable.`;
+Return ONLY valid JSON, no markdown. Keep titles concise (max 10 words), descriptions detailed but focused.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -101,7 +102,8 @@ Return ONLY valid JSON, no markdown. Keep descriptions concise but actionable.`;
       insights = {
         insights: [
           {
-            description: "Schedule regular inspections based on your home's age and systems to prevent costly repairs.",
+            title: "Schedule regular home inspections",
+            description: "Based on your home's age and systems, regular inspections can prevent costly repairs and extend the life of major components.",
             type: "tip",
             priority: "normal",
             category: "General"

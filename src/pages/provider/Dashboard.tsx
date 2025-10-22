@@ -98,7 +98,7 @@ export default function ProviderDashboard() {
                 </div>
               ) : insights.length > 0 ? (
                 insights.map((insight, idx) => (
-                  <AIInsightCard key={idx} message={insight.text} type={insight.type} />
+                  <AIInsightCard key={idx} title={insight.text} description={insight.text} type={insight.type} />
                 ))
               ) : (
                 <div className="text-center py-4">
