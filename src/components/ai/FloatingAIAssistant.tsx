@@ -52,8 +52,9 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
   };
 
   const handleClearConversation = () => {
-    setSessionId(undefined);
-    localStorage.removeItem(storageKey);
+    const newSessionId = crypto.randomUUID();
+    setSessionId(newSessionId);
+    localStorage.setItem(storageKey, newSessionId);
   };
 
   return (
@@ -121,7 +122,7 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
           </div>
 
           {/* Chat Content */}
-          <div className="h-[calc(100%-4rem)] pb-safe">
+          <div className="h-[calc(100%-4rem)]">
             <HomeBaseAI
               sessionId={sessionId}
               context={context}

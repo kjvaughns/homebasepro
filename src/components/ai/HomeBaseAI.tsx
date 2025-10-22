@@ -57,7 +57,13 @@ export default function HomeBaseAI({
 
   // Load chat history when session ID is available
   useEffect(() => {
-    if (!sessionId || historyLoaded) return;
+    if (!sessionId) {
+      setMessages([]);
+      setHistoryLoaded(false);
+      return;
+    }
+    
+    if (historyLoaded) return;
 
     const loadHistory = async () => {
       try {
@@ -249,8 +255,8 @@ export default function HomeBaseAI({
   };
 
   return (
-    <div className="flex flex-col h-full touch-manipulation">
-      <div className="flex-1 overflow-y-auto space-y-4 p-3 sm:p-4">
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto space-y-4 p-3 sm:p-4 touch-manipulation">
         {messages.length === 0 && (
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-6">
@@ -501,7 +507,7 @@ export default function HomeBaseAI({
         />
       )}
 
-      <div className="border-t p-3 sm:p-4 bg-background safe-bottom">
+      <div className="flex-shrink-0 border-t p-3 sm:p-4 bg-background safe-bottom">
         <div className="flex gap-2">
           <Input
             ref={inputRef}
