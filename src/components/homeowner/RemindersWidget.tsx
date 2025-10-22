@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, X, Calendar, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AIInsightCard } from "@/components/provider/AIInsightCard";
 
 interface Reminder {
   id: string;
@@ -20,6 +21,7 @@ interface Reminder {
 interface AIInsight {
   title: string;
   description: string;
+  type: 'tip' | 'alert' | 'suggestion';
   priority: 'high' | 'normal' | 'low';
   category: string;
   action?: string;
@@ -181,130 +183,42 @@ export function RemindersWidget() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          Home Maintenance
+          <Sparkles className="h-5 w-5" />
+          HomeBase AI · Insights
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="ai" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="ai" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              AI Insights
-              {aiInsights.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{aiInsights.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="reminders">
-              Reminders
-              {reminders.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{reminders.length}</Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="ai" className="space-y-3">
-            {loadingAI ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : aiInsights.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground text-sm">
-                <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Add your home details to get personalized insights</p>
-              </div>
-            ) : (
-              aiInsights.map((insight, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        <p className="font-medium text-sm">{insight.title}</p>
-                        <Badge variant={getPriorityColor(insight.priority)} className="text-xs">
-                          {insight.priority}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{insight.description}</p>
-                      {insight.action && (
-                        <p className="text-xs font-medium text-primary">{insight.action}</p>
-                      )}
-                      {insight.estimated_cost && (
-                        <p className="text-xs text-muted-foreground">Est. cost: {insight.estimated_cost}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchAIInsights}
-              disabled={loadingAI}
-              className="w-full mt-2"
-            >
-              {loadingAI ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Refresh Insights
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="reminders" className="space-y-3">
-            {reminders.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground text-sm">
-                <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No active reminders</p>
-              </div>
-            ) : (
-              reminders.map((reminder) => {
-                const daysUntil = getDaysUntilDue(reminder.due_date);
-                const isOverdue = daysUntil < 0;
-                const isDueSoon = daysUntil >= 0 && daysUntil <= 7;
-
-                return (
-                  <div
-                    key={reminder.id}
-                    className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <p className="font-medium text-sm">{reminder.title}</p>
-                          <Badge variant={getPriorityColor(reminder.priority)} className="text-xs">
-                            {reminder.priority}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{reminder.description}</p>
-                        <p className={`text-xs font-medium ${
-                          isOverdue ? 'text-destructive' : isDueSoon ? 'text-orange-600' : 'text-muted-foreground'
-                        }`}>
-                          {isOverdue 
-                            ? `Overdue by ${Math.abs(daysUntil)} day${Math.abs(daysUntil) === 1 ? '' : 's'}`
-                            : daysUntil === 0
-                            ? 'Due today'
-                            : `Due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}`
-                          }
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0"
-                        onClick={() => dismissReminder(reminder.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </TabsContent>
-        </Tabs>
+      <CardContent className="space-y-3">
+        {loadingAI ? (
+          <div className="space-y-2">
+            <div className="animate-pulse rounded-md bg-muted h-16 w-full" />
+            <div className="animate-pulse rounded-md bg-muted h-16 w-full" />
+          </div>
+        ) : aiInsights.length > 0 ? (
+          <div className="space-y-2">
+            {aiInsights.map((insight, idx) => (
+              <AIInsightCard 
+                key={idx} 
+                message={insight.description} 
+                type={insight.type}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>Add your home details to get personalized insights</p>
+          </div>
+        )}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={fetchAIInsights}
+          disabled={loadingAI}
+          className="w-full"
+        >
+          {loadingAI ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Ask HomeBase AI
+        </Button>
       </CardContent>
     </Card>
   );

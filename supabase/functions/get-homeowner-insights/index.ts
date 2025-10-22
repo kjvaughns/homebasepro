@@ -37,24 +37,27 @@ Provide insights in this exact JSON format:
 {
   "insights": [
     {
-      "title": "Short title",
-      "description": "Detailed explanation and recommendation",
+      "description": "Detailed explanation and recommendation in one clear sentence",
+      "type": "tip|alert|suggestion",
       "priority": "high|normal|low",
-      "category": "HVAC|Plumbing|Electrical|Exterior|Interior|Landscaping",
-      "action": "What homeowner should do",
-      "estimated_cost": "$XX-XX range"
+      "category": "HVAC|Plumbing|Electrical|Exterior|Interior|Landscaping"
     }
   ]
 }
 
-Focus on:
-1. Age-based maintenance (e.g., HVAC nearing end of life)
-2. Seasonal maintenance (e.g., gutter cleaning before winter)
-3. Preventive care (e.g., filter changes, inspections)
-4. Cost-saving tips
-5. Safety concerns
+Type guidelines:
+- "tip" (blue icon): General advice, best practices, preventive maintenance tips
+- "alert" (yellow icon): Urgent issues, age-based warnings, safety concerns that need attention soon
+- "suggestion" (green icon): Optimization opportunities, cost-saving ideas, efficiency improvements
 
-Return ONLY valid JSON, no markdown.`;
+Focus on:
+1. Age-based maintenance (type: "alert" for urgent, "tip" for preventive)
+2. Seasonal maintenance (type: "suggestion")
+3. Preventive care (type: "tip")
+4. Cost-saving tips (type: "suggestion")
+5. Safety concerns (type: "alert")
+
+Return ONLY valid JSON, no markdown. Keep descriptions concise but actionable.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -98,12 +101,10 @@ Return ONLY valid JSON, no markdown.`;
       insights = {
         insights: [
           {
-            title: "Regular Maintenance",
-            description: "Schedule regular inspections based on your home's age and systems.",
+            description: "Schedule regular inspections based on your home's age and systems to prevent costly repairs.",
+            type: "tip",
             priority: "normal",
-            category: "General",
-            action: "Review maintenance schedule",
-            estimated_cost: "$0-50"
+            category: "General"
           }
         ]
       };
@@ -117,7 +118,7 @@ Return ONLY valid JSON, no markdown.`;
     console.error('Error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         insights: [] // Return empty array on error
       }), 
       {

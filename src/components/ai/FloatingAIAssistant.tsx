@@ -121,13 +121,14 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
           </div>
 
           {/* Chat Content */}
-          <div className="h-[calc(100%-4rem)]">
+          <div className="h-[calc(100%-4rem)] pb-safe">
             <HomeBaseAI
               sessionId={sessionId}
               context={context}
               onServiceRequestCreated={handleServiceRequestCreated}
               onSessionChange={handleSessionChange}
               userRole={userRole}
+              autoFocus={!isMinimized}
             />
           </div>
         </div>

@@ -27,6 +27,7 @@ interface HomeBaseAIProps {
   onServiceRequestCreated?: (request: any) => void;
   onSessionChange?: (sessionId: string) => void;
   userRole?: 'homeowner' | 'provider';
+  autoFocus?: boolean;
 }
 
 export default function HomeBaseAI({ 
@@ -34,7 +35,8 @@ export default function HomeBaseAI({
   context,
   onServiceRequestCreated,
   onSessionChange,
-  userRole = 'homeowner'
+  userRole = 'homeowner',
+  autoFocus = false
 }: HomeBaseAIProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -49,6 +51,7 @@ export default function HomeBaseAI({
   const { toast } = useToast();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const isProvider = userRole === 'provider';
 
@@ -95,6 +98,15 @@ export default function HomeBaseAI({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Auto-focus input when autoFocus prop changes
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [autoFocus]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -492,6 +504,7 @@ export default function HomeBaseAI({
       <div className="border-t p-3 sm:p-4 bg-background safe-bottom">
         <div className="flex gap-2">
           <Input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -503,6 +516,8 @@ export default function HomeBaseAI({
             autoCapitalize="sentences"
             autoCorrect="on"
             autoComplete="off"
+            autoFocus={autoFocus}
+            style={{ touchAction: 'manipulation' }}
           />
           <Button 
             onClick={sendMessage} 
