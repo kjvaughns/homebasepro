@@ -54,6 +54,8 @@ export default function AddHome() {
         property_type: formData.property_type || null,
         square_footage: formData.square_footage ? parseInt(formData.square_footage) : null,
         year_built: formData.year_built ? parseInt(formData.year_built) : null,
+        bedrooms: (formData as any).bedrooms ? parseInt((formData as any).bedrooms) : null,
+        bathrooms: (formData as any).bathrooms ? parseFloat((formData as any).bathrooms) : null,
         notes: formData.notes || null,
         is_primary: formData.is_primary,
       });
@@ -191,6 +193,30 @@ export default function AddHome() {
                     placeholder="2020"
                     value={formData.year_built}
                     onChange={(e) => setFormData({ ...formData, year_built: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Input
+                    id="bedrooms"
+                    type="number"
+                    placeholder="3"
+                    value={(formData as any).bedrooms || ""}
+                    onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value } as any)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Input
+                    id="bathrooms"
+                    type="number"
+                    step="0.5"
+                    placeholder="2.5"
+                    value={(formData as any).bathrooms || ""}
+                    onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value } as any)}
                   />
                 </div>
               </div>

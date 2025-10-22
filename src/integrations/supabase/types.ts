@@ -1104,7 +1104,7 @@ export type Database = {
           device_fingerprint: string | null
           email: string | null
           id: string
-          ip: unknown | null
+          ip: unknown
           phone: string | null
           reason: string | null
           referrer_code: string | null
@@ -1115,7 +1115,7 @@ export type Database = {
           device_fingerprint?: string | null
           email?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           phone?: string | null
           reason?: string | null
           referrer_code?: string | null
@@ -1126,12 +1126,44 @@ export type Database = {
           device_fingerprint?: string | null
           email?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           phone?: string | null
           reason?: string | null
           referrer_code?: string | null
         }
         Relationships: []
+      }
+      homeowner_maintenance_plans: {
+        Row: {
+          created_at: string | null
+          homeowner_profile_id: string | null
+          id: string
+          plan_data: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          homeowner_profile_id?: string | null
+          id?: string
+          plan_data: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          homeowner_profile_id?: string | null
+          id?: string
+          plan_data?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_maintenance_plans_homeowner_profile_id_fkey"
+            columns: ["homeowner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       homeowner_subscriptions: {
         Row: {
@@ -1211,6 +1243,8 @@ export type Database = {
         Row: {
           access_notes: string | null
           address: string
+          bathrooms: number | null
+          bedrooms: number | null
           city: string
           created_at: string
           gate_code: string | null
@@ -1236,6 +1270,8 @@ export type Database = {
         Insert: {
           access_notes?: string | null
           address: string
+          bathrooms?: number | null
+          bedrooms?: number | null
           city: string
           created_at?: string
           gate_code?: string | null
@@ -1261,6 +1297,8 @@ export type Database = {
         Update: {
           access_notes?: string | null
           address?: string
+          bathrooms?: number | null
+          bedrooms?: number | null
           city?: string
           created_at?: string
           gate_code?: string | null
@@ -2110,6 +2148,7 @@ export type Database = {
           created_at: string
           default_property_id: string | null
           full_name: string
+          has_completed_service_assessment: boolean | null
           id: string
           phone: string | null
           updated_at: string
@@ -2122,6 +2161,7 @@ export type Database = {
           created_at?: string
           default_property_id?: string | null
           full_name: string
+          has_completed_service_assessment?: boolean | null
           id?: string
           phone?: string | null
           updated_at?: string
@@ -2134,6 +2174,7 @@ export type Database = {
           created_at?: string
           default_property_id?: string | null
           full_name?: string
+          has_completed_service_assessment?: boolean | null
           id?: string
           phone?: string | null
           updated_at?: string
@@ -2708,7 +2749,7 @@ export type Database = {
           created_at: string | null
           device_fingerprint: string | null
           id: string
-          ip: unknown | null
+          ip: unknown
           referred_profile_id: string
           referrer_code: string
         }
@@ -2716,7 +2757,7 @@ export type Database = {
           created_at?: string | null
           device_fingerprint?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           referred_profile_id: string
           referrer_code: string
         }
@@ -2724,7 +2765,7 @@ export type Database = {
           created_at?: string | null
           device_fingerprint?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           referred_profile_id?: string
           referrer_code?: string
         }
@@ -2743,7 +2784,7 @@ export type Database = {
           created_at: string | null
           device_fingerprint: string | null
           id: string
-          ip_created: unknown | null
+          ip_created: unknown
           referral_code: string
           referred_by_code: string | null
           rewards_meta: Json | null
@@ -2755,7 +2796,7 @@ export type Database = {
           created_at?: string | null
           device_fingerprint?: string | null
           id?: string
-          ip_created?: unknown | null
+          ip_created?: unknown
           referral_code: string
           referred_by_code?: string | null
           rewards_meta?: Json | null
@@ -2767,7 +2808,7 @@ export type Database = {
           created_at?: string | null
           device_fingerprint?: string | null
           id?: string
-          ip_created?: unknown | null
+          ip_created?: unknown
           referral_code?: string
           referred_by_code?: string | null
           rewards_meta?: Json | null
@@ -3338,7 +3379,7 @@ export type Database = {
           country: string | null
           device_type: string | null
           id: string
-          ip: unknown | null
+          ip: unknown
           referrer: string | null
           region: string | null
           short_link_id: string
@@ -3352,7 +3393,7 @@ export type Database = {
           country?: string | null
           device_type?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           referrer?: string | null
           region?: string | null
           short_link_id: string
@@ -3366,7 +3407,7 @@ export type Database = {
           country?: string | null
           device_type?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           referrer?: string | null
           region?: string | null
           short_link_id?: string
@@ -3884,18 +3925,12 @@ export type Database = {
         Args: { invite_email: string }
         Returns: undefined
       }
-      admin_exists: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      admin_exists: { Args: never; Returns: boolean }
       apply_service_credit: {
         Args: { subscription_id: string; user_profile_id: string }
         Returns: Json
       }
-      can_accept_invite: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      can_accept_invite: { Args: { _user_id: string }; Returns: boolean }
       check_admin_invite: {
         Args: { invite_email: string }
         Returns: {
@@ -3917,18 +3952,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      generate_referral_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_email: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_id_by_email: {
-        Args: { user_email: string }
-        Returns: string
-      }
+      generate_referral_code: { Args: never; Returns: string }
+      get_user_email: { Args: never; Returns: string }
+      get_user_id_by_email: { Args: { user_email: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3940,10 +3966,7 @@ export type Database = {
         Args: { ref_code: string }
         Returns: undefined
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
       match_providers: {
         Args: { p_home_id: string; p_limit?: number; p_service_type: string }
         Returns: {
@@ -3953,10 +3976,7 @@ export type Database = {
           trust_score: number
         }[]
       }
-      payments_kpis: {
-        Args: { org_uuid: string }
-        Returns: Json
-      }
+      payments_kpis: { Args: { org_uuid: string }; Returns: Json }
       reset_unread_count: {
         Args: { conv_id: string; user_type: string }
         Returns: undefined

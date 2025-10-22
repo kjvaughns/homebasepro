@@ -179,8 +179,7 @@ export default function HomeownerDashboard() {
               key={category.label}
               className={`cursor-pointer hover:shadow-md transition-all bg-gradient-to-br ${category.color} active:scale-95`}
               onClick={() => {
-                setShowAI(true);
-                setTimeout(() => setInput(`I need help with ${category.label}`), 100);
+                navigate(`/homeowner/browse?category=${category.label}`);
               }}
             >
               <CardContent className="p-4 sm:p-5 text-center">

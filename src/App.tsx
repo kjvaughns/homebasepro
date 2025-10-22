@@ -75,6 +75,7 @@ import ShareLinkAnalytics from "@/pages/provider/ShareLinkAnalytics";
 import ShortLinkRedirect from "@/pages/ShortLinkRedirect";
 import Portfolio from "@/pages/provider/Portfolio";
 import Favorites from "@/pages/homeowner/Favorites";
+import MyProviders from "@/pages/homeowner/MyProviders";
 import AccountIndex from "@/pages/provider/account";
 import AccountProfile from "@/pages/provider/account/Profile";
 import AccountSocial from "@/pages/provider/account/Social";
@@ -190,6 +191,7 @@ const App = () => {
               <Route path="/homeowner/appointments" element={<Appointments />} />
               <Route path="/homeowner/appointments/:id" element={<AppointmentDetail />} />
               <Route path="/homeowner/favorites" element={<Favorites />} />
+              <Route path="/homeowner/providers" element={<MyProviders />} />
             <Route path="/homeowner/settings" element={<HomeownerSettings />} />
             <Route path="/homeowner/messages" element={<Messages role="homeowner" />} />
             </Route>

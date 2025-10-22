@@ -498,6 +498,11 @@ export default function HomeBaseAI({
             placeholder={isProvider ? "Ask about your business..." : "Describe your home problem..."}
             disabled={isLoading}
             className="flex-1 h-11 sm:h-10 text-base"
+            inputMode="text"
+            enterKeyHint="send"
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            autoComplete="off"
           />
           <Button 
             onClick={sendMessage} 

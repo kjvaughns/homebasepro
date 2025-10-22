@@ -153,6 +153,16 @@ export default function Appointments() {
             Technician: {visit.technician_name}
           </p>
         )}
+        {visit.notes && (
+          <p className="text-sm text-muted-foreground border-t pt-2 mt-2">
+            <strong>Service:</strong> {visit.notes}
+          </p>
+        )}
+        {visit.status === 'completed' && visit.completion_time && (
+          <p className="text-xs text-muted-foreground">
+            Completed: {new Date(visit.completion_time).toLocaleDateString()}
+          </p>
+        )}
         <AppointmentReceiptButton visit={visit} homeownerName={homeownerName} />
       </CardContent>
     </Card>
