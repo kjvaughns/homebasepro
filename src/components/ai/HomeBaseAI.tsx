@@ -256,7 +256,7 @@ export default function HomeBaseAI({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-4 p-3 sm:p-4 touch-manipulation">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-3 sm:p-4 touch-manipulation">
         {messages.length === 0 && (
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-6">

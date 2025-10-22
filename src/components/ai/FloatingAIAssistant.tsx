@@ -122,7 +122,7 @@ export function FloatingAIAssistant({ userRole, context, onServiceRequestCreated
           </div>
 
           {/* Chat Content */}
-          <div className="h-[calc(100%-4rem)]">
+          <div className="flex-1 min-h-0">
             <HomeBaseAI
               sessionId={sessionId}
               context={context}
