@@ -220,11 +220,17 @@ export default function Browse() {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center">
                       <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                      <span className="font-semibold ml-1">4.{8 - (index % 3)}</span>
+                      <span className="font-semibold ml-1">
+                        {provider.rating_avg ? provider.rating_avg.toFixed(1) : 'New'}
+                      </span>
                     </div>
-                    <span className="text-muted-foreground">
-                      ({150 + (index * 50)} reviews)
-                    </span>
+                    {provider.rating_count > 0 ? (
+                      <span className="text-muted-foreground">
+                        ({provider.rating_count} review{provider.rating_count !== 1 ? 's' : ''})
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No reviews yet</span>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2 pt-2">

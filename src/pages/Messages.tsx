@@ -220,7 +220,7 @@ export default function Messages({ role }: MessagesProps) {
         {selectedConversation ? (
           <>
             {/* Header */}
-            <div className="shrink-0 border-b p-4 bg-card/95 backdrop-blur flex items-center gap-3 shadow-sm">
+            <div className="sticky top-0 z-40 shrink-0 border-b p-4 bg-card/95 backdrop-blur-lg flex items-center gap-3 shadow-sm" style={{ transform: 'translateZ(0)', willChange: 'transform' }}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -248,17 +248,18 @@ export default function Messages({ role }: MessagesProps) {
                 )}
               </div>
               
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Phone className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Video className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Info className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9"
+                onClick={() => {
+                  if (selectedConversation?.provider_org_id) {
+                    navigate(`/homeowner/browse/${selectedConversation.provider_org_id}`);
+                  }
+                }}
+              >
+                <Info className="h-4 w-4" />
+              </Button>
             </div>
             
             {/* Messages */}
