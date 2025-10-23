@@ -44,6 +44,14 @@ export default function EmbeddedConnectOnboarding({ onComplete }: EmbeddedConnec
         throw new Error(sessionError.message || 'Failed to create onboarding session');
       }
       
+      // Check for error response format (ok: false)
+      if (data?.ok === false) {
+        const errorMsg = data.code === 'ACCOUNT_CREATE_FAILED' 
+          ? 'Unable to create payment account. Please try again or contact support.'
+          : data.message || 'Payment setup failed. Please try again.';
+        throw new Error(errorMsg);
+      }
+      
       if (!data?.clientSecret || !data?.accountId) {
         throw new Error('Payment setup failed. Please try again.');
       }
@@ -108,7 +116,17 @@ export default function EmbeddedConnectOnboarding({ onComplete }: EmbeddedConnec
 
     } catch (err: any) {
       console.error('Embedded onboarding error:', err);
-      setError(err.message || 'Failed to initialize onboarding');
+      
+      // Parse error message for user-friendly display
+      let userMessage = 'Failed to initialize payment setup. Please try again.';
+      
+      if (err.message?.includes('not configured')) {
+        userMessage = 'Payment system not configured. Please contact support@homebaseproapp.com';
+      } else if (err.message?.includes('authentication') || err.message?.includes('auth')) {
+        userMessage = 'Session expired. Please refresh the page and try again.';
+      }
+      
+      setError(userMessage);
       setLoading(false);
     }
   };

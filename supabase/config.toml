@@ -1,5 +1,11 @@
 project_id = "mqaplaplgfcbaaafylpf"
 
+[functions.create-customer-setup-intent]
+verify_jwt = true
+
+[functions.create-job-payment-intent]
+verify_jwt = true
+
 [functions.get-or-create-referral-profile]
 verify_jwt = false
 
