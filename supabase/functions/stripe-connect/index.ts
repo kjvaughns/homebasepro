@@ -46,12 +46,11 @@ serve(async (req) => {
     }
 
     // Handle different actions
-    if (action === 'create-account-session') {
-      // Create or retrieve Stripe Connect account
+    if (action === 'create-account') {
+      // Create new Express account if needed
       let stripeAccountId = org.stripe_account_id;
 
       if (!stripeAccountId) {
-        // Create new Express account
         try {
           const account = await stripe.accounts.create({
             type: 'express',
@@ -82,55 +81,13 @@ serve(async (req) => {
         }
       }
 
-      // Create account session for embedded onboarding
-      try {
-        const accountSession = await stripe.accountSessions.create({
-          account: stripeAccountId,
-          components: {
-            account_onboarding: { enabled: true },
-            account_management: { enabled: true },
-          },
-        });
-
-        return successResponse({
-          clientSecret: accountSession.client_secret,
-          accountId: stripeAccountId,
-        });
-      } catch (error: any) {
-        await logError(supabase, org.id, 'stripe-connect:create-session', { action, stripeAccountId }, error.message, error);
-        return errorResponse('SESSION_CREATE_FAILED', 'Failed to create onboarding session. Please try again.', 500, {
-          stripe_error: formatStripeError(error)
-        });
-      }
+      return successResponse({ account_id: stripeAccountId });
     }
 
-    if (action === 'create-dashboard-session') {
+    if (action === 'account-link') {
+      // Create hosted onboarding link
       if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first to access dashboard', 400);
-      }
-
-      try {
-        const accountSession = await stripe.accountSessions.create({
-          account: org.stripe_account_id,
-          components: {
-            account_management: { enabled: true },
-            balances: { enabled: true },
-            payouts: { enabled: true },
-          },
-        });
-
-        return successResponse({ clientSecret: accountSession.client_secret });
-      } catch (error: any) {
-        await logError(supabase, org.id, 'stripe-connect:dashboard-session', { action }, error.message, error);
-        return errorResponse('DASHBOARD_FAILED', 'Failed to load dashboard. Please try again.', 500, {
-          stripe_error: formatStripeError(error)
-        });
-      }
-    }
-
-    if (action === 'create-account-link') {
-      if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Stripe account not created yet', 400);
+        return errorResponse('NO_ACCOUNT', 'Create account first', 400);
       }
 
       const appUrl = getAppUrl();
@@ -138,8 +95,8 @@ serve(async (req) => {
       try {
         const accountLink = await stripe.accountLinks.create({
           account: org.stripe_account_id,
-          refresh_url: `${appUrl}/provider/settings?tab=payments&refresh=1`,
-          return_url: `${appUrl}/provider/stripe-onboarding?success=1`,
+          refresh_url: `${appUrl}/provider/payments?onboarding=retry`,
+          return_url: `${appUrl}/provider/payments?onboarding=done`,
           type: 'account_onboarding',
         });
 
@@ -147,6 +104,24 @@ serve(async (req) => {
       } catch (error: any) {
         await logError(supabase, org.id, 'stripe-connect:account-link', { action }, error.message, error);
         return errorResponse('LINK_CREATE_FAILED', 'Failed to create onboarding link', 500, {
+          stripe_error: formatStripeError(error)
+        });
+      }
+    }
+
+    if (action === 'login-link') {
+      // Create hosted Express dashboard login link
+      if (!org.stripe_account_id) {
+        return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first', 400);
+      }
+
+      try {
+        const loginLink = await stripe.accounts.createLoginLink(org.stripe_account_id);
+
+        return successResponse({ url: loginLink.url });
+      } catch (error: any) {
+        await logError(supabase, org.id, 'stripe-connect:login-link', { action }, error.message, error);
+        return errorResponse('LOGIN_LINK_FAILED', 'Failed to create login link', 500, {
           stripe_error: formatStripeError(error)
         });
       }

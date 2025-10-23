@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { logPaymentError } from './error-logger.ts';
+import { createStripeClient } from '../_shared/stripe.ts';
+import { getAppUrl, getPlatformFeePercent, getCurrency, readSecret } from '../_shared/env.ts';
+import { handleCorsPrefilight, successResponse, errorResponse } from '../_shared/http.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,19 +56,11 @@ const PayoutSchema = z.object({
 });
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const cors = handleCorsPrefilight(req);
+  if (cors) return cors;
 
   try {
-    // Use consistent env var names
-    const stripeKey = Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key') || Deno.env.get('stripe');
-    if (!stripeKey) throw new Error('STRIPE_SECRET not configured');
-
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
+    const stripe = createStripeClient();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -103,6 +97,19 @@ serve(async (req) => {
 
     const requestBody = await req.json();
     const { action, ...payload } = requestBody;
+
+    // Hosted Checkout flows (no org required)
+    if (action === 'create-subscription-checkout') {
+      const { createSubscriptionCheckout } = await import('./hosted-checkout.ts');
+      const result = await createSubscriptionCheckout(stripe, supabase, user.id);
+      return successResponse(result);
+    }
+
+    if (action === 'create-payment-checkout') {
+      const { createPaymentCheckout } = await import('./hosted-checkout.ts');
+      const result = await createPaymentCheckout(stripe, payload);
+      return successResponse(result);
+    }
 
     // Validate Stripe account is fully onboarded
     const account = await stripe.accounts.retrieve(org.stripe_account_id);
