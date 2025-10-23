@@ -1,34 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCorsPrefilight, successResponse, errorResponse } from "../_shared/http.ts";
+import { createStripeClient, formatStripeError } from "../_shared/stripe.ts";
+import { getAppUrl } from "../_shared/env.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const cors = handleCorsPrefilight(req);
+  if (cors) return cors;
 
   try {
-    // Initialize Stripe with consistent env var name
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key') || Deno.env.get('stripe');
-    if (!stripeSecretKey) {
-      throw new Error('STRIPE_SECRET not configured');
-    }
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    });
+    const stripe = createStripeClient();
 
     // Get auth token and create Supabase client
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('UNAUTHORIZED', 'Missing authorization header', 401);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -41,10 +27,7 @@ serve(async (req) => {
     // Verify JWT and get user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'AUTH_FAILED', message: 'Authentication failed' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('AUTH_FAILED', 'Authentication failed', 401);
     }
 
     // Get request body
@@ -59,10 +42,7 @@ serve(async (req) => {
 
     if (orgError || !org) {
       await logError(supabase, null, 'stripe-connect', { action }, 'Organization not found for user');
-      return new Response(
-        JSON.stringify({ ok: false, code: 'ORG_NOT_FOUND', message: 'Provider organization not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('ORG_NOT_FOUND', 'Provider organization not found', 404);
     }
 
     // Handle different actions
@@ -93,13 +73,11 @@ serve(async (req) => {
           console.log('Created new Stripe account:', stripeAccountId);
         } catch (error: any) {
           await logError(supabase, org.id, 'stripe-connect:create-account', { action }, error.message, error);
-          return new Response(
-            JSON.stringify({ 
-              ok: false, 
-              code: 'ACCOUNT_CREATE_FAILED', 
-              message: 'Failed to create Stripe account. Please try again.' 
-            }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          return errorResponse(
+            'ACCOUNT_CREATE_FAILED', 
+            'Failed to create Stripe account. Please try again.', 
+            500,
+            { stripe_error: formatStripeError(error) }
           );
         }
       }
@@ -114,37 +92,21 @@ serve(async (req) => {
           },
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            clientSecret: accountSession.client_secret,
-            accountId: stripeAccountId,
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({
+          clientSecret: accountSession.client_secret,
+          accountId: stripeAccountId,
+        });
       } catch (error: any) {
         await logError(supabase, org.id, 'stripe-connect:create-session', { action, stripeAccountId }, error.message, error);
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            code: 'SESSION_CREATE_FAILED', 
-            message: 'Failed to create onboarding session. Please try again.' 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('SESSION_CREATE_FAILED', 'Failed to create onboarding session. Please try again.', 500, {
+          stripe_error: formatStripeError(error)
+        });
       }
     }
 
     if (action === 'create-dashboard-session') {
       if (!org.stripe_account_id) {
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            code: 'NO_ACCOUNT', 
-            message: 'Complete Stripe setup first to access dashboard' 
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first to access dashboard', 400);
       }
 
       try {
@@ -157,39 +119,21 @@ serve(async (req) => {
           },
         });
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            clientSecret: accountSession.client_secret,
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({ clientSecret: accountSession.client_secret });
       } catch (error: any) {
         await logError(supabase, org.id, 'stripe-connect:dashboard-session', { action }, error.message, error);
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            code: 'DASHBOARD_FAILED', 
-            message: 'Failed to load dashboard. Please try again.' 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('DASHBOARD_FAILED', 'Failed to load dashboard. Please try again.', 500, {
+          stripe_error: formatStripeError(error)
+        });
       }
     }
 
     if (action === 'create-account-link') {
       if (!org.stripe_account_id) {
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            code: 'NO_ACCOUNT', 
-            message: 'Stripe account not created yet' 
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('NO_ACCOUNT', 'Stripe account not created yet', 400);
       }
 
-      const appUrl = Deno.env.get('APP_URL') || 'https://homebaseproapp.com';
+      const appUrl = getAppUrl();
 
       try {
         const accountLink = await stripe.accountLinks.create({
@@ -199,34 +143,22 @@ serve(async (req) => {
           type: 'account_onboarding',
         });
 
-        return new Response(
-          JSON.stringify({ success: true, url: accountLink.url }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({ url: accountLink.url });
       } catch (error: any) {
         await logError(supabase, org.id, 'stripe-connect:account-link', { action }, error.message, error);
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            code: 'LINK_CREATE_FAILED', 
-            message: 'Failed to create onboarding link' 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('LINK_CREATE_FAILED', 'Failed to create onboarding link', 500, {
+          stripe_error: formatStripeError(error)
+        });
       }
     }
 
     if (action === 'check-status') {
       if (!org.stripe_account_id) {
-        return new Response(
-          JSON.stringify({
-            success: true,
-            complete: false,
-            paymentsReady: false,
-            detailsSubmitted: false,
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({
+          complete: false,
+          paymentsReady: false,
+          detailsSubmitted: false,
+        });
       }
 
       try {
@@ -246,45 +178,26 @@ serve(async (req) => {
           })
           .eq('id', org.id);
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            complete: detailsSubmitted,
-            paymentsReady: paymentsReady,
-            detailsSubmitted: detailsSubmitted,
-            chargesEnabled: chargesEnabled,
-            payoutsEnabled: payoutsEnabled,
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({
+          complete: detailsSubmitted,
+          paymentsReady: paymentsReady,
+          detailsSubmitted: detailsSubmitted,
+          chargesEnabled: chargesEnabled,
+          payoutsEnabled: payoutsEnabled,
+        });
       } catch (error: any) {
         await logError(supabase, org.id, 'stripe-connect:check-status', { action }, error.message, error);
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            code: 'STATUS_CHECK_FAILED', 
-            message: 'Failed to check account status' 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('STATUS_CHECK_FAILED', 'Failed to check account status', 500, {
+          stripe_error: formatStripeError(error)
+        });
       }
     }
 
-    return new Response(
-      JSON.stringify({ ok: false, code: 'INVALID_ACTION', message: `Unknown action: ${action}` }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse('INVALID_ACTION', `Unknown action: ${action}`, 400);
 
   } catch (error: any) {
     console.error('Stripe Connect error:', error);
-    return new Response(
-      JSON.stringify({ 
-        ok: false, 
-        code: 'INTERNAL_ERROR', 
-        message: error.message || 'Internal server error' 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Internal server error', 500);
   }
 });
 

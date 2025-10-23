@@ -1,30 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCorsPrefilight, successResponse, errorResponse } from "../_shared/http.ts";
+import { createStripeClient, formatStripeError } from "../_shared/stripe.ts";
+import { getPlatformFeePercent, getCurrency } from "../_shared/env.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const cors = handleCorsPrefilight(req);
+  if (cors) return cors;
 
   try {
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key');
-    if (!stripeSecretKey) {
-      throw new Error('STRIPE_SECRET not configured');
-    }
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+    const stripe = createStripeClient();
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Missing authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('UNAUTHORIZED', 'Missing authorization', 401);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -36,19 +25,13 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'AUTH_FAILED', message: 'Authentication failed' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('AUTH_FAILED', 'Authentication failed', 401);
     }
 
     const { jobId, providerOrgId, amountCents, description, metadata } = await req.json();
 
     if (!jobId || !providerOrgId || !amountCents) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'MISSING_PARAMS', message: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('MISSING_PARAMS', 'Missing required parameters', 400);
     }
 
     // Get provider organization
@@ -61,40 +44,23 @@ serve(async (req) => {
     if (orgError || !org) {
       await logError(supabase, providerOrgId, 'create-job-payment-intent', 
         { jobId, providerOrgId }, 'Provider organization not found');
-      return new Response(
-        JSON.stringify({ ok: false, code: 'PROVIDER_NOT_FOUND', message: 'Provider not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('PROVIDER_NOT_FOUND', 'Provider not found', 404);
     }
 
     if (!org.stripe_account_id) {
       await logError(supabase, org.id, 'create-job-payment-intent', 
         { jobId, providerOrgId }, 'Provider has not connected Stripe');
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          code: 'STRIPE_NOT_CONNECTED', 
-          message: 'Provider has not set up payments yet' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('STRIPE_NOT_CONNECTED', 'Provider has not set up payments yet', 400);
     }
 
     if (!org.payments_ready) {
       await logError(supabase, org.id, 'create-job-payment-intent', 
         { jobId, providerOrgId }, 'Provider payments not ready');
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          code: 'PAYMENTS_NOT_READY', 
-          message: 'Provider has not completed payment setup' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('PAYMENTS_NOT_READY', 'Provider has not completed payment setup', 400);
     }
 
     // Get platform fee percentage
-    const feePct = parseInt(Deno.env.get('PLATFORM_FEE_PERCENT') || '5');
+    const feePct = getPlatformFeePercent();
     const { data: settings } = await supabase
       .from('settings')
       .select('value')
@@ -104,7 +70,7 @@ serve(async (req) => {
     const finalFeePct = settings?.value ? parseInt(settings.value as string) : feePct;
     const appFee = Math.floor(amountCents * (finalFeePct / 100));
 
-    const currency = Deno.env.get('CURRENCY') || 'usd';
+    const currency = getCurrency();
 
     // Create PaymentIntent with application fee and transfer
     try {
@@ -136,38 +102,22 @@ serve(async (req) => {
 
       console.log('Created PaymentIntent:', paymentIntent.id, 'for job:', jobId);
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          clientSecret: paymentIntent.client_secret,
-          paymentIntentId: paymentIntent.id,
-          applicationFee: appFee,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return successResponse({
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        applicationFee: appFee,
+      });
     } catch (error: any) {
       await logError(supabase, org.id, 'create-job-payment-intent:create-intent', 
         { jobId, providerOrgId, amountCents }, error.message, error);
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          code: 'PAYMENT_INTENT_FAILED', 
-          message: 'Failed to create payment. Please try again.' 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('PAYMENT_INTENT_FAILED', 'Failed to create payment. Please try again.', 500, {
+        stripe_error: formatStripeError(error)
+      });
     }
 
   } catch (error: any) {
     console.error('Payment intent error:', error);
-    return new Response(
-      JSON.stringify({ 
-        ok: false, 
-        code: 'INTERNAL_ERROR', 
-        message: error.message || 'Internal server error' 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Internal server error', 500);
   }
 });
 

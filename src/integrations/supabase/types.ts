@@ -4064,6 +4064,33 @@ export type Database = {
           },
         ]
       }
+      tutorial_steps: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          role: string
+          step_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          role: string
+          step_order: number
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          role?: string
+          step_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
       typing_states: {
         Row: {
           conversation_id: string

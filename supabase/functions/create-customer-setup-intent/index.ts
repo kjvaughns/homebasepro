@@ -1,30 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCorsPrefilight, successResponse, errorResponse } from "../_shared/http.ts";
+import { createStripeClient, formatStripeError } from "../_shared/stripe.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const cors = handleCorsPrefilight(req);
+  if (cors) return cors;
 
   try {
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key');
-    if (!stripeSecretKey) {
-      throw new Error('STRIPE_SECRET not configured');
-    }
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+    const stripe = createStripeClient();
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Missing authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('UNAUTHORIZED', 'Missing authorization', 401);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -36,10 +24,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'AUTH_FAILED', message: 'Authentication failed' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('AUTH_FAILED', 'Authentication failed', 401);
     }
 
     const { profileId, email } = await req.json();
@@ -47,10 +32,7 @@ serve(async (req) => {
     // Get user's email if not provided
     const userEmail = email || user.email;
     if (!userEmail) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'EMAIL_REQUIRED', message: 'Email address required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('EMAIL_REQUIRED', 'Email address required', 400);
     }
 
     // Check if customer record exists
@@ -86,14 +68,9 @@ serve(async (req) => {
       } catch (error: any) {
         await logError(supabase, null, 'create-customer-setup-intent:create-customer', 
           { profileId, email: userEmail }, error.message, error);
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            code: 'CUSTOMER_CREATE_FAILED', 
-            message: 'Failed to create customer account' 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('CUSTOMER_CREATE_FAILED', 'Failed to create customer account', 500, {
+          stripe_error: formatStripeError(error)
+        });
       }
     }
 
@@ -108,37 +85,21 @@ serve(async (req) => {
         },
       });
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          clientSecret: setupIntent.client_secret,
-          customerId: stripeCustomerId,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return successResponse({
+        clientSecret: setupIntent.client_secret,
+        customerId: stripeCustomerId,
+      });
     } catch (error: any) {
       await logError(supabase, null, 'create-customer-setup-intent:setup-intent', 
         { profileId, customerId: stripeCustomerId }, error.message, error);
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          code: 'SETUP_INTENT_FAILED', 
-          message: 'Failed to initialize payment method setup' 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('SETUP_INTENT_FAILED', 'Failed to initialize payment method setup', 500, {
+        stripe_error: formatStripeError(error)
+      });
     }
 
   } catch (error: any) {
     console.error('Setup intent error:', error);
-    return new Response(
-      JSON.stringify({ 
-        ok: false, 
-        code: 'INTERNAL_ERROR', 
-        message: error.message || 'Internal server error' 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Internal server error', 500);
   }
 });
 
