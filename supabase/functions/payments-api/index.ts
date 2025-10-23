@@ -28,31 +28,35 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Auth is optional - JWT validation done by config.toml (verify_jwt = true)
-    // Get user from JWT if present
-    const authHeader = req.headers.get('Authorization');
-    let user = null;
+  // Get user from JWT (guaranteed to exist due to verify_jwt = true)
+  const authHeader = req.headers.get('Authorization');
+  let user = null;
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: authUser } } = await supabase.auth.getUser(token);
+    user = authUser;
+  }
+
+  console.log('🔐 Auth header present:', !!authHeader);
+  console.log('👤 User authenticated:', !!user, user?.id);
+
+  const requestBody = await req.json();
+  const { action, ...payload } = requestBody;
+  console.log('🎬 Action:', action);
+
+  // Get organization for provider actions (if user exists)
+  let org = null;
+  if (user) {
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('*')
+      .eq('owner_id', user.id)
+      .maybeSingle();
     
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user: authUser } } = await supabase.auth.getUser(token);
-      user = authUser;
-    }
-
-    const requestBody = await req.json();
-    const { action, ...payload } = requestBody;
-
-    // Get organization for provider actions (if user exists)
-    let org = null;
-    if (user) {
-      const { data: orgData } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('owner_id', user.id)
-        .maybeSingle();
-      
-      org = orgData;
-    }
+    org = orgData;
+    console.log('🏢 Organization found:', !!org, org?.id);
+  }
 
     // Helper: Get fee amount based on provider plan
     const getFeeAmount = async (providerId: string, jobAmount: number) => {
@@ -86,16 +90,16 @@ serve(async (req) => {
 
     // ===== HOSTED FLOWS =====
     
-    // Create subscription checkout (Provider plan upgrades)
-    if (action === 'create-subscription-checkout') {
-      const { plan } = payload;
-      
-      if (!user || !org) {
-        return new Response(
-          JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Authentication required' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+  // Create subscription checkout (Provider plan upgrades)
+  if (action === 'create-subscription-checkout') {
+    const { plan } = payload;
+    
+    if (!org) {
+      return new Response(
+        JSON.stringify({ ok: false, code: 'NO_ORGANIZATION', message: 'Provider organization not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
       // Get price ID from env
       const priceIdMap: Record<string, string> = {
@@ -113,8 +117,15 @@ serve(async (req) => {
         );
       }
 
-      // Get or create customer
-      let customerId = org.stripe_customer_id;
+    // Get or create customer
+    if (!user) {
+      return new Response(
+        JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let customerId = org.stripe_customer_id;
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: user.email,

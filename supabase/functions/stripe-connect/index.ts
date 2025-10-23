@@ -18,25 +18,27 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from JWT if present
-    let user = null;
-    if (authHeader) {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(
-        authHeader.replace('Bearer ', '')
-      );
-      if (!authError && authUser) {
-        user = authUser;
-      }
+  // Get user from JWT (guaranteed to exist due to verify_jwt = true)
+  let user = null;
+  if (authHeader) {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    if (!authError && authUser) {
+      user = authUser;
     }
+  }
 
-    if (!user) {
-      return errorResponse('UNAUTHORIZED', 'Authentication required', 401);
-    }
+  console.log('🔐 Auth header present:', !!authHeader);
+  console.log('👤 User authenticated:', !!user, user?.id);
 
-    const { action } = await req.json();
+  const { action } = await req.json();
+  console.log('🎬 Action:', action);
 
-    // Get organization for this user
-    const { data: org, error: orgError } = await supabase
+  // Get organization for this user (if user exists)
+  let org = null;
+  if (user) {
+    const { data: orgData, error: orgError } = await supabase
       .from('organizations')
       .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready')
       .eq('owner_id', user.id)
@@ -48,16 +50,20 @@ serve(async (req) => {
       return errorResponse('DB_ERROR', 'Database error fetching organization', 500);
     }
 
-    if (!org) {
-      await logError(supabase, null, 'stripe-connect', { action }, 'Organization not found for user');
-      return errorResponse('ORG_NOT_FOUND', 'Provider organization not found. Please complete provider onboarding first.', 404);
+    org = orgData;
+  }
+
+  console.log('🏢 Organization found:', !!org, org?.id);
+
+  // CREATE ACCOUNT (Express)
+  if (action === 'create-account') {
+    if (!user || !org) {
+      return errorResponse('UNAUTHORIZED', 'User authentication required', 401);
     }
 
-    // CREATE ACCOUNT (Express)
-    if (action === 'create-account') {
-      if (org.stripe_account_id) {
-        return successResponse({ account_id: org.stripe_account_id });
-      }
+    if (org.stripe_account_id) {
+      return successResponse({ account_id: org.stripe_account_id });
+    }
 
       try {
         const { data: profile } = await supabase
@@ -105,11 +111,15 @@ serve(async (req) => {
       }
     }
 
-    // ACCOUNT LINK (Hosted onboarding)
-    if (action === 'account-link') {
-      if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Create account first', 400);
-      }
+  // ACCOUNT LINK (Hosted onboarding)
+  if (action === 'account-link') {
+    if (!user || !org) {
+      return errorResponse('UNAUTHORIZED', 'User authentication required', 401);
+    }
+
+    if (!org.stripe_account_id) {
+      return errorResponse('NO_ACCOUNT', 'Create account first', 400);
+    }
 
       const appUrl = getAppUrl();
 
@@ -130,11 +140,15 @@ serve(async (req) => {
       }
     }
 
-    // LOGIN LINK (Express dashboard)
-    if (action === 'login-link') {
-      if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Complete onboarding first', 400);
-      }
+  // LOGIN LINK (Express dashboard)
+  if (action === 'login-link') {
+    if (!user || !org) {
+      return errorResponse('UNAUTHORIZED', 'User authentication required', 401);
+    }
+
+    if (!org.stripe_account_id) {
+      return errorResponse('NO_ACCOUNT', 'Complete onboarding first', 400);
+    }
 
       try {
         const loginLink = await stripe.accounts.createLoginLink(org.stripe_account_id);
@@ -147,15 +161,15 @@ serve(async (req) => {
       }
     }
 
-    // CHECK STATUS
-    if (action === 'check-status') {
-      if (!org.stripe_account_id) {
-        return successResponse({
-          complete: false,
-          paymentsReady: false,
-          detailsSubmitted: false,
-        });
-      }
+  // CHECK STATUS (public - can work without full auth)
+  if (action === 'check-status') {
+    if (!user || !org || !org.stripe_account_id) {
+      return successResponse({
+        complete: false,
+        paymentsReady: false,
+        detailsSubmitted: false,
+      });
+    }
 
       try {
         const account = await stripe.accounts.retrieve(org.stripe_account_id);
@@ -190,6 +204,10 @@ serve(async (req) => {
 
     // LEGACY: create-account-session (embedded - deprecated)
     if (action === 'create-account-session') {
+      if (!user || !org) {
+        return errorResponse('UNAUTHORIZED', 'Authentication required', 401);
+      }
+
       let stripeAccountId = org.stripe_account_id;
 
       if (!stripeAccountId) {
@@ -244,6 +262,10 @@ serve(async (req) => {
 
     // LEGACY: create-dashboard-session (embedded)
     if (action === 'create-dashboard-session') {
+      if (!org) {
+        return errorResponse('NO_ORGANIZATION', 'Organization not found', 404);
+      }
+
       if (!org.stripe_account_id) {
         return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first', 400);
       }
@@ -262,6 +284,10 @@ serve(async (req) => {
 
     // LEGACY: create-account-link (now just 'account-link')
     if (action === 'create-account-link') {
+      if (!org) {
+        return errorResponse('NO_ORGANIZATION', 'Organization not found', 404);
+      }
+
       if (!org.stripe_account_id) {
         return errorResponse('NO_ACCOUNT', 'Stripe account not created yet', 400);
       }
