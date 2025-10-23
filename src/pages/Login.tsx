@@ -25,12 +25,19 @@ const Login = () => {
         // Check if they have a profile to determine where to redirect
         const { data: profile } = await supabase
           .from("profiles")
-          .select("user_type")
+          .select("user_type, onboarded_at")
           .eq("user_id", user.id)
           .maybeSingle();
 
         if (profile) {
-          if (profile.user_type === "provider") {
+          if (!profile.onboarded_at) {
+            // Not onboarded yet - send to appropriate onboarding
+            if (profile.user_type === "provider") {
+              navigate("/onboarding/provider");
+            } else {
+              navigate("/onboarding/homeowner");
+            }
+          } else if (profile.user_type === "provider") {
             navigate("/provider/dashboard");
           } else {
             navigate("/homeowner/dashboard");
@@ -71,11 +78,18 @@ const Login = () => {
         
         const { data: profile } = await supabase
           .from('profiles')
-          .select('user_type')
+          .select('user_type, onboarded_at')
           .eq('user_id', data.user.id)
           .single();
 
-        if (profile?.user_type === "provider") {
+        if (!profile?.onboarded_at) {
+          // User hasn't completed onboarding - send to setup
+          if (profile?.user_type === "provider") {
+            navigate("/onboarding/provider");
+          } else {
+            navigate("/onboarding/homeowner");
+          }
+        } else if (profile?.user_type === "provider") {
           navigate("/provider/dashboard");
         } else {
           navigate("/homeowner/dashboard");
