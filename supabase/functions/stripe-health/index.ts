@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleCorsPrefilight, successResponse, errorResponse } from "../_shared/http.ts";
-import { createStripeClient, isLiveMode } from "../_shared/stripe.ts";
+import { stripeGet } from "../_shared/stripe-fetch.ts";
 import { getStripeSecret, getWebhookSecret } from "../_shared/env.ts";
 
 serve(async (req) => {
@@ -22,11 +22,11 @@ serve(async (req) => {
     }
 
     // Test Stripe API connectivity
-    const stripe = createStripeClient();
-    const balance = await stripe.balance.retrieve();
+    const balance = await stripeGet('balance');
+    const isLive = getStripeSecret().startsWith('sk_live_');
 
     return successResponse({
-      env: isLiveMode() ? 'live' : 'test',
+      env: isLive ? 'live' : 'test',
       balance_object: balance.object,
       has_webhook_secret: !!getWebhookSecret(),
       currencies: balance.available.map((b: any) => b.currency),

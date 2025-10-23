@@ -1,12 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { logPaymentError } from './error-logger.ts';
 import { getPlatformFeePercent, getAppUrl } from '../_shared/env.ts';
+import { stripePost, stripeGet, formatStripeError } from '../_shared/stripe-fetch.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST,OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -16,47 +16,39 @@ serve(async (req) => {
   }
 
   try {
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key') || Deno.env.get('stripe');
-    if (!stripeKey) throw new Error('STRIPE_SECRET not configured');
-
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Get user from JWT (guaranteed to exist due to verify_jwt = true)
-  const authHeader = req.headers.get('Authorization');
-  let user = null;
-  
-  if (authHeader) {
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user: authUser } } = await supabase.auth.getUser(token);
-    user = authUser;
-  }
-
-  console.log('🔐 Auth header present:', !!authHeader);
-  console.log('👤 User authenticated:', !!user, user?.id);
-
-  const requestBody = await req.json();
-  const { action, ...payload } = requestBody;
-  console.log('🎬 Action:', action);
-
-  // Get organization for provider actions (if user exists)
-  let org = null;
-  if (user) {
-    const { data: orgData } = await supabase
-      .from('organizations')
-      .select('*')
-      .eq('owner_id', user.id)
-      .maybeSingle();
+    // Get user from JWT (optional - verify_jwt = true validates it)
+    const authHeader = req.headers.get('Authorization');
+    let user = null;
     
-    org = orgData;
-    console.log('🏢 Organization found:', !!org, org?.id);
-  }
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user: authUser } } = await supabase.auth.getUser(token);
+      user = authUser;
+    }
+
+    console.log('🔐 Auth header present:', !!authHeader);
+    console.log('👤 User authenticated:', !!user, user?.id);
+
+    const requestBody = await req.json();
+    const { action, ...payload } = requestBody;
+    console.log('🎬 Action:', action);
+
+    // Get organization for provider actions (if user exists)
+    let org = null;
+    if (user) {
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+      
+      org = orgData;
+      console.log('🏢 Organization found:', !!org, org?.id);
+    }
 
     // Helper: Get fee amount based on provider plan
     const getFeeAmount = async (providerId: string, jobAmount: number) => {
@@ -90,16 +82,16 @@ serve(async (req) => {
 
     // ===== HOSTED FLOWS =====
     
-  // Create subscription checkout (Provider plan upgrades)
-  if (action === 'create-subscription-checkout') {
-    const { plan } = payload;
-    
-    if (!org) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'NO_ORGANIZATION', message: 'Provider organization not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Create subscription checkout (Provider plan upgrades)
+    if (action === 'create-subscription-checkout') {
+      const { plan } = payload;
+      
+      if (!org) {
+        return new Response(
+          JSON.stringify({ ok: false, code: 'NO_ORGANIZATION', message: 'Provider organization not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Get price ID from env
       const priceIdMap: Record<string, string> = {
@@ -117,17 +109,16 @@ serve(async (req) => {
         );
       }
 
-    // Get or create customer
-    if (!user) {
-      return new Response(
-        JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      if (!user) {
+        return new Response(
+          JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Authentication required' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    let customerId = org.stripe_customer_id;
+      let customerId = org.stripe_customer_id;
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await stripePost('customers', {
           email: user.email,
           name: org.name,
           metadata: { org_id: org.id, profile_id: org.owner_id },
@@ -137,7 +128,7 @@ serve(async (req) => {
       }
 
       const appUrl = getAppUrl();
-      const session = await stripe.checkout.sessions.create({
+      const session = await stripePost('checkout/sessions', {
         mode: 'subscription',
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
@@ -187,7 +178,7 @@ serve(async (req) => {
       const feeAmount = await getFeeAmount(providerOrg.id, amount_cents);
       const appUrl = getAppUrl();
 
-      const session = await stripe.checkout.sessions.create({
+      const session = await stripePost('checkout/sessions', {
         mode: 'payment',
         line_items: [{
           price_data: {
@@ -238,7 +229,7 @@ serve(async (req) => {
 
       if (!customerId) {
         // Create customer if doesn't exist
-        const customer = await stripe.customers.create({
+        const customer = await stripePost('customers', {
           email: user.email,
           metadata: { profile_id: profileId },
         });
@@ -258,7 +249,7 @@ serve(async (req) => {
       const appUrl = getAppUrl();
       const returnPath = role === 'provider' ? '/provider/settings?tab=payments' : '/homeowner/settings';
       
-      const session = await stripe.billingPortal.sessions.create({
+      const session = await stripePost('billing_portal/sessions', {
         customer: customerId,
         return_url: `${appUrl}${returnPath}`,
       });
@@ -292,7 +283,7 @@ serve(async (req) => {
       let customerId = customer?.stripe_customer_id;
 
       if (!customerId) {
-        const stripeCustomer = await stripe.customers.create({
+        const stripeCustomer = await stripePost('customers', {
           email, name,
           metadata: { profile_id: profileId },
         });
@@ -305,7 +296,7 @@ serve(async (req) => {
         });
       }
 
-      const setupIntent = await stripe.setupIntents.create({
+      const setupIntent = await stripePost('setup_intents', {
         customer: customerId,
         payment_method_types: ['card'],
         metadata: { profile_id: profileId },
@@ -334,7 +325,7 @@ serve(async (req) => {
         );
       }
 
-      await stripe.customers.update(customer.stripe_customer_id, {
+      await stripePost(`customers/${customer.stripe_customer_id}`, {
         invoice_settings: { default_payment_method: paymentMethodId },
       });
 
@@ -362,7 +353,7 @@ serve(async (req) => {
       if (!customer) {
         const { data: profile } = await supabase.from('profiles').select('full_name, user_id').eq('id', homeownerId).single();
         const { data: authUser } = await supabase.auth.admin.getUserById(profile?.user_id || '');
-        const stripeCustomer = await stripe.customers.create({
+        const stripeCustomer = await stripePost('customers', {
           email: authUser?.user?.email,
           name: profile?.full_name,
           metadata: { profile_id: homeownerId },
@@ -393,7 +384,7 @@ serve(async (req) => {
       const totalAmount = Math.round((amount + tip) * 100);
       const feeAmount = await getFeeAmount(booking.provider_org_id, totalAmount);
 
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await stripePost('payment_intents', {
         amount: totalAmount,
         currency: 'usd',
         customer: customer.stripe_customer_id,
@@ -409,8 +400,6 @@ serve(async (req) => {
           booking_id: jobId,
           tip_amount: tip,
         },
-      }, {
-        idempotencyKey: `booking_${jobId}_payment_${Date.now()}`,
       });
 
       const { data: payment } = await supabase
@@ -466,7 +455,7 @@ serve(async (req) => {
       }
 
       try {
-        const capturedPaymentIntent = await stripe.paymentIntents.capture(payment.stripe_id);
+        const capturedPaymentIntent = await stripePost(`payment_intents/${payment.stripe_id}/capture`, {});
 
         await supabase
           .from('payments')
@@ -491,13 +480,11 @@ serve(async (req) => {
       const { accountId, amount } = payload;
 
       try {
-        const payout = await stripe.payouts.create({
+        const payout = await stripePost('payouts', {
           amount: Math.round(amount * 100),
           currency: 'usd',
           method: 'standard',
-        }, {
-          stripeAccount: accountId,
-        });
+        }, accountId);
 
         return new Response(
           JSON.stringify({ ok: true, payout }),
@@ -515,9 +502,7 @@ serve(async (req) => {
     // BALANCE
     if (action === 'balance') {
       try {
-        const balance = await stripe.balance.retrieve({
-          stripeAccount: org.stripe_account_id,
-        });
+        const balance = await stripeGet('balance', org.stripe_account_id);
 
         return new Response(
           JSON.stringify({ ok: true, balance }),
@@ -537,14 +522,14 @@ serve(async (req) => {
       const { customerId } = payload;
 
       try {
-        const invoice = await stripe.invoices.create({
+        const invoice = await stripePost('invoices', {
           customer: customerId,
           collection_method: 'send_invoice',
           days_until_due: 30,
         });
 
         // Send the invoice
-        await stripe.invoices.sendInvoice(invoice.id);
+        await stripePost(`invoices/${invoice.id}/send`, {});
 
         return new Response(
           JSON.stringify({ ok: true, invoice }),
@@ -564,7 +549,7 @@ serve(async (req) => {
       const { paymentIntentId, amount } = payload;
 
       try {
-        const refund = await stripe.refunds.create({
+        const refund = await stripePost('refunds', {
           payment_intent: paymentIntentId,
           amount: Math.round(amount * 100),
         });
