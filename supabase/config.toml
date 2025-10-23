@@ -47,10 +47,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.stripe-connect]
-verify_jwt = true
+verify_jwt = false
 
 [functions.payments-api]
-verify_jwt = true
+verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false

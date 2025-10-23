@@ -3,6 +3,14 @@ import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0?target=deno';
 import { getStripeSecret, resolveWebhookSecrets, has, getPlatformFeePercent } from '../_shared/env.ts';
 
+console.log('stripe-webhook starting');
+console.log('✅ Webhook configured:', {
+  hasStripeSecret: has('STRIPE_SECRET_KEY_LIVE') || has('STRIPE_SECRET'),
+  hasPlatformSecret: has('STRIPE_WEBHOOK_SECRET_PLATFORM') || has('STRIPE_WEBHOOK_SECRET'),
+  hasConnectSecret: has('STRIPE_WEBHOOK_SECRET_CONNECT'),
+  platformFeePercent: getPlatformFeePercent() * 100 + '%'
+});
+
 serve(async (req) => {
   // Health/Diagnostics Endpoint
   if (req.method === "GET") {

@@ -7,7 +7,17 @@ const CORS = {
 };
 
 const ok  = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json', ...CORS }});
-const err = (code: string, message: string, s = 400) => ok({ ok: false, code, message }, s);
+const err = (code: string, message: string, s = 400, details?: any) => {
+  const errorBody = {
+    ok: false,
+    code,
+    message,
+    ...(details && { details }),
+    timestamp: new Date().toISOString()
+  };
+  console.error('❌ Function error:', errorBody);
+  return ok(errorBody, s);
+};
 
 // Resolve environment variables flexibly
 function readEnv(...keys: string[]) {
@@ -18,12 +28,29 @@ function readEnv(...keys: string[]) {
   return undefined;
 }
 
-const STRIPE_KEY = readEnv('STRIPE_SECRET', 'STRIPE_SECRET_KEY_LIVE', 'stripe_secret_key', 'stripe');
+const STRIPE_KEY = readEnv('STRIPE_SECRET', 'STRIPE_SECRET_KEY_LIVE', 'STRIPE_SECRET_KEY_TEST', 'stripe_secret_key', 'stripe');
+const STRIPE_PUBLISHABLE = readEnv('STRIPE_PUBLISHABLE_KEY', 'STRIPE_PUBLISHABLE_KEY_LIVE', 'STRIPE_PUBLISHABLE_KEY_TEST', 'stripe_publishable_key');
 const APP_URL    = readEnv('APP_URL') || 'https://homebaseproapp.com';
 const CURRENCY   = readEnv('CURRENCY') || 'usd';
+const PRICE_FREE = readEnv('STRIPE_PRICE_FREE');
 const PRICE_BETA = readEnv('STRIPE_PRICE_BETA_MONTHLY', 'STRIPE_PRICE_BETA');
+const PRICE_GROWTH = readEnv('STRIPE_PRICE_GROWTH');
+const PRICE_PRO = readEnv('STRIPE_PRICE_PRO');
+const PRICE_SCALE = readEnv('STRIPE_PRICE_SCALE');
 
 console.log('payments-api starting (Deno-only, no Node shims)');
+console.log('✅ Stripe configured:', {
+  hasSecret: !!STRIPE_KEY,
+  hasPublishable: !!STRIPE_PUBLISHABLE,
+  hasPriceFree: !!PRICE_FREE,
+  hasPriceBeta: !!PRICE_BETA,
+  hasPriceGrowth: !!PRICE_GROWTH,
+  hasPricePro: !!PRICE_PRO,
+  hasPriceScale: !!PRICE_SCALE,
+  mode: STRIPE_KEY?.startsWith('sk_live_') ? 'live' : 'test',
+  appUrl: APP_URL,
+  currency: CURRENCY
+});
 
 // Flatten nested object params -> Stripe bracket notation
 function flattenParams(obj: Record<string, any>, prefix = ''): [string, string][] {
@@ -69,7 +96,18 @@ async function stripePOST(path: string, params: any, stripeAccount?: string) {
     body: form(params)
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.error?.message || `Stripe ${path} failed`);
+  if (!res.ok) {
+    const error = new Error(json?.error?.message || `Stripe ${path} failed`);
+    (error as any).stripeError = json?.error;
+    console.error('Stripe API error:', {
+      path,
+      type: json?.error?.type,
+      code: json?.error?.code,
+      message: json?.error?.message,
+      statusCode: res.status
+    });
+    throw error;
+  }
   return json;
 }
 
@@ -84,7 +122,18 @@ async function stripeGET(path: string, stripeAccount?: string) {
     headers
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.error?.message || `Stripe ${path} failed`);
+  if (!res.ok) {
+    const error = new Error(json?.error?.message || `Stripe ${path} failed`);
+    (error as any).stripeError = json?.error;
+    console.error('Stripe API error:', {
+      path,
+      type: json?.error?.type,
+      code: json?.error?.code,
+      message: json?.error?.message,
+      statusCode: res.status
+    });
+    throw error;
+  }
   return json;
 }
 
@@ -97,6 +146,28 @@ Deno.serve(async (req) => {
     try { body = await req.json(); } catch { return err('BAD_JSON', 'Body must be JSON with { action }'); }
     const action = body?.action;
     if (!action) return err('MISSING_ACTION', 'Include body.action');
+
+    console.log('🎯 Action requested:', action);
+
+    // HEALTH CHECK / CONFIG CHECK
+    if (action === 'health' || action === 'check-config') {
+      return ok({
+        ok: true,
+        configured: {
+          stripe_secret: !!STRIPE_KEY,
+          stripe_publishable: !!STRIPE_PUBLISHABLE,
+          price_free: !!PRICE_FREE,
+          price_beta: !!PRICE_BETA,
+          price_growth: !!PRICE_GROWTH,
+          price_pro: !!PRICE_PRO,
+          price_scale: !!PRICE_SCALE,
+          app_url: !!APP_URL,
+          currency: !!CURRENCY
+        },
+        mode: STRIPE_KEY?.startsWith('sk_live_') ? 'live' : 'test',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // ========== PUBLIC ACTIONS (no auth required) ==========
     
@@ -487,6 +558,22 @@ Deno.serve(async (req) => {
 
   } catch (e: any) {
     console.error('payments-api error:', e);
+    
+    // If this is a Stripe error, format it nicely
+    if (e?.stripeError) {
+      return err(
+        'STRIPE_ERROR',
+        e.message || 'Stripe API request failed',
+        e.stripeError.statusCode || 400,
+        {
+          stripe_code: e.stripeError.code,
+          stripe_type: e.stripeError.type,
+          stripe_param: e.stripeError.param,
+          decline_code: e.stripeError.decline_code
+        }
+      );
+    }
+    
     return err('SERVER_ERROR', e?.message || String(e), 500);
   }
 });

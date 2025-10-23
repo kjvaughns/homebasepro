@@ -33,6 +33,26 @@ serve(async (req) => {
     const { action } = await req.json();
     console.log('🎬 Action:', action);
 
+    // HEALTH CHECK
+    if (action === 'health') {
+      const { getStripeSecret, getPublishableKey } = await import('../_shared/env.ts');
+      const hasSecret = (() => {
+        try { return !!getStripeSecret(); } catch { return false; }
+      })();
+      const hasPublishable = (() => {
+        try { return !!getPublishableKey(); } catch { return false; }
+      })();
+      return successResponse({
+        ok: true,
+        configured: {
+          stripe_secret: hasSecret,
+          stripe_publishable: hasPublishable,
+          app_url: !!Deno.env.get('APP_URL')
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Get organization for this user (if user exists)
     let org = null;
     if (user) {
@@ -319,6 +339,23 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('Stripe Connect error:', error);
+    
+    // If this is a Stripe error, format it with more details
+    if (error?.stripeError) {
+      const stripeError = formatStripeError(error);
+      return errorResponse(
+        'STRIPE_ERROR',
+        error.message || 'Stripe API request failed',
+        400,
+        {
+          stripe_code: stripeError.code,
+          stripe_type: stripeError.type,
+          stripe_param: stripeError.param,
+          decline_code: stripeError.decline_code
+        }
+      );
+    }
+    
     return errorResponse('INTERNAL_ERROR', error.message || 'Internal server error', 500);
   }
 });
