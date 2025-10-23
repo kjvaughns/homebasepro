@@ -42,24 +42,6 @@ const Register = () => {
         throw new Error("Please fill in all required fields");
       }
 
-      // Check if registration is open
-      const { data: regSettings } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'registration_enabled')
-        .single();
-
-      const registrationEnabled = regSettings?.value?.[userType] === true;
-      
-      if (!registrationEnabled) {
-        toast({
-          title: "Registration Temporarily Closed",
-          description: "We're currently in limited beta. Please check back later.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,

@@ -76,8 +76,56 @@ const Pricing = () => {
         </p>
       </section>
 
-      {/* Pricing Card - Single BETA Plan */}
-      <div className="max-w-md mx-auto px-4 pb-16">
+      {/* Pricing Cards */}
+      <div className="max-w-5xl mx-auto px-4 pb-16 grid md:grid-cols-2 gap-6">
+        {/* FREE Plan Card */}
+        <Card className="border-2 border-border shadow-lg">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Badge variant="outline">FREE FOREVER</Badge>
+            </div>
+            <CardTitle className="text-3xl">Free Plan</CardTitle>
+            <div className="mt-4">
+              <span className="text-5xl font-bold">$0</span>
+              <span className="text-muted-foreground">/month</span>
+            </div>
+            <CardDescription className="mt-2">
+              Perfect to get started
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <ul className="space-y-3">
+              {[
+                "Get booked by homeowners",
+                "Up to 5 clients",
+                "Payment links & invoices",
+                "Client messaging",
+                "Provider profile & reviews",
+                "8% transaction fees",
+                "Up to 5 team members",
+              ].map((feature) => (
+                <li key={feature} className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <span className="text-sm">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+
+          <CardFooter>
+            <Button
+              onClick={() => navigate('/register')}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              Get Started Free
+            </Button>
+          </CardFooter>
+        </Card>
+
+        {/* BETA Plan Card */}
         <Card className="border-2 border-primary shadow-xl">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
@@ -98,9 +146,9 @@ const Pricing = () => {
           <CardContent className="space-y-4">
             <ul className="space-y-3">
               {[
-                "Get booked by homeowners",
+                "Everything in FREE, plus:",
                 "Unlimited clients",
-                "Payment links & invoices",
+                "Lower transaction fees (3%)",
                 "Client messaging",
                 "Provider profile & reviews",
                 "3% transaction fees",
