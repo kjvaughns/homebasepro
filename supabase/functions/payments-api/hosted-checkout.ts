@@ -11,10 +11,10 @@ export async function createSubscriptionCheckout(
     throw new Error('STRIPE_PRICE_BETA_MONTHLY not configured');
   }
 
-  // Get or create customer
+  // Get or create customer with billing address
   const { data: profile } = await supabase
     .from('profiles')
-    .select('stripe_customer_id, email')
+    .select('stripe_customer_id, email, address_line1, address_line2, address_city, address_state, address_postal_code, address_country')
     .eq('user_id', userId)
     .single();
 
@@ -23,7 +23,15 @@ export async function createSubscriptionCheckout(
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: profile?.email,
-      metadata: { user_id: userId }
+      metadata: { user_id: userId },
+      address: profile?.address_line1 ? {
+        line1: profile.address_line1,
+        line2: profile.address_line2 || undefined,
+        city: profile.address_city || undefined,
+        state: profile.address_state || undefined,
+        postal_code: profile.address_postal_code || undefined,
+        country: profile.address_country || 'US',
+      } : undefined,
     });
     customerId = customer.id;
 
@@ -46,6 +54,9 @@ export async function createSubscriptionCheckout(
       trial_period_days: 14
     },
     payment_method_collection: 'always',
+    billing_address_collection: 'required',
+    customer_update: { address: 'auto' },
+    automatic_tax: { enabled: true },
     success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/billing`,
     metadata: { user_id: userId }
@@ -88,6 +99,8 @@ export async function createPaymentCheckout(
       },
       metadata: metadata || {}
     },
+    billing_address_collection: 'required',
+    automatic_tax: { enabled: true },
     success_url: `${appUrl}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/payments/cancel`,
     metadata: metadata || {}

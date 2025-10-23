@@ -46,7 +46,7 @@ serve(async (req) => {
       
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, user_id')
+        .select('full_name, user_id, email, address_line1, address_line2, address_city, address_state, address_postal_code, address_country')
         .eq('user_id', user.id)
         .single();
 
@@ -79,6 +79,13 @@ serve(async (req) => {
 
       if (!stripeAccountId) {
         try {
+          // Get profile for address data
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, address_line1, address_line2, address_city, address_state, address_postal_code, address_country')
+            .eq('user_id', user.id)
+            .single();
+
           const account = await stripe.accounts.create({
             type: 'express',
             capabilities: {
@@ -86,6 +93,19 @@ serve(async (req) => {
               card_payments: { requested: true },
             },
             business_type: 'individual',
+            individual: profile?.address_line1 ? {
+              email: profile?.email,
+              address: {
+                line1: profile.address_line1,
+                line2: profile.address_line2 || undefined,
+                city: profile.address_city || undefined,
+                state: profile.address_state || undefined,
+                postal_code: profile.address_postal_code || undefined,
+                country: profile.address_country || 'US',
+              }
+            } : {
+              email: profile?.email,
+            },
           });
 
           stripeAccountId = account.id;

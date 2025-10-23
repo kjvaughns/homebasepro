@@ -2364,6 +2364,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_city: string | null
+          address_country: string | null
+          address_line1: string | null
+          address_line2: string | null
+          address_postal_code: string | null
+          address_state: string | null
           avatar_url: string | null
           created_at: string
           default_property_id: string | null
@@ -2384,6 +2390,12 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          address_city?: string | null
+          address_country?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          address_postal_code?: string | null
+          address_state?: string | null
           avatar_url?: string | null
           created_at?: string
           default_property_id?: string | null
@@ -2404,6 +2416,12 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          address_city?: string | null
+          address_country?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          address_postal_code?: string | null
+          address_state?: string | null
           avatar_url?: string | null
           created_at?: string
           default_property_id?: string | null

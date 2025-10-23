@@ -85,7 +85,7 @@ serve(async (req) => {
       .from('organizations')
       .select('*')
       .eq('owner_id', user.id)
-      .single();
+      .maybeSingle();
 
     // Auto-create organization if missing (for hosted checkout flows)
     if (!org && (action === 'create-subscription-checkout' || action === 'create-payment-checkout')) {
@@ -107,7 +107,7 @@ serve(async (req) => {
           team_limit: 5,
         })
         .select('*')
-        .single();
+        .maybeSingle();
 
       org = newOrg;
     }

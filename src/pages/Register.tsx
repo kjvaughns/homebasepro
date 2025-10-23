@@ -68,6 +68,30 @@ const Register = () => {
           .eq('email', email.trim().toLowerCase())
           .eq('status', 'pending');
 
+        // Auto-create organization for providers immediately
+        if (userType === "provider") {
+          const orgName = fullName || email.split('@')[0] || 'My Business';
+          const slug = `${orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+          
+          const { error: orgError } = await supabase
+            .from('organizations')
+            .insert({
+              owner_id: data.user.id,
+              name: orgName,
+              slug: slug,
+              email: email.trim(),
+              phone: phone || null,
+              plan: 'free',
+              team_limit: 5,
+              transaction_fee_pct: 0.08,
+            });
+
+          if (orgError) {
+            console.error('Failed to create organization:', orgError);
+            // Don't block registration, they can complete onboarding later
+          }
+        }
+
         toast({
           title: "Account created!",
           description: "Please check your email to verify your account.",
