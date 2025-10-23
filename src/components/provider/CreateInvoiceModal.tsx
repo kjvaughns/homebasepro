@@ -169,6 +169,38 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
 
       if (insertError) throw insertError;
 
+      // Generate Stripe Checkout session for payment
+      const appUrl = window.location.origin;
+      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('payments-api', {
+        body: {
+          action: 'create-payment-checkout',
+          amount: Math.round(total * 100),
+          currency: 'usd',
+          metadata: {
+            invoice_id: invoice.id,
+            invoice_number: invoiceNumber,
+            client_id: selectedClient,
+            type: 'invoice_payment'
+          },
+          success_url: `${appUrl}/homeowner/dashboard?payment=success&invoice_id=${invoice.id}`,
+          cancel_url: `${appUrl}/homeowner/dashboard?payment=cancelled`,
+        }
+      });
+
+      if (checkoutError) {
+        console.error('Checkout creation error:', checkoutError);
+        toast.error("Invoice created but payment link generation failed");
+      } else if (checkoutData?.url) {
+        // Update invoice with Stripe Checkout URL
+        await supabase
+          .from('invoices')
+          .update({
+            stripe_checkout_url: checkoutData.url,
+            stripe_checkout_session_id: checkoutData.session_id
+          })
+          .eq('id', invoice.id);
+      }
+
       // Send email if requested
       if (sendEmail) {
         const { error: emailError } = await supabase.functions.invoke('send-invoice', {
@@ -176,6 +208,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
             invoiceId: invoice.id,
             clientEmail: client.email,
             pdfUrl: publicUrl,
+            paymentUrl: checkoutData?.url || null,
             invoiceNumber: invoiceNumber,
             amount: Math.round(total * 100),
             dueDate: dueDate,
@@ -188,10 +221,10 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
           console.error('Email send failed:', emailError);
           toast.error("Invoice created but notification failed. Client can view in their portal.");
         } else {
-          toast.success("Invoice created and sent!");
+          toast.success("Invoice created and sent with payment link!");
         }
       } else {
-        toast.success("Invoice created!");
+        toast.success("Invoice created with payment link!");
       }
 
       handleClose();

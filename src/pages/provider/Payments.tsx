@@ -6,10 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Link2, Receipt, DollarSign, ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
+import { Download, Receipt, DollarSign, ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentDrawer } from "@/components/provider/PaymentDrawer";
-import { CreatePaymentLinkModal } from "@/components/provider/CreatePaymentLinkModal";
 import { CreateInvoiceModal } from "@/components/provider/CreateInvoiceModal";
 import { DisputeDrawer } from "@/components/provider/DisputeDrawer";
 import { BulkPaymentActions } from "@/components/provider/BulkPaymentActions";
@@ -42,7 +41,6 @@ export default function PaymentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [selectedDispute, setSelectedDispute] = useState<any | null>(null);
-  const [showPaymentLink, setShowPaymentLink] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -264,13 +262,9 @@ export default function PaymentsPage() {
             <Sparkles className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">AI Insights</span>
           </Button>
-          <Button size="sm" onClick={() => setShowPaymentLink(true)} className="flex-1 sm:flex-initial">
-            <Link2 className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Payment Link</span>
-          </Button>
           <Button size="sm" onClick={() => setShowInvoice(true)} className="flex-1 sm:flex-initial">
             <Receipt className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Invoice</span>
+            <span className="hidden sm:inline">Send Invoice</span>
           </Button>
           <Button variant="outline" size="sm" onClick={exportCsv} className="flex-1 sm:flex-initial">
             <Download className="h-4 w-4 sm:mr-1" />
@@ -499,14 +493,6 @@ export default function PaymentsPage() {
           onRefresh={loadData}
         />
       )}
-
-      <CreatePaymentLinkModal
-        open={showPaymentLink}
-        onClose={() => {
-          setShowPaymentLink(false);
-          loadData();
-        }}
-      />
 
       <CreateInvoiceModal
         open={showInvoice}

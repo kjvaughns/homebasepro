@@ -264,7 +264,10 @@ export type Database = {
       bookings: {
         Row: {
           address: string
+          assigned_team_member_id: string | null
           cancellation_reason: string | null
+          completion_notes: string | null
+          completion_photos: Json | null
           created_at: string
           date_time_end: string
           date_time_start: string
@@ -277,10 +280,14 @@ export type Database = {
           home_id: string | null
           homeowner_profile_id: string
           id: string
+          invoice_id: string | null
+          lat: number | null
+          lng: number | null
           notes: string | null
           payment_captured: boolean | null
           precheck_answers: Json | null
           provider_org_id: string
+          route_order: number | null
           service_name: string
           status: string
           updated_at: string
@@ -288,7 +295,10 @@ export type Database = {
         }
         Insert: {
           address: string
+          assigned_team_member_id?: string | null
           cancellation_reason?: string | null
+          completion_notes?: string | null
+          completion_photos?: Json | null
           created_at?: string
           date_time_end: string
           date_time_start: string
@@ -301,10 +311,14 @@ export type Database = {
           home_id?: string | null
           homeowner_profile_id: string
           id?: string
+          invoice_id?: string | null
+          lat?: number | null
+          lng?: number | null
           notes?: string | null
           payment_captured?: boolean | null
           precheck_answers?: Json | null
           provider_org_id: string
+          route_order?: number | null
           service_name: string
           status?: string
           updated_at?: string
@@ -312,7 +326,10 @@ export type Database = {
         }
         Update: {
           address?: string
+          assigned_team_member_id?: string | null
           cancellation_reason?: string | null
+          completion_notes?: string | null
+          completion_photos?: Json | null
           created_at?: string
           date_time_end?: string
           date_time_start?: string
@@ -325,16 +342,27 @@ export type Database = {
           home_id?: string | null
           homeowner_profile_id?: string
           id?: string
+          invoice_id?: string | null
+          lat?: number | null
+          lng?: number | null
           notes?: string | null
           payment_captured?: boolean | null
           precheck_answers?: Json | null
           provider_org_id?: string
+          route_order?: number | null
           service_name?: string
           status?: string
           updated_at?: string
           urgency_level?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_assigned_team_member_id_fkey"
+            columns: ["assigned_team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_home_id_fkey"
             columns: ["home_id"]
@@ -347,6 +375,13 @@ export type Database = {
             columns: ["homeowner_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {
@@ -1489,8 +1524,12 @@ export type Database = {
           line_items: Json | null
           notes: string | null
           organization_id: string
+          paid_at: string | null
           pdf_url: string | null
           status: string | null
+          stripe_checkout_session_id: string | null
+          stripe_checkout_url: string | null
+          stripe_payment_intent_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1506,8 +1545,12 @@ export type Database = {
           line_items?: Json | null
           notes?: string | null
           organization_id: string
+          paid_at?: string | null
           pdf_url?: string | null
           status?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_checkout_url?: string | null
+          stripe_payment_intent_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1523,8 +1566,12 @@ export type Database = {
           line_items?: Json | null
           notes?: string | null
           organization_id?: string
+          paid_at?: string | null
           pdf_url?: string | null
           status?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_checkout_url?: string | null
+          stripe_payment_intent_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -2068,6 +2115,7 @@ export type Database = {
         Row: {
           amount: number
           application_fee_cents: number | null
+          booking_id: string | null
           captured: boolean | null
           client_subscription_id: string
           created_at: string
@@ -2076,6 +2124,7 @@ export type Database = {
           fee_pct_at_time: number | null
           fee_percent: number
           id: string
+          invoice_id: string | null
           meta: Json | null
           org_id: string | null
           payment_date: string
@@ -2091,6 +2140,7 @@ export type Database = {
         Insert: {
           amount: number
           application_fee_cents?: number | null
+          booking_id?: string | null
           captured?: boolean | null
           client_subscription_id: string
           created_at?: string
@@ -2099,6 +2149,7 @@ export type Database = {
           fee_pct_at_time?: number | null
           fee_percent: number
           id?: string
+          invoice_id?: string | null
           meta?: Json | null
           org_id?: string | null
           payment_date?: string
@@ -2114,6 +2165,7 @@ export type Database = {
         Update: {
           amount?: number
           application_fee_cents?: number | null
+          booking_id?: string | null
           captured?: boolean | null
           client_subscription_id?: string
           created_at?: string
@@ -2122,6 +2174,7 @@ export type Database = {
           fee_pct_at_time?: number | null
           fee_percent?: number
           id?: string
+          invoice_id?: string | null
           meta?: Json | null
           org_id?: string | null
           payment_date?: string
@@ -2136,10 +2189,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_client_subscription_id_fkey"
             columns: ["client_subscription_id"]
             isOneToOne: false
             referencedRelation: "client_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {
