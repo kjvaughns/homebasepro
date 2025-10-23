@@ -51,12 +51,14 @@ serve(async (req) => {
       });
 
       if (!userRes.ok) {
-        console.error('JWT verification failed:', userRes.status, userRes.statusText);
+        const errorBody = await userRes.text();
+        console.error('JWT verification failed:', userRes.status, errorBody);
         return new Response(
           JSON.stringify({ 
             error: 'Invalid or expired session',
             code: 'AUTH_INVALID',
-            message: 'Please log in again'
+            message: 'Please log in again',
+            details: errorBody
           }),
           { 
             status: 401,
@@ -72,7 +74,8 @@ serve(async (req) => {
         JSON.stringify({ 
           error: 'Authentication failed',
           code: 'AUTH_ERROR',
-          message: 'Unable to verify your session'
+          message: 'Unable to verify your session',
+          details: String(authError)
         }),
         { 
           status: 401,

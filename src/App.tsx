@@ -321,7 +321,6 @@ const App = () => {
               <Route path="reviews" element={<Navigate to="/provider/account/reviews" replace />} />
               <Route path="settings/profile" element={<Navigate to="/provider/account/profile" replace />} />
               
-              <Route path="stripe-onboarding" element={<StripeOnboarding />} />
               <Route path="messages" element={<Messages role="provider" />} />
             </Route>
 

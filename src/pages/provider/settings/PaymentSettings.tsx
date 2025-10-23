@@ -23,15 +23,38 @@ export default function PaymentSettings() {
   const checkStripeStatus = async () => {
     try {
       setCheckingStatus(true);
-      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+      
+      const invokePromise = supabase.functions.invoke('stripe-connect', {
         body: { action: 'check-status' }
       });
       
-      if (!error && data) {
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as any;
+      
+      if (error) {
+        console.error('Error checking Stripe status:', error);
+        toast({
+          title: "Connection Error",
+          description: "Unable to check Stripe status. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (data) {
         setStripeConnected(data.connected && data.complete);
       }
     } catch (error) {
       console.error('Error checking Stripe status:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to check Stripe status",
+        variant: "destructive"
+      });
     } finally {
       setCheckingStatus(false);
     }
