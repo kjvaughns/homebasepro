@@ -11,9 +11,24 @@ export default function StripeOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [status, setStatus] = useState<'checking' | 'success' | 'incomplete' | 'not-started' | 'error'>('checking');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    checkOnboardingStatus();
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to continue',
+          variant: 'destructive',
+        });
+        navigate('/login');
+        return;
+      }
+      checkOnboardingStatus();
+    };
+    
+    checkAuth();
   }, []);
 
   const checkOnboardingStatus = async () => {
@@ -23,6 +38,17 @@ export default function StripeOnboarding() {
     if (success === 'true') {
       // User returned from successful onboarding
       try {
+        // Verify authentication first
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          console.error('No active session:', sessionError);
+          setErrorMessage('Your session has expired. Please log in again.');
+          setStatus('error');
+          setTimeout(() => navigate('/login'), 2000);
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('stripe-connect', {
           body: { action: 'check-status' },
         });
@@ -45,8 +71,18 @@ export default function StripeOnboarding() {
         } else {
           setStatus('incomplete');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Status check error:', error);
+        
+        const errorData = error?.message ? JSON.parse(error.message) : {};
+        
+        if (errorData.code === 'AUTH_MISSING' || errorData.code === 'AUTH_INVALID') {
+          setErrorMessage('Your session has expired. Please log in again.');
+          setTimeout(() => navigate('/login'), 2000);
+        } else {
+          setErrorMessage(errorData.message || 'Unable to check Stripe status');
+        }
+        
         setStatus('error');
       }
     } else if (refresh === 'true') {
@@ -55,6 +91,17 @@ export default function StripeOnboarding() {
     } else {
       // Just checking status
       try {
+        // Verify authentication first
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          console.error('No active session:', sessionError);
+          setErrorMessage('Your session has expired. Please log in again.');
+          setStatus('error');
+          setTimeout(() => navigate('/login'), 2000);
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('stripe-connect', {
           body: { action: 'check-status' },
         });
@@ -71,8 +118,18 @@ export default function StripeOnboarding() {
         } else {
           setStatus(data.complete ? 'success' : 'incomplete');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Status check error:', error);
+        
+        const errorData = error?.message ? JSON.parse(error.message) : {};
+        
+        if (errorData.code === 'AUTH_MISSING' || errorData.code === 'AUTH_INVALID') {
+          setErrorMessage('Your session has expired. Please log in again.');
+          setTimeout(() => navigate('/login'), 2000);
+        } else {
+          setErrorMessage(errorData.message || 'Unable to check Stripe status');
+        }
+        
         setStatus('error');
       }
     }
@@ -145,7 +202,7 @@ export default function StripeOnboarding() {
               <XCircle className="h-12 w-12 mx-auto mb-4 text-red-600" />
               <CardTitle>Something Went Wrong</CardTitle>
               <CardDescription>
-                We encountered an error checking your account status
+                {errorMessage || 'We encountered an error checking your account status'}
               </CardDescription>
             </>
           )}

@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 
 const corsHeaders = {
@@ -24,7 +24,18 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      console.error('Missing Authorization header');
+      return new Response(
+        JSON.stringify({ 
+          error: 'No authorization header',
+          code: 'AUTH_MISSING',
+          message: 'Please log in to continue'
+        }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -32,15 +43,43 @@ serve(async (req) => {
 
     // Verify JWT and get user
     const token = authHeader.replace('Bearer ', '');
-    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    let user;
+    
+    try {
+      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!userRes.ok) {
-      throw new Error('Unauthorized');
+      if (!userRes.ok) {
+        console.error('JWT verification failed:', userRes.status, userRes.statusText);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid or expired session',
+            code: 'AUTH_INVALID',
+            message: 'Please log in again'
+          }),
+          { 
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      user = await userRes.json();
+    } catch (authError) {
+      console.error('Auth verification error:', authError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Authentication failed',
+          code: 'AUTH_ERROR',
+          message: 'Unable to verify your session'
+        }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
-
-    const user = await userRes.json();
     
     const { action } = await req.json();
 
