@@ -72,6 +72,9 @@ verify_jwt = true
 [functions.get-stripe-config]
 verify_jwt = false
 
+[functions.stripe-health]
+verify_jwt = false
+
 [functions.generate-maintenance-reminders]
 verify_jwt = false
 

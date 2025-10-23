@@ -7,13 +7,13 @@ export function readSecret(...keys: string[]) {
 }
 
 export function getStripeSecret() {
-  const key = readSecret("STRIPE_SECRET", "stripe_secret_key", "stripe");
+  const key = readSecret("STRIPE_SECRET_KEY_LIVE", "STRIPE_SECRET", "stripe_secret_key", "stripe");
   if (!key) throw new Error("NO_STRIPE_SECRET");
   return key;
 }
 
 export function getPublishableKey() {
-  return readSecret("STRIPE_PUBLISHABLE_KEY", "stripe_publishable_key") || "";
+  return readSecret("STRIPE_PUBLISHABLE_KEY_LIVE", "STRIPE_PUBLISHABLE_KEY", "stripe_publishable_key") || "";
 }
 
 export function getAppUrl() {
@@ -27,7 +27,7 @@ export function getCurrency() {
 export function getPlatformFeePercent() {
   const raw = readSecret("PLATFORM_FEE_PERCENT");
   const n = raw ? Number(raw) : 5;
-  return Number.isFinite(n) ? n : 5;
+  return Number.isFinite(n) ? n / 100 : 0.05; // Return as decimal (5% = 0.05)
 }
 
 export function getWebhookSecret() {

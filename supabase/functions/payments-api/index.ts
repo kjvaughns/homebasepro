@@ -3,6 +3,7 @@ import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { logPaymentError } from './error-logger.ts';
+import { getPlatformFeePercent } from '../_shared/env.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -161,8 +162,39 @@ serve(async (req) => {
     }
 
     // Helper function to get fee amount based on provider plan
-    const getFeeAmount = (provider: any, jobAmount: number) => {
-      const feePercent = provider.transaction_fee_pct || 0.08;
+    const getFeeAmount = async (providerId: string, jobAmount: number) => {
+      // First, check if org has a manually set transaction_fee_pct
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('transaction_fee_pct')
+        .eq('id', providerId)
+        .single();
+      
+      if (org?.transaction_fee_pct !== null && org?.transaction_fee_pct !== undefined) {
+        return Math.round(jobAmount * org.transaction_fee_pct);
+      }
+      
+      // Otherwise, derive from subscription plan
+      const { data: subscription } = await supabase
+        .from('provider_subscriptions')
+        .select('plan')
+        .eq('organization_id', providerId)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      // Plan-based fee mapping
+      const planFees: Record<string, number> = {
+        'free': 0.08,    // 8%
+        'beta': 0.03,    // 3%
+        'growth': 0.025, // 2.5%
+        'pro': 0.02,     // 2%
+        'scale': 0.015,  // 1.5%
+      };
+      
+      const feePercent = subscription?.plan 
+        ? (planFees[subscription.plan] || getPlatformFeePercent())
+        : getPlatformFeePercent();
+      
       return Math.round(jobAmount * feePercent);
     };
 
@@ -286,7 +318,7 @@ serve(async (req) => {
 
       const { data: providerOrg, error: orgError } = await supabase
         .from('organizations')
-        .select('stripe_account_id, transaction_fee_pct')
+        .select('stripe_account_id')
         .eq('id', booking.provider_org_id)
         .single();
 
@@ -294,28 +326,8 @@ serve(async (req) => {
         throw new Error('Provider organization not found');
       }
 
-      // Get active subscription to validate fee percentage
-      const { data: subscription } = await supabase
-        .from('provider_subscriptions')
-        .select('plan, status')
-        .eq('provider_id', booking.provider_org_id)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      // Calculate fee based on active subscription plan, fallback to org record
-      const planFeeMap: Record<string, number> = {
-        free: 0.08,
-        growth: 0.025,
-        pro: 0.02,
-        scale: 0.02,
-      };
-
-      const feePercent = subscription?.plan && planFeeMap[subscription.plan]
-        ? planFeeMap[subscription.plan]
-        : providerOrg.transaction_fee_pct;
-
       const totalAmount = Math.round((amount + tip) * 100);
-      const feeAmount = Math.round(totalAmount * feePercent);
+      const feeAmount = await getFeeAmount(booking.provider_org_id, totalAmount);
 
       // Create destination charge with application fee and idempotency key
       const paymentIntent = await stripe.paymentIntents.create({
