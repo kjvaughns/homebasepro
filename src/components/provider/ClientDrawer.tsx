@@ -26,6 +26,8 @@ import { useState } from "react";
 import AddClientNoteModal from "./AddClientNoteModal";
 import CreateJobModal from "./CreateJobModal";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ClientDrawerProps {
   clientId: string;
@@ -59,10 +61,61 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
     );
   }
 
-  const handleMessage = () => {
-    if (client.homeowner_profile_id) {
-      navigate(`/provider/messages?client=${client.id}`);
+  const handleMessage = async () => {
+    if (!client.homeowner_profile_id) {
+      toast.error('Client profile not found');
+      return;
+    }
+    
+    try {
+      // Get current user's org
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+      
+      if (!org) return;
+      
+      // Check if conversation exists
+      let conversationId = client.conversation_id;
+      
+      if (!conversationId) {
+        // Create conversation
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        const { data: newConv, error: convError } = await supabase
+          .from('conversations')
+          .insert({
+            homeowner_profile_id: client.homeowner_profile_id,
+            provider_org_id: org.id
+          })
+          .select('id')
+          .single();
+        
+        if (convError) throw convError;
+        
+        // Create members
+        await supabase.from('conversation_members').insert([
+          { conversation_id: newConv.id, profile_id: client.homeowner_profile_id },
+          { conversation_id: newConv.id, profile_id: profile.id }
+        ]);
+        
+        conversationId = newConv.id;
+      }
+      
+      navigate(`/provider/messages?conversation=${conversationId}`);
       onClose();
+    } catch (error) {
+      console.error('Error opening conversation:', error);
+      toast.error('Failed to open conversation');
     }
   };
 

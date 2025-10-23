@@ -52,7 +52,7 @@ export const ConversationListItem = ({
               {lastMessage || "No messages yet"}
             </p>
             {unreadCount && unreadCount > 0 && (
-              <Badge className="h-5 min-w-[20px] px-1.5 shrink-0 rounded-full bg-primary">
+              <Badge className="h-5 min-w-[20px] px-1.5 shrink-0 rounded-full bg-[hsl(158,100%,35%)] text-white hover:bg-[hsl(158,100%,35%)]/90">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </Badge>
             )}

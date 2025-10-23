@@ -61,6 +61,12 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
   const handleFileUpload = async (file: File) => {
     if (!file) return;
     
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+    
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
@@ -70,24 +76,40 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
         .from('message-attachments')
         .upload(fileName, file, { upsert: false });
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        
+        // Check for RLS policy violation
+        if (uploadError.message?.includes('row-level security') || 
+            uploadError.message?.includes('policy')) {
+          toast.error('Upload failed: You do not have permission to upload files to this conversation');
+        } else if (uploadError.message?.includes('duplicate')) {
+          toast.error('A file with this name already exists');
+        } else {
+          toast.error(`Upload failed: ${uploadError.message}`);
+        }
+        return;
+      }
       
       const { data: { publicUrl } } = supabase.storage
         .from('message-attachments')
         .getPublicUrl(fileName);
       
       const messageType = file.type.startsWith('image/') ? 'image' : 'file';
+      
+      // Include file metadata in meta field
       await onSend('', messageType, {
         url: publicUrl,
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        fileName: fileName
       });
       
-      toast.success('File sent');
-    } catch (error) {
+      toast.success(`${messageType === 'image' ? 'Photo' : 'File'} sent`);
+    } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload file');
+      toast.error('Failed to upload file. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -108,9 +130,15 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
 
   return (
     <div 
-      className="sticky bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t shadow-lg"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t shadow-lg"
       style={{
-        paddingBottom: `calc(max(env(safe-area-inset-bottom, 0px), ${keyboardHeight}px) + 12px)`
+        transform: 'translate3d(0, 0, 0)',
+        paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + 12px)`,
+        paddingTop: '12px',
+        ...(keyboardHeight > 0 && {
+          transform: `translate3d(0, -${keyboardHeight}px, 0)`,
+          transition: 'transform 0.2s ease-out'
+        })
       }}
     >
       <div className="px-4 py-3">

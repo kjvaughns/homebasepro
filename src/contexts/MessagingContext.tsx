@@ -343,26 +343,24 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
     if (!userProfileId) return;
     
     try {
-      console.log('Sending message:', { conversationId, content, messageType });
+      console.log('Sending message via RPC:', { conversationId, content, messageType });
       
-      const messageData: any = {
-        conversation_id: conversationId,
-        sender_profile_id: userProfileId,
-        content,
-        message_type: messageType,
-        sender_type: 'user',
-        meta: meta || {}
-      };
-      
-      const { error } = await supabase
-        .from('messages')
-        .insert(messageData);
+      const { data, error } = await supabase.rpc('send_message', {
+        p_conversation_id: conversationId,
+        p_sender_profile_id: userProfileId,
+        p_content: content,
+        p_message_type: messageType,
+        p_meta: meta || {},
+        p_attachment_url: meta?.url || null
+      });
       
       if (error) {
         console.error('Send message error:', error);
         toast.error('Failed to send message');
         throw error;
       }
+      
+      console.log('Message sent successfully:', data);
     } catch (error) {
       console.error('Error in sendMessage:', error);
       throw error;
@@ -385,7 +383,22 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      setUnreadCounts(prev => ({ ...prev, [conversationId]: 0 }));
+      // Update local state immediately
+      setUnreadCounts(prev => {
+        const updated = { ...prev, [conversationId]: 0 };
+        // Recalculate total
+        const newTotal = Object.values(updated).reduce((sum, count) => sum + count, 0);
+        setTotalUnread(newTotal);
+        return updated;
+      });
+      
+      // Trigger realtime update for other devices
+      await supabase.from('conversations')
+        .update({ 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', conversationId);
+        
     } catch (error) {
       console.error('Error in markAsRead:', error);
     }

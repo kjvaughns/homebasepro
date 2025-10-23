@@ -6,10 +6,11 @@ import { ConversationListItem } from '@/components/messages/ConversationListItem
 import { MessageComposer } from '@/components/messages/MessageComposer';
 import { TypingIndicator } from '@/components/messages/TypingIndicator';
 import { DateSeparator } from '@/components/messages/DateSeparator';
+import { ProfileInfoDrawer } from '@/components/messages/ProfileInfoDrawer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Phone, Video, Info, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Info, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isSameDay } from 'date-fns';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
@@ -39,6 +40,7 @@ export default function Messages({ role }: MessagesProps) {
   } = useMessaging();
   
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(conversationIdFromUrl);
+  const [showProfileDrawer, setShowProfileDrawer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const keyboardHeight = useKeyboardHeight();
@@ -220,7 +222,7 @@ export default function Messages({ role }: MessagesProps) {
         {selectedConversation ? (
           <>
             {/* Header */}
-            <div className="sticky top-0 z-40 shrink-0 border-b p-4 bg-card/95 backdrop-blur-lg flex items-center gap-3 shadow-sm" style={{ transform: 'translateZ(0)', willChange: 'transform' }}>
+            <div className="sticky top-0 z-40 shrink-0 border-b p-4 bg-card/95 backdrop-blur-lg flex items-center gap-3 shadow-sm">
               <Button
                 variant="ghost"
                 size="icon"
@@ -252,11 +254,7 @@ export default function Messages({ role }: MessagesProps) {
                 variant="ghost" 
                 size="icon" 
                 className="h-9 w-9"
-                onClick={() => {
-                  if (selectedConversation?.provider_org_id) {
-                    navigate(`/homeowner/browse/${selectedConversation.provider_org_id}`);
-                  }
-                }}
+                onClick={() => setShowProfileDrawer(true)}
               >
                 <Info className="h-4 w-4" />
               </Button>
@@ -267,14 +265,17 @@ export default function Messages({ role }: MessagesProps) {
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/10"
               style={{
-                paddingBottom: `calc(120px + ${keyboardHeight}px + env(safe-area-inset-bottom, 0px))`,
                 overscrollBehaviorY: 'contain',
-                WebkitOverflowScrolling: 'touch'
+                WebkitOverflowScrolling: 'touch',
+                overflowAnchor: 'auto'
               }}
             >
               {renderMessages()}
               
               {typingInConversation.length > 0 && <TypingIndicator />}
+              
+              {/* Spacer for composer + keyboard */}
+              <div style={{ height: `calc(120px + ${keyboardHeight}px)` }} />
               
               <div ref={messagesEndRef} />
             </div>
@@ -298,6 +299,13 @@ export default function Messages({ role }: MessagesProps) {
           </div>
         )}
       </div>
+      
+      <ProfileInfoDrawer
+        open={showProfileDrawer}
+        onOpenChange={setShowProfileDrawer}
+        conversation={selectedConversation}
+        userType={role}
+      />
     </div>
   );
 }

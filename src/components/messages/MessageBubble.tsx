@@ -2,6 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, ExternalLink } from "lucide-react";
 
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
 interface MessageBubbleProps {
   message: any;
   isSender: boolean;
@@ -21,24 +29,42 @@ export function MessageBubble({ message, isSender }: MessageBubbleProps) {
           <MessageCard card={message.meta.card} />
         )}
         
-        {message.message_type === "image" && message.attachment_url && (
-          <img
-            src={message.attachment_url}
-            alt="Attachment"
-            className="rounded-xl mb-1 max-w-full h-auto max-h-[300px] object-cover"
-          />
+        {message.message_type === "image" && (message.attachment_url || message.meta?.url) && (
+          <div className="group relative">
+            <img
+              src={message.attachment_url || message.meta?.url}
+              alt={message.meta?.name || "Image"}
+              className="rounded-xl mb-1 max-w-full h-auto max-h-[300px] object-cover cursor-pointer"
+              onClick={() => window.open(message.attachment_url || message.meta?.url, '_blank')}
+              loading="lazy"
+            />
+            {message.meta?.name && (
+              <p className="text-xs opacity-60 mt-1">{message.meta.name}</p>
+            )}
+          </div>
         )}
         
-        {message.message_type === "file" && message.attachment_url && (
+        {message.message_type === "file" && (message.attachment_url || message.meta?.url) && (
           <a
-            href={message.attachment_url}
+            href={message.attachment_url || message.meta?.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm hover:underline"
+            className="flex items-center gap-3 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors border border-border/50"
           >
-            <FileText className="h-4 w-4" />
-            <span>{message.attachment_metadata?.name || "Download file"}</span>
-            <ExternalLink className="h-3 w-3" />
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {message.meta?.name || message.attachment_metadata?.name || "Download file"}
+              </p>
+              {(message.meta?.size || message.attachment_metadata?.size) && (
+                <p className="text-xs text-muted-foreground">
+                  {formatFileSize(message.meta?.size || message.attachment_metadata?.size)}
+                </p>
+              )}
+            </div>
+            <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-50" />
           </a>
         )}
         
