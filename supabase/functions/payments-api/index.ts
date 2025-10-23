@@ -59,8 +59,9 @@ serve(async (req) => {
   }
 
   try {
-    const stripeKey = Deno.env.get('stripe');
-    if (!stripeKey) throw new Error('Stripe key not configured');
+    // Use consistent env var names
+    const stripeKey = Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key') || Deno.env.get('stripe');
+    if (!stripeKey) throw new Error('STRIPE_SECRET not configured');
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
@@ -75,7 +76,12 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) throw new Error('Unauthorized');
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: 'Authentication failed' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { data: org } = await supabase
       .from('organizations')
@@ -84,7 +90,15 @@ serve(async (req) => {
       .single();
 
     if (!org || !org.stripe_account_id) {
-      throw new Error('Stripe account not connected');
+      await logPaymentError(supabase, org?.id || null, 'payments-api', {}, 'Stripe account not connected');
+      return new Response(
+        JSON.stringify({ 
+          ok: false, 
+          code: 'STRIPE_NOT_CONNECTED', 
+          message: 'Complete Stripe setup in Settings > Payments first' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const requestBody = await req.json();
@@ -93,13 +107,15 @@ serve(async (req) => {
     // Validate Stripe account is fully onboarded
     const account = await stripe.accounts.retrieve(org.stripe_account_id);
     if (!account.details_submitted || !account.charges_enabled) {
-      await supabase.from('payment_errors').insert({
-        org_id: org.id,
-        action: action || 'unknown',
-        error_message: 'Stripe account onboarding incomplete',
-        request_body: requestBody
-      });
-      throw new Error('Stripe account onboarding incomplete. Please complete setup in Settings > Payments.');
+      await logPaymentError(supabase, org.id, 'payments-api', requestBody, 'Stripe account onboarding incomplete');
+      return new Response(
+        JSON.stringify({ 
+          ok: false, 
+          code: 'ONBOARDING_INCOMPLETE', 
+          message: 'Complete Stripe setup in Settings > Payments to accept payments' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Validate input based on action
@@ -761,12 +777,23 @@ serve(async (req) => {
       );
     }
 
-    throw new Error('Invalid action');
+    return new Response(
+      JSON.stringify({ 
+        ok: false, 
+        code: 'INVALID_ACTION', 
+        message: `Unknown action: ${action}` 
+      }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Payments API error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ 
+        ok: false, 
+        code: 'INTERNAL_ERROR', 
+        message: error instanceof Error ? error.message : 'Payment operation failed' 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

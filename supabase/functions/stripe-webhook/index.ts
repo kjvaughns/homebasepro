@@ -4,7 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 serve(async (req) => {
   try {
-    const stripeKey = Deno.env.get('stripe');
+    // Use consistent env var names  
+    const stripeKey = Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key') || Deno.env.get('stripe');
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
     
     if (!stripeKey || !webhookSecret) {
@@ -53,14 +54,20 @@ serve(async (req) => {
     if (event.type === 'account.updated') {
       const account = event.data.object as Stripe.Account;
       
+      // Determine if payments are fully ready
+      const paymentsReady = account.charges_enabled && account.payouts_enabled;
+      
       await supabase
         .from('organizations')
         .update({
           charges_enabled: account.charges_enabled,
           payouts_enabled: account.payouts_enabled,
-          stripe_onboarding_complete: account.charges_enabled && account.payouts_enabled,
+          stripe_onboarding_complete: account.details_submitted || false,
+          payments_ready: paymentsReady,
         })
         .eq('stripe_account_id', account.id);
+      
+      console.log(`Updated account ${account.id}: payments_ready=${paymentsReady}`);
     }
 
     // Handle payment intent created (authorization)

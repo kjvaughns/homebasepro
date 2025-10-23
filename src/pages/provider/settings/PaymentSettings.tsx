@@ -44,9 +44,30 @@ export default function PaymentSettings() {
         });
         return;
       }
+
+      // Check for error response format
+      if (data?.ok === false) {
+        console.error('Status check failed:', data.message);
+        toast({
+          variant: "destructive",
+          title: "Status Check Failed",
+          description: data.message || "Unable to verify Stripe connection",
+        });
+        return;
+      }
       
-      if (data) {
-        setStripeConnected(data.connected && data.complete);
+      // Check both complete status and payments_ready
+      if (data?.success && data?.paymentsReady) {
+        setStripeConnected(true);
+      } else if (data?.success && data?.detailsSubmitted && !data?.paymentsReady) {
+        // Onboarding submitted but not yet ready
+        toast({
+          title: "Payment Setup In Progress",
+          description: "Your account is being reviewed by Stripe. This usually takes a few minutes.",
+        });
+      } else if (data?.connected && data?.complete) {
+        // Legacy format support
+        setStripeConnected(true);
       }
     } catch (error) {
       console.error('Error checking Stripe status:', error);
