@@ -27,6 +27,20 @@ export function SubscriptionGuard({ children, requiredFeature }: SubscriptionGua
         return;
       }
 
+      // Check if user has admin role - admins get free access
+      const { data: adminRole } = await (supabase as any)
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (adminRole) {
+        setHasAccess(true);
+        setLoading(false);
+        return;
+      }
+
       const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('plan, trial_ends_at, stripe_subscription_id')

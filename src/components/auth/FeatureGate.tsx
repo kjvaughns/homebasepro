@@ -40,6 +40,19 @@ export const FeatureGate = ({ feature, children }: FeatureGateProps) => {
         return;
       }
 
+      // Check if user has admin role - admins get access to all features
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (adminRole) {
+        setHasAccess(true);
+        return;
+      }
+
       const { data: org } = await supabase
         .from('organizations')
         .select('plan')
