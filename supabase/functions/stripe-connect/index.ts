@@ -31,14 +31,16 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { action } = await req.json();
+    const { action, origin } = await req.json();
 
-    // Get organization for this user (or create one)
+    // Get organization for this user (use maybeSingle, pick most recent if multiple)
     let { data: org, error: orgError } = await supabase
       .from('organizations')
       .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready, name')
       .eq('owner_id', user.id)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     // Auto-create organization if missing
     if (orgError || !org) {
@@ -73,6 +75,84 @@ serve(async (req) => {
     }
 
     // Handle different actions
+    if (action === 'start-onboarding') {
+      // Single action: ensure account exists + create onboarding link
+      let stripeAccountId = org.stripe_account_id;
+
+      // Create Stripe account if needed
+      if (!stripeAccountId) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, address_line1, address_line2, address_city, address_state, address_postal_code, address_country')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          const account = await stripe.accounts.create({
+            type: 'express',
+            capabilities: {
+              transfers: { requested: true },
+              card_payments: { requested: true },
+            },
+            business_type: 'individual',
+            individual: profile?.address_line1 ? {
+              email: profile?.email,
+              address: {
+                line1: profile.address_line1,
+                line2: profile.address_line2 || undefined,
+                city: profile.address_city || undefined,
+                state: profile.address_state || undefined,
+                postal_code: profile.address_postal_code || undefined,
+                country: profile.address_country || 'US',
+              }
+            } : {
+              email: profile?.email,
+            },
+          });
+
+          stripeAccountId = account.id;
+
+          // Save account ID
+          await supabase
+            .from('organizations')
+            .update({ stripe_account_id: stripeAccountId })
+            .eq('id', org.id);
+
+          console.log('Created new Stripe account:', stripeAccountId);
+        } catch (error: any) {
+          await logError(supabase, org.id, 'stripe-connect:start-onboarding', { action }, error.message, error);
+          return errorResponse(
+            'ACCOUNT_CREATE_FAILED', 
+            'Failed to create Stripe account. Please try again.', 
+            500,
+            { stripe_error: formatStripeError(error) }
+          );
+        }
+      }
+
+      // Create onboarding link
+      const appUrl = origin || getAppUrl();
+      
+      try {
+        const accountLink = await stripe.accountLinks.create({
+          account: stripeAccountId,
+          refresh_url: `${appUrl}/provider/settings?tab=payments&onboarding=retry`,
+          return_url: `${appUrl}/provider/settings?tab=payments&onboarding=done`,
+          type: 'account_onboarding',
+        });
+
+        return successResponse({ url: accountLink.url });
+      } catch (error: any) {
+        await logError(supabase, org.id, 'stripe-connect:start-onboarding', { action }, error.message, error);
+        return errorResponse(
+          'LINK_CREATE_FAILED', 
+          'Failed to create onboarding link. Please try again.', 
+          500,
+          { stripe_error: formatStripeError(error) }
+        );
+      }
+    }
+
     if (action === 'create-account') {
       // Create new Express account if needed
       let stripeAccountId = org.stripe_account_id;

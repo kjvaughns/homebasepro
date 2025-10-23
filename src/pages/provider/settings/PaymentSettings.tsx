@@ -44,20 +44,24 @@ export default function PaymentSettings() {
     setError(null);
     
     try {
-      // Create account (will auto-create org if missing)
-      const { data: accountData, error: accountError } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'create-account' }
-      });
-
-      if (accountError) throw accountError;
-
-      // Get onboarding link
       const { data, error } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'account-link' }
+        body: { 
+          action: 'start-onboarding',
+          origin: window.location.origin
+        }
       });
 
-      if (error) throw error;
-      if (!data?.url) throw new Error('No onboarding URL returned');
+      if (error) {
+        console.error('Onboarding error:', error);
+        throw new Error(error.message || 'Failed to start onboarding');
+      }
+
+      if (!data?.ok || !data?.url) {
+        const errorMsg = data?.message || 'No onboarding URL returned';
+        const errorCode = data?.code || 'UNKNOWN_ERROR';
+        console.error('Onboarding failed:', errorCode, errorMsg, data?.stripe_error);
+        throw new Error(`${errorCode}: ${errorMsg}`);
+      }
 
       // Redirect to Stripe
       window.location.href = data.url;
