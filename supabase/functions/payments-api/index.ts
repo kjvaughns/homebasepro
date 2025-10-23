@@ -90,7 +90,7 @@ async function stripeGET(path: string, stripeAccount?: string) {
 
 Deno.serve(async (req) => {
   try {
-    if (req.method === 'OPTIONS') return new Response('ok', { status: 204, headers: CORS });
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     if (req.method !== 'POST') return err('METHOD_NOT_ALLOWED', 'Use POST', 405);
 
     let body: any = null;
@@ -383,6 +383,104 @@ Deno.serve(async (req) => {
         return_url: `${APP_URL}/${role === 'provider' ? 'provider/billing/portal' : 'billing/portal'}?status=done`
       });
       return ok({ ok: true, url: portal.url });
+    }
+
+    // HOMEOWNER PAYMENT INTENT (for booking payments)
+    if (action === 'homeowner-payment-intent') {
+      const { jobId, amount, homeownerId } = body;
+      if (!jobId || !amount) return err('MISSING_FIELDS', 'jobId and amount required');
+
+      try {
+        const { data: job } = await supabase.from('bookings').select('provider_org_id, homeowner_profile_id').eq('id', jobId).single();
+        if (!job) return err('JOB_NOT_FOUND', 'Job not found');
+
+        const { data: org } = await supabase.from('organizations').select('stripe_account_id').eq('id', job.provider_org_id).single();
+        if (!org?.stripe_account_id) return err('NO_STRIPE_ACCOUNT', 'Provider has not connected Stripe');
+
+        const feePercent = 0.05;
+        const applicationFee = Math.round(amount * feePercent);
+        const paymentIntent = await stripePOST('payment_intents', {
+          amount,
+          currency: CURRENCY,
+          application_fee_amount: applicationFee,
+          transfer_data: { destination: org.stripe_account_id },
+          metadata: { job_id: jobId, homeowner_id: homeownerId || job.homeowner_profile_id, org_id: job.provider_org_id }
+        });
+        return ok({ clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
+      } catch (error: any) {
+        return err('PAYMENT_INTENT_FAILED', error.message || 'Failed to create payment intent', 500);
+      }
+    }
+
+    // CREATE HOMEOWNER CUSTOMER
+    if (action === 'create-homeowner-customer') {
+      const { email, name, profileId } = body;
+      if (!email || !profileId) return err('MISSING_FIELDS', 'email and profileId required');
+
+      const { data: existing } = await supabase.from('profiles').select('stripe_customer_id').eq('id', profileId).single();
+      if (existing?.stripe_customer_id) return ok({ customerId: existing.stripe_customer_id });
+
+      const customer = await stripePOST('customers', { email, name: name || email, metadata: { profile_id: profileId } });
+      await supabase.from('profiles').update({ stripe_customer_id: customer.id }).eq('id', profileId);
+      return ok({ customerId: customer.id });
+    }
+
+    // ATTACH PAYMENT METHOD
+    if (action === 'attach-payment-method') {
+      const { paymentMethodId, customerId } = body;
+      if (!paymentMethodId || !customerId) return err('MISSING_FIELDS', 'paymentMethodId and customerId required');
+
+      await stripePOST(`payment_methods/${paymentMethodId}/attach`, { customer: customerId });
+      await stripePOST(`customers/${customerId}`, { invoice_settings: { default_payment_method: paymentMethodId } });
+      return ok({ success: true });
+    }
+
+    // INSTANT PAYOUT
+    if (action === 'instant-payout') {
+      const { amount } = body;
+      if (!amount || amount <= 0) return err('INVALID_AMOUNT', 'Valid amount required');
+
+      const { data: org } = await supabase.from('organizations').select('stripe_account_id').eq('owner_id', user.id).single();
+      if (!org?.stripe_account_id) return err('NO_STRIPE_ACCOUNT', 'Connect Stripe account first');
+
+      const payout = await stripePOST('payouts', { amount: Math.round(amount * 100), currency: CURRENCY, method: 'instant' }, org.stripe_account_id);
+      return ok({ payoutId: payout.id, status: payout.status });
+    }
+
+    // PAYMENT LINK (Create Stripe Checkout for ad-hoc payment)
+    if (action === 'payment-link') {
+      const { amount, description, clientId, jobId } = body;
+      if (!amount || !description) return err('MISSING_FIELDS', 'amount and description required');
+
+      const { data: org } = await supabase.from('organizations').select('stripe_account_id').eq('owner_id', user.id).single();
+      if (!org?.stripe_account_id) return err('NO_STRIPE_ACCOUNT', 'Connect Stripe account first');
+
+      const session = await stripePOST('checkout/sessions', {
+        mode: 'payment',
+        line_items: [{ price_data: { currency: CURRENCY, product_data: { name: description }, unit_amount: Math.round(amount * 100) }, quantity: 1 }],
+        success_url: `${APP_URL}/provider/payments?success=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${APP_URL}/provider/payments?canceled=1`,
+        payment_intent_data: {
+          application_fee_amount: Math.round(amount * 100 * 0.05),
+          transfer_data: { destination: org.stripe_account_id },
+          metadata: { client_id: clientId || '', job_id: jobId || '' }
+        }
+      });
+      return ok({ url: session.url, sessionId: session.id });
+    }
+
+    // REFUND
+    if (action === 'refund') {
+      const { paymentIntentId, amount, reason } = body;
+      if (!paymentIntentId) return err('MISSING_FIELDS', 'paymentIntentId required');
+
+      const refundParams: any = { payment_intent: paymentIntentId };
+      if (amount) refundParams.amount = Math.round(amount * 100);
+      if (reason) refundParams.reason = reason;
+
+      const refund = await stripePOST('refunds', refundParams);
+      await supabase.from('payments').update({ status: 'refunded' }).eq('stripe_id', paymentIntentId);
+      return ok({ refundId: refund.id, status: refund.status });
     }
 
     return err('UNKNOWN_ACTION', `Unsupported action: ${action}`);
