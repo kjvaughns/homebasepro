@@ -169,11 +169,57 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ========== PUBLIC ACTIONS (no auth required) ==========
+    // ========== PUBLIC HOSTED CHECKOUT ACTIONS (no auth required) ==========
     
-    // CHECK CONFIG
-    if (action === 'check-config') {
-      return ok({ ok: true, hasStripe: !!STRIPE_KEY, hasPrice: !!PRICE_BETA });
+    // CREATE SUBSCRIPTION CHECKOUT (14-day trial)
+    if (action === 'create-subscription-checkout') {
+      if (!PRICE_BETA) return err('NO_PRICE_ID', 'STRIPE_PRICE_BETA or STRIPE_PRICE_BETA_MONTHLY not set');
+      const session = await stripePOST('checkout/sessions', {
+        mode: 'subscription',
+        line_items: [{ price: PRICE_BETA, quantity: 1 }],
+        subscription_data: { trial_period_days: 14 },
+        payment_method_collection: 'always',
+        success_url: `${APP_URL}/provider/billing/portal?status=plan_active&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${APP_URL}/provider/billing/portal?status=cancelled`
+      });
+      return ok({ ok: true, url: session.url });
+    }
+
+    // CREATE PAYMENT CHECKOUT (one-off payment with fee)
+    if (action === 'create-payment-checkout') {
+      const { amount_cents, providerStripeAccountId, description, fee_percent } = body || {};
+      if (!amount_cents || !providerStripeAccountId) return err('MISSING_FIELDS', 'amount_cents and providerStripeAccountId required');
+      const pct = Number(fee_percent ?? 8);
+      const application_fee_amount = Math.floor(Number(amount_cents) * (pct / 100));
+      const session = await stripePOST('checkout/sessions', {
+        mode: 'payment',
+        line_items: [{
+          price_data: {
+            currency: CURRENCY,
+            unit_amount: amount_cents,
+            product_data: { name: description || 'Service Payment' }
+          },
+          quantity: 1
+        }],
+        payment_intent_data: {
+          application_fee_amount,
+          transfer_data: { destination: providerStripeAccountId }
+        },
+        success_url: `${APP_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${APP_URL}/payments/cancel`
+      });
+      return ok({ ok: true, url: session.url });
+    }
+
+    // CREATE PORTAL LINK (Customer Portal)
+    if (action === 'create-portal-link') {
+      const { customer_id, role } = body || {};
+      if (!customer_id) return err('MISSING_CUSTOMER', 'customer_id required');
+      const portal = await stripePOST('billing_portal/sessions', {
+        customer: customer_id,
+        return_url: `${APP_URL}/${role === 'provider' ? 'provider/billing/portal' : 'billing/portal'}?status=done`
+      });
+      return ok({ ok: true, url: portal.url });
     }
 
     // BALANCE (can be public or authenticated)
@@ -186,7 +232,7 @@ Deno.serve(async (req) => {
       return ok({ ok: true, balance: bal });
     }
 
-    // ========== AUTHENTICATED ACTIONS ==========
+    // ========== AUTHENTICATED ACTIONS (require JWT) ==========
     
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return err('UNAUTHORIZED', 'Authorization header required', 401);
@@ -405,56 +451,7 @@ Deno.serve(async (req) => {
       return ok({ ok: true, success: true, message: 'Subscription will cancel at period end' });
     }
 
-    // CREATE SUBSCRIPTION CHECKOUT
-    if (action === 'create-subscription-checkout') {
-      if (!PRICE_BETA) return err('NO_PRICE_ID', 'STRIPE_PRICE_BETA or STRIPE_PRICE_BETA_MONTHLY not set');
-      const session = await stripePOST('checkout/sessions', {
-        mode: 'subscription',
-        line_items: [{ price: PRICE_BETA, quantity: 1 }],
-        subscription_data: { trial_period_days: 14 },
-        payment_method_collection: 'always',
-        success_url: `${APP_URL}/provider/billing/portal?status=plan_active&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${APP_URL}/provider/billing/portal?status=cancelled`
-      });
-      return ok({ ok: true, url: session.url });
-    }
-
-    // CREATE PAYMENT CHECKOUT
-    if (action === 'create-payment-checkout') {
-      const { amount_cents, providerStripeAccountId, description, fee_percent } = body || {};
-      if (!amount_cents || !providerStripeAccountId) return err('MISSING_FIELDS', 'amount_cents and providerStripeAccountId required');
-      const pct = Number(fee_percent ?? 8);
-      const application_fee_amount = Math.floor(Number(amount_cents) * (pct / 100));
-      const session = await stripePOST('checkout/sessions', {
-        mode: 'payment',
-        line_items: [{
-          price_data: {
-            currency: CURRENCY,
-            unit_amount: amount_cents,
-            product_data: { name: description || 'Service Payment' }
-          },
-          quantity: 1
-        }],
-        payment_intent_data: {
-          application_fee_amount,
-          transfer_data: { destination: providerStripeAccountId }
-        },
-        success_url: `${APP_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${APP_URL}/payments/cancel`
-      });
-      return ok({ ok: true, url: session.url });
-    }
-
-    // CREATE PORTAL LINK
-    if (action === 'create-portal-link') {
-      const { customer_id, role } = body || {};
-      if (!customer_id) return err('MISSING_CUSTOMER', 'customer_id required');
-      const portal = await stripePOST('billing_portal/sessions', {
-        customer: customer_id,
-        return_url: `${APP_URL}/${role === 'provider' ? 'provider/billing/portal' : 'billing/portal'}?status=done`
-      });
-      return ok({ ok: true, url: portal.url });
-    }
+    // MOVED: create-subscription-checkout, create-payment-checkout, create-portal-link now handled before auth check (lines 175-225)
 
     // HOMEOWNER PAYMENT INTENT (for booking payments)
     if (action === 'homeowner-payment-intent') {

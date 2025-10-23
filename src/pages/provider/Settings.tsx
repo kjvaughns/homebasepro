@@ -68,8 +68,16 @@ export default function Settings() {
   const handleStripeConnect = async () => {
     setStripeLoading(true);
     try {
+      // First create account if needed
+      const { data: accountData, error: accountError } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'create-account' }
+      });
+      
+      if (accountError) throw accountError;
+
+      // Then get onboarding link
       const { data, error } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'create-account-link' }
+        body: { action: 'account-link' }
       });
       
       if (error) throw error;

@@ -1,61 +1,50 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmbeddedAccountDashboard() {
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    initializeDashboard();
-  }, []);
+  const handleOpenDashboard = async () => {
+    setLoading(true);
+    setError(null);
 
-  const initializeDashboard = async () => {
     try {
-      // Get account session for dashboard
-      const { data, error: sessionError } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'create-dashboard-session' }
+      // Use hosted login link instead of embedded dashboard
+      const { data, error: loginError } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'login-link' }
       });
 
-      if (sessionError) throw sessionError;
-      if (!data?.clientSecret) {
-        throw new Error('Failed to create dashboard session');
+      if (loginError) throw loginError;
+      
+      if (!data?.url) {
+        throw new Error('Failed to create dashboard link');
       }
 
-      // Get Stripe config
-      const { data: config } = await supabase.functions.invoke('get-stripe-config');
-      if (!config?.publishableKey) {
-        throw new Error('Stripe configuration missing');
-      }
+      // Redirect to Stripe Express dashboard
+      window.open(data.url, '_blank');
 
-      // Load Stripe
-      const stripe = await loadStripe(config.publishableKey);
-      if (!stripe) {
-        throw new Error('Failed to load Stripe');
-      }
-
-      // Mount embedded account dashboard
-      const connectedAccount = (stripe as any).connectAccountManagement({
-        clientSecret: data.clientSecret,
+      toast({
+        title: "Opening Dashboard",
+        description: "You'll be redirected to Stripe to manage your account",
       });
-
-      const container = document.getElementById('account-dashboard-container');
-      if (container) {
-        connectedAccount.mount(container);
-      }
-
-      setMounted(true);
-
-      // Cleanup on unmount
-      return () => {
-        connectedAccount.unmount();
-      };
 
     } catch (err: any) {
-      console.error('Dashboard initialization error:', err);
-      setError(err.message || 'Failed to load account dashboard');
+      console.error('Dashboard link error:', err);
+      const errorMsg = err.message || 'Failed to load account dashboard';
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,13 +52,13 @@ export default function EmbeddedAccountDashboard() {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-sm text-destructive">{error}</p>
-          <button
-            onClick={initializeDashboard}
-            className="mt-4 text-sm underline hover:no-underline"
+          <p className="text-sm text-destructive mb-4">{error}</p>
+          <Button
+            onClick={handleOpenDashboard}
+            variant="outline"
           >
             Try Again
-          </button>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -83,14 +72,35 @@ export default function EmbeddedAccountDashboard() {
           Manage your bank account, view balances, and track payouts
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="relative min-h-[600px]">
-          {!mounted && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          )}
-          <div id="account-dashboard-container" className="min-h-[600px]" />
+      <CardContent className="space-y-4">
+        <div className="p-6 bg-muted rounded-lg text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            Click below to access your Stripe Express dashboard where you can manage your account settings, view payouts, and update banking information.
+          </p>
+          <Button 
+            onClick={handleOpenDashboard}
+            disabled={loading}
+            className="w-full sm:w-auto"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Open Dashboard
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p>• View your available and pending balances</p>
+          <p>• Set up and manage bank account details</p>
+          <p>• Track payout history and schedules</p>
+          <p>• Update tax information and business details</p>
         </div>
       </CardContent>
     </Card>

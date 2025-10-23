@@ -1,158 +1,114 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, Loader2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
 
 interface EmbeddedConnectOnboardingProps {
   onComplete?: () => void;
 }
 
 export default function EmbeddedConnectOnboarding({ onComplete }: EmbeddedConnectOnboardingProps) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    initializeOnboarding();
-  }, []);
+  const handleStartOnboarding = async () => {
+    setLoading(true);
+    setError(null);
 
-  const initializeOnboarding = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      // Get Stripe publishable key
-      const { data: config, error: configError } = await supabase.functions.invoke('get-stripe-config');
-      
-      if (configError) {
-        console.error('Stripe config error:', configError);
-        throw new Error('Failed to load Stripe configuration');
-      }
-      
-      if (!config?.publishableKey) {
-        throw new Error('Payment system not configured. Please contact support.');
-      }
-
-      // Get account session client secret
-      const { data, error: sessionError } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'create-account-session' }
+      const { data: accountData, error: accountError } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'create-account' }
       });
 
-      if (sessionError) {
-        console.error('Account session error:', sessionError);
-        throw new Error(sessionError.message || 'Failed to create onboarding session');
-      }
-      
-      // Check for error response format (ok: false)
-      if (data?.ok === false) {
-        const errorMsg = data.code === 'ACCOUNT_CREATE_FAILED' 
-          ? 'Unable to create payment account. Please try again or contact support.'
-          : data.message || 'Payment setup failed. Please try again.';
-        throw new Error(errorMsg);
-      }
-      
-      if (!data?.clientSecret || !data?.accountId) {
-        throw new Error('Payment setup failed. Please try again.');
-      }
+      if (accountError) throw accountError;
+      if (!accountData?.account_id) throw new Error('Failed to create Stripe account');
 
-      // Load Stripe with Connect account
-      const stripe = await loadStripe(config.publishableKey, {
-        stripeAccount: data.accountId
+      const { data: linkData, error: linkError } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'account-link' }
       });
 
-      if (!stripe) {
-        throw new Error('Failed to load Stripe');
-      }
+      if (linkError) throw linkError;
+      if (!linkData?.url) throw new Error('Failed to create onboarding link');
 
-      // Mount embedded onboarding component
-      const connectInstance = (stripe as any).connectAccountOnboarding({
-        clientSecret: data.clientSecret,
-      });
-
-      connectInstance.setOnExit(() => {
-        console.log('User exited onboarding');
-        toast({
-          title: "Setup Paused",
-          description: "You can resume anytime. Complete all steps to start accepting payments.",
-          variant: "destructive"
-        });
-      });
-
-      connectInstance.setOnLoadError((e: any) => {
-        console.error('Stripe Connect load error:', e);
-        setError('Failed to load payment setup. Please check your connection and try again.');
-        setLoading(false);
-      });
-
-      const container = document.getElementById('connect-onboarding-container');
-      if (container) {
-        connectInstance.mount(container);
-      }
-
-      setLoading(false);
-
-      // Poll for completion
-      const pollInterval = setInterval(async () => {
-        const { data: status } = await supabase.functions.invoke('stripe-connect', {
-          body: { action: 'check-status' }
-        });
-
-        if (status?.complete) {
-          clearInterval(pollInterval);
-          toast({
-            title: "Payment Setup Complete!",
-            description: "You can now accept payments from clients"
-          });
-          onComplete?.();
-        }
-      }, 3000);
-
-      // Cleanup
-      return () => {
-        clearInterval(pollInterval);
-        connectInstance.unmount();
-      };
-
+      window.location.href = linkData.url;
     } catch (err: any) {
-      console.error('Embedded onboarding error:', err);
-      
-      // Parse error message for user-friendly display
-      let userMessage = 'Failed to initialize payment setup. Please try again.';
-      
-      if (err.message?.includes('not configured')) {
-        userMessage = 'Payment system not configured. Please contact support@homebaseproapp.com';
-      } else if (err.message?.includes('authentication') || err.message?.includes('auth')) {
-        userMessage = 'Session expired. Please refresh the page and try again.';
-      }
-      
-      setError(userMessage);
+      setError(err.message || 'Failed to start onboarding');
+      toast({ title: "Error", description: err.message, variant: "destructive" });
       setLoading(false);
     }
   };
 
   if (error) {
     return (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
-        <p className="text-sm text-destructive">{error}</p>
-        <button
-          onClick={initializeOnboarding}
-          className="mt-4 text-sm underline hover:no-underline"
-        >
-          Try Again
-        </button>
-      </div>
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-sm text-destructive mb-4">{error}</p>
+          <Button onClick={handleStartOnboarding} variant="outline">Try Again</Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="relative min-h-[600px]">
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <Card>
+      <CardHeader>
+        <CardTitle>Complete Payment Setup</CardTitle>
+        <CardDescription>Connect your Stripe account to start accepting payments</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Secure Setup</p>
+              <p className="text-sm text-muted-foreground">Your information is encrypted and secure</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Bank Details</p>
+              <p className="text-sm text-muted-foreground">Link your bank account for direct deposits</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Business Information</p>
+              <p className="text-sm text-muted-foreground">Verify your business or personal details</p>
+            </div>
+          </div>
         </div>
-      )}
-      <div id="connect-onboarding-container" className="min-h-[600px]" />
-    </div>
+
+        <div className="bg-muted p-4 rounded-lg">
+          <p className="text-sm text-muted-foreground mb-4">
+            You'll be redirected to Stripe to complete a secure onboarding process. This typically takes 5-10 minutes.
+          </p>
+          <Button onClick={handleStartOnboarding} disabled={loading} className="w-full" size="lg">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Setting up...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="mr-2 h-5 w-5" />
+                Start Onboarding
+              </>
+            )}
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center">
+          By continuing, you agree to Stripe's{" "}
+          <a href="https://stripe.com/connect-account/legal" target="_blank" rel="noopener noreferrer" className="underline">
+            Connected Account Agreement
+          </a>
+        </p>
+      </CardContent>
+    </Card>
   );
 }

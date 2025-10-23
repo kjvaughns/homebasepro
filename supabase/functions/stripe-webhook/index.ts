@@ -1,7 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0?target=deno';
 import { getStripeSecret, resolveWebhookSecrets, has, getPlatformFeePercent } from '../_shared/env.ts';
+import { stripeGet } from '../_shared/stripe-fetch.ts';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+};
 
 console.log('stripe-webhook starting');
 console.log('✅ Webhook configured:', {
@@ -10,6 +16,43 @@ console.log('✅ Webhook configured:', {
   hasConnectSecret: has('STRIPE_WEBHOOK_SECRET_CONNECT'),
   platformFeePercent: getPlatformFeePercent() * 100 + '%'
 });
+
+// Manual webhook signature verification (Deno-safe, no Node SDK)
+async function verifyWebhookSignature(payload: string, signatureHeader: string, secret: string): Promise<boolean> {
+  try {
+    const elements = signatureHeader.split(',').reduce((acc, pair) => {
+      const [key, value] = pair.split('=');
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+    
+    const timestamp = elements.t;
+    const expectedSig = elements.v1;
+    
+    if (!timestamp || !expectedSig) return false;
+    
+    const signedPayload = `${timestamp}.${payload}`;
+    const encoder = new TextEncoder();
+    
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const computedSignature = await crypto.subtle.sign('HMAC', key, encoder.encode(signedPayload));
+    const computedSig = Array.from(new Uint8Array(computedSignature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    return computedSig === expectedSig;
+  } catch (e) {
+    console.error('Signature verification error:', e);
+    return false;
+  }
+}
 
 serve(async (req) => {
   // Health/Diagnostics Endpoint
@@ -27,13 +70,13 @@ serve(async (req) => {
       }
     }), { 
       status: 200, 
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS }
     });
   }
 
-  // CORS Preflight
+  // CORS Preflight - MUST have null body for 204
   if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 204 });
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   // Only accept POST for webhooks
@@ -42,7 +85,7 @@ serve(async (req) => {
       ok: false, 
       code: "METHOD_NOT_ALLOWED",
       message: "Only POST requests accepted for webhooks" 
-    }), { status: 405, headers: { "Content-Type": "application/json" } });
+    }), { status: 405, headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
   }
 
   try {
@@ -53,7 +96,7 @@ serve(async (req) => {
         ok: false, 
         code: "MISSING_SIGNATURE",
         message: "Stripe-Signature header missing" 
-      }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }), { status: 400, headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
     }
 
     // Get webhook secrets
@@ -65,56 +108,36 @@ serve(async (req) => {
         ok: false, 
         code: "NO_WEBHOOK_SECRETS",
         message: "Webhook secrets not configured. Set STRIPE_WEBHOOK_SECRET_PLATFORM and/or STRIPE_WEBHOOK_SECRET_CONNECT in Edge Secrets."
-      }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }), { status: 500, headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
     }
-
-    // Initialize Stripe
-    const stripeKey = getStripeSecret();
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
 
     // Read raw body for signature verification
     const rawBody = await req.text();
     
-    // Try to construct event with available secrets
-    let event: Stripe.Event | null = null;
+    // Try to verify with available secrets
+    let event: any = null;
     let source: "platform" | "connect" | "unknown" = "unknown";
 
     // Try platform secret first
-    if (platform) {
-      try {
-        event = stripe.webhooks.constructEvent(rawBody, sig, platform);
-        source = "platform";
-        console.log(`✅ Webhook validated with platform secret`);
-      } catch (e: any) {
-        console.log(`Platform secret validation failed: ${e.message}`);
-      }
+    if (platform && await verifyWebhookSignature(rawBody, sig, platform)) {
+      event = JSON.parse(rawBody);
+      source = "platform";
+      console.log(`✅ Webhook validated with platform secret`);
     }
 
     // If platform failed, try connect secret
-    if (!event && connect) {
-      try {
-        event = stripe.webhooks.constructEvent(rawBody, sig, connect);
-        source = "connect";
-        console.log(`✅ Webhook validated with connect secret`);
-      } catch (e: any) {
-        console.log(`Connect secret validation failed: ${e.message}`);
-        return new Response(JSON.stringify({ 
-          ok: false, 
-          code: "BAD_SIGNATURE",
-          message: `Webhook signature validation failed: ${e.message}` 
-        }), { status: 400, headers: { "Content-Type": "application/json" } });
-      }
+    if (!event && connect && await verifyWebhookSignature(rawBody, sig, connect)) {
+      event = JSON.parse(rawBody);
+      source = "connect";
+      console.log(`✅ Webhook validated with connect secret`);
     }
 
     if (!event) {
       return new Response(JSON.stringify({ 
         ok: false, 
-        code: "BAD_SIGNATURE_OR_NO_SECRET",
-        message: "Could not validate webhook signature with available secrets" 
-      }), { status: 400, headers: { "Content-Type": "application/json" } });
+        code: "BAD_SIGNATURE",
+        message: "Webhook signature validation failed" 
+      }), { status: 400, headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
     }
 
     console.log(`📥 Webhook event: ${event.type} (source: ${source}, id: ${event.id})`);
@@ -138,7 +161,7 @@ serve(async (req) => {
         message: "Event already processed (idempotent)",
         source,
         event_id: event.id 
-      }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }), { status: 200, headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
     }
 
     // Record event processing start
@@ -155,7 +178,6 @@ serve(async (req) => {
 
     // Helper function to get dynamic platform fee based on subscription plan
     const getDynamicPlatformFee = async (providerId: string): Promise<number> => {
-      // First, check if org has manually set transaction_fee_pct
       const { data: org } = await supabase
         .from('organizations')
         .select('transaction_fee_pct')
@@ -166,7 +188,6 @@ serve(async (req) => {
         return org.transaction_fee_pct;
       }
       
-      // Otherwise, derive from subscription plan
       const { data: subscription } = await supabase
         .from('provider_subscriptions')
         .select('plan')
@@ -174,13 +195,12 @@ serve(async (req) => {
         .eq('status', 'active')
         .maybeSingle();
       
-      // Plan-based fee mapping
       const planFees: Record<string, number> = {
-        'free': 0.08,    // 8%
-        'beta': 0.03,    // 3%
-        'growth': 0.025, // 2.5%
-        'pro': 0.02,     // 2%
-        'scale': 0.015,  // 1.5%
+        'free': 0.08,
+        'beta': 0.03,
+        'growth': 0.025,
+        'pro': 0.02,
+        'scale': 0.015,
       };
       
       return subscription?.plan 
@@ -188,7 +208,6 @@ serve(async (req) => {
         : getPlatformFeePercent();
     };
 
-    // Helper to get plan config (for updates)
     const getPlanConfig = (plan: string) => {
       const configs: Record<string, { teamLimit: number; feePercent: number }> = {
         'free': { teamLimit: 0, feePercent: 0.08 },
@@ -201,9 +220,7 @@ serve(async (req) => {
       return configs[plan] || { teamLimit: 0, feePercent: 0.08 };
     };
 
-    // Helper function to insert ledger entry with idempotency check
     const insertLedgerEntry = async (entry: any) => {
-      // Check if ledger entry already exists to prevent duplicates from webhook retries
       if (entry.stripe_ref) {
         const { data: existing } = await supabase
           .from('ledger_entries')
@@ -222,9 +239,7 @@ serve(async (req) => {
 
     // Handle Express Connect account updates
     if (event.type === 'account.updated') {
-      const account = event.data.object as Stripe.Account;
-      
-      // Determine if payments are fully ready
+      const account = event.data.object;
       const paymentsReady = account.charges_enabled && account.payouts_enabled;
       
       await supabase
@@ -242,11 +257,10 @@ serve(async (req) => {
 
     // Handle payment intent created (authorization)
     if (event.type === 'payment_intent.created') {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const paymentIntent = event.data.object;
       const { org_id, homeowner_id, job_id } = paymentIntent.metadata;
 
       if (org_id) {
-        // Insert ledger entry for charge authorization
         await insertLedgerEntry({
           occurred_at: new Date().toISOString(),
           type: 'charge',
@@ -265,10 +279,9 @@ serve(async (req) => {
 
     // Handle provider subscription invoices
     if (event.type === 'invoice.paid') {
-      const invoice = event.data.object as Stripe.Invoice;
+      const invoice = event.data.object;
       const orgId = invoice.metadata.org_id;
 
-      // Check if this is a subscription invoice (provider plan billing)
       if (invoice.subscription) {
         const { data: subscription } = await supabase
           .from('provider_subscriptions')
@@ -277,7 +290,6 @@ serve(async (req) => {
           .single();
 
         if (subscription) {
-          // Update organization with new plan tier and limits using dynamic fees
           const config = getPlanConfig(subscription.plan);
           
           await supabase
@@ -291,7 +303,6 @@ serve(async (req) => {
           
           console.log(`Synced ${subscription.plan} plan to org ${subscription.provider_id}`);
 
-          // Insert ledger entry for subscription revenue
           await insertLedgerEntry({
             occurred_at: new Date().toISOString(),
             type: 'subscription_invoice',
@@ -306,7 +317,6 @@ serve(async (req) => {
         }
       }
 
-      // Handle job payment invoices (legacy)
       if (orgId) {
         await supabase
           .from('payments')
@@ -316,7 +326,6 @@ serve(async (req) => {
           })
           .eq('stripe_id', invoice.id);
 
-        // Update linked job if exists
         if (invoice.metadata.job_id) {
           await supabase
             .from('bookings')
@@ -327,7 +336,7 @@ serve(async (req) => {
     }
 
     if (event.type === 'invoice.payment_failed') {
-      const invoice = event.data.object as Stripe.Invoice;
+      const invoice = event.data.object;
       await supabase
         .from('payments')
         .update({ status: 'open' })
@@ -335,18 +344,17 @@ serve(async (req) => {
     }
 
     if (event.type === 'invoice.voided') {
-      const invoice = event.data.object as Stripe.Invoice;
+      const invoice = event.data.object;
       await supabase
         .from('payments')
         .update({ status: 'void' })
         .eq('stripe_id', invoice.id);
     }
 
-    // Handle payment intent succeeded (payment completed)
+    // Handle payment intent succeeded
     if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const paymentIntent = event.data.object;
       
-      // Confirm booking when payment succeeds
       if (paymentIntent.metadata.booking_id) {
         await supabase
           .from('bookings')
@@ -354,10 +362,10 @@ serve(async (req) => {
           .eq('id', paymentIntent.metadata.booking_id);
         console.log('Booking confirmed:', paymentIntent.metadata.booking_id);
       }
+
       const { org_id, homeowner_id, job_id } = paymentIntent.metadata;
 
       if (org_id) {
-        // Update payment record
         const { data: existing } = await supabase
           .from('payments')
           .select('*')
@@ -374,11 +382,9 @@ serve(async (req) => {
             })
             .eq('id', existing.id);
 
-          // Insert ledger entries for destination charge
           const feeAmount = existing.application_fee_cents || 0;
           const transferAmount = existing.amount - feeAmount;
 
-          // Platform fee
           await insertLedgerEntry({
             occurred_at: new Date().toISOString(),
             type: 'fee',
@@ -393,7 +399,6 @@ serve(async (req) => {
             metadata: { fee_pct: existing.fee_pct_at_time },
           });
 
-          // Provider transfer
           await insertLedgerEntry({
             occurred_at: new Date().toISOString(),
             type: 'transfer',
@@ -408,7 +413,6 @@ serve(async (req) => {
             metadata: { transfer_group: existing.transfer_group },
           });
 
-          // Update job status if completed
           if (job_id) {
             await supabase
               .from('bookings')
@@ -420,7 +424,6 @@ serve(async (req) => {
               .eq('id', job_id);
           }
         } else {
-          // Create new payment record (legacy payment intents)
           await supabase
             .from('payments')
             .insert({
@@ -440,9 +443,9 @@ serve(async (req) => {
       }
     }
 
-    // Handle transfers created
+    // Handle transfers
     if (event.type === 'transfer.created') {
-      const transfer = event.data.object as Stripe.Transfer;
+      const transfer = event.data.object;
       
       await insertLedgerEntry({
         occurred_at: new Date().toISOString(),
@@ -461,7 +464,7 @@ serve(async (req) => {
 
     // Handle refunds
     if (event.type === 'charge.refunded') {
-      const charge = event.data.object as Stripe.Charge;
+      const charge = event.data.object;
       
       await supabase
         .from('payments')
@@ -471,10 +474,9 @@ serve(async (req) => {
 
     // Handle payouts
     if (event.type === 'payout.paid') {
-      const payout = event.data.object as Stripe.Payout;
+      const payout = event.data.object;
       const stripeAccount = event.account;
 
-      // Find org by stripe account
       const { data: org } = await supabase
         .from('organizations')
         .select('id')
@@ -499,20 +501,19 @@ serve(async (req) => {
 
     // Handle trial subscription start (checkout.session.completed)
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object;
       
       if (session.mode === 'subscription' && session.subscription) {
         const { org_id, user_id, plan } = session.metadata;
         
         if (org_id && user_id) {
-          // Fetch subscription details
-          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          // Fetch subscription details using REST API
+          const subscription = await stripeGet(`subscriptions/${session.subscription}`);
           
-          // Update profiles with trial info
           await supabase
             .from('profiles')
             .update({
-              stripe_customer_id: session.customer as string,
+              stripe_customer_id: session.customer,
               stripe_subscription_id: subscription.id,
               plan: plan || 'beta',
               trial_ends_at: subscription.trial_end 
@@ -521,7 +522,6 @@ serve(async (req) => {
             })
             .eq('user_id', user_id);
           
-          // Update organization with dynamic fee
           const config = getPlanConfig(plan || 'beta');
           await supabase
             .from('organizations')
@@ -531,12 +531,11 @@ serve(async (req) => {
             })
             .eq('id', org_id);
 
-          // Update provider_subscriptions
           await supabase
             .from('provider_subscriptions')
             .upsert({
               provider_id: org_id,
-              stripe_customer_id: session.customer as string,
+              stripe_customer_id: session.customer,
               stripe_subscription_id: subscription.id,
               plan: plan || 'beta',
               status: subscription.status,
@@ -548,12 +547,11 @@ serve(async (req) => {
       }
     }
 
-    // Handle subscription updates (downgrades/upgrades/trial ending)
+    // Handle subscription updates
     if (event.type === 'customer.subscription.updated') {
-      const subscription = event.data.object as Stripe.Subscription;
-      const prevAttributes = event.data.previous_attributes as any;
+      const subscription = event.data.object;
+      const prevAttributes = event.data.previous_attributes;
       
-      // Check if trial just ended
       if (prevAttributes?.status === 'trialing' && subscription.status === 'active') {
         console.log(`Trial ended and converted to paid for subscription ${subscription.id}`);
       }
@@ -565,7 +563,6 @@ serve(async (req) => {
         .single();
       
       if (providerSub) {
-        // Update profiles
         await supabase
           .from('profiles')
           .update({
@@ -578,7 +575,6 @@ serve(async (req) => {
           })
           .eq('stripe_subscription_id', subscription.id);
 
-        // Update provider_subscriptions
         await supabase
           .from('provider_subscriptions')
           .update({
@@ -591,7 +587,6 @@ serve(async (req) => {
           const oldPlan = (providerSub.organizations as any).plan;
           const newPlan = providerSub.plan;
           
-          // Check if plan changed (downgrade or upgrade)
           const planOrder = ['free', 'beta', 'growth', 'pro', 'scale'];
           const oldIndex = planOrder.indexOf(oldPlan);
           const newIndex = planOrder.indexOf(newPlan);
@@ -599,10 +594,8 @@ serve(async (req) => {
           if (oldIndex !== newIndex) {
             console.log(`Provider ${providerSub.provider_id} plan change: ${oldPlan} -> ${newPlan}`);
             
-            // Get new limits with dynamic fees
             const newLimits = getPlanConfig(newPlan);
             
-            // Update org with new plan and limits
             await supabase
               .from('organizations')
               .update({
@@ -611,19 +604,6 @@ serve(async (req) => {
                 transaction_fee_pct: newLimits.feePercent,
               })
               .eq('id', providerSub.provider_id);
-            
-            // If downgrading, check if over team limit
-            if (newIndex < oldIndex) {
-              const { count } = await supabase
-                .from('team_members')
-                .select('*', { count: 'exact', head: true })
-                .eq('organization_id', providerSub.provider_id)
-                .in('status', ['invited', 'active']);
-              
-              if (count && count > newLimits.teamLimit) {
-                console.warn(`⚠️  Provider ${providerSub.provider_id} has ${count} team members but limit is now ${newLimits.teamLimit}`);
-              }
-            }
           }
         }
       }
@@ -631,9 +611,8 @@ serve(async (req) => {
 
     // Handle subscription deleted/canceled
     if (event.type === 'customer.subscription.deleted') {
-      const subscription = event.data.object as Stripe.Subscription;
+      const subscription = event.data.object;
       
-      // Revert to free plan
       await supabase
         .from('profiles')
         .update({
@@ -648,7 +627,6 @@ serve(async (req) => {
         .update({ status: 'canceled' })
         .eq('stripe_subscription_id', subscription.id);
 
-      // Update organization to free plan with dynamic fees
       const config = getPlanConfig('free');
       const { data: providerSub } = await supabase
         .from('provider_subscriptions')
@@ -672,13 +650,13 @@ serve(async (req) => {
 
     // Handle disputes
     if (event.type === 'charge.dispute.created') {
-      const dispute = event.data.object as Stripe.Dispute;
+      const dispute = event.data.object;
       
       await supabase
         .from('disputes')
         .insert({
           stripe_dispute_id: dispute.id,
-          charge_id: dispute.charge as string,
+          charge_id: dispute.charge,
           amount: dispute.amount,
           currency: dispute.currency,
           reason: dispute.reason,
@@ -689,7 +667,6 @@ serve(async (req) => {
           created_at: new Date(dispute.created * 1000).toISOString(),
         });
 
-      // Update payment status
       await supabase
         .from('payments')
         .update({ status: 'disputed' })
@@ -699,7 +676,7 @@ serve(async (req) => {
     }
 
     if (event.type === 'charge.dispute.updated') {
-      const dispute = event.data.object as Stripe.Dispute;
+      const dispute = event.data.object;
       
       await supabase
         .from('disputes')
@@ -715,7 +692,7 @@ serve(async (req) => {
     }
 
     if (event.type === 'charge.dispute.closed') {
-      const dispute = event.data.object as Stripe.Dispute;
+      const dispute = event.data.object;
       
       await supabase
         .from('disputes')
@@ -725,7 +702,6 @@ serve(async (req) => {
         })
         .eq('stripe_dispute_id', dispute.id);
 
-      // Update payment status based on outcome
       const newStatus = dispute.status === 'won' ? 'paid' : 'disputed';
       await supabase
         .from('payments')
@@ -750,14 +726,13 @@ serve(async (req) => {
       event_type: event.type,
       event_id: event.id 
     }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
       status: 200,
     });
 
   } catch (error: any) {
     console.error('❌ Webhook processing error:', error);
     
-    // Return structured error
     return new Response(
       JSON.stringify({ 
         ok: false,
@@ -767,7 +742,7 @@ serve(async (req) => {
       }),
       { 
         status: 400, 
-        headers: { 'Content-Type': 'application/json' } 
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } 
       }
     );
   }
