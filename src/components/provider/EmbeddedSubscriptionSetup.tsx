@@ -18,6 +18,7 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
+  const [isElementReady, setIsElementReady] = useState(false);
   const [showPromoCode, setShowPromoCode] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const { toast } = useToast();
@@ -26,6 +27,15 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
     e.preventDefault();
 
     if (!stripe || !elements) return;
+
+    if (!isElementReady) {
+      toast({
+        title: "Please wait",
+        description: "Payment form is still loading",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setProcessing(true);
 
@@ -90,7 +100,17 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <PaymentElement />
+          <PaymentElement 
+            onReady={() => {
+              console.log('PaymentElement is ready');
+              setIsElementReady(true);
+            }}
+            onChange={(e) => {
+              if (e.complete) {
+                setIsElementReady(true);
+              }
+            }}
+          />
 
           {/* Promo Code Section */}
           <div className="space-y-2">
@@ -148,7 +168,7 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
 
           <Button 
             type="submit" 
-            disabled={!stripe || processing} 
+            disabled={!stripe || !isElementReady || processing} 
             className="w-full"
             size="lg"
           >
@@ -161,6 +181,12 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
               "Start Free Trial"
             )}
           </Button>
+
+          {!isElementReady && !processing && (
+            <p className="text-xs text-center text-muted-foreground">
+              Loading payment form...
+            </p>
+          )}
 
           <p className="text-xs text-center text-muted-foreground">
             By continuing, you agree to our terms of service
