@@ -86,11 +86,18 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
 
       const { data: org } = await supabase
         .from("organizations")
-        .select("id, name, email")
+        .select("id, name, email, stripe_account_id, stripe_onboarding_complete")
         .eq("owner_id", user.id)
         .single();
 
       if (!org) return;
+
+      // Check if Stripe Connect is set up (required for email sending)
+      if (sendEmail && (!org.stripe_account_id || !org.stripe_onboarding_complete)) {
+        toast.error("Please complete Stripe Connect setup in Settings > Payments before sending invoices");
+        setLoading(false);
+        return;
+      }
 
       const { data: client } = await supabase
         .from("clients")

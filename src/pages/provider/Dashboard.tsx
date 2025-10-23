@@ -1,7 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Bot, MapPin, ArrowRight, HelpCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, Bot, MapPin, ArrowRight, HelpCircle, Info } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useProviderStats, useTodayJobs, useUnpaidInvoices, useUnrepliedMessages } from "./hooks/useDashboardData";
 import { useDashboardInsights } from "./hooks/useDashboardInsights";
 import { AIInsightCard } from "@/components/provider/AIInsightCard";
@@ -22,8 +25,33 @@ export default function ProviderDashboard() {
   const { invoices } = useUnpaidInvoices();
   const { threads: unreadThreads } = useUnrepliedMessages();
   const { insights, loading: insightsLoading } = useDashboardInsights();
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('plan, trial_ends_at, onboarded_at')
+      .eq('user_id', user.id)
+      .single();
+
+    setUserProfile(data);
+  };
+
+  const isNewUser = userProfile?.onboarded_at && 
+    new Date(userProfile.onboarded_at) > new Date(Date.now() - 24*60*60*1000);
+
+  const trialDaysRemaining = userProfile?.trial_ends_at 
+    ? Math.ceil((new Date(userProfile.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : 0;
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
@@ -35,6 +63,30 @@ export default function ProviderDashboard() {
           Welcome back! Here's an overview of your business.
         </p>
       </header>
+
+      {/* Welcome banners for new users */}
+      {isNewUser && userProfile?.plan === 'free' && (
+        <Alert className="mb-6 border-primary/50 bg-primary/5">
+          <Info className="h-4 w-4" />
+          <AlertTitle>🎉 Welcome to HomeBase!</AlertTitle>
+          <AlertDescription>
+            You're on the FREE plan. Ready to accept payments?{' '}
+            <Link to="/provider/settings?tab=payments" className="underline font-medium">
+              Set up Stripe Connect
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isNewUser && userProfile?.plan === 'beta' && trialDaysRemaining > 0 && (
+        <Alert className="mb-6 border-primary/50 bg-primary/5">
+          <Info className="h-4 w-4" />
+          <AlertTitle>🚀 Trial Active!</AlertTitle>
+          <AlertDescription>
+            {trialDaysRemaining} days remaining in your free trial. Complete Stripe Connect setup in Settings to start accepting payments.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Welcome state for new providers */}
       <NewProviderWelcome hasAnyData={hasAnyData} />

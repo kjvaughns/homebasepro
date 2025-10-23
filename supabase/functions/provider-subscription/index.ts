@@ -60,6 +60,47 @@ serve(async (req) => {
       throw new Error('Unauthorized - Please sign in again');
     }
 
+    // Register free plan (no payment required)
+    if (action === 'register-free-plan') {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!org) {
+        throw new Error('Organization not found');
+      }
+
+      // Update organization to FREE plan
+      await supabase
+        .from('organizations')
+        .update({
+          plan: 'free',
+          transaction_fee_pct: 0.08,
+          team_limit: 5
+        })
+        .eq('id', org.id);
+
+      // Update profile
+      await supabase
+        .from('profiles')
+        .update({
+          plan: 'free',
+          onboarded_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          plan: 'free',
+          message: 'FREE plan activated'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Create SetupIntent for embedded card collection
     if (action === 'create-setup-intent') {
       const { data: profile, error: profileError } = await supabase

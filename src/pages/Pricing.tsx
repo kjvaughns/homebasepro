@@ -97,13 +97,13 @@ const Pricing = () => {
           <CardContent className="space-y-4">
             <ul className="space-y-3">
               {[
-                "Get booked by homeowners",
+                "Start immediately (no card required)",
                 "Up to 5 clients",
                 "Payment links & invoices",
                 "Client messaging",
-                "Provider profile & reviews",
                 "8% transaction fees",
                 "Up to 5 team members",
+                "Stripe Connect required for payments",
               ].map((feature) => (
                 <li key={feature} className="flex items-start gap-2">
                   <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
@@ -149,11 +149,10 @@ const Pricing = () => {
                 "Everything in FREE, plus:",
                 "Unlimited clients",
                 "Lower transaction fees (3%)",
-                "Client messaging",
-                "Provider profile & reviews",
-                "3% transaction fees",
                 "Up to 3 team members",
+                "All features unlocked",
                 "Priority support",
+                "14-day free trial (card required)",
               ].map((feature) => (
                 <li key={feature} className="flex items-start gap-2">
                   <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />

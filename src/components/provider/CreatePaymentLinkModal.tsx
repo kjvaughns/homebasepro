@@ -40,6 +40,19 @@ export function CreatePaymentLinkModal({ open, onClose, clientId, jobId }: Creat
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Check if Stripe Connect is set up
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("stripe_account_id, stripe_onboarding_complete")
+        .eq("owner_id", user.id)
+        .single();
+
+      if (!org || !org.stripe_account_id || !org.stripe_onboarding_complete) {
+        toast.error("Please complete Stripe Connect setup in Settings > Payments to create payment links");
+        setLoading(false);
+        return;
+      }
+
       // Call payment API to create Stripe checkout session
       const { data, error } = await supabase.functions.invoke('payments-api', {
         body: {
