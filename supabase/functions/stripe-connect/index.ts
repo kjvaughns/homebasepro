@@ -33,16 +33,43 @@ serve(async (req) => {
     // Get request body
     const { action } = await req.json();
 
-    // Get organization for this user
-    const { data: org, error: orgError } = await supabase
+    // Get organization for this user (or create one)
+    let { data: org, error: orgError } = await supabase
       .from('organizations')
-      .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready')
+      .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready, name')
       .eq('owner_id', user.id)
       .single();
 
+    // Auto-create organization if missing
     if (orgError || !org) {
-      await logError(supabase, null, 'stripe-connect', { action }, 'Organization not found for user');
-      return errorResponse('ORG_NOT_FOUND', 'Provider organization not found', 404);
+      console.log('Organization not found, creating one for user:', user.id);
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      const orgName = profile?.full_name || user.email?.split('@')[0] || 'My Business';
+      
+      const { data: newOrg, error: createError } = await supabase
+        .from('organizations')
+        .insert({
+          owner_id: user.id,
+          name: orgName,
+          slug: `${orgName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+          plan: 'free',
+          team_limit: 5,
+        })
+        .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready, name')
+        .single();
+
+      if (createError || !newOrg) {
+        await logError(supabase, null, 'stripe-connect', { action }, 'Failed to create organization');
+        return errorResponse('ORG_CREATE_FAILED', 'Failed to create provider organization', 500);
+      }
+
+      org = newOrg;
     }
 
     // Handle different actions

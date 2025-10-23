@@ -77,26 +77,67 @@ serve(async (req) => {
       );
     }
 
-    const { data: org } = await supabase
+    const requestBody = await req.json();
+    const { action, ...payload } = requestBody;
+
+    // Get organization (auto-create if missing for hosted flows)
+    let { data: org } = await supabase
       .from('organizations')
       .select('*')
       .eq('owner_id', user.id)
       .single();
 
-    if (!org || !org.stripe_account_id) {
-      await logPaymentError(supabase, org?.id || null, 'payments-api', {}, 'Stripe account not connected');
+    // Auto-create organization if missing (for hosted checkout flows)
+    if (!org && (action === 'create-subscription-checkout' || action === 'create-payment-checkout')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
+      const orgName = profile?.full_name || user.email?.split('@')[0] || 'My Business';
+      
+      const { data: newOrg } = await supabase
+        .from('organizations')
+        .insert({
+          owner_id: user.id,
+          name: orgName,
+          slug: `${orgName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+          plan: 'free',
+          team_limit: 5,
+        })
+        .select('*')
+        .single();
+
+      org = newOrg;
+    }
+
+    if (!org) {
+      await logPaymentError(supabase, null, 'payments-api', {}, 'Organization not found');
       return new Response(
         JSON.stringify({ 
           ok: false, 
-          code: 'STRIPE_NOT_CONNECTED', 
-          message: 'Complete Stripe setup in Settings > Payments first' 
+          code: 'ORG_NOT_FOUND', 
+          message: 'Provider organization not found' 
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const requestBody = await req.json();
-    const { action, ...payload } = requestBody;
+    // Skip stripe account check for hosted checkout flows
+    if (action !== 'create-subscription-checkout' && action !== 'create-payment-checkout') {
+      if (!org.stripe_account_id) {
+        await logPaymentError(supabase, org.id, 'payments-api', {}, 'Stripe account not connected');
+        return new Response(
+          JSON.stringify({ 
+            ok: false, 
+            code: 'STRIPE_NOT_CONNECTED', 
+            message: 'Complete Stripe setup in Settings > Payments first' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Hosted Checkout flows (no org required)
     if (action === 'create-subscription-checkout') {

@@ -9,6 +9,7 @@ export default function PaymentSettings() {
   const [stripeConnected, setStripeConnected] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     checkStripeStatus();
@@ -17,16 +18,22 @@ export default function PaymentSettings() {
   const checkStripeStatus = async () => {
     try {
       setCheckingStatus(true);
+      setError(null);
+      
       const { data, error } = await supabase.functions.invoke('stripe-connect', {
         body: { action: 'check-status' }
       });
 
-      if (error) throw error;
-
-      setStripeConnected(data?.paymentsReady || false);
-    } catch (err) {
+      if (error) {
+        // If organization doesn't exist, it will be auto-created on first action
+        console.log('Status check error:', error);
+        setStripeConnected(false);
+      } else {
+        setStripeConnected(data?.paymentsReady || false);
+      }
+    } catch (err: any) {
       console.error('Error checking Stripe status:', err);
-      toast.error('Failed to check payment status');
+      setError(err?.message || 'Failed to check payment status');
     } finally {
       setCheckingStatus(false);
     }
@@ -34,11 +41,15 @@ export default function PaymentSettings() {
 
   const startOnboarding = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // Create account
-      await supabase.functions.invoke('stripe-connect', {
+      // Create account (will auto-create org if missing)
+      const { data: accountData, error: accountError } = await supabase.functions.invoke('stripe-connect', {
         body: { action: 'create-account' }
       });
+
+      if (accountError) throw accountError;
 
       // Get onboarding link
       const { data, error } = await supabase.functions.invoke('stripe-connect', {
@@ -46,12 +57,15 @@ export default function PaymentSettings() {
       });
 
       if (error) throw error;
-      if (!data?.url) throw new Error('No onboarding URL');
+      if (!data?.url) throw new Error('No onboarding URL returned');
 
+      // Redirect to Stripe
       window.location.href = data.url;
     } catch (err: any) {
       console.error('Onboarding error:', err);
-      toast.error(err?.message || 'Failed to start onboarding');
+      const message = err?.message || 'Failed to start onboarding';
+      setError(message);
+      toast.error(message);
       setLoading(false);
     }
   };
@@ -84,6 +98,12 @@ export default function PaymentSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+          
           {checkingStatus ? (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />

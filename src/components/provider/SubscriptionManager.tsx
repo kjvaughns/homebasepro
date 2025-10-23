@@ -133,37 +133,26 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
     setProcessing(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('provider-subscription', {
-        body: {
-          action: subscription ? 'upgrade-plan' : 'create-subscription',
-          plan: selectedPlan.id,
-        },
+      // Always use hosted Stripe Checkout
+      const { data, error } = await supabase.functions.invoke('payments-api', {
+        body: { action: 'create-subscription-checkout' },
       });
 
       if (error) throw error;
 
-      // For beta plan with trial, redirect to Stripe Checkout
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      if (data?.url) {
+        window.location.href = data.url;
         return;
       }
 
-      // For immediate subscriptions (no trial)
-      toast({
-        title: 'Plan activated',
-        description: `You're now on the ${selectedPlan.name} plan`,
-      });
-      setShowUpgradeDialog(false);
-      loadSubscription();
-      onPlanChanged?.();
+      throw new Error('No checkout URL returned');
     } catch (error: any) {
       console.error('Subscription error:', error);
       toast({
         title: 'Subscription failed',
-        description: error.message || 'Failed to activate subscription',
+        description: error.message || 'Failed to start checkout',
         variant: 'destructive',
       });
-    } finally {
       setProcessing(false);
     }
   };

@@ -64,7 +64,7 @@ export function TutorialProvider({ children, role }: { children: React.ReactNode
         .from('profiles')
         .select('seen_tutorial_at')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.warn('Failed to check tutorial status:', error);
@@ -103,10 +103,14 @@ export function TutorialProvider({ children, role }: { children: React.ReactNode
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase
-          .from('profiles')
-          .update({ seen_tutorial_at: new Date().toISOString() })
-          .eq('user_id', user.id);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ seen_tutorial_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+      
+      if (updateError) {
+        console.error('Error updating tutorial status:', updateError);
+      }
       }
     } catch (err) {
       console.warn('Failed to update tutorial status:', err);
