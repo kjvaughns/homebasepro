@@ -57,8 +57,26 @@ serve(async (req) => {
       let stripeAccountId = org.stripe_account_id;
 
       if (!stripeAccountId) {
-        // Create new Express account
+        // Create new Express account with profile data
         try {
+          // Fetch profile address for Stripe Tax compliance and pre-fill
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('address_line1, address_line2, address_city, address_state, address_postal_code, address_country, full_name, phone')
+            .eq('user_id', user.id)
+            .single();
+
+          // Prepare address object for Stripe if available
+          const individualAddress = profile?.address_line1 ? {
+            line1: profile.address_line1,
+            line2: profile.address_line2 || undefined,
+            city: profile.address_city,
+            state: profile.address_state,
+            postal_code: profile.address_postal_code,
+            country: profile.address_country || 'US'
+          } : undefined;
+
+          // Create account with address pre-fill for better UX
           const account = await stripe.accounts.create({
             type: 'express',
             capabilities: {
@@ -66,6 +84,15 @@ serve(async (req) => {
               card_payments: { requested: true },
             },
             business_type: 'individual',
+            individual: individualAddress ? {
+              address: individualAddress,
+              email: user.email,
+              first_name: profile?.full_name?.split(' ')[0],
+              last_name: profile?.full_name?.split(' ').slice(1).join(' '),
+              phone: profile?.phone
+            } : {
+              email: user.email
+            }
           });
 
           stripeAccountId = account.id;
@@ -76,12 +103,13 @@ serve(async (req) => {
             .update({ stripe_account_id: stripeAccountId })
             .eq('id', org.id);
 
-          console.log('Created new Stripe account:', stripeAccountId);
+          console.log('Created new Stripe account:', stripeAccountId, 'with address:', !!individualAddress);
         } catch (error: any) {
+          console.error('Account creation error:', error);
           await logError(supabase, org.id, 'stripe-connect:create-account', { action }, error.message, error);
           return errorResponse(
             'ACCOUNT_CREATE_FAILED', 
-            'Failed to create Stripe account. Please try again.', 
+            'Failed to create payment account. Please try again.', 
             500,
             { stripe_error: formatStripeError(error) }
           );
@@ -103,6 +131,7 @@ serve(async (req) => {
           accountId: stripeAccountId,
         });
       } catch (error: any) {
+        console.error('Session creation error:', error);
         await logError(supabase, org.id, 'stripe-connect:create-session', { action, stripeAccountId }, error.message, error);
         return errorResponse('SESSION_CREATE_FAILED', 'Failed to create onboarding session. Please try again.', 500, {
           stripe_error: formatStripeError(error)
