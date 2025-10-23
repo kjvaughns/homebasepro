@@ -50,29 +50,30 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: UserDetailDrawe
 
       // Fetch activity based on user type
       if (profile?.user_type === 'homeowner') {
-        const { data: bookingsData } = await supabase
+        const bookingsQuery = await (supabase as any)
           .from('bookings')
           .select('*')
           .eq('homeowner_profile_id', profile.id)
           .order('created_at', { ascending: false })
           .limit(10);
-        setBookings(bookingsData || []);
+        setBookings(bookingsQuery.data || []);
 
-        const { data: paymentsData } = await supabase
+        const paymentsQuery = await (supabase as any)
           .from('payments')
           .select('*')
           .eq('homeowner_profile_id', profile.id)
           .order('payment_date', { ascending: false })
           .limit(10);
-        setPayments(paymentsData || []);
+        setPayments(paymentsQuery.data || []);
       }
 
-      // Fetch conversations (simplified query to avoid type issues)
-      const { data: convos } = await supabase
+      // Fetch conversations with explicit typing
+      const convosQuery = await (supabase as any)
         .from('conversations')
         .select('id, created_at')
         .limit(5);
-      setMessages(convos || []);
+      
+      setMessages(convosQuery.data || []);
     } catch (error) {
       console.error('Error fetching user details:', error);
     } finally {
