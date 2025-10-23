@@ -76,7 +76,7 @@ export const RoleSwitcher = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card z-50">
         <DropdownMenuItem
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/homeowner/dashboard")}
           className={!isProviderView && !isAdminView ? "bg-accent" : ""}
         >
           <User className="h-4 w-4 mr-2" />

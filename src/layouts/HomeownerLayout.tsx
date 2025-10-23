@@ -35,7 +35,7 @@ import { SupportDrawer } from "@/components/support/SupportDrawer";
 import { useMessaging } from "@/contexts/MessagingContext";
 
   const mobileNavigation = [
-    { name: "Home", href: "/dashboard", icon: Home },
+    { name: "Home", href: "/homeowner/dashboard", icon: Home },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
     { name: "Providers", href: "/homeowner/providers", icon: Users },
@@ -43,7 +43,7 @@ import { useMessaging } from "@/contexts/MessagingContext";
   ];
 
   const desktopNavigation = [
-    { name: "Home", href: "/dashboard", icon: Home },
+    { name: "Home", href: "/homeowner/dashboard", icon: Home },
     { name: "Properties", href: "/homeowner/homes", icon: Building2 },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "My Providers", href: "/homeowner/providers", icon: Users },
@@ -130,7 +130,7 @@ export default function HomeownerLayout() {
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
+            <Link to="/homeowner/dashboard" className="flex items-center gap-2 font-semibold text-lg">
               <img src={homebaseLogo} alt="HomeBase" className="h-6 w-6" />
               HomeBase
             </Link>
@@ -147,7 +147,7 @@ export default function HomeownerLayout() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background z-50">
-                <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                <DropdownMenuItem onClick={() => navigate("/homeowner/dashboard")}>
                   <Home className="mr-2 h-4 w-4" />
                   <span>Dashboard</span>
                 </DropdownMenuItem>

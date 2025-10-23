@@ -49,7 +49,7 @@ const PWALaunch = () => {
         }
 
         // Default to homeowner dashboard
-        navigate("/dashboard", { replace: true });
+        navigate("/homeowner/dashboard", { replace: true });
       } catch (error) {
         console.error("Error determining route:", error);
         // Fallback to login on error

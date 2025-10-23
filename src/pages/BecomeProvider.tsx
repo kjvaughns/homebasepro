@@ -229,7 +229,7 @@ const BecomeProvider = () => {
         <Button
           variant="link"
           className="w-full mt-4"
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/homeowner/dashboard")}
         >
           Back to dashboard
         </Button>

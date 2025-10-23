@@ -33,7 +33,7 @@ const Login = () => {
           if (profile.user_type === "provider") {
             navigate("/provider/dashboard");
           } else {
-            navigate("/dashboard");
+            navigate("/homeowner/dashboard");
           }
         }
       }
@@ -78,7 +78,7 @@ const Login = () => {
         if (profile?.user_type === "provider") {
           navigate("/provider/dashboard");
         } else {
-          navigate("/dashboard");
+          navigate("/homeowner/dashboard");
         }
       }
     } catch (error: any) {
