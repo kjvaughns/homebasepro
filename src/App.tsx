@@ -112,7 +112,7 @@ import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 
 const queryClient = new QueryClient();
 
-// Onboarding Guard Component
+// Onboarding Guard Component - Protects routes that require onboarding
 const OnboardingGuard = ({ children, requiredFor }: { children: React.ReactNode; requiredFor: 'homeowner' | 'provider' }) => {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
@@ -121,6 +121,7 @@ const OnboardingGuard = ({ children, requiredFor }: { children: React.ReactNode;
     const checkOnboarding = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log('[OnboardingGuard] No user, redirecting to /login');
         navigate('/login');
         return;
       }
@@ -131,14 +132,78 @@ const OnboardingGuard = ({ children, requiredFor }: { children: React.ReactNode;
         .eq('user_id', user.id)
         .single();
 
+      console.log('[OnboardingGuard] Profile check:', { 
+        onboarded: !!profile?.onboarded_at, 
+        userType: profile?.user_type,
+        requiredFor 
+      });
+
+      // IMPORTANT: Only redirect if NOT onboarded AND user type matches
+      // If already onboarded, just let them through
       if (!profile?.onboarded_at && profile?.user_type === requiredFor) {
+        console.log(`[OnboardingGuard] User not onboarded, redirecting to /onboarding/${requiredFor}`);
         navigate(`/onboarding/${requiredFor}`);
+        return;
       }
+      
+      console.log('[OnboardingGuard] User is onboarded or wrong type, allowing access');
       setChecking(false);
     };
 
     checkOnboarding();
-  }, []);
+  }, [navigate, requiredFor]); // Add dependencies to prevent unnecessary re-runs
+
+  if (checking) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>;
+  }
+
+  return <>{children}</>;
+};
+
+// Onboarding Route Guard - Prevents already onboarded users from accessing setup
+const OnboardingRouteGuard = ({ children, userType }: { children: React.ReactNode; userType: 'homeowner' | 'provider' }) => {
+  const [checking, setChecking] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAlreadyOnboarded = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('[OnboardingRouteGuard] No user, redirecting to /login');
+        navigate('/login');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarded_at, user_type')
+        .eq('user_id', user.id)
+        .single();
+
+      console.log('[OnboardingRouteGuard] Profile check:', { 
+        onboarded: !!profile?.onboarded_at, 
+        userType: profile?.user_type 
+      });
+
+      // If already onboarded, redirect to dashboard
+      if (profile?.onboarded_at) {
+        console.log('[OnboardingRouteGuard] User already onboarded, redirecting to dashboard');
+        if (profile.user_type === 'provider') {
+          navigate('/provider/dashboard', { replace: true });
+        } else {
+          navigate('/homeowner/dashboard', { replace: true });
+        }
+        return;
+      }
+      
+      console.log('[OnboardingRouteGuard] User not onboarded, allowing access to setup');
+      setChecking(false);
+    };
+
+    checkAlreadyOnboarded();
+  }, [navigate, userType]);
 
   if (checking) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -233,8 +298,16 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/l/:slug" element={<ShortLinkRedirect />} />
-            <Route path="/onboarding/homeowner" element={<OnboardingHomeowner />} />
-            <Route path="/onboarding/provider" element={<OnboardingProvider />} />
+            <Route path="/onboarding/homeowner" element={
+              <OnboardingRouteGuard userType="homeowner">
+                <OnboardingHomeowner />
+              </OnboardingRouteGuard>
+            } />
+            <Route path="/onboarding/provider" element={
+              <OnboardingRouteGuard userType="provider">
+                <OnboardingProvider />
+              </OnboardingRouteGuard>
+            } />
 
             <Route path="/become-provider" element={<BecomeProvider />} />
 

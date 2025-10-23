@@ -83,16 +83,20 @@ const Login = () => {
           .single();
 
         if (!profile?.onboarded_at) {
+          console.log("[Login] User not onboarded, redirecting to setup");
           // User hasn't completed onboarding - send to setup
           if (profile?.user_type === "provider") {
             navigate("/onboarding/provider");
           } else {
             navigate("/onboarding/homeowner");
           }
-        } else if (profile?.user_type === "provider") {
-          navigate("/provider/dashboard");
         } else {
-          navigate("/homeowner/dashboard");
+          console.log("[Login] User already onboarded, redirecting to dashboard");
+          if (profile?.user_type === "provider") {
+            navigate("/provider/dashboard");
+          } else {
+            navigate("/homeowner/dashboard");
+          }
         }
       }
     } catch (error: any) {
