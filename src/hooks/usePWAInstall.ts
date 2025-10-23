@@ -15,6 +15,7 @@ interface PWAInstallState {
 
 const DISMISS_KEY = 'homebase-install-dismissed';
 const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SESSION_PROMPT_KEY = 'homebase-install-prompted-session';
 
 export function usePWAInstall(): PWAInstallState {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -49,6 +50,11 @@ export function usePWAInstall(): PWAInstallState {
       return false;
     };
 
+    // Check if already prompted this session
+    const checkPromptedThisSession = () => {
+      return sessionStorage.getItem(SESSION_PROMPT_KEY) === 'true';
+    };
+
     checkInstalled();
     checkIOS();
 
@@ -58,7 +64,7 @@ export function usePWAInstall(): PWAInstallState {
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
       
-      if (!checkDismissed() && !isInstalled) {
+      if (!checkDismissed() && !isInstalled && !checkPromptedThisSession()) {
         setCanInstall(true);
       }
     };
@@ -73,8 +79,8 @@ export function usePWAInstall(): PWAInstallState {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // For iOS, show install prompt if not installed and not dismissed
-    if (isIOS && !isInstalled && !checkDismissed()) {
+    // For iOS, show install prompt if not installed, not dismissed, and not prompted this session
+    if (isIOS && !isInstalled && !checkDismissed() && !checkPromptedThisSession()) {
       setCanInstall(true);
     }
 
@@ -108,6 +114,7 @@ export function usePWAInstall(): PWAInstallState {
 
   const dismissInstall = () => {
     localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    sessionStorage.setItem(SESSION_PROMPT_KEY, 'true');
     setCanInstall(false);
   };
 

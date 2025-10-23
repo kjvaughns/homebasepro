@@ -7,8 +7,6 @@ import { Users, DollarSign, Calendar, Plus, ChevronRight, Clock, FileText } from
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
-import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
 
 const ProviderDashboard = () => {
   const navigate = useNavigate();
@@ -23,8 +21,6 @@ const ProviderDashboard = () => {
   });
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [recentInvoices, setRecentInvoices] = useState<any[]>([]);
-  const { canInstall, isInstalled, isIOS, promptInstall, dismissInstall } = usePWAInstall();
-  const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   useEffect(() => {
     loadProviderData();
@@ -56,16 +52,6 @@ const ProviderDashboard = () => {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  // Auto-show install prompt after 30 seconds if not installed
-  useEffect(() => {
-    if (!loading && canInstall && !isInstalled) {
-      const timer = setTimeout(() => {
-        setShowInstallDialog(true);
-      }, 30000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, canInstall, isInstalled]);
 
   const loadProviderData = async () => {
     try {
@@ -373,22 +359,6 @@ const ProviderDashboard = () => {
           )}
         </Card>
       </div>
-
-      {/* Install Prompt Dialog */}
-      <InstallPromptDialog
-        open={showInstallDialog}
-        onOpenChange={setShowInstallDialog}
-        isIOS={isIOS}
-        onInstall={async () => {
-          if (!isIOS) {
-            const success = await promptInstall();
-            if (success) {
-              toast({ title: 'HomeBase installed!', description: 'You can now access HomeBase from your home screen' });
-            }
-          }
-        }}
-        onDismiss={dismissInstall}
-      />
     </div>
   );
 };

@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { DashboardFilters } from "@/components/admin/DashboardFilters";
 import { useToast } from "@/hooks/use-toast";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
-import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
 
 interface DashboardStats {
@@ -45,8 +43,6 @@ const Dashboard = () => {
     to: undefined,
   });
   const { toast } = useToast();
-  const { canInstall, isInstalled, isIOS, promptInstall, dismissInstall } = usePWAInstall();
-  const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -155,16 +151,6 @@ const Dashboard = () => {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  // Auto-show install prompt after 30 seconds if not installed
-  useEffect(() => {
-    if (!loading && canInstall && !isInstalled) {
-      const timer = setTimeout(() => {
-        setShowInstallDialog(true);
-      }, 30000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, canInstall, isInstalled]);
 
   const userDistribution = [
     { name: "Homeowners", value: stats.totalHomeowners, color: "#8B5CF6" },
@@ -361,22 +347,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Install Prompt Dialog */}
-      <InstallPromptDialog
-        open={showInstallDialog}
-        onOpenChange={setShowInstallDialog}
-        isIOS={isIOS}
-        onInstall={async () => {
-          if (!isIOS) {
-            const success = await promptInstall();
-            if (success) {
-              toast({ title: 'HomeBase installed!', description: 'You can now access HomeBase from your home screen' });
-            }
-          }
-        }}
-        onDismiss={dismissInstall}
-      />
     </div>
   );
 };

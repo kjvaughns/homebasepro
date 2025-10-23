@@ -7,8 +7,6 @@ import { Calendar, ChevronRight, Plus, Clock, CheckCircle2, Bot, Wrench, Droplet
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
-import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import HomeBaseAI from "@/components/ai/HomeBaseAI";
 import { RemindersWidget } from "@/components/homeowner/RemindersWidget";
@@ -23,24 +21,12 @@ export default function HomeownerDashboard() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
-  const { canInstall, isInstalled, isIOS, promptInstall, dismissInstall } = usePWAInstall();
-  const [showInstallDialog, setShowInstallDialog] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [input, setInput] = useState('');
 
   useEffect(() => {
     loadDashboardData();
   }, []);
-
-  // Auto-show install prompt after 30 seconds if not installed
-  useEffect(() => {
-    if (!loading && canInstall && !isInstalled) {
-      const timer = setTimeout(() => {
-        setShowInstallDialog(true);
-      }, 30000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, canInstall, isInstalled]);
 
   const loadDashboardData = async () => {
     try {
@@ -338,22 +324,6 @@ export default function HomeownerDashboard() {
           </div>
         </div>
       )}
-
-      {/* Install Prompt Dialog */}
-      <InstallPromptDialog
-        open={showInstallDialog}
-        onOpenChange={setShowInstallDialog}
-        isIOS={isIOS}
-        onInstall={async () => {
-          if (!isIOS) {
-            const success = await promptInstall();
-            if (success) {
-              toast({ title: 'HomeBase installed!', description: 'You can now access HomeBase from your home screen' });
-            }
-          }
-        }}
-        onDismiss={dismissInstall}
-      />
 
       {/* HomeBase AI Dialog */}
       <Dialog open={showAI} onOpenChange={setShowAI}>

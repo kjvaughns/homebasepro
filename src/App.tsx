@@ -5,6 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { registerServiceWorker } from "@/utils/serviceWorker";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
+import { useToast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
@@ -147,6 +150,9 @@ const OnboardingGuard = ({ children, requiredFor }: { children: React.ReactNode;
 const App = () => {
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'homeowner' | 'provider'>('homeowner');
+  const { toast } = useToast();
+  const { canInstall, isInstalled, isIOS, promptInstall, dismissInstall } = usePWAInstall();
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   useEffect(() => {
     registerServiceWorker();
@@ -179,6 +185,17 @@ const App = () => {
       });
     }
   }, []);
+
+  // Show install prompt once per session after authentication on dashboard routes
+  useEffect(() => {
+    if (user && canInstall && !isInstalled) {
+      const timer = setTimeout(() => {
+        setShowInstallDialog(true);
+        sessionStorage.setItem('homebase-install-prompted-session', 'true');
+      }, 5000); // Show after 5 seconds on first dashboard visit
+      return () => clearTimeout(timer);
+    }
+  }, [user, canInstall, isInstalled]);
 
   // Helper to determine if AI widget should show
   const shouldShowAI = (pathname: string) => {
@@ -321,6 +338,9 @@ const App = () => {
               <Route path="reviews" element={<Navigate to="/provider/account/reviews" replace />} />
               <Route path="settings/profile" element={<Navigate to="/provider/account/profile" replace />} />
               
+              {/* Stripe onboarding redirect - handle old route */}
+              <Route path="stripe-onboarding" element={<Navigate to="/provider/dashboard" replace />} />
+              
               <Route path="messages" element={<Messages role="provider" />} />
             </Route>
 
@@ -354,6 +374,22 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
             </Routes>
             </ErrorBoundary>
+            
+            {/* Centralized PWA Install Dialog */}
+            <InstallPromptDialog
+              open={showInstallDialog}
+              onOpenChange={setShowInstallDialog}
+              isIOS={isIOS}
+              onInstall={async () => {
+                if (!isIOS) {
+                  const success = await promptInstall();
+                  if (success) {
+                    toast({ title: 'HomeBase installed!', description: 'You can now access HomeBase from your home screen' });
+                  }
+                }
+              }}
+              onDismiss={dismissInstall}
+            />
           </BrowserRouter>
         </MessagingProvider>
       </TooltipProvider>
