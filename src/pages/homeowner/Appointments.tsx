@@ -65,18 +65,23 @@ export default function Appointments() {
   };
 
   const upcomingVisits = visits.filter(
-    (v) => new Date(v.scheduled_date) >= new Date() && v.status !== "canceled"
+    (v) => ['confirmed', 'pending', 'scheduled'].includes(v.status) && 
+    new Date(v.scheduled_at || v.scheduled_date) >= new Date()
   );
 
   const pastVisits = visits.filter(
-    (v) => new Date(v.scheduled_date) < new Date() || v.status === "completed"
+    (v) => v.status === "completed" || 
+    (new Date(v.scheduled_at || v.scheduled_date) < new Date() && v.status !== 'canceled')
   );
 
-  const getStatusColor = (status: string) => {
+  const canceledVisits = visits.filter((v) => v.status === "canceled");
+
+  const getStatusColor = (status: string): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
+      case "confirmed":
       case "scheduled":
         return "default";
-      case "in_progress":
+      case "pending":
         return "secondary";
       case "completed":
         return "outline";
@@ -182,12 +187,15 @@ export default function Appointments() {
       </div>
 
       <Tabs defaultValue="upcoming" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upcoming">
             Upcoming ({upcomingVisits.length})
           </TabsTrigger>
           <TabsTrigger value="past">
             Past ({pastVisits.length})
+          </TabsTrigger>
+          <TabsTrigger value="canceled">
+            Canceled ({canceledVisits.length})
           </TabsTrigger>
         </TabsList>
 
@@ -231,6 +239,23 @@ export default function Appointments() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {pastVisits.map((visit) => (
+                <VisitCard key={visit.id} visit={visit} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="canceled" className="space-y-4">
+          {canceledVisits.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No canceled appointments</h3>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {canceledVisits.map((visit) => (
                 <VisitCard key={visit.id} visit={visit} />
               ))}
             </div>

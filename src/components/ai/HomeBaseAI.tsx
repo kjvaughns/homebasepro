@@ -507,7 +507,10 @@ export default function HomeBaseAI({
         />
       )}
 
-      <div className="flex-shrink-0 border-t p-3 sm:p-4 bg-background safe-bottom">
+      <div 
+        className="flex-shrink-0 border-t p-3 sm:p-4 bg-background"
+        style={{ paddingBottom: `max(env(safe-area-inset-bottom, 12px), 12px)` }}
+      >
         <div className="flex gap-2">
           <Input
             ref={inputRef}

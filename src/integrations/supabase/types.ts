@@ -279,10 +279,12 @@ export type Database = {
           id: string
           notes: string | null
           payment_captured: boolean | null
+          precheck_answers: Json | null
           provider_org_id: string
           service_name: string
           status: string
           updated_at: string
+          urgency_level: string | null
         }
         Insert: {
           address: string
@@ -301,10 +303,12 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_captured?: boolean | null
+          precheck_answers?: Json | null
           provider_org_id: string
           service_name: string
           status?: string
           updated_at?: string
+          urgency_level?: string | null
         }
         Update: {
           address?: string
@@ -323,10 +327,12 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_captured?: boolean | null
+          precheck_answers?: Json | null
           provider_org_id?: string
           service_name?: string
           status?: string
           updated_at?: string
+          urgency_level?: string | null
         }
         Relationships: [
           {
@@ -1133,6 +1139,85 @@ export type Database = {
         }
         Relationships: []
       }
+      home_photos: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          display_order: number | null
+          home_id: string | null
+          id: string
+          photo_url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          home_id?: string | null
+          id?: string
+          photo_url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          home_id?: string | null
+          id?: string
+          photo_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_photos_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homeowner_documents: {
+        Row: {
+          created_at: string | null
+          document_type: string
+          file_size: number | null
+          file_url: string
+          id: string
+          metadata: Json | null
+          profile_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_type: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          profile_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          profile_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homeowner_maintenance_plans: {
         Row: {
           created_at: string | null
@@ -1252,12 +1337,17 @@ export type Database = {
           id: string
           is_default: boolean | null
           is_primary: boolean
+          last_hvac_service: string | null
+          last_lawn_service: string | null
+          last_plumbing_service: string | null
+          lawn_sqft: number | null
           lot_acres: number | null
           maintenance_score: number | null
           name: string
           notes: string | null
           owner_id: string
           pets: string | null
+          pool_type: string | null
           preferred_contact_method: string | null
           property_type: string | null
           square_footage: number | null
@@ -1279,12 +1369,17 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           is_primary?: boolean
+          last_hvac_service?: string | null
+          last_lawn_service?: string | null
+          last_plumbing_service?: string | null
+          lawn_sqft?: number | null
           lot_acres?: number | null
           maintenance_score?: number | null
           name: string
           notes?: string | null
           owner_id: string
           pets?: string | null
+          pool_type?: string | null
           preferred_contact_method?: string | null
           property_type?: string | null
           square_footage?: number | null
@@ -1306,12 +1401,17 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           is_primary?: boolean
+          last_hvac_service?: string | null
+          last_lawn_service?: string | null
+          last_plumbing_service?: string | null
+          lawn_sqft?: number | null
           lot_acres?: number | null
           maintenance_score?: number | null
           name?: string
           notes?: string | null
           owner_id?: string
           pets?: string | null
+          pool_type?: string | null
           preferred_contact_method?: string | null
           property_type?: string | null
           square_footage?: number | null
@@ -3224,6 +3324,10 @@ export type Database = {
       service_visits: {
         Row: {
           arrival_time: string | null
+          cancelation_reason: string | null
+          canceled_by: string | null
+          completion_notes: string | null
+          completion_photos: Json | null
           completion_time: string | null
           created_at: string
           home_id: string
@@ -3237,10 +3341,15 @@ export type Database = {
           service_request_id: string | null
           status: string
           technician_name: string | null
+          technician_notes: string | null
           updated_at: string
         }
         Insert: {
           arrival_time?: string | null
+          cancelation_reason?: string | null
+          canceled_by?: string | null
+          completion_notes?: string | null
+          completion_photos?: Json | null
           completion_time?: string | null
           created_at?: string
           home_id: string
@@ -3254,10 +3363,15 @@ export type Database = {
           service_request_id?: string | null
           status?: string
           technician_name?: string | null
+          technician_notes?: string | null
           updated_at?: string
         }
         Update: {
           arrival_time?: string | null
+          cancelation_reason?: string | null
+          canceled_by?: string | null
+          completion_notes?: string | null
+          completion_photos?: Json | null
           completion_time?: string | null
           created_at?: string
           home_id?: string
@@ -3271,9 +3385,17 @@ export type Database = {
           service_request_id?: string | null
           status?: string
           technician_name?: string | null
+          technician_notes?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "service_visits_canceled_by_fkey"
+            columns: ["canceled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_visits_home_id_fkey"
             columns: ["home_id"]
