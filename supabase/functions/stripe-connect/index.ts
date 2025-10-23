@@ -33,16 +33,22 @@ serve(async (req) => {
     // Get request body
     const { action } = await req.json();
 
-    // Get organization for this user
+    // Get organization for this user (latest if multiple exist)
     const { data: org, error: orgError } = await supabase
       .from('organizations')
       .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready')
       .eq('owner_id', user.id)
-      .single();
+      .order('created_at', { ascending: false })
+      .maybeSingle();
 
-    if (orgError || !org) {
+    if (orgError) {
+      await logError(supabase, null, 'stripe-connect', { action }, 'Database error fetching organization', orgError);
+      return errorResponse('DB_ERROR', 'Database error fetching organization', 500);
+    }
+
+    if (!org) {
       await logError(supabase, null, 'stripe-connect', { action }, 'Organization not found for user');
-      return errorResponse('ORG_NOT_FOUND', 'Provider organization not found', 404);
+      return errorResponse('ORG_NOT_FOUND', 'Provider organization not found. Please complete provider onboarding first.', 404);
     }
 
     // Handle different actions
