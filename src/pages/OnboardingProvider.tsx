@@ -11,8 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import EmbeddedSubscriptionSetup from "@/components/provider/EmbeddedSubscriptionSetup";
-import HostedSubscriptionSetup from "@/components/provider/HostedSubscriptionSetup";
-import { USE_EMBEDDED_PAYMENTS } from "@/lib/featureFlags";
 
 
 const OnboardingProvider = () => {
@@ -29,12 +27,6 @@ const OnboardingProvider = () => {
     serviceType: "",
     description: "",
     serviceArea: "",
-    addressLine1: "",
-    addressLine2: "",
-    addressCity: "",
-    addressState: "",
-    addressPostalCode: "",
-    addressCountry: "US",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -53,15 +45,7 @@ const OnboardingProvider = () => {
       });
       return;
     }
-    if (step === 2 && (!formData.addressLine1 || !formData.addressCity || !formData.addressState || !formData.addressPostalCode)) {
-      toast({
-        title: "Error",
-        description: "Please fill in all billing address fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (step === 3 && (!formData.serviceType || !formData.description)) {
+    if (step === 2 && (!formData.serviceType || !formData.description)) {
       toast({
         title: "Error",
         description: "Please fill in all service details",
@@ -95,14 +79,13 @@ const OnboardingProvider = () => {
         .from("organizations")
         .select('id')
         .eq('owner_id', user.id)
-        .maybeSingle();
+        .single();
 
       let orgId = existingOrg?.id;
 
       // Create org if doesn't exist
       if (!orgId) {
-        const baseSlug = formData.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const slug = `${baseSlug}-${Date.now()}`;
+        const slug = formData.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const { data: orgData, error: orgError } = await supabase
           .from("organizations")
           .insert({
@@ -119,28 +102,15 @@ const OnboardingProvider = () => {
             team_limit: 5
           })
           .select()
-          .maybeSingle();
+          .single();
 
         if (orgError) {
           console.error("Org creation error:", orgError);
           toast({ title: "Error", description: "Failed to create organization", variant: "destructive" });
           return;
         }
-        orgId = orgData?.id;
+        orgId = orgData.id;
       }
-
-      // Save billing address to profiles
-      await supabase
-        .from('profiles')
-        .update({
-          address_line1: formData.addressLine1,
-          address_line2: formData.addressLine2 || null,
-          address_city: formData.addressCity,
-          address_state: formData.addressState,
-          address_postal_code: formData.addressPostalCode,
-          address_country: formData.addressCountry,
-        })
-        .eq('user_id', user.id);
 
       // Mark onboarding complete with FREE plan
       await supabase
@@ -180,14 +150,13 @@ const OnboardingProvider = () => {
         .from("organizations")
         .select('id')
         .eq('owner_id', user.id)
-        .maybeSingle();
+        .single();
 
       let orgId = existingOrg?.id;
 
       // Create org if doesn't exist
       if (!orgId) {
-        const baseSlug = formData.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const slug = `${baseSlug}-${Date.now()}`;
+        const slug = formData.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const { data: orgData, error: orgError } = await supabase
           .from("organizations")
           .insert({
@@ -201,32 +170,24 @@ const OnboardingProvider = () => {
             service_area: formData.serviceArea,
           })
           .select()
-          .maybeSingle();
+          .single();
 
         if (orgError) {
           console.error("Org creation error:", orgError);
           toast({ title: "Error", description: "Failed to create organization", variant: "destructive" });
           return;
         }
-        orgId = orgData?.id;
+        orgId = orgData.id;
       }
 
-      // Save billing address and mark onboarding complete
+      // Mark onboarding complete
       await supabase
         .from('profiles')
-        .update({
-          onboarded_at: new Date().toISOString(),
-          address_line1: formData.addressLine1,
-          address_line2: formData.addressLine2 || null,
-          address_city: formData.addressCity,
-          address_state: formData.addressState,
-          address_postal_code: formData.addressPostalCode,
-          address_country: formData.addressCountry,
-        })
+        .update({ onboarded_at: new Date().toISOString() })
         .eq('user_id', user.id);
 
       // Move to next step (trial)
-      setStep(4);
+      setStep(3);
     } catch (error) {
       console.error("Error:", error);
       toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
@@ -247,10 +208,9 @@ const OnboardingProvider = () => {
           <div className="flex justify-between items-center mb-4">
             <div className={`flex-1 h-2 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
             <div className={`flex-1 h-2 rounded-full mx-1 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`flex-1 h-2 rounded-full mx-1 ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`flex-1 h-2 rounded-full ${step >= 4 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex-1 h-2 rounded-full ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
           </div>
-          <p className="text-center text-muted-foreground">Step {step} of 4</p>
+          <p className="text-center text-muted-foreground">Step {step} of 3</p>
         </div>
 
         {step === 1 && (
@@ -311,71 +271,6 @@ const OnboardingProvider = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <Settings className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Billing Address</h2>
-              <p className="text-muted-foreground">Required for tax calculation and payments</p>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="addressLine1">Street Address *</Label>
-                <Input
-                  id="addressLine1"
-                  name="addressLine1"
-                  value={formData.addressLine1}
-                  onChange={handleInputChange}
-                  placeholder="123 Main Street"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="addressLine2">Apartment, Suite, etc. (Optional)</Label>
-                <Input
-                  id="addressLine2"
-                  name="addressLine2"
-                  value={formData.addressLine2}
-                  onChange={handleInputChange}
-                  placeholder="Apt 4B"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="addressCity">City *</Label>
-                  <Input
-                    id="addressCity"
-                    name="addressCity"
-                    value={formData.addressCity}
-                    onChange={handleInputChange}
-                    placeholder="New York"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="addressState">State *</Label>
-                  <Input
-                    id="addressState"
-                    name="addressState"
-                    value={formData.addressState}
-                    onChange={handleInputChange}
-                    placeholder="NY"
-                    maxLength={2}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="addressPostalCode">ZIP Code *</Label>
-                <Input
-                  id="addressPostalCode"
-                  name="addressPostalCode"
-                  value={formData.addressPostalCode}
-                  onChange={handleInputChange}
-                  placeholder="10001"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <Settings className="h-12 w-12 text-primary mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">What services do you offer?</h2>
               <p className="text-muted-foreground">Help customers understand what you specialize in</p>
             </div>
@@ -418,7 +313,7 @@ const OnboardingProvider = () => {
           </div>
         )}
 
-        {step === 4 && !selectedPlan && (
+        {step === 3 && !selectedPlan && (
           <div className="space-y-6">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold">Choose Your Plan</h2>
@@ -513,7 +408,7 @@ const OnboardingProvider = () => {
           </div>
         )}
 
-        {step === 4 && selectedPlan === 'beta' && (
+        {step === 3 && selectedPlan === 'beta' && (
           <div className="space-y-6">
             <div className="text-center mb-6">
               <div className="bg-primary/10 rounded-full h-20 w-20 mx-auto flex items-center justify-center mb-4">
@@ -542,15 +437,11 @@ const OnboardingProvider = () => {
               ← Back to plan selection
             </Button>
 
-            {USE_EMBEDDED_PAYMENTS ? (
-              <EmbeddedSubscriptionSetup onSuccess={handleTrialSuccess} />
-            ) : (
-              <HostedSubscriptionSetup />
-            )}
+            <EmbeddedSubscriptionSetup onSuccess={handleTrialSuccess} />
           </div>
         )}
 
-        {step < 4 && (
+        {step < 3 && (
           <div className="flex gap-4 mt-8">
             {step > 1 && (
               <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1" disabled={loading}>

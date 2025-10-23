@@ -31,63 +31,28 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { action, origin } = await req.json();
+    const { action } = await req.json();
 
-    // Get organization for this user (use maybeSingle, pick most recent if multiple)
-    let { data: org, error: orgError } = await supabase
+    // Get organization for this user
+    const { data: org, error: orgError } = await supabase
       .from('organizations')
-      .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready, name')
+      .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready')
       .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .single();
 
-    // Auto-create organization if missing
     if (orgError || !org) {
-      console.log('Organization not found, creating one for user:', user.id);
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, user_id, email, address_line1, address_line2, address_city, address_state, address_postal_code, address_country')
-        .eq('user_id', user.id)
-        .single();
-
-      const orgName = profile?.full_name || user.email?.split('@')[0] || 'My Business';
-      
-      const { data: newOrg, error: createError } = await supabase
-        .from('organizations')
-        .insert({
-          owner_id: user.id,
-          name: orgName,
-          slug: `${orgName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
-          plan: 'free',
-          team_limit: 5,
-        })
-        .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready, name')
-        .single();
-
-      if (createError || !newOrg) {
-        await logError(supabase, null, 'stripe-connect', { action }, 'Failed to create organization');
-        return errorResponse('ORG_CREATE_FAILED', 'Failed to create provider organization', 500);
-      }
-
-      org = newOrg;
+      await logError(supabase, null, 'stripe-connect', { action }, 'Organization not found for user');
+      return errorResponse('ORG_NOT_FOUND', 'Provider organization not found', 404);
     }
 
     // Handle different actions
-    if (action === 'start-onboarding') {
-      // Single action: ensure account exists + create onboarding link
+    if (action === 'create-account-session') {
+      // Create or retrieve Stripe Connect account
       let stripeAccountId = org.stripe_account_id;
 
-      // Create Stripe account if needed
       if (!stripeAccountId) {
+        // Create new Express account
         try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email, address_line1, address_line2, address_city, address_state, address_postal_code, address_country')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
           const account = await stripe.accounts.create({
             type: 'express',
             capabilities: {
@@ -95,97 +60,6 @@ serve(async (req) => {
               card_payments: { requested: true },
             },
             business_type: 'individual',
-            individual: profile?.address_line1 ? {
-              email: profile?.email,
-              address: {
-                line1: profile.address_line1,
-                line2: profile.address_line2 || undefined,
-                city: profile.address_city || undefined,
-                state: profile.address_state || undefined,
-                postal_code: profile.address_postal_code || undefined,
-                country: profile.address_country || 'US',
-              }
-            } : {
-              email: profile?.email,
-            },
-          });
-
-          stripeAccountId = account.id;
-
-          // Save account ID
-          await supabase
-            .from('organizations')
-            .update({ stripe_account_id: stripeAccountId })
-            .eq('id', org.id);
-
-          console.log('Created new Stripe account:', stripeAccountId);
-        } catch (error: any) {
-          await logError(supabase, org.id, 'stripe-connect:start-onboarding', { action }, error.message, error);
-          return errorResponse(
-            'ACCOUNT_CREATE_FAILED', 
-            'Failed to create Stripe account. Please try again.', 
-            500,
-            { stripe_error: formatStripeError(error) }
-          );
-        }
-      }
-
-      // Create onboarding link
-      const appUrl = origin || getAppUrl();
-      
-      try {
-        const accountLink = await stripe.accountLinks.create({
-          account: stripeAccountId,
-          refresh_url: `${appUrl}/provider/settings?tab=payments&onboarding=retry`,
-          return_url: `${appUrl}/provider/settings?tab=payments&onboarding=done`,
-          type: 'account_onboarding',
-        });
-
-        return successResponse({ url: accountLink.url });
-      } catch (error: any) {
-        await logError(supabase, org.id, 'stripe-connect:start-onboarding', { action }, error.message, error);
-        return errorResponse(
-          'LINK_CREATE_FAILED', 
-          'Failed to create onboarding link. Please try again.', 
-          500,
-          { stripe_error: formatStripeError(error) }
-        );
-      }
-    }
-
-    if (action === 'create-account') {
-      // Create new Express account if needed
-      let stripeAccountId = org.stripe_account_id;
-
-      if (!stripeAccountId) {
-        try {
-          // Get profile for address data
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email, address_line1, address_line2, address_city, address_state, address_postal_code, address_country')
-            .eq('user_id', user.id)
-            .single();
-
-          const account = await stripe.accounts.create({
-            type: 'express',
-            capabilities: {
-              transfers: { requested: true },
-              card_payments: { requested: true },
-            },
-            business_type: 'individual',
-            individual: profile?.address_line1 ? {
-              email: profile?.email,
-              address: {
-                line1: profile.address_line1,
-                line2: profile.address_line2 || undefined,
-                city: profile.address_city || undefined,
-                state: profile.address_state || undefined,
-                postal_code: profile.address_postal_code || undefined,
-                country: profile.address_country || 'US',
-              }
-            } : {
-              email: profile?.email,
-            },
           });
 
           stripeAccountId = account.id;
@@ -208,13 +82,55 @@ serve(async (req) => {
         }
       }
 
-      return successResponse({ account_id: stripeAccountId });
+      // Create account session for embedded onboarding
+      try {
+        const accountSession = await stripe.accountSessions.create({
+          account: stripeAccountId,
+          components: {
+            account_onboarding: { enabled: true },
+            account_management: { enabled: true },
+          },
+        });
+
+        return successResponse({
+          clientSecret: accountSession.client_secret,
+          accountId: stripeAccountId,
+        });
+      } catch (error: any) {
+        await logError(supabase, org.id, 'stripe-connect:create-session', { action, stripeAccountId }, error.message, error);
+        return errorResponse('SESSION_CREATE_FAILED', 'Failed to create onboarding session. Please try again.', 500, {
+          stripe_error: formatStripeError(error)
+        });
+      }
     }
 
-    if (action === 'account-link') {
-      // Create hosted onboarding link
+    if (action === 'create-dashboard-session') {
       if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Create account first', 400);
+        return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first to access dashboard', 400);
+      }
+
+      try {
+        const accountSession = await stripe.accountSessions.create({
+          account: org.stripe_account_id,
+          components: {
+            account_management: { enabled: true },
+            balances: { enabled: true },
+            payouts: { enabled: true },
+          },
+        });
+
+        return successResponse({ clientSecret: accountSession.client_secret });
+      } catch (error: any) {
+        await logError(supabase, org.id, 'stripe-connect:dashboard-session', { action }, error.message, error);
+        return errorResponse('DASHBOARD_FAILED', 'Failed to load dashboard. Please try again.', 500, {
+          stripe_error: formatStripeError(error)
+        });
+      }
+    }
+
+    if (action === 'create-account-link') {
+      if (!org.stripe_account_id) {
+        return errorResponse('NO_ACCOUNT', 'Stripe account not created yet', 400);
       }
 
       const appUrl = getAppUrl();
@@ -222,8 +138,8 @@ serve(async (req) => {
       try {
         const accountLink = await stripe.accountLinks.create({
           account: org.stripe_account_id,
-          refresh_url: `${appUrl}/provider/payments?onboarding=retry`,
-          return_url: `${appUrl}/provider/payments?onboarding=done`,
+          refresh_url: `${appUrl}/provider/settings?tab=payments&refresh=1`,
+          return_url: `${appUrl}/provider/stripe-onboarding?success=1`,
           type: 'account_onboarding',
         });
 
@@ -231,24 +147,6 @@ serve(async (req) => {
       } catch (error: any) {
         await logError(supabase, org.id, 'stripe-connect:account-link', { action }, error.message, error);
         return errorResponse('LINK_CREATE_FAILED', 'Failed to create onboarding link', 500, {
-          stripe_error: formatStripeError(error)
-        });
-      }
-    }
-
-    if (action === 'login-link') {
-      // Create hosted Express dashboard login link
-      if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first', 400);
-      }
-
-      try {
-        const loginLink = await stripe.accounts.createLoginLink(org.stripe_account_id);
-
-        return successResponse({ url: loginLink.url });
-      } catch (error: any) {
-        await logError(supabase, org.id, 'stripe-connect:login-link', { action }, error.message, error);
-        return errorResponse('LOGIN_LINK_FAILED', 'Failed to create login link', 500, {
           stripe_error: formatStripeError(error)
         });
       }

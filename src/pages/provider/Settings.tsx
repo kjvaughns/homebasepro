@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +36,6 @@ interface Organization {
 export default function Settings() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [searchParams] = useSearchParams();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [plan, setPlan] = useState<any>(null);
@@ -217,7 +216,7 @@ export default function Settings() {
         <RoleSwitcher />
       </div>
 
-      <Tabs defaultValue={searchParams.get('tab') || 'billing'} className="space-y-6">
+      <Tabs defaultValue="billing" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 max-w-full">
           <TabsTrigger value="billing" className="text-xs sm:text-sm">Billing</TabsTrigger>
           <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>

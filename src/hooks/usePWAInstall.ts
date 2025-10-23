@@ -60,12 +60,11 @@ export function usePWAInstall(): PWAInstallState {
 
     // Listen for beforeinstallprompt (Chrome/Edge/Android)
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing ONLY if we plan to show our own UI
+      e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(promptEvent);
       
       if (!checkDismissed() && !isInstalled && !checkAlreadyShown()) {
-        e.preventDefault(); // Only prevent if we'll show our UI
-        setDeferredPrompt(promptEvent);
         setCanInstall(true);
       }
     };
