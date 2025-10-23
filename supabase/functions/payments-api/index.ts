@@ -83,39 +83,48 @@ serve(async (req) => {
       );
     }
 
-    const { data: org } = await supabase
-      .from('organizations')
-      .select('*')
-      .eq('owner_id', user.id)
-      .single();
-
-    if (!org || !org.stripe_account_id) {
-      await logPaymentError(supabase, org?.id || null, 'payments-api', {}, 'Stripe account not connected');
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          code: 'STRIPE_NOT_CONNECTED', 
-          message: 'Complete Stripe setup in Settings > Payments first' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const requestBody = await req.json();
     const { action, ...payload } = requestBody;
 
-    // Validate Stripe account is fully onboarded
-    const account = await stripe.accounts.retrieve(org.stripe_account_id);
-    if (!account.details_submitted || !account.charges_enabled) {
-      await logPaymentError(supabase, org.id, 'payments-api', requestBody, 'Stripe account onboarding incomplete');
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          code: 'ONBOARDING_INCOMPLETE', 
-          message: 'Complete Stripe setup in Settings > Payments to accept payments' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Action-based authorization - only check org for provider actions
+    const homeownerActions = ['create-setup-intent', 'attach-payment-method', 'homeowner-payment-intent', 'create-homeowner-customer'];
+    
+    let org = null;
+    if (!homeownerActions.includes(action)) {
+      // Provider actions - require organization with Stripe account
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!orgData || !orgData.stripe_account_id) {
+        await logPaymentError(supabase, orgData?.id || null, 'payments-api', {}, 'Stripe account not connected');
+        return new Response(
+          JSON.stringify({ 
+            ok: false, 
+            code: 'STRIPE_NOT_CONNECTED', 
+            message: 'Complete Stripe setup in Settings > Payments first' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate Stripe account is fully onboarded
+      const account = await stripe.accounts.retrieve(orgData.stripe_account_id);
+      if (!account.details_submitted || !account.charges_enabled) {
+        await logPaymentError(supabase, orgData.id, 'payments-api', requestBody, 'Stripe account onboarding incomplete');
+        return new Response(
+          JSON.stringify({ 
+            ok: false, 
+            code: 'ONBOARDING_INCOMPLETE', 
+            message: 'Complete Stripe setup in Settings > Payments to accept payments' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      org = orgData;
     }
 
     // Validate input based on action
@@ -264,11 +273,21 @@ serve(async (req) => {
         customer = newCustomer;
       }
 
-      // Get provider organization with Stripe account
+      // Get provider organization from job's booking record
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('provider_org_id')
+        .eq('id', jobId)
+        .single();
+
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+
       const { data: providerOrg, error: orgError } = await supabase
         .from('organizations')
         .select('stripe_account_id, transaction_fee_pct')
-        .eq('id', org.id)
+        .eq('id', booking.provider_org_id)
         .single();
 
       if (orgError || !providerOrg) {
@@ -279,7 +298,7 @@ serve(async (req) => {
       const { data: subscription } = await supabase
         .from('provider_subscriptions')
         .select('plan, status')
-        .eq('provider_id', org.id)
+        .eq('provider_id', booking.provider_org_id)
         .eq('status', 'active')
         .maybeSingle();
 
@@ -324,7 +343,7 @@ serve(async (req) => {
       const { data: payment } = await supabase
         .from('payments')
         .insert({
-          org_id: org.id,
+          org_id: booking.provider_org_id,
           homeowner_profile_id: homeownerId,
           job_id: jobId,
           type: 'job_payment',
@@ -332,9 +351,9 @@ serve(async (req) => {
           amount: totalAmount,
           currency: 'usd',
           stripe_id: paymentIntent.id,
-          transfer_destination: org.stripe_account_id,
+          transfer_destination: providerOrg.stripe_account_id,
           application_fee_cents: feeAmount,
-          fee_pct_at_time: org.transaction_fee_pct,
+          fee_pct_at_time: providerOrg.transaction_fee_pct,
           captured: false,
           transfer_group: `job_${jobId}`,
           payment_method: customer.default_payment_method,

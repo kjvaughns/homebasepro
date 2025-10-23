@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -60,6 +61,7 @@ import SubscriptionDetail from "./pages/homeowner/SubscriptionDetail";
 import Appointments from "./pages/homeowner/Appointments";
 import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
+import HomeownerPaymentSettings from "./pages/homeowner/PaymentSettings";
 import MessagesPage from "./pages/Messages";
 import Jobs from "@/pages/provider/Jobs";
 import MyJobs from "@/pages/provider/MyJobs";
@@ -67,7 +69,7 @@ import Services from "@/pages/provider/Services";
 import PartsMaterials from "@/pages/provider/PartsMaterials";
 import ProfileSettings from "@/pages/provider/settings/ProfileSettings";
 import BillingSettings from "@/pages/provider/settings/BillingSettings";
-import PaymentSettings from "@/pages/provider/settings/PaymentSettings";
+import ProviderPaymentSettings from "@/pages/provider/settings/PaymentSettings";
 import IntegrationSettings from "@/pages/provider/settings/IntegrationSettings";
 import AppSettings from "@/pages/provider/settings/AppSettings";
 import RefundRequests from "@/pages/provider/RefundRequests";
@@ -251,6 +253,7 @@ const App = () => {
               <Route path="favorites" element={<Favorites />} />
               <Route path="providers" element={<MyProviders />} />
               <Route path="settings" element={<HomeownerSettings />} />
+              <Route path="settings/payments" element={<HomeownerPaymentSettings />} />
               <Route path="messages" element={<Messages role="homeowner" />} />
             </Route>
 
@@ -329,7 +332,7 @@ const App = () => {
               {/* Settings Routes */}
               <Route path="settings" element={<Settings />} />
               <Route path="settings/billing" element={<BillingSettings />} />
-              <Route path="settings/payments" element={<PaymentSettings />} />
+              <Route path="settings/payments" element={<ProviderPaymentSettings />} />
               <Route path="settings/integrations" element={<IntegrationSettings />} />
               <Route path="settings/app" element={<AppSettings />} />
               
