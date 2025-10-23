@@ -45,23 +45,20 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
+    // Create Supabase client with auth
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Verify JWT and get user
-    const token = authHeader.replace('Bearer ', '');
-    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // Use Supabase's built-in auth verification (more reliable)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!userRes.ok) {
-      throw new Error('Unauthorized');
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      throw new Error('Unauthorized - Please sign in again');
     }
-
-    const user = await userRes.json();
 
     // Create SetupIntent for embedded card collection
     if (action === 'create-setup-intent') {
