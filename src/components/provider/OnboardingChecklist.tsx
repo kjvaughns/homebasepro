@@ -27,7 +27,7 @@ export function OnboardingChecklist() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('onboarding_checklist')
       .eq('user_id', user.id)

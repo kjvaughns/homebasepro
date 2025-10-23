@@ -36,20 +36,20 @@ export function TutorialProvider({ children, role }: { children: React.ReactNode
   }, [role]);
 
   const loadTutorialSteps = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('tutorial_steps')
       .select('*')
       .eq('role', role)
       .order('step_order');
     
-    if (data) setSteps(data);
+    if (data) setSteps(data as TutorialStep[]);
   };
 
   const checkIfShouldShow = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('seen_tutorial_at')
       .eq('user_id', user.id)
@@ -81,7 +81,7 @@ export function TutorialProvider({ children, role }: { children: React.ReactNode
     
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase
+      await (supabase as any)
         .from('profiles')
         .update({ seen_tutorial_at: new Date().toISOString() })
         .eq('user_id', user.id);

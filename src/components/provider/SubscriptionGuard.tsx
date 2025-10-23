@@ -27,7 +27,7 @@ export function SubscriptionGuard({ children, requiredFeature }: SubscriptionGua
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('plan, trial_ends_at, stripe_subscription_id')
         .eq('user_id', user.id)

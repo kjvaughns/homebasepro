@@ -30,7 +30,7 @@ export function SupportDrawer() {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Create support ticket in database
-      await supabase.from('support_tickets').insert({
+      await (supabase as any).from('support_tickets').insert({
         user_id: user?.id,
         subject,
         message,
