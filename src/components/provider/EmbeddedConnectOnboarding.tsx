@@ -23,9 +23,15 @@ export default function EmbeddedConnectOnboarding({ onComplete }: EmbeddedConnec
       setError(null);
 
       // Get Stripe publishable key
-      const { data: config } = await supabase.functions.invoke('get-stripe-config');
+      const { data: config, error: configError } = await supabase.functions.invoke('get-stripe-config');
+      
+      if (configError) {
+        console.error('Stripe config error:', configError);
+        throw new Error('Failed to load Stripe configuration');
+      }
+      
       if (!config?.publishableKey) {
-        throw new Error('Stripe configuration missing');
+        throw new Error('Payment system not configured. Please contact support.');
       }
 
       // Get account session client secret
@@ -33,9 +39,13 @@ export default function EmbeddedConnectOnboarding({ onComplete }: EmbeddedConnec
         body: { action: 'create-account-session' }
       });
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error('Account session error:', sessionError);
+        throw new Error(sessionError.message || 'Failed to create onboarding session');
+      }
+      
       if (!data?.clientSecret || !data?.accountId) {
-        throw new Error('Failed to create account session');
+        throw new Error('Payment setup failed. Please try again.');
       }
 
       // Load Stripe with Connect account
@@ -53,16 +63,18 @@ export default function EmbeddedConnectOnboarding({ onComplete }: EmbeddedConnec
       });
 
       connectInstance.setOnExit(() => {
+        console.log('User exited onboarding');
         toast({
-          title: "Onboarding Incomplete",
-          description: "Please complete all steps to accept payments",
+          title: "Setup Paused",
+          description: "You can resume anytime. Complete all steps to start accepting payments.",
           variant: "destructive"
         });
       });
 
       connectInstance.setOnLoadError((e: any) => {
         console.error('Stripe Connect load error:', e);
-        setError('Failed to load onboarding form. Please refresh and try again.');
+        setError('Failed to load payment setup. Please check your connection and try again.');
+        setLoading(false);
       });
 
       const container = document.getElementById('connect-onboarding-container');

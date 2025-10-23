@@ -139,10 +139,18 @@ export default function EmbeddedSubscriptionSetup({ onSuccess }: EmbeddedSubscri
 
   const initializeSetup = async () => {
     try {
+      setLoading(true);
+      
       // Get Stripe publishable key
-      const { data: config } = await supabase.functions.invoke('get-stripe-config');
+      const { data: config, error: configError } = await supabase.functions.invoke('get-stripe-config');
+      
+      if (configError) {
+        console.error('Stripe config error:', configError);
+        throw new Error('Failed to load Stripe configuration');
+      }
+      
       if (!config?.publishableKey) {
-        throw new Error('Stripe not configured');
+        throw new Error('Stripe not configured. Please contact support.');
       }
 
       setStripePromise(loadStripe(config.publishableKey));
@@ -152,16 +160,20 @@ export default function EmbeddedSubscriptionSetup({ onSuccess }: EmbeddedSubscri
         body: { action: 'create-setup-intent' }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('SetupIntent error:', error);
+        throw new Error(error.message || 'Failed to initialize payment form');
+      }
+      
       if (!setup?.clientSecret) {
-        throw new Error('Failed to create setup session');
+        throw new Error('Payment setup failed. Please try again.');
       }
 
       setClientSecret(setup.clientSecret);
     } catch (err: any) {
       console.error('Setup initialization error:', err);
       toast({
-        title: "Initialization Failed",
+        title: "Setup Failed",
         description: err.message || "Failed to initialize payment setup",
         variant: "destructive"
       });
