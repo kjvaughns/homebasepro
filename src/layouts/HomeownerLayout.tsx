@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TutorialProvider } from "@/contexts/TutorialContext";
+import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useMessaging } from "@/contexts/MessagingContext";
 
@@ -122,6 +124,7 @@ export default function HomeownerLayout() {
   }, [location.pathname, isMessagesRoute]);
 
   return (
+    <TutorialProvider role="homeowner">
     <div className="min-h-[100svh] overflow-hidden bg-background flex flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
@@ -288,6 +291,8 @@ export default function HomeownerLayout() {
           context={{ userId: userProfile?.user_id }}
         />
       )}
+      <TutorialOverlay />
     </div>
+    </TutorialProvider>
   );
 }

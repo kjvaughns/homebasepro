@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import homebaseLogo from "@/assets/homebase-logo.png";
+import { TutorialProvider } from "@/contexts/TutorialContext";
+import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
@@ -144,6 +146,7 @@ const ProviderLayout = () => {
   // -------------------- MOBILE --------------------
   if (isMobile) {
     return (
+      <TutorialProvider role="provider">
       <div className="min-h-[100svh] overflow-hidden bg-background flex flex-col">
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
           <div className="container flex h-full items-center justify-between">
@@ -291,13 +294,16 @@ const ProviderLayout = () => {
             context={{ userId: userProfile?.user_id, orgId: organization?.id }}
           />
         )}
+        <TutorialOverlay />
       </div>
+      </TutorialProvider>
     );
   }
 
   // -------------------- DESKTOP --------------------
   return (
-    <>
+    <TutorialProvider role="provider">
+    <SidebarProvider>
       <header
         id="provider-topbar"
         className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14"
@@ -387,7 +393,11 @@ const ProviderLayout = () => {
       <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />
       {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
       <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
-    </>
+      
+      {/* Tutorial Overlay */}
+      <TutorialOverlay />
+    </SidebarProvider>
+    </TutorialProvider>
   );
 };
 

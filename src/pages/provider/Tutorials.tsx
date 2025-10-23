@@ -1,61 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Play, Clock } from "lucide-react";
-
-const tutorials = [
-  {
-    id: "1",
-    title: "Getting Started with HomeBase",
-    description: "Learn the basics of setting up your provider account",
-    duration: "2:30",
-    category: "Basics",
-    thumbnail: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400",
-  },
-  {
-    id: "2",
-    title: "Creating Your First Job",
-    description: "Step-by-step guide to creating and scheduling jobs",
-    duration: "3:15",
-    category: "Jobs",
-    thumbnail: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400",
-  },
-  {
-    id: "3",
-    title: "Managing Client Relationships",
-    description: "Use the CRM to track client history and communications",
-    duration: "4:00",
-    category: "CRM",
-    thumbnail: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=400",
-  },
-  {
-    id: "4",
-    title: "Setting Up Payment Links",
-    description: "Create and share payment links with clients",
-    duration: "2:45",
-    category: "Payments",
-    thumbnail: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400",
-  },
-  {
-    id: "5",
-    title: "Understanding Your Analytics",
-    description: "Track your business performance with analytics dashboard",
-    duration: "3:30",
-    category: "Analytics",
-    thumbnail: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400",
-  },
-  {
-    id: "6",
-    title: "Mobile App Features",
-    description: "Using HomeBase on the go with the mobile PWA",
-    duration: "2:15",
-    category: "Mobile",
-    thumbnail: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400",
-  },
-];
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Play } from 'lucide-react';
+import { useTutorial } from '@/contexts/TutorialContext';
 
 export default function Tutorials() {
+  const { startTutorial, steps, goToStep } = useTutorial();
+
   return (
-    <div className="container max-w-6xl py-8">
+    <div className="container max-w-4xl py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Tutorials & Help</h1>
         <p className="text-muted-foreground">
@@ -63,56 +15,44 @@ export default function Tutorials() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tutorials.map((tutorial) => (
-          <Card key={tutorial.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-            <div className="relative aspect-video bg-muted">
-              <img 
-                src={tutorial.thumbnail} 
-                alt={tutorial.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
-                  <Play className="h-8 w-8 text-primary ml-1" />
-                </div>
-              </div>
-              <Badge className="absolute top-2 right-2 bg-black/60 text-white">
-                {tutorial.category}
-              </Badge>
-            </div>
-            <CardHeader>
-              <CardTitle className="text-lg">{tutorial.title}</CardTitle>
-              <CardDescription className="flex items-center gap-2 text-xs">
-                <Clock className="h-3 w-3" />
-                {tutorial.duration}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                {tutorial.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="mt-12">
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Need More Help?</CardTitle>
+          <CardTitle>Getting Started Tour</CardTitle>
           <CardDescription>
-            Can't find what you're looking for? We're here to help.
+            Take a guided tour of the platform ({steps.length} steps)
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-4">
-          <a href="mailto:support@homebase.com" className="text-primary hover:underline">
-            Contact Support
-          </a>
-          <a href="/resources" className="text-primary hover:underline">
-            View Resources
-          </a>
+        <CardContent>
+          <Button onClick={startTutorial} className="w-full sm:w-auto">
+            <Play className="mr-2 h-4 w-4" />
+            Start Tutorial
+          </Button>
         </CardContent>
       </Card>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Tutorial Steps</h2>
+        <div className="grid gap-4">
+          {steps.map((step, idx) => (
+            <Card key={step.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => goToStep(idx)}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base">{step.title}</CardTitle>
+                    <CardDescription className="text-sm">{step.description}</CardDescription>
+                  </div>
+                  <Button variant="ghost" size="icon">
+                    <Play className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

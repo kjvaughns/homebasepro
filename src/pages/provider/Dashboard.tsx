@@ -6,6 +6,7 @@ import { useProviderStats, useTodayJobs, useUnpaidInvoices, useUnrepliedMessages
 import { useDashboardInsights } from "./hooks/useDashboardInsights";
 import { AIInsightCard } from "@/components/provider/AIInsightCard";
 import { BalanceWidget } from "@/components/provider/BalanceWidget";
+import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist";
 import { NewProviderWelcome } from "@/components/provider/NewProviderWelcome";
 import {
   Tooltip,

@@ -33,6 +33,21 @@ const PLANS: Plan[] = [
     features: ['Up to 5 clients', '8% transaction fee', 'Basic features'],
   },
   {
+    id: 'beta',
+    name: 'BETA Monthly',
+    price: 15,
+    feePercent: 3.0,
+    teamLimit: 3,
+    features: [
+      '14-day free trial (card required)',
+      'Unlimited clients',
+      '3% transaction fee',
+      '3 team members',
+      'Priority support',
+      'All Pro features during beta'
+    ],
+  },
+  {
     id: 'growth',
     name: 'Growth',
     price: 29,

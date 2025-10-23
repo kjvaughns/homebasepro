@@ -90,11 +90,11 @@ const Index = () => {
                 Referrals
               </Button>
               <Button 
-                onClick={() => navigate("/waitlist")} 
+                onClick={() => navigate("/register")} 
                 size="sm" 
                 className="h-9 text-sm px-4 whitespace-nowrap"
               >
-                Join Waitlist
+                Get Started Free
               </Button>
             </div>
 
@@ -103,6 +103,24 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      {/* Beta Pricing Banner */}
+      <div className="bg-gradient-to-r from-[hsl(var(--primary))]/10 to-accent/10 border-b border-[hsl(var(--primary))]/20">
+        <div className="container mx-auto px-4 py-3">
+          <p className="text-center text-sm md:text-base">
+            <span className="font-semibold text-[hsl(var(--primary))]">🎉 BETA LAUNCH</span>
+            {" · "}
+            Provider plans at $15/mo with 14-day free trial (card required)
+            {" · "}
+            <button 
+              onClick={() => navigate("/pricing")} 
+              className="underline font-medium hover:text-[hsl(var(--primary))] transition-colors"
+            >
+              View Pricing
+            </button>
+          </p>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">

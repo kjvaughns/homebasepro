@@ -42,18 +42,17 @@ const Register = () => {
         throw new Error("Please fill in all required fields");
       }
 
-      // Check beta access before allowing registration
-      const { data: hasAccess, error: accessError } = await supabase.rpc(
-        'check_beta_access',
-        { user_email: email.trim().toLowerCase(), account_type: userType }
-      );
+      // Check if registration is open
+      const { data: regSettings } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'registration_open')
+        .single();
 
-      if (accessError) throw accessError;
-
-      if (!hasAccess) {
+      if (!regSettings || regSettings.value !== true) {
         toast({
-          title: "Registration Closed",
-          description: "Registration is currently invite-only. Please join our waitlist!",
+          title: "Registration Temporarily Closed",
+          description: "We're currently in maintenance mode. Please try again later.",
           variant: "destructive",
         });
         navigate('/waitlist');
