@@ -31,7 +31,7 @@ const OnboardingHomeowner = () => {
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && (!formData.name || !formData.email || !formData.phone)) {
       toast({
         title: "Error",
@@ -40,6 +40,7 @@ const OnboardingHomeowner = () => {
       });
       return;
     }
+    
     if (step === 2 && (!formData.address || !formData.city || !formData.state || !formData.zipCode)) {
       toast({
         title: "Error",
@@ -48,15 +49,9 @@ const OnboardingHomeowner = () => {
       });
       return;
     }
-    setStep(step + 1);
-  };
-
-  const handleSkipPayment = () => {
-    setStep(4);
-  };
-
-  const handleComplete = async () => {
-    try {
+    
+    // After step 2, save property and mark as onboarded
+    if (step === 2) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({ title: "Not authenticated", variant: "destructive" });
@@ -64,7 +59,7 @@ const OnboardingHomeowner = () => {
         return;
       }
 
-      // Save property to database
+      // Save property
       const { error: propError } = await supabase
         .from('properties')
         .insert({
@@ -81,18 +76,25 @@ const OnboardingHomeowner = () => {
         return;
       }
 
-      // Mark onboarding complete
+      // Mark as onboarded NOW (before payment step)
       await supabase
         .from('profiles')
         .update({ onboarded_at: new Date().toISOString() })
         .eq('user_id', user.id);
-
-      toast({ title: "Success!", description: "Welcome to HomeBase!" });
-      navigate("/homeowner/dashboard");
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+        
+      toast({ title: "Success!", description: "Profile saved. Payment is optional." });
     }
+    
+    setStep(step + 1);
+  };
+
+  const handleSkipPayment = () => {
+    setStep(4);
+  };
+
+  const handleComplete = async () => {
+    // Just navigate to dashboard - user is already onboarded
+    navigate("/homeowner/dashboard");
   };
 
   return (

@@ -126,6 +126,14 @@ const OnboardingGuard = ({ children, requiredFor }: { children: React.ReactNode;
         return;
       }
 
+      // Check if admin - admins skip onboarding guard
+      const { data: isAdmin } = await supabase.rpc('is_admin');
+      if (isAdmin) {
+        console.log('[OnboardingGuard] Admin user, bypassing guard');
+        setChecking(false);
+        return;
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('onboarded_at, user_type')

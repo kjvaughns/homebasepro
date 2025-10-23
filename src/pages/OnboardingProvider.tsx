@@ -168,6 +168,7 @@ const OnboardingProvider = () => {
             phone: formData.phone,
             email: formData.email,
             service_area: formData.serviceArea,
+            plan: 'free', // Default to free
           })
           .select()
           .single();
@@ -180,13 +181,15 @@ const OnboardingProvider = () => {
         orgId = orgData.id;
       }
 
-      // Mark onboarding complete
+      // Mark onboarding complete NOW (before plan selection)
       await supabase
         .from('profiles')
         .update({ onboarded_at: new Date().toISOString() })
         .eq('user_id', user.id);
 
-      // Move to next step (trial)
+      toast({ title: "Success!", description: "Organization created. Plan selection is optional." });
+
+      // Move to next step (plan selection - now optional)
       setStep(3);
     } catch (error) {
       console.error("Error:", error);
@@ -404,6 +407,16 @@ const OnboardingProvider = () => {
                   </Button>
                 </CardFooter>
               </Card>
+            </div>
+            
+            <div className="text-center mt-6">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/provider/dashboard')}
+                className="text-muted-foreground"
+              >
+                Skip for now - Go to Dashboard
+              </Button>
             </div>
           </div>
         )}

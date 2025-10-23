@@ -22,7 +22,32 @@ const Login = () => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Check if they have a profile to determine where to redirect
+        // Check if admin first - admins skip onboarding
+        const { data: isAdmin } = await supabase.rpc('is_admin');
+        
+        if (isAdmin) {
+          console.log('[Login] Admin user detected');
+          
+          // Auto-complete onboarding for admins if needed
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarded_at")
+            .eq("user_id", user.id)
+            .single();
+            
+          if (!profile?.onboarded_at) {
+            console.log('[Login] Setting onboarded_at for admin');
+            await supabase
+              .from('profiles')
+              .update({ onboarded_at: new Date().toISOString() })
+              .eq('user_id', user.id);
+          }
+          
+          navigate("/admin/dashboard");
+          return;
+        }
+        
+        // Regular user flow
         const { data: profile } = await supabase
           .from("profiles")
           .select("user_type, onboarded_at")
@@ -75,6 +100,31 @@ const Login = () => {
       if (data.user) {
         // Reset rate limiter on successful login
         loginRateLimiter.reset('login');
+        
+        // Check if admin first
+        const { data: isAdmin } = await supabase.rpc('is_admin');
+        
+        if (isAdmin) {
+          console.log("[Login] Admin user logged in");
+          
+          // Auto-complete onboarding for admins if needed
+          const { data: adminProfile } = await supabase
+            .from('profiles')
+            .select('onboarded_at')
+            .eq('user_id', data.user.id)
+            .single();
+            
+          if (!adminProfile?.onboarded_at) {
+            console.log("[Login] Setting onboarded_at for admin");
+            await supabase
+              .from('profiles')
+              .update({ onboarded_at: new Date().toISOString() })
+              .eq('user_id', data.user.id);
+          }
+          
+          navigate("/admin/dashboard");
+          return;
+        }
         
         const { data: profile } = await supabase
           .from('profiles')
