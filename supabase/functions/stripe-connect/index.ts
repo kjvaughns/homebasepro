@@ -285,6 +285,11 @@ serve(async (req) => {
     
   } catch (error) {
     console.error('Stripe Connect error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      action: (await req.clone().json()).action,
+      timestamp: new Date().toISOString()
+    });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 

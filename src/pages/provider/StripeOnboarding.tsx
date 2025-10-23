@@ -10,7 +10,7 @@ export default function StripeOnboarding() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [status, setStatus] = useState<'checking' | 'success' | 'incomplete' | 'error'>('checking');
+  const [status, setStatus] = useState<'checking' | 'success' | 'incomplete' | 'not-started' | 'error'>('checking');
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -27,9 +27,16 @@ export default function StripeOnboarding() {
           body: { action: 'check-status' },
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Stripe Connect check-status error:', error);
+          throw error;
+        }
 
-        if (data.complete) {
+        console.log('Stripe Connect status:', data);
+
+        if (data.connected === false) {
+          setStatus('not-started');
+        } else if (data.complete) {
           setStatus('success');
           toast({
             title: 'Stripe Connected!',
@@ -52,9 +59,18 @@ export default function StripeOnboarding() {
           body: { action: 'check-status' },
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Stripe Connect check-status error:', error);
+          throw error;
+        }
 
-        setStatus(data.complete ? 'success' : 'incomplete');
+        console.log('Stripe Connect status:', data);
+
+        if (data.connected === false) {
+          setStatus('not-started');
+        } else {
+          setStatus(data.complete ? 'success' : 'incomplete');
+        }
       } catch (error) {
         console.error('Status check error:', error);
         setStatus('error');
@@ -104,6 +120,16 @@ export default function StripeOnboarding() {
             </>
           )}
 
+          {status === 'not-started' && (
+            <>
+              <XCircle className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+              <CardTitle>Stripe Connect Not Setup</CardTitle>
+              <CardDescription>
+                You haven't started setting up Stripe Connect yet. You can do this later from Settings when you're ready to accept payments.
+              </CardDescription>
+            </>
+          )}
+
           {status === 'incomplete' && (
             <>
               <XCircle className="h-12 w-12 mx-auto mb-4 text-amber-600" />
@@ -148,6 +174,26 @@ export default function StripeOnboarding() {
                 className="w-full"
               >
                 Go to Dashboard
+              </Button>
+            </div>
+          )}
+
+          {status === 'not-started' && (
+            <div className="space-y-3">
+              <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Set Up Payments Later</h4>
+                <p className="text-sm text-muted-foreground">
+                  You can access your dashboard now and set up Stripe Connect from Settings {'>'}Payments when you're ready to accept payments from clients.
+                </p>
+              </div>
+
+              <Button onClick={() => navigate('/provider/dashboard')} className="w-full" size="lg">
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+
+              <Button onClick={() => navigate('/provider/settings?tab=payments')} variant="outline" className="w-full">
+                Set Up Stripe Connect Now
               </Button>
             </div>
           )}
