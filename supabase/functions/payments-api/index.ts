@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { logPaymentError } from './error-logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -483,67 +484,107 @@ serve(async (req) => {
 
     // Create payment link
     if (action === 'payment-link') {
-      const { clientId, jobId, amount, description, type } = payload;
+      const { clientId, jobId, amount, description, type, customer_email } = payload;
 
-      const { data: client } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('id', clientId)
-        .single();
+      try {
+        const { data: client } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', clientId)
+          .single();
 
-      if (!client) throw new Error('Client not found');
+        if (!client) {
+          await logPaymentError(supabase, org.id, 'payment-link', 'Client not found', payload);
+          throw new Error('Client not found');
+        }
 
-      // Create Stripe Checkout Session with destination charge
-      const session = await stripe.checkout.sessions.create(
-        {
-          mode: 'payment',
-          payment_method_types: ['card'],
-          line_items: [{
-            price_data: {
-              currency: 'usd',
-              unit_amount: Math.round(amount * 100),
-              product_data: {
-                name: description || `Payment for ${client.name}`,
+        // Calculate fee based on provider's subscription tier
+        const { data: subscription } = await supabase
+          .from('provider_subscriptions')
+          .select('plan')
+          .eq('provider_id', org.id)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        const planFeeMap: Record<string, number> = {
+          free: 0.08,
+          growth: 0.025,
+          pro: 0.02,
+          scale: 0.015,
+        };
+
+        const feePercent = subscription?.plan && planFeeMap[subscription.plan]
+          ? planFeeMap[subscription.plan]
+          : org.transaction_fee_pct || 0.029;
+
+        const amountCents = Math.round(amount * 100);
+        const feeAmount = Math.round(amountCents * feePercent);
+
+        // Create Stripe Checkout Session with proper fund routing
+        const session = await stripe.checkout.sessions.create(
+          {
+            mode: 'payment',
+            payment_method_types: ['card'],
+            customer_email: customer_email || client.email,
+            line_items: [{
+              price_data: {
+                currency: 'usd',
+                unit_amount: amountCents,
+                product_data: {
+                  name: description || `Payment for ${client.name}`,
+                },
+              },
+              quantity: 1,
+            }],
+            payment_intent_data: {
+              application_fee_amount: feeAmount,
+              transfer_data: {
+                destination: org.stripe_account_id,
+              },
+              metadata: {
+                org_id: org.id,
+                client_id: clientId,
+                job_id: jobId || '',
+                type: type || 'payment_link',
               },
             },
-            quantity: 1,
-          }],
-          payment_intent_data: {
-            application_fee_amount: Math.round(amount * 100 * 0.029), // 2.9% platform fee
+            success_url: `${Deno.env.get('PUBLIC_URL')}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${Deno.env.get('PUBLIC_URL')}/payment/cancelled`,
             metadata: {
               org_id: org.id,
               client_id: clientId,
               job_id: jobId || '',
+              type: type || 'payment_link',
             },
           },
-          success_url: `${Deno.env.get('PUBLIC_URL')}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${Deno.env.get('PUBLIC_URL')}/payment/cancelled`,
-          metadata: {
-            org_id: org.id,
-            client_id: clientId,
-            job_id: jobId || '',
-            type: type || 'payment_link',
-          },
-        },
-        { stripeAccount: org.stripe_account_id }
-      );
+          { stripeAccount: org.stripe_account_id }
+        );
 
-      // Save to payment_links table
-      await supabase.from('payment_links').insert({
-        organization_id: org.id,
-        client_id: clientId,
-        job_id: jobId,
-        description: description,
-        amount: Math.round(amount * 100),
-        stripe_session_id: session.id,
-        payment_link_url: session.url,
-        status: 'active',
-      });
-
-      return new Response(
-        JSON.stringify({ id: session.id, url: session.url }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        return new Response(
+          JSON.stringify({ id: session.id, url: session.url }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      } catch (error: any) {
+        console.error('Payment link error:', error);
+        
+        await logPaymentError(
+          supabase, 
+          org.id, 
+          'payment-link', 
+          error.message,
+          payload,
+          error.raw || error
+        );
+        
+        return new Response(
+          JSON.stringify({ 
+            error: error.message,
+            code: error.code || 'payment_link_failed',
+            details: error.type || 'Unknown error'
+          }),
+          { status: error.statusCode || 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Create invoice

@@ -1475,6 +1475,82 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string | null
+          due_date: string
+          email_sent_at: string | null
+          email_status: string | null
+          id: string
+          invoice_number: string
+          job_id: string | null
+          line_items: Json | null
+          notes: string | null
+          organization_id: string
+          pdf_url: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string | null
+          due_date: string
+          email_sent_at?: string | null
+          email_status?: string | null
+          id?: string
+          invoice_number: string
+          job_id?: string | null
+          line_items?: Json | null
+          notes?: string | null
+          organization_id: string
+          pdf_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string | null
+          due_date?: string
+          email_sent_at?: string | null
+          email_status?: string | null
+          id?: string
+          invoice_number?: string
+          job_id?: string | null
+          line_items?: Json | null
+          notes?: string | null
+          organization_id?: string
+          pdf_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           body_md: string
@@ -1783,6 +1859,7 @@ export type Database = {
           lng: number | null
           logo_url: string | null
           name: string
+          next_payout_date: string | null
           owner_id: string
           phone: string | null
           plan: string | null
@@ -1821,6 +1898,7 @@ export type Database = {
           lng?: number | null
           logo_url?: string | null
           name: string
+          next_payout_date?: string | null
           owner_id: string
           phone?: string | null
           plan?: string | null
@@ -1859,6 +1937,7 @@ export type Database = {
           lng?: number | null
           logo_url?: string | null
           name?: string
+          next_payout_date?: string | null
           owner_id?: string
           phone?: string | null
           plan?: string | null
@@ -1935,6 +2014,47 @@ export type Database = {
           {
             foreignKeyName: "parts_materials_organization_id_fkey"
             columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_errors: {
+        Row: {
+          action: string
+          created_at: string | null
+          error_code: string | null
+          error_message: string
+          id: string
+          org_id: string | null
+          request_body: Json | null
+          stripe_error_details: Json | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          error_code?: string | null
+          error_message: string
+          id?: string
+          org_id?: string | null
+          request_body?: Json | null
+          stripe_error_details?: Json | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string
+          id?: string
+          org_id?: string | null
+          request_body?: Json | null
+          stripe_error_details?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_errors_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]

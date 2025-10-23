@@ -52,13 +52,24 @@ export function CreatePaymentLinkModal({ open, onClose, clientId, jobId }: Creat
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Payment link error:", error);
+        const errorMsg = error.message || "Failed to create payment link";
+        toast.error(errorMsg);
+        return;
+      }
+
+      if (!data?.url) {
+        toast.error("Payment link creation failed: No URL returned");
+        return;
+      }
 
       setGeneratedLink(data.url);
       toast.success("Payment link created!");
     } catch (error: any) {
       console.error("Error creating payment link:", error);
-      toast.error(error.message || "Failed to create payment link");
+      const errorDetails = error.details || error.message || "Failed to create payment link";
+      toast.error(errorDetails);
     } finally {
       setLoading(false);
     }

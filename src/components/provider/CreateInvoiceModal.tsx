@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { generateInvoicePDF } from "@/utils/generateInvoice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,30 +92,105 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
 
       if (!org) return;
 
+      const { data: client } = await supabase
+        .from("clients")
+        .select("email, name")
+        .eq("id", selectedClient)
+        .single();
+
+      if (!client) {
+        toast.error("Client not found");
+        return;
+      }
+
       const total = calculateTotal();
       const invoiceNumber = `INV-${Date.now()}`;
 
-      const { error } = await (supabase as any)
+      // Generate PDF
+      const pdfBlob = generateInvoicePDF({
+        invoice_number: invoiceNumber,
+        client_name: client.name,
+        provider_name: org.name,
+        line_items: lineItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          rate: Math.round(item.rate * 100),
+          amount: Math.round(item.quantity * item.rate * 100),
+        })),
+        subtotal: Math.round(total * 100),
+        tax_amount: 0,
+        discount_amount: 0,
+        total_amount: Math.round(total * 100),
+        due_date: dueDate,
+        created_at: new Date().toISOString(),
+      });
+
+      // Upload PDF to storage
+      const pdfPath = `invoices/${org.id}/${invoiceNumber}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from('provider-images')
+        .upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast.error("Failed to generate PDF");
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('provider-images')
+        .getPublicUrl(pdfPath);
+
+      // Create invoice record
+      const { data: invoice, error: insertError } = await supabase
         .from("invoices")
-        .insert({
+        .insert([{
           organization_id: org.id,
           client_id: selectedClient,
           job_id: jobId,
           invoice_number: invoiceNumber,
-          amount: total,
+          amount: Math.round(total * 100),
           due_date: dueDate,
-          line_items: lineItems,
+          line_items: lineItems as any,
           notes: notes,
           status: "pending",
+          pdf_url: publicUrl,
+          email_status: sendEmail ? 'pending' : 'not_sent',
+        }])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Send email if requested
+      if (sendEmail) {
+        const { error: emailError } = await supabase.functions.invoke('send-invoice', {
+          body: {
+            invoiceId: invoice.id,
+            clientEmail: client.email,
+            pdfUrl: publicUrl,
+            invoiceNumber: invoiceNumber,
+            amount: Math.round(total * 100),
+            dueDate: dueDate,
+            providerName: org.name,
+            clientName: client.name,
+          }
         });
 
-      if (error) throw error;
+        if (emailError) {
+          console.error('Email send failed:', emailError);
+          toast.error("Invoice created but notification failed. Client can view in their portal.");
+        } else {
+          toast.success("Invoice created and sent!");
+        }
+      } else {
+        toast.success("Invoice created!");
+      }
 
-      toast.success(sendEmail ? "Invoice created and sent!" : "Invoice created!");
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating invoice:", error);
-      toast.error("Failed to create invoice");
+      toast.error(error.message || "Failed to create invoice");
     } finally {
       setLoading(false);
     }

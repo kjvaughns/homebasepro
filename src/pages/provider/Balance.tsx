@@ -82,7 +82,7 @@ export default function Balance() {
     try {
       const { data, error } = await supabase.functions.invoke("payments-api", {
         body: {
-          action: "instant_payout",
+          action: "instant-payout",
           amount: amountInCents,
           currency: balance.currency,
         },
