@@ -8,8 +8,9 @@ interface TutorialStep {
   step_order: number;
   title: string;
   description: string;
-  route: string;
-  icon: string;
+  route?: string;
+  icon?: string;
+  created_at?: string;
 }
 
 interface TutorialContextType {
@@ -36,28 +37,46 @@ export function TutorialProvider({ children, role }: { children: React.ReactNode
   }, [role]);
 
   const loadTutorialSteps = async () => {
-    const { data } = await (supabase as any)
-      .from('tutorial_steps')
-      .select('*')
-      .eq('role', role)
-      .order('step_order');
-    
-    if (data) setSteps(data as TutorialStep[]);
+    try {
+      const { data, error } = await supabase
+        .from('tutorial_steps')
+        .select('*')
+        .eq('role', role)
+        .order('step_order');
+      
+      if (error) {
+        console.warn('Tutorial steps not available:', error);
+        return;
+      }
+      
+      if (data) setSteps(data as TutorialStep[]);
+    } catch (err) {
+      console.warn('Failed to load tutorial steps:', err);
+    }
   };
 
   const checkIfShouldShow = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: profile } = await (supabase as any)
-      .from('profiles')
-      .select('seen_tutorial_at')
-      .eq('user_id', user.id)
-      .single();
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('seen_tutorial_at')
+        .eq('user_id', user.id)
+        .single();
 
-    // Show if never seen tutorial
-    if (!profile?.seen_tutorial_at) {
-      setShowTutorial(true);
+      if (error) {
+        console.warn('Failed to check tutorial status:', error);
+        return;
+      }
+
+      // Show if never seen tutorial
+      if (!profile?.seen_tutorial_at) {
+        setShowTutorial(true);
+      }
+    } catch (err) {
+      console.warn('Tutorial check failed:', err);
     }
   };
 
@@ -70,7 +89,9 @@ export function TutorialProvider({ children, role }: { children: React.ReactNode
     if (currentStep < steps.length - 1) {
       const nextStepIndex = currentStep + 1;
       setCurrentStep(nextStepIndex);
-      navigate(steps[nextStepIndex].route);
+      if (steps[nextStepIndex].route) {
+        navigate(steps[nextStepIndex].route);
+      }
     } else {
       skipTutorial(); // Finished
     }
@@ -79,19 +100,25 @@ export function TutorialProvider({ children, role }: { children: React.ReactNode
   const skipTutorial = async () => {
     setShowTutorial(false);
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await (supabase as any)
-        .from('profiles')
-        .update({ seen_tutorial_at: new Date().toISOString() })
-        .eq('user_id', user.id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ seen_tutorial_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+      }
+    } catch (err) {
+      console.warn('Failed to update tutorial status:', err);
     }
   };
 
   const goToStep = (step: number) => {
     if (step >= 0 && step < steps.length) {
       setCurrentStep(step);
-      navigate(steps[step].route);
+      if (steps[step].route) {
+        navigate(steps[step].route);
+      }
     }
   };
 

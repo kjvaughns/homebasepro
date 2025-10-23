@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { getStripeErrorMessage, getStripeErrorTitle } from '@/utils/stripeErrorMessages';
 import { logError } from '@/utils/errorHandler';
 import { USE_EMBEDDED_PAYMENTS } from '@/lib/featureFlags';
+import { HostedPaymentCheckout } from './HostedPaymentCheckout';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -213,6 +214,19 @@ function CheckoutForm({ jobId, amount, description, onSuccess, onCancel }: Check
 }
 
 export function PaymentCheckout({ jobId, providerId, amount, description, onSuccess, onCancel }: PaymentCheckoutProps) {
+  // Use hosted checkout if embedded payments disabled
+  if (!USE_EMBEDDED_PAYMENTS) {
+    return (
+      <HostedPaymentCheckout
+        jobId={jobId}
+        providerId={providerId}
+        amount={amount}
+        description={description}
+        onCancel={onCancel}
+      />
+    );
+  }
+
   const [clientSecret, setClientSecret] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);

@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import EmbeddedSubscriptionSetup from "@/components/provider/EmbeddedSubscriptionSetup";
+import HostedSubscriptionSetup from "@/components/provider/HostedSubscriptionSetup";
+import { USE_EMBEDDED_PAYMENTS } from "@/lib/featureFlags";
 
 
 const OnboardingProvider = () => {
@@ -437,7 +439,11 @@ const OnboardingProvider = () => {
               ← Back to plan selection
             </Button>
 
-            <EmbeddedSubscriptionSetup onSuccess={handleTrialSuccess} />
+            {USE_EMBEDDED_PAYMENTS ? (
+              <EmbeddedSubscriptionSetup onSuccess={handleTrialSuccess} />
+            ) : (
+              <HostedSubscriptionSetup />
+            )}
           </div>
         )}
 

@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Loader2, Plus, Trash2 } from 'lucide-react';
+import { CreditCard, Loader2, Plus, Trash2, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { USE_EMBEDDED_PAYMENTS } from '@/lib/featureFlags';
 import {
   Dialog,
   DialogContent,
@@ -175,6 +176,42 @@ export function PaymentMethodManager() {
   };
 
   const handleAddPaymentMethod = async () => {
+    // Use hosted Customer Portal when embedded payments disabled
+    if (!USE_EMBEDDED_PAYMENTS) {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('stripe_customer_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile?.stripe_customer_id) {
+          throw new Error('Please complete a payment first to add payment methods');
+        }
+
+        // Redirect to Stripe Customer Portal
+        window.open('https://billing.stripe.com/p/login/test_...', '_blank');
+        toast({
+          title: 'Opening Stripe Portal',
+          description: 'Manage your payment methods securely',
+        });
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Embedded flow
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
