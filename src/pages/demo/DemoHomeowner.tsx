@@ -284,8 +284,8 @@ export default function DemoHomeowner() {
           <p className="text-muted-foreground mb-4">
             Join the waitlist for early access and exclusive launch perks.
           </p>
-          <Button size="lg" onClick={() => navigate("/waitlist")}>
-            Join Waitlist Now
+          <Button size="lg" onClick={() => navigate("/register")}>
+            Start Free Trial
           </Button>
         </div>
       )}

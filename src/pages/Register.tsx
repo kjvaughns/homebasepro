@@ -46,16 +46,17 @@ const Register = () => {
       const { data: regSettings } = await supabase
         .from('app_settings')
         .select('value')
-        .eq('key', 'registration_open')
+        .eq('key', 'registration_enabled')
         .single();
 
-      if (!regSettings || regSettings.value !== true) {
+      const registrationEnabled = regSettings?.value?.[userType] === true;
+      
+      if (!registrationEnabled) {
         toast({
           title: "Registration Temporarily Closed",
-          description: "We're currently in maintenance mode. Please try again later.",
+          description: "We're currently in limited beta. Please check back later.",
           variant: "destructive",
         });
-        navigate('/waitlist');
         return;
       }
 

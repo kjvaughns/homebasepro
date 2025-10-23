@@ -114,8 +114,8 @@ export default function ClubPortal() {
 
             <div className="text-center text-sm text-muted-foreground space-y-2">
               <p>Don't have a code yet?</p>
-              <Button variant="outline" onClick={() => navigate('/waitlist')}>
-                Join Waitlist
+              <Button variant="outline" onClick={() => navigate('/register')}>
+                Get Started
               </Button>
             </div>
           </CardContent>

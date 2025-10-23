@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,8 @@ import {
   Search,
   Filter,
   X,
+  AlertCircle,
+  TrendingUp,
 } from "lucide-react";
 import { useClientsList } from "./hooks/useClientsData";
 import ClientDrawer from "@/components/provider/ClientDrawer";
@@ -36,20 +39,61 @@ import { AddClientDialog } from "@/components/provider/AddClientDialog";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Clients() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { clients, loading, refetch } = useClientsList();
   const { isMobile } = useMobileLayout();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [orgPlan, setOrgPlan] = useState<string>('free');
+  const [orgFee, setOrgFee] = useState<number>(0.08);
   
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [planFilter, setPlanFilter] = useState<string>("all");
   const [balanceFilter, setBalanceFilter] = useState<string>("all");
+
+  // Fetch organization plan
+  useEffect(() => {
+    const fetchOrgPlan = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('plan, transaction_fee_pct')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (org) {
+        setOrgPlan(org.plan || 'free');
+        setOrgFee(org.transaction_fee_pct || 0.08);
+      }
+    };
+
+    fetchOrgPlan();
+  }, []);
+
+  const isFreePlan = orgPlan === 'free';
+  const atClientLimit = isFreePlan && clients.length >= 5;
+
+  const handleAddClient = () => {
+    if (atClientLimit) {
+      toast({
+        title: "Client Limit Reached",
+        description: "FREE plan allows up to 5 clients. Upgrade to Growth plan for unlimited clients.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowAddDialog(true);
+  };
 
   // Filtered and searched clients
   const filteredClients = useMemo(() => {
@@ -143,6 +187,27 @@ export default function Clients() {
   return (
     <>
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 space-y-6 overflow-x-hidden">
+        {/* FREE Plan Banner */}
+        {isFreePlan && (
+          <Alert className="border-primary/20 bg-primary/5">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <div>
+                <span className="font-semibold">FREE Plan</span> • {clients.length}/5 clients • {(orgFee * 100).toFixed(1)}% transaction fee
+                {atClientLimit && " • Client limit reached"}
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => navigate("/provider/settings/billing")}
+                className="shrink-0"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Upgrade
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -160,7 +225,7 @@ export default function Clients() {
               <Upload className="h-4 w-4 mr-2" />
               Import CSV
             </Button>
-            <Button className="w-full sm:w-auto" onClick={() => setShowAddDialog(true)}>
+            <Button className="w-full sm:w-auto" onClick={handleAddClient}>
               <Plus className="h-4 w-4 mr-2" />
               Add Client
             </Button>
@@ -273,7 +338,7 @@ export default function Clients() {
               </p>
               {clients.length === 0 && (
                 <div className="flex gap-2 justify-center">
-                  <Button onClick={() => setShowAddDialog(true)}>
+                  <Button onClick={handleAddClient}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Client
                   </Button>

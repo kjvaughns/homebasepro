@@ -511,10 +511,10 @@ export default function ProviderCommunicationBuilder() {
                       size="lg"
                       variant="outline"
                       className="w-full"
-                      onClick={() => navigate("/waitlist")}
+                      onClick={() => navigate("/register")}
                       data-track="pcb_signup_click"
                     >
-                      Create a free provider account
+                      Get Started Free
                     </Button>
                   </div>
 

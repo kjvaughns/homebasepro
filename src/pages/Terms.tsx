@@ -25,11 +25,11 @@ const Terms = () => {
                 Home
               </Button>
               <Button 
-                onClick={() => navigate("/waitlist")} 
+                onClick={() => navigate("/register")} 
                 size="sm" 
                 className="h-9 text-sm px-4 whitespace-nowrap"
               >
-                Join Waitlist
+                Get Started
               </Button>
             </div>
           </div>

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Check } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
@@ -16,6 +18,8 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
+  const [showPromoCode, setShowPromoCode] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +53,8 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
         {
           body: {
             action: 'activate-trial-subscription',
-            paymentMethodId: setupIntent.payment_method
+            paymentMethodId: setupIntent.payment_method,
+            promoCode: promoCode || undefined
           }
         }
       );
@@ -86,6 +91,45 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <PaymentElement />
+
+          {/* Promo Code Section */}
+          <div className="space-y-2">
+            {!showPromoCode ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPromoCode(true)}
+                className="text-sm"
+              >
+                Have a promo code?
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="promoCode" className="text-sm">Promo Code</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="promoCode"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="ENTER CODE"
+                    className="uppercase"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowPromoCode(false);
+                      setPromoCode('');
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="rounded-lg border bg-muted/50 p-4 space-y-2 text-sm">
             <div className="flex items-center gap-2 text-green-600 font-medium">

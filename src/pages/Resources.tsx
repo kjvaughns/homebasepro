@@ -67,10 +67,10 @@ export default function Resources() {
                 Pricing
               </Button>
               <Button 
-                onClick={() => navigate("/waitlist")} 
+                onClick={() => navigate("/register")} 
                 size="sm"
               >
-                Join Waitlist
+                Get Started
               </Button>
             </div>
           </div>
@@ -101,9 +101,9 @@ export default function Resources() {
               <Button 
                 size="lg" 
                 variant="outline"
-                onClick={() => navigate("/waitlist")}
+                onClick={() => navigate("/register")}
               >
-                Create a free HomeBase account
+                Create a Free Account
               </Button>
             </div>
           </div>
@@ -171,9 +171,9 @@ export default function Resources() {
           <div className="text-center mt-12">
             <Button 
               size="lg"
-              onClick={() => navigate("/waitlist")}
+              onClick={() => navigate("/register")}
             >
-              Open in HomeBase
+              Get Started Free
             </Button>
           </div>
         </div>
@@ -213,9 +213,9 @@ export default function Resources() {
             <Button 
               size="lg" 
               variant="secondary"
-              onClick={() => navigate("/waitlist")}
+              onClick={() => navigate("/register")}
             >
-              Create a free HomeBase account
+              Get Started Free
             </Button>
             <Button 
               size="lg" 

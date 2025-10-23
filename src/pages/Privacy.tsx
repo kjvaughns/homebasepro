@@ -25,11 +25,11 @@ const Privacy = () => {
                 Home
               </Button>
               <Button 
-                onClick={() => navigate("/waitlist")} 
+                onClick={() => navigate("/register")} 
                 size="sm" 
                 className="h-9 text-sm px-4 whitespace-nowrap"
               >
-                Join Waitlist
+                Get Started
               </Button>
             </div>
           </div>
@@ -45,8 +45,8 @@ const Privacy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Information We Collect</h2>
             <p className="text-muted-foreground mb-4">
-              We collect information you provide directly to us when you create an account, join our waitlist, 
-              use our services, or communicate with us. This may include:
+              We collect information you provide directly to us when you create an account, use our services, 
+              or communicate with us. This may include:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">
               <li>Name and contact information (email address, phone number)</li>

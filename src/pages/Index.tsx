@@ -130,7 +130,7 @@ const Index = () => {
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in">
                 <Star className="h-4 w-4" />
-                <span className="text-xs sm:text-sm font-medium">🎉 Early Access: Lifetime 25% Discount for Beta Users</span>
+                <span className="text-xs sm:text-sm font-medium">🎉 Now Open: Start Your Free Trial Today</span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
                 Never forget maintenance again
@@ -142,10 +142,10 @@ const Index = () => {
               <div className="flex flex-col gap-4 items-center md:items-start animate-fade-in">
                 <Button 
                   size="lg" 
-                  onClick={() => navigate("/waitlist")}
+                  onClick={() => navigate("/register")}
                   className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
                 >
-                  Join the Waitlist
+                  Start Free Trial
                 </Button>
                 
                 <div className="flex flex-wrap gap-3 justify-center md:justify-start">
@@ -476,15 +476,15 @@ const Index = () => {
         <div className="container mx-auto text-center max-w-3xl">
           <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to get started?</h2>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 px-4">
-            Join the waitlist and secure your lifetime 25% discount
+            Start your free trial today and transform your home service business
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
             <Button 
               size="lg" 
-              onClick={() => navigate("/waitlist")}
+              onClick={() => navigate("/register")}
               className="text-base sm:text-lg px-6 sm:px-8 w-full sm:w-auto"
             >
-              Join Waitlist Now
+              Get Started Free
             </Button>
             <Button 
               size="lg" 

@@ -106,9 +106,9 @@ export const MobileMenu = () => {
 
           <Button
             className="w-full h-12 text-base"
-            onClick={() => handleNavigate("/waitlist")}
+            onClick={() => handleNavigate("/register")}
           >
-            Join Waitlist
+            Get Started
           </Button>
 
           <Separator className="my-4" />

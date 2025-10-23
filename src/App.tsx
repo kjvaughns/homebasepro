@@ -16,8 +16,7 @@ import Terms from "./pages/Terms";
 import Resources from "./pages/Resources";
 import HomeMaintenanceSurvivalKit from "./pages/HomeMaintenanceSurvivalKit";
 import ProviderCommunicationBuilder from "./pages/ProviderCommunicationBuilder";
-import Waitlist from "./pages/Waitlist";
-import WaitlistThankYou from "./pages/WaitlistThankYou";
+// Waitlist pages kept for legacy links but not routed
 import Club from "./pages/Club";
 import DemoHomeowner from "./pages/demo/DemoHomeowner";
 import DemoProvider from "./pages/demo/DemoProvider";
@@ -348,9 +347,7 @@ const App = () => {
               <Route path="access" element={<AdminUsersAccess />} />
             </Route>
 
-            {/* Waitlist routes */}
-            <Route path="/waitlist" element={<Waitlist />} />
-            <Route path="/waitlist/thank-you" element={<WaitlistThankYou />} />
+            {/* Waitlist routes removed - redirect to register */}
             <Route path="/club" element={<Club />} />
             <Route path="/pwa-launch" element={<PWALaunch />} />
 
