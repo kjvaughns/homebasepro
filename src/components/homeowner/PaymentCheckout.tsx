@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getStripeErrorMessage, getStripeErrorTitle } from '@/utils/stripeErrorMessages';
 import { logError } from '@/utils/errorHandler';
+import { USE_EMBEDDED_PAYMENTS } from '@/lib/featureFlags';
 import {
   AlertDialog,
   AlertDialogAction,
