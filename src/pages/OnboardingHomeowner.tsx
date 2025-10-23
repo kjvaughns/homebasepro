@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Home, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import { PaymentMethodManager } from "@/components/homeowner/PaymentMethodManager";
 
@@ -54,12 +55,44 @@ const OnboardingHomeowner = () => {
     setStep(4);
   };
 
-  const handleComplete = () => {
-    toast({
-      title: "Success!",
-      description: "Your profile is ready. Welcome to HomeBase!",
-    });
-    navigate("/dashboard");
+  const handleComplete = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Not authenticated", variant: "destructive" });
+        navigate("/register");
+        return;
+      }
+
+      // Save property to database
+      const { error: propError } = await supabase
+        .from('properties')
+        .insert({
+          homeowner_id: user.id,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zip_code: formData.zipCode,
+        });
+
+      if (propError) {
+        console.error("Property save error:", propError);
+        toast({ title: "Error", description: "Failed to save property", variant: "destructive" });
+        return;
+      }
+
+      // Mark onboarding complete
+      await supabase
+        .from('profiles')
+        .update({ onboarded_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+
+      toast({ title: "Success!", description: "Welcome to HomeBase!" });
+      navigate("/homeowner/dashboard");
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+    }
   };
 
   return (

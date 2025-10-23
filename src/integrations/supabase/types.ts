@@ -2370,7 +2370,13 @@ export type Database = {
           full_name: string
           has_completed_service_assessment: boolean | null
           id: string
+          is_beta: boolean | null
+          onboarded_at: string | null
           phone: string | null
+          plan: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
           updated_at: string
           user_id: string
           user_type: string
@@ -2383,7 +2389,13 @@ export type Database = {
           full_name: string
           has_completed_service_assessment?: boolean | null
           id?: string
+          is_beta?: boolean | null
+          onboarded_at?: string | null
           phone?: string | null
+          plan?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id: string
           user_type: string
@@ -2396,7 +2408,13 @@ export type Database = {
           full_name?: string
           has_completed_service_assessment?: boolean | null
           id?: string
+          is_beta?: boolean | null
+          onboarded_at?: string | null
           phone?: string | null
+          plan?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
           user_type?: string
@@ -2408,6 +2426,47 @@ export type Database = {
             columns: ["default_property_id"]
             isOneToOne: false
             referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties: {
+        Row: {
+          address: string
+          city: string
+          created_at: string | null
+          homeowner_id: string
+          id: string
+          state: string
+          updated_at: string | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string | null
+          homeowner_id: string
+          id?: string
+          state: string
+          updated_at?: string | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string | null
+          homeowner_id?: string
+          id?: string
+          state?: string
+          updated_at?: string | null
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

@@ -47,6 +47,18 @@ serve(async (req) => {
     const user = await userRes.json();
     const { action, plan, paymentMethodId } = await req.json();
 
+    // Check Stripe configuration
+    if (action === 'check-config') {
+      const stripePriceId = Deno.env.get('STRIPE_PRICE_BETA_MONTHLY');
+      return new Response(
+        JSON.stringify({ 
+          hasStripe: !!stripeKey, 
+          hasPrice: !!stripePriceId 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get user's organization
     const { data: orgs, error: orgError } = await supabase
       .from('organizations')
@@ -143,8 +155,9 @@ serve(async (req) => {
                 plan: plan,
               }
             },
-            success_url: `${req.headers.get('origin')}/provider/settings?tab=billing&success=true`,
-            cancel_url: `${req.headers.get('origin')}/provider/settings?tab=billing&canceled=true`,
+            success_url: `${req.headers.get('origin') || 'https://homebaseproapp.com'}/provider/dashboard?trial_started=true`,
+            cancel_url: `${req.headers.get('origin') || 'https://homebaseproapp.com'}/onboarding/provider?canceled=true`,
+            payment_method_collection: 'always',
             metadata: {
               org_id: org.id,
               user_id: user.id,

@@ -538,6 +538,121 @@ serve(async (req) => {
       }
     }
 
+    // Handle checkout.session.completed - Trial start
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      
+      if (session.mode === 'subscription' && session.subscription) {
+        const { org_id, user_id, plan } = session.metadata || {};
+        
+        if (org_id && user_id) {
+          console.log(`Processing trial start for org ${org_id}`);
+          
+          // Fetch full subscription details
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          
+          // Update profiles with trial info
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              stripe_customer_id: session.customer as string,
+              stripe_subscription_id: subscription.id,
+              plan: plan || 'beta',
+              trial_ends_at: subscription.trial_end 
+                ? new Date(subscription.trial_end * 1000).toISOString() 
+                : null,
+              onboarded_at: new Date().toISOString(), // Mark onboarding complete
+            })
+            .eq('user_id', user_id);
+
+          if (profileError) {
+            console.error('Profile update error:', profileError);
+          }
+          
+          // Update organization
+          const { error: orgError } = await supabase
+            .from('organizations')
+            .update({
+              plan: plan || 'beta',
+              transaction_fee_pct: 0.03,
+              team_limit: 3,
+            })
+            .eq('id', org_id);
+
+          if (orgError) {
+            console.error('Organization update error:', orgError);
+          }
+
+          // Upsert provider_subscriptions
+          const { error: subError } = await supabase
+            .from('provider_subscriptions')
+            .upsert({
+              provider_id: org_id,
+              stripe_customer_id: session.customer as string,
+              stripe_subscription_id: subscription.id,
+              plan: plan || 'beta',
+              status: subscription.status,
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            });
+
+          if (subError) {
+            console.error('Subscription record error:', subError);
+          }
+
+          console.log(`Trial started successfully for org ${org_id}`);
+        }
+      }
+    }
+
+    // Handle customer.subscription.deleted - Subscription canceled
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as Stripe.Subscription;
+      
+      console.log(`Subscription canceled: ${subscription.id}`);
+      
+      // Revert to free plan
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          plan: 'free',
+          trial_ends_at: null,
+          stripe_subscription_id: null,
+        })
+        .eq('stripe_subscription_id', subscription.id);
+
+      if (profileError) {
+        console.error('Profile revert to free error:', profileError);
+      }
+
+      // Update provider_subscriptions status
+      const { error: subError } = await supabase
+        .from('provider_subscriptions')
+        .update({ status: 'canceled' })
+        .eq('stripe_subscription_id', subscription.id);
+
+      if (subError) {
+        console.error('Subscription cancellation update error:', subError);
+      }
+
+      // Revert organization to free plan limits
+      const { data: providerSub } = await supabase
+        .from('provider_subscriptions')
+        .select('provider_id')
+        .eq('stripe_subscription_id', subscription.id)
+        .single();
+
+      if (providerSub) {
+        await supabase
+          .from('organizations')
+          .update({
+            plan: 'free',
+            team_limit: 0,
+            transaction_fee_pct: 0.08,
+          })
+          .eq('id', providerSub.provider_id);
+      }
+    }
+
     return new Response(JSON.stringify({ received: true }), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,

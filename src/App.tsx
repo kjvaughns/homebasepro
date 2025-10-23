@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { registerServiceWorker } from "@/utils/serviceWorker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -108,6 +108,43 @@ import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 
 const queryClient = new QueryClient();
 
+// Onboarding Guard Component
+const OnboardingGuard = ({ children, requiredFor }: { children: React.ReactNode; requiredFor: 'homeowner' | 'provider' }) => {
+  const [checking, setChecking] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarded_at, user_type')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.onboarded_at && profile?.user_type === requiredFor) {
+        navigate(`/onboarding/${requiredFor}`);
+      }
+      setChecking(false);
+    };
+
+    checkOnboarding();
+  }, []);
+
+  if (checking) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>;
+  }
+
+  return <>{children}</>;
+};
+
 const App = () => {
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'homeowner' | 'provider'>('homeowner');
@@ -183,7 +220,7 @@ const App = () => {
             <Route path="/become-provider" element={<BecomeProvider />} />
 
             {/* Homeowner Routes */}
-            <Route element={<HomeownerLayout />}>
+            <Route path="/homeowner" element={<OnboardingGuard requiredFor="homeowner"><HomeownerLayout /></OnboardingGuard>}>
               <Route path="/dashboard" element={<HomeownerDashboard />} />
               <Route path="/homeowner/homes" element={<Homes />} />
               <Route path="/homeowner/homes/new" element={<AddHome />} />
@@ -201,7 +238,7 @@ const App = () => {
             </Route>
 
             {/* Provider routes with shared layout */}
-            <Route path="/provider" element={<ProviderLayout />}>
+            <Route path="/provider" element={<OnboardingGuard requiredFor="provider"><ProviderLayout /></OnboardingGuard>}>
               <Route path="dashboard" element={<ProviderDashboard />} />
               
               {/* Guarded routes - require active subscription or trial */}

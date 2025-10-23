@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Home, Briefcase, Settings } from "lucide-react";
+import { Home, Briefcase, Settings, CreditCard, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import homebaseLogo from "@/assets/homebase-logo.png";
@@ -14,6 +14,7 @@ const OnboardingProvider = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     companyName: "",
     ownerName: "",
@@ -51,81 +52,108 @@ const OnboardingProvider = () => {
     setStep(step + 1);
   };
 
-  const handleComplete = async () => {
+  const handleStartTrial = async () => {
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
-        toast({
-          title: "Not authenticated",
-          description: "Please sign up first",
-          variant: "destructive",
-        });
+        toast({ title: "Not authenticated", variant: "destructive" });
+        navigate("/register");
+        return;
+      }
+
+      // Check if org exists
+      const { data: existingOrg } = await supabase
+        .from("organizations")
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!existingOrg) {
+        toast({ title: "Please complete steps 1-2 first", variant: "destructive" });
+        setStep(1);
+        return;
+      }
+
+      // Call edge function to create trial subscription
+      const { data, error } = await supabase.functions.invoke('provider-subscription', {
+        body: { action: 'create-subscription', plan: 'beta' }
+      });
+
+      if (error) throw error;
+
+      if (data?.checkoutUrl) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast({ title: "Error", description: "Failed to start trial", variant: "destructive" });
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast({ title: "Error", description: error.message || "Failed to start trial", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Not authenticated", variant: "destructive" });
         navigate("/auth");
         return;
       }
 
-      // Create slug from company name
-      const slug = formData.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-      // Create organization
-      const { data: orgData, error: orgError } = await supabase
+      // Check if org exists
+      const { data: existingOrg } = await supabase
         .from("organizations")
-        .insert({
-          owner_id: user.id,
-          name: formData.companyName,
-          slug: slug,
-          description: formData.description,
-          service_type: formData.serviceType ? [formData.serviceType] : [],
-          phone: formData.phone,
-          email: formData.email,
-          service_area: formData.serviceArea,
-        })
-        .select()
+        .select('id')
+        .eq('owner_id', user.id)
         .single();
 
-      if (orgError) {
-        console.error("Error creating organization:", orgError);
-        toast({
-          title: "Error",
-          description: "Failed to create organization. Please try again.",
-          variant: "destructive",
-        });
-        return;
+      let orgId = existingOrg?.id;
+
+      // Create org if doesn't exist
+      if (!orgId) {
+        const slug = formData.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const { data: orgData, error: orgError } = await supabase
+          .from("organizations")
+          .insert({
+            owner_id: user.id,
+            name: formData.companyName,
+            slug: slug,
+            description: formData.description,
+            service_type: formData.serviceType ? [formData.serviceType] : [],
+            phone: formData.phone,
+            email: formData.email,
+            service_area: formData.serviceArea,
+          })
+          .select()
+          .single();
+
+        if (orgError) {
+          console.error("Org creation error:", orgError);
+          toast({ title: "Error", description: "Failed to create organization", variant: "destructive" });
+          return;
+        }
+        orgId = orgData.id;
       }
 
-      // Create subscription on free plan
-      const { error: subError } = await supabase
-        .from("organization_subscriptions")
-        .insert({
-          organization_id: orgData.id,
-          plan_tier: "free",
-          status: "active",
-        });
+      // Mark onboarding complete
+      await supabase
+        .from('profiles')
+        .update({ onboarded_at: new Date().toISOString() })
+        .eq('user_id', user.id);
 
-      if (subError) {
-        console.error("Error creating subscription:", subError);
-        toast({
-          title: "Error",
-          description: "Failed to create subscription. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Success!",
-        description: "Your provider account is ready. Welcome to HomeBase!",
-      });
-      
-      navigate("/provider/dashboard");
+      // Move to next step (trial signup)
+      setStep(3);
     } catch (error) {
       console.error("Error:", error);
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -247,39 +275,82 @@ const OnboardingProvider = () => {
         )}
 
         {step === 3 && (
-          <div className="space-y-6 text-center">
-            <div className="bg-primary/10 rounded-full h-24 w-24 mx-auto flex items-center justify-center mb-4">
-              <Briefcase className="h-12 w-12 text-primary" />
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="bg-primary/10 rounded-full h-24 w-24 mx-auto flex items-center justify-center mb-4">
+                <CreditCard className="h-12 w-12 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold">Start your free trial</h2>
+              <p className="text-muted-foreground">Get full access to HomeBase for 14 days</p>
             </div>
-            <h2 className="text-2xl font-bold">You're ready to grow!</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Your provider profile is set up. You'll start on our <strong>Free Plan</strong> with up to 5 clients and 8% transaction fees. You can upgrade anytime as you grow!
-            </p>
-            <div className="bg-muted p-4 rounded-lg text-left max-w-md mx-auto">
-              <p className="text-sm font-semibold mb-2">Free Plan includes:</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>✓ Up to 5 clients</li>
-                <li>✓ Client Management</li>
-                <li>✓ Recurring Billing</li>
-                <li>✓ Basic Support</li>
-              </ul>
+
+            <div className="bg-gradient-to-br from-primary/5 to-accent/5 p-6 rounded-lg border-2 border-primary/20">
+              <div className="text-center mb-4">
+                <div className="inline-flex items-baseline gap-1">
+                  <span className="text-5xl font-bold text-primary">$15</span>
+                  <span className="text-muted-foreground">/month</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  after your 14-day free trial
+                </p>
+              </div>
+
+              <div className="bg-background p-4 rounded-lg mb-4">
+                <p className="text-sm font-semibold mb-3">What's included:</p>
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>Get booked by homeowners</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>Unlimited clients</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>Payment links & invoices</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>Client messaging</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>Up to 3 team members</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>3% transaction fees</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
+                <p className="text-xs text-amber-900 dark:text-amber-100">
+                  <strong>Card required.</strong> Cancel anytime during your trial and you won't be charged.
+                </p>
+              </div>
             </div>
           </div>
         )}
 
         <div className="flex gap-4 mt-8">
-          {step > 1 && step < 3 && (
-            <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1">
+          {step > 1 && (
+            <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1" disabled={loading}>
               Back
             </Button>
           )}
-          {step < 3 ? (
-            <Button onClick={handleNext} className="flex-1">
+          {step < 2 ? (
+            <Button onClick={handleNext} className="flex-1" disabled={loading}>
               Next
             </Button>
+          ) : step === 2 ? (
+            <Button onClick={handleComplete} className="flex-1" disabled={loading}>
+              {loading ? "Saving..." : "Next"}
+            </Button>
           ) : (
-            <Button onClick={handleComplete} className="flex-1">
-              Complete Setup
+            <Button onClick={handleStartTrial} className="flex-1 bg-primary" disabled={loading}>
+              {loading ? "Starting trial..." : "Start Free Trial"}
             </Button>
           )}
         </div>
