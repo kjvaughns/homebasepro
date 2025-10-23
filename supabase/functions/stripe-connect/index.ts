@@ -44,6 +44,120 @@ serve(async (req) => {
     
     const { action } = await req.json();
 
+    // Create embedded account session for onboarding
+    if (action === 'create-account-session') {
+      // Get user's organization
+      const orgRes = await fetch(`${supabaseUrl}/rest/v1/organizations?owner_id=eq.${user.id}&select=*`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      const orgs = await orgRes.json();
+      if (!orgs || orgs.length === 0) {
+        throw new Error('No organization found');
+      }
+      
+      const org = orgs[0];
+      let accountId = org.stripe_account_id;
+      
+      // Create Stripe Connect Express account if doesn't exist
+      if (!accountId) {
+        const account = await stripe.accounts.create({
+          type: 'express',
+          email: org.email,
+          country: 'US',
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+          business_profile: {
+            name: org.name,
+            support_email: org.email,
+          },
+        });
+        accountId = account.id;
+        
+        // Save to database
+        await fetch(`${supabaseUrl}/rest/v1/organizations?id=eq.${org.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            stripe_account_id: accountId,
+          }),
+        });
+      }
+
+      // Create account session for embedded onboarding
+      const accountSession = await stripe.accountSessions.create({
+        account: accountId,
+        components: {
+          account_onboarding: { 
+            enabled: true,
+            features: {
+              external_account_collection: true,
+            }
+          },
+        },
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          clientSecret: accountSession.client_secret,
+          accountId: accountId 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create embedded account session for dashboard
+    if (action === 'create-dashboard-session') {
+      const orgRes = await fetch(`${supabaseUrl}/rest/v1/organizations?owner_id=eq.${user.id}&select=*`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      const orgs = await orgRes.json();
+      if (!orgs || orgs.length === 0) {
+        throw new Error('No organization found');
+      }
+      
+      const org = orgs[0];
+      
+      if (!org.stripe_account_id) {
+        throw new Error('Stripe account not connected');
+      }
+
+      // Create account session for embedded dashboard
+      const accountSession = await stripe.accountSessions.create({
+        account: org.stripe_account_id,
+        components: {
+          account_management: { 
+            enabled: true,
+            features: {
+              external_account_collection: true,
+            }
+          },
+          balances: { enabled: true },
+          payouts: { enabled: true },
+          payouts_list: { enabled: true },
+        },
+      });
+      
+      return new Response(
+        JSON.stringify({ clientSecret: accountSession.client_secret }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (action === 'create-account-link') {
       // Get user's organization
       const orgRes = await fetch(`${supabaseUrl}/rest/v1/organizations?owner_id=eq.${user.id}&select=*`, {

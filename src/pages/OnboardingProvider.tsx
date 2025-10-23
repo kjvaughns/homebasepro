@@ -15,6 +15,8 @@ const OnboardingProvider = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [trialComplete, setTrialComplete] = useState(false);
+  const [paymentsComplete, setPaymentsComplete] = useState(false);
   const [formData, setFormData] = useState({
     companyName: "",
     ownerName: "",

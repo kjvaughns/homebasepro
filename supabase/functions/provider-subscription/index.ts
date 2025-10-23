@@ -47,6 +47,147 @@ serve(async (req) => {
     const user = await userRes.json();
     const { action, plan, paymentMethodId } = await req.json();
 
+    // Create SetupIntent for embedded card collection
+    if (action === 'create-setup-intent') {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      let customerId = profile?.stripe_customer_id;
+
+      // Create or retrieve customer
+      if (!customerId) {
+        const { data: orgs } = await supabase
+          .from('organizations')
+          .select('email, name')
+          .eq('owner_id', user.id)
+          .single();
+
+        const customer = await stripe.customers.create({
+          email: orgs?.email || user.email,
+          name: orgs?.name,
+          metadata: { user_id: user.id }
+        });
+        customerId = customer.id;
+
+        // Save customer ID
+        await supabase
+          .from('profiles')
+          .update({ stripe_customer_id: customerId })
+          .eq('user_id', user.id);
+      }
+
+      // Create SetupIntent for card collection
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+        metadata: { 
+          purpose: 'trial_subscription',
+          user_id: user.id 
+        }
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          clientSecret: setupIntent.client_secret,
+          customerId 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Activate trial subscription after card is collected
+    if (action === 'activate-trial-subscription') {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.stripe_customer_id) {
+        throw new Error('Customer not found');
+      }
+
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!org) {
+        throw new Error('Organization not found');
+      }
+
+      const stripePriceId = Deno.env.get('STRIPE_PRICE_BETA_MONTHLY');
+      if (!stripePriceId) {
+        throw new Error('Trial price not configured');
+      }
+
+      // Create subscription with trial
+      const subscription = await stripe.subscriptions.create({
+        customer: profile.stripe_customer_id,
+        items: [{ price: stripePriceId }],
+        trial_period_days: 14,
+        default_payment_method: paymentMethodId,
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          org_id: org.id,
+          user_id: user.id,
+          plan: 'beta'
+        }
+      });
+
+      const trialEnd = new Date(subscription.trial_end! * 1000).toISOString();
+
+      // Update profiles
+      await supabase
+        .from('profiles')
+        .update({
+          stripe_subscription_id: subscription.id,
+          plan: 'beta',
+          trial_ends_at: trialEnd,
+          onboarded_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      // Update organizations
+      await supabase
+        .from('organizations')
+        .update({
+          plan: 'beta',
+          transaction_fee_pct: 0.03,
+          team_limit: 3
+        })
+        .eq('id', org.id);
+
+      // Create subscription record
+      await supabase
+        .from('provider_subscriptions')
+        .upsert({
+          provider_id: org.id,
+          stripe_customer_id: profile.stripe_customer_id,
+          stripe_subscription_id: subscription.id,
+          plan: 'beta',
+          status: subscription.status,
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          subscription,
+          trialEndsAt: trialEnd
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check Stripe configuration
     if (action === 'check-config') {
       const stripePriceId = Deno.env.get('STRIPE_PRICE_BETA_MONTHLY');

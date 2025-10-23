@@ -5,12 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { CreditCard, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import EmbeddedConnectOnboarding from "@/components/provider/EmbeddedConnectOnboarding";
 
 export default function PaymentSettings() {
   const [stripeConnected, setStripeConnected] = useState(false);
-  const [stripeLoading, setStripeLoading] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -19,6 +22,7 @@ export default function PaymentSettings() {
 
   const checkStripeStatus = async () => {
     try {
+      setCheckingStatus(true);
       const { data, error } = await supabase.functions.invoke('stripe-connect', {
         body: { action: 'check-status' }
       });
@@ -28,31 +32,18 @@ export default function PaymentSettings() {
       }
     } catch (error) {
       console.error('Error checking Stripe status:', error);
+    } finally {
+      setCheckingStatus(false);
     }
   };
 
-  const handleStripeConnect = async () => {
-    setStripeLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'create-account-link' }
-      });
-      
-      if (error) throw error;
-      
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error: any) {
-      console.error('Error connecting Stripe:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to connect Stripe account",
-        variant: "destructive",
-      });
-    } finally {
-      setStripeLoading(false);
-    }
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    checkStripeStatus();
+    toast({
+      title: "Success!",
+      description: "Stripe account connected successfully"
+    });
   };
 
   return (
@@ -70,7 +61,11 @@ export default function PaymentSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {stripeConnected ? (
+          {checkingStatus ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : stripeConnected ? (
             <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
@@ -98,19 +93,28 @@ export default function PaymentSettings() {
               </div>
               
               <Button 
-                onClick={handleStripeConnect} 
-                disabled={stripeLoading}
+                onClick={() => setShowOnboarding(true)}
                 className="w-full"
               >
-                {stripeLoading ? "Connecting..." : "Connect Stripe Account"}
+                Connect Stripe Account
               </Button>
               
               <p className="text-xs text-muted-foreground text-center">
-                You'll be redirected to Stripe to complete the setup
+                Complete setup directly in the app
               </p>
             </div>
           )}
         </CardContent>
+      </Card>
+
+      {/* Embedded Onboarding Dialog */}
+      <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <EmbeddedConnectOnboarding onComplete={handleOnboardingComplete} />
+        </DialogContent>
+      </Dialog>
+
+      <Card>
       </Card>
 
       <Card>
