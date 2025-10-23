@@ -11,29 +11,31 @@ serve(async (req) => {
   try {
     const stripe = createStripeClient();
 
-    // Get auth token and create Supabase client
+    // Auth is optional - JWT validation done by config.toml (verify_jwt = true)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return errorResponse('UNAUTHORIZED', 'Missing authorization header', 401);
-    }
-
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-      global: { headers: { Authorization: authHeader } }
-    });
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify JWT and get user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return errorResponse('AUTH_FAILED', 'Authentication failed', 401);
+    // Get user from JWT if present
+    let user = null;
+    if (authHeader) {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      );
+      if (!authError && authUser) {
+        user = authUser;
+      }
     }
 
-    // Get request body
+    if (!user) {
+      return errorResponse('UNAUTHORIZED', 'Authentication required', 401);
+    }
+
     const { action } = await req.json();
 
-    // Get organization for this user (latest if multiple exist)
+    // Get organization for this user
     const { data: org, error: orgError } = await supabase
       .from('organizations')
       .select('id, stripe_account_id, stripe_onboarding_complete, payments_ready')
@@ -51,121 +53,62 @@ serve(async (req) => {
       return errorResponse('ORG_NOT_FOUND', 'Provider organization not found. Please complete provider onboarding first.', 404);
     }
 
-    // Handle different actions
-    if (action === 'create-account-session') {
-      // Create or retrieve Stripe Connect account
-      let stripeAccountId = org.stripe_account_id;
-
-      if (!stripeAccountId) {
-        // Create new Express account with profile data
-        try {
-          // Fetch profile address for Stripe Tax compliance and pre-fill
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('address_line1, address_line2, address_city, address_state, address_postal_code, address_country, full_name, phone')
-            .eq('user_id', user.id)
-            .single();
-
-          // Prepare address object for Stripe if available
-          const individualAddress = profile?.address_line1 ? {
-            line1: profile.address_line1,
-            line2: profile.address_line2 || undefined,
-            city: profile.address_city,
-            state: profile.address_state,
-            postal_code: profile.address_postal_code,
-            country: profile.address_country || 'US'
-          } : undefined;
-
-          // Create account with address pre-fill for better UX
-          const account = await stripe.accounts.create({
-            type: 'express',
-            capabilities: {
-              transfers: { requested: true },
-              card_payments: { requested: true },
-            },
-            business_type: 'individual',
-            individual: individualAddress ? {
-              address: individualAddress,
-              email: user.email,
-              first_name: profile?.full_name?.split(' ')[0],
-              last_name: profile?.full_name?.split(' ').slice(1).join(' '),
-              phone: profile?.phone
-            } : {
-              email: user.email
-            }
-          });
-
-          stripeAccountId = account.id;
-
-          // Save account ID
-          await supabase
-            .from('organizations')
-            .update({ stripe_account_id: stripeAccountId })
-            .eq('id', org.id);
-
-          console.log('Created new Stripe account:', stripeAccountId, 'with address:', !!individualAddress);
-        } catch (error: any) {
-          console.error('Account creation error:', error);
-          await logError(supabase, org.id, 'stripe-connect:create-account', { action }, error.message, error);
-          return errorResponse(
-            'ACCOUNT_CREATE_FAILED', 
-            'Failed to create payment account. Please try again.', 
-            500,
-            { stripe_error: formatStripeError(error) }
-          );
-        }
+    // CREATE ACCOUNT (Express)
+    if (action === 'create-account') {
+      if (org.stripe_account_id) {
+        return successResponse({ account_id: org.stripe_account_id });
       }
 
-      // Create account session for embedded onboarding
       try {
-        const accountSession = await stripe.accountSessions.create({
-          account: stripeAccountId,
-          components: {
-            account_onboarding: { enabled: true },
-            account_management: { enabled: true },
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('address_line1, address_line2, address_city, address_state, address_postal_code, address_country, full_name, phone')
+          .eq('user_id', user.id)
+          .single();
+
+        const individualAddress = profile?.address_line1 ? {
+          line1: profile.address_line1,
+          line2: profile.address_line2 || undefined,
+          city: profile.address_city,
+          state: profile.address_state,
+          postal_code: profile.address_postal_code,
+          country: profile.address_country || 'US'
+        } : undefined;
+
+        const account = await stripe.accounts.create({
+          type: 'express',
+          capabilities: {
+            transfers: { requested: true },
+            card_payments: { requested: true },
           },
+          business_type: 'individual',
+          individual: individualAddress ? {
+            address: individualAddress,
+            email: user.email,
+            first_name: profile?.full_name?.split(' ')[0],
+            last_name: profile?.full_name?.split(' ').slice(1).join(' '),
+            phone: profile?.phone
+          } : { email: user.email }
         });
 
-        return successResponse({
-          clientSecret: accountSession.client_secret,
-          accountId: stripeAccountId,
-        });
+        await supabase
+          .from('organizations')
+          .update({ stripe_account_id: account.id })
+          .eq('id', org.id);
+
+        return successResponse({ account_id: account.id });
       } catch (error: any) {
-        console.error('Session creation error:', error);
-        await logError(supabase, org.id, 'stripe-connect:create-session', { action, stripeAccountId }, error.message, error);
-        return errorResponse('SESSION_CREATE_FAILED', 'Failed to create onboarding session. Please try again.', 500, {
+        await logError(supabase, org.id, 'stripe-connect:create-account', { action }, error.message, error);
+        return errorResponse('ACCOUNT_CREATE_FAILED', 'Failed to create payment account', 500, {
           stripe_error: formatStripeError(error)
         });
       }
     }
 
-    if (action === 'create-dashboard-session') {
+    // ACCOUNT LINK (Hosted onboarding)
+    if (action === 'account-link') {
       if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first to access dashboard', 400);
-      }
-
-      try {
-        const accountSession = await stripe.accountSessions.create({
-          account: org.stripe_account_id,
-          components: {
-            account_management: { enabled: true },
-            balances: { enabled: true },
-            payouts: { enabled: true },
-          },
-        });
-
-        return successResponse({ clientSecret: accountSession.client_secret });
-      } catch (error: any) {
-        await logError(supabase, org.id, 'stripe-connect:dashboard-session', { action }, error.message, error);
-        return errorResponse('DASHBOARD_FAILED', 'Failed to load dashboard. Please try again.', 500, {
-          stripe_error: formatStripeError(error)
-        });
-      }
-    }
-
-    if (action === 'create-account-link') {
-      if (!org.stripe_account_id) {
-        return errorResponse('NO_ACCOUNT', 'Stripe account not created yet', 400);
+        return errorResponse('NO_ACCOUNT', 'Create account first', 400);
       }
 
       const appUrl = getAppUrl();
@@ -174,7 +117,7 @@ serve(async (req) => {
         const accountLink = await stripe.accountLinks.create({
           account: org.stripe_account_id,
           refresh_url: `${appUrl}/provider/settings?tab=payments&refresh=1`,
-          return_url: `${appUrl}/provider/stripe-onboarding?success=1`,
+          return_url: `${appUrl}/provider/settings?tab=payments&success=1`,
           type: 'account_onboarding',
         });
 
@@ -187,6 +130,24 @@ serve(async (req) => {
       }
     }
 
+    // LOGIN LINK (Express dashboard)
+    if (action === 'login-link') {
+      if (!org.stripe_account_id) {
+        return errorResponse('NO_ACCOUNT', 'Complete onboarding first', 400);
+      }
+
+      try {
+        const loginLink = await stripe.accounts.createLoginLink(org.stripe_account_id);
+        return successResponse({ url: loginLink.url });
+      } catch (error: any) {
+        await logError(supabase, org.id, 'stripe-connect:login-link', { action }, error.message, error);
+        return errorResponse('LOGIN_FAILED', 'Failed to create dashboard link', 500, {
+          stripe_error: formatStripeError(error)
+        });
+      }
+    }
+
+    // CHECK STATUS
     if (action === 'check-status') {
       if (!org.stripe_account_id) {
         return successResponse({
@@ -204,7 +165,6 @@ serve(async (req) => {
         const payoutsEnabled = account.payouts_enabled || false;
         const paymentsReady = chargesEnabled && payoutsEnabled;
 
-        // Update database with current status
         await supabase
           .from('organizations')
           .update({
@@ -215,10 +175,10 @@ serve(async (req) => {
 
         return successResponse({
           complete: detailsSubmitted,
-          paymentsReady: paymentsReady,
-          detailsSubmitted: detailsSubmitted,
-          chargesEnabled: chargesEnabled,
-          payoutsEnabled: payoutsEnabled,
+          paymentsReady,
+          detailsSubmitted,
+          chargesEnabled,
+          payoutsEnabled,
         });
       } catch (error: any) {
         await logError(supabase, org.id, 'stripe-connect:check-status', { action }, error.message, error);
@@ -226,6 +186,96 @@ serve(async (req) => {
           stripe_error: formatStripeError(error)
         });
       }
+    }
+
+    // LEGACY: create-account-session (embedded - deprecated)
+    if (action === 'create-account-session') {
+      let stripeAccountId = org.stripe_account_id;
+
+      if (!stripeAccountId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('address_line1, address_line2, address_city, address_state, address_postal_code, address_country, full_name, phone')
+          .eq('user_id', user.id)
+          .single();
+
+        const individualAddress = profile?.address_line1 ? {
+          line1: profile.address_line1,
+          line2: profile.address_line2 || undefined,
+          city: profile.address_city,
+          state: profile.address_state,
+          postal_code: profile.address_postal_code,
+          country: profile.address_country || 'US'
+        } : undefined;
+
+        const account = await stripe.accounts.create({
+          type: 'express',
+          capabilities: {
+            transfers: { requested: true },
+            card_payments: { requested: true },
+          },
+          business_type: 'individual',
+          individual: individualAddress ? {
+            address: individualAddress,
+            email: user.email,
+            first_name: profile?.full_name?.split(' ')[0],
+            last_name: profile?.full_name?.split(' ').slice(1).join(' '),
+            phone: profile?.phone
+          } : { email: user.email }
+        });
+
+        stripeAccountId = account.id;
+        await supabase.from('organizations').update({ stripe_account_id: stripeAccountId }).eq('id', org.id);
+      }
+
+      const accountSession = await stripe.accountSessions.create({
+        account: stripeAccountId,
+        components: {
+          account_onboarding: { enabled: true },
+          account_management: { enabled: true },
+        },
+      });
+
+      return successResponse({
+        clientSecret: accountSession.client_secret,
+        accountId: stripeAccountId,
+      });
+    }
+
+    // LEGACY: create-dashboard-session (embedded)
+    if (action === 'create-dashboard-session') {
+      if (!org.stripe_account_id) {
+        return errorResponse('NO_ACCOUNT', 'Complete Stripe setup first', 400);
+      }
+
+      const accountSession = await stripe.accountSessions.create({
+        account: org.stripe_account_id,
+        components: {
+          account_management: { enabled: true },
+          balances: { enabled: true },
+          payouts: { enabled: true },
+        },
+      });
+
+      return successResponse({ clientSecret: accountSession.client_secret });
+    }
+
+    // LEGACY: create-account-link (now just 'account-link')
+    if (action === 'create-account-link') {
+      if (!org.stripe_account_id) {
+        return errorResponse('NO_ACCOUNT', 'Stripe account not created yet', 400);
+      }
+
+      const appUrl = getAppUrl();
+
+      const accountLink = await stripe.accountLinks.create({
+        account: org.stripe_account_id,
+        refresh_url: `${appUrl}/provider/settings?tab=payments&refresh=1`,
+        return_url: `${appUrl}/provider/stripe-onboarding?success=1`,
+        type: 'account_onboarding',
+      });
+
+      return successResponse({ url: accountLink.url });
     }
 
     return errorResponse('INVALID_ACTION', `Unknown action: ${action}`, 400);

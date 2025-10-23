@@ -80,7 +80,7 @@ serve(async (req) => {
         event = stripe.webhooks.constructEvent(rawBody, sig, platform);
         source = "platform";
         console.log(`✅ Webhook validated with platform secret`);
-      } catch (e) {
+      } catch (e: any) {
         console.log(`Platform secret validation failed: ${e.message}`);
       }
     }
@@ -91,7 +91,7 @@ serve(async (req) => {
         event = stripe.webhooks.constructEvent(rawBody, sig, connect);
         source = "connect";
         console.log(`✅ Webhook validated with connect secret`);
-      } catch (e) {
+      } catch (e: any) {
         console.log(`Connect secret validation failed: ${e.message}`);
         return new Response(JSON.stringify({ 
           ok: false, 
