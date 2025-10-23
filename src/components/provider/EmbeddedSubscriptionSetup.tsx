@@ -59,7 +59,7 @@ function SubscriptionSetupForm({ onSuccess }: EmbeddedSubscriptionSetupProps) {
 
       // Activate trial subscription with the payment method
       const { data, error: subError } = await supabase.functions.invoke(
-        'provider-subscription',
+        'payments-api',
         {
           body: {
             action: 'activate-trial-subscription',
@@ -226,7 +226,7 @@ export default function EmbeddedSubscriptionSetup({ onSuccess }: EmbeddedSubscri
       setStripePromise(loadStripe(config.publishableKey));
 
       // Create SetupIntent for card collection
-      const { data: setup, error } = await supabase.functions.invoke('provider-subscription', {
+      const { data: setup, error } = await supabase.functions.invoke('payments-api', {
         body: { action: 'create-setup-intent' }
       });
 

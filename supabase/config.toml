@@ -1,5 +1,9 @@
 project_id = "mqaplaplgfcbaaafylpf"
 
+# DEPRECATED: Use payments-api instead
+# [functions.provider-subscription]
+# verify_jwt = true
+
 [functions.create-customer-setup-intent]
 verify_jwt = true
 

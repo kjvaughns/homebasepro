@@ -92,7 +92,7 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
 
   const loadSubscription = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('provider-subscription', {
+      const { data, error } = await supabase.functions.invoke('payments-api', {
         body: { action: 'get-subscription' },
       });
 
@@ -100,7 +100,7 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
       
       // BUG-007 FIX: Fetch full subscription details from Stripe if available
       if (data?.subscription?.stripe_subscription_id) {
-        const { data: stripeData } = await supabase.functions.invoke('provider-subscription', {
+        const { data: stripeData } = await supabase.functions.invoke('payments-api', {
           body: { 
             action: 'get-stripe-subscription',
             subscriptionId: data.subscription.stripe_subscription_id,
@@ -133,7 +133,7 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
     setProcessing(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('provider-subscription', {
+      const { data, error } = await supabase.functions.invoke('payments-api', {
         body: {
           action: subscription ? 'upgrade-plan' : 'create-subscription',
           plan: selectedPlan.id,
