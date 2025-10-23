@@ -3819,6 +3819,36 @@ export type Database = {
           },
         ]
       }
+      stripe_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          processed_at: string | null
+          raw_event: Json | null
+          stripe_event_id: string
+          webhook_source: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          processed_at?: string | null
+          raw_event?: Json | null
+          stripe_event_id: string
+          webhook_source?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          processed_at?: string | null
+          raw_event?: Json | null
+          stripe_event_id?: string
+          webhook_source?: string | null
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           client_limit: number | null

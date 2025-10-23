@@ -1,35 +1,197 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { getStripeSecret, resolveWebhookSecrets, has, getPlatformFeePercent } from '../_shared/env.ts';
 
 serve(async (req) => {
+  // Health/Diagnostics Endpoint
+  if (req.method === "GET") {
+    const secrets = resolveWebhookSecrets();
+    return new Response(JSON.stringify({
+      ok: true,
+      timestamp: new Date().toISOString(),
+      has_stripe_secret: has('STRIPE_SECRET_KEY_LIVE') || has('STRIPE_SECRET'),
+      has_platform_webhook_secret: !!secrets.platform,
+      has_connect_webhook_secret: !!secrets.connect,
+      webhook_secret_sources: {
+        platform: secrets.platform ? (has('STRIPE_WEBHOOK_SECRET_PLATFORM') ? 'STRIPE_WEBHOOK_SECRET_PLATFORM' : 'STRIPE_WEBHOOK_SECRET') : null,
+        connect: secrets.connect ? 'STRIPE_WEBHOOK_SECRET_CONNECT' : null,
+      }
+    }), { 
+      status: 200, 
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // CORS Preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { status: 204 });
+  }
+
+  // Only accept POST for webhooks
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ 
+      ok: false, 
+      code: "METHOD_NOT_ALLOWED",
+      message: "Only POST requests accepted for webhooks" 
+    }), { status: 405, headers: { "Content-Type": "application/json" } });
+  }
+
   try {
-    // Use consistent env var names  
-    const stripeKey = Deno.env.get('STRIPE_SECRET') || Deno.env.get('stripe_secret_key') || Deno.env.get('stripe');
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-    
-    if (!stripeKey || !webhookSecret) {
-      throw new Error('Stripe configuration missing');
+    // Get signature header
+    const sig = req.headers.get("Stripe-Signature");
+    if (!sig) {
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        code: "MISSING_SIGNATURE",
+        message: "Stripe-Signature header missing" 
+      }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
+    // Get webhook secrets
+    const { platform, connect } = resolveWebhookSecrets();
+    
+    if (!platform && !connect) {
+      console.error("❌ No webhook secrets configured!");
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        code: "NO_WEBHOOK_SECRETS",
+        message: "Webhook secrets not configured. Set STRIPE_WEBHOOK_SECRET_PLATFORM and/or STRIPE_WEBHOOK_SECRET_CONNECT in Edge Secrets."
+      }), { status: 500, headers: { "Content-Type": "application/json" } });
+    }
+
+    // Initialize Stripe
+    const stripeKey = getStripeSecret();
     const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    const signature = req.headers.get('stripe-signature');
-    if (!signature) {
-      throw new Error('No signature');
+    // Read raw body for signature verification
+    const rawBody = await req.text();
+    
+    // Try to construct event with available secrets
+    let event: Stripe.Event | null = null;
+    let source: "platform" | "connect" | "unknown" = "unknown";
+
+    // Try platform secret first
+    if (platform) {
+      try {
+        event = stripe.webhooks.constructEvent(rawBody, sig, platform);
+        source = "platform";
+        console.log(`✅ Webhook validated with platform secret`);
+      } catch (e) {
+        console.log(`Platform secret validation failed: ${e.message}`);
+      }
     }
 
-    const body = await req.text();
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    // If platform failed, try connect secret
+    if (!event && connect) {
+      try {
+        event = stripe.webhooks.constructEvent(rawBody, sig, connect);
+        source = "connect";
+        console.log(`✅ Webhook validated with connect secret`);
+      } catch (e) {
+        console.log(`Connect secret validation failed: ${e.message}`);
+        return new Response(JSON.stringify({ 
+          ok: false, 
+          code: "BAD_SIGNATURE",
+          message: `Webhook signature validation failed: ${e.message}` 
+        }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+    }
 
+    if (!event) {
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        code: "BAD_SIGNATURE_OR_NO_SECRET",
+        message: "Could not validate webhook signature with available secrets" 
+      }), { status: 400, headers: { "Content-Type": "application/json" } });
+    }
+
+    console.log(`📥 Webhook event: ${event.type} (source: ${source}, id: ${event.id})`);
+
+    // Initialize Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('Webhook event:', event.type);
+    // Idempotency check - prevent duplicate processing from retries
+    const { data: existingEvent } = await supabase
+      .from('stripe_events')
+      .select('id, processed_at')
+      .eq('stripe_event_id', event.id)
+      .maybeSingle();
+
+    if (existingEvent?.processed_at) {
+      console.log(`⚠️  Event ${event.id} already processed at ${existingEvent.processed_at}, skipping`);
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        message: "Event already processed (idempotent)",
+        source,
+        event_id: event.id 
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+
+    // Record event processing start
+    if (!existingEvent) {
+      await supabase
+        .from('stripe_events')
+        .insert({
+          stripe_event_id: event.id,
+          event_type: event.type,
+          webhook_source: source,
+          raw_event: event,
+        });
+    }
+
+    // Helper function to get dynamic platform fee based on subscription plan
+    const getDynamicPlatformFee = async (providerId: string): Promise<number> => {
+      // First, check if org has manually set transaction_fee_pct
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('transaction_fee_pct')
+        .eq('id', providerId)
+        .single();
+      
+      if (org?.transaction_fee_pct !== null && org?.transaction_fee_pct !== undefined) {
+        return org.transaction_fee_pct;
+      }
+      
+      // Otherwise, derive from subscription plan
+      const { data: subscription } = await supabase
+        .from('provider_subscriptions')
+        .select('plan')
+        .eq('organization_id', providerId)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      // Plan-based fee mapping
+      const planFees: Record<string, number> = {
+        'free': 0.08,    // 8%
+        'beta': 0.03,    // 3%
+        'growth': 0.025, // 2.5%
+        'pro': 0.02,     // 2%
+        'scale': 0.015,  // 1.5%
+      };
+      
+      return subscription?.plan 
+        ? (planFees[subscription.plan] || getPlatformFeePercent())
+        : getPlatformFeePercent();
+    };
+
+    // Helper to get plan config (for updates)
+    const getPlanConfig = (plan: string) => {
+      const configs: Record<string, { teamLimit: number; feePercent: number }> = {
+        'free': { teamLimit: 0, feePercent: 0.08 },
+        'beta': { teamLimit: 3, feePercent: 0.03 },
+        'growth': { teamLimit: 3, feePercent: 0.025 },
+        'pro': { teamLimit: 10, feePercent: 0.02 },
+        'scale': { teamLimit: 25, feePercent: 0.015 },
+      };
+      
+      return configs[plan] || { teamLimit: 0, feePercent: 0.08 };
+    };
 
     // Helper function to insert ledger entry with idempotency check
     const insertLedgerEntry = async (entry: any) => {
@@ -107,28 +269,19 @@ serve(async (req) => {
           .single();
 
         if (subscription) {
-          // CRITICAL: Update organization with new plan tier and limits
-          const planConfig = {
-            free: { team_limit: 0, transaction_fee_pct: 0.08 },
-            growth: { team_limit: 3, transaction_fee_pct: 0.025 },
-            pro: { team_limit: 10, transaction_fee_pct: 0.02 },
-            scale: { team_limit: 25, transaction_fee_pct: 0.02 },
-          };
+          // Update organization with new plan tier and limits using dynamic fees
+          const config = getPlanConfig(subscription.plan);
           
-          const config = planConfig[subscription.plan as keyof typeof planConfig];
+          await supabase
+            .from('organizations')
+            .update({
+              plan: subscription.plan,
+              team_limit: config.teamLimit,
+              transaction_fee_pct: config.feePercent,
+            })
+            .eq('id', subscription.provider_id);
           
-          if (config) {
-            await supabase
-              .from('organizations')
-              .update({
-                plan: subscription.plan,
-                team_limit: config.team_limit,
-                transaction_fee_pct: config.transaction_fee_pct,
-              })
-              .eq('id', subscription.provider_id);
-            
-            console.log(`Synced ${subscription.plan} plan to org ${subscription.provider_id}`);
-          }
+          console.log(`Synced ${subscription.plan} plan to org ${subscription.provider_id}`);
 
           // Insert ledger entry for subscription revenue
           await insertLedgerEntry({
@@ -185,7 +338,7 @@ serve(async (req) => {
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       
-      // BUG-002 FIX: Confirm booking when payment succeeds
+      // Confirm booking when payment succeeds
       if (paymentIntent.metadata.booking_id) {
         await supabase
           .from('bookings')
@@ -360,12 +513,13 @@ serve(async (req) => {
             })
             .eq('user_id', user_id);
           
-          // Update organization
+          // Update organization with dynamic fee
+          const config = getPlanConfig(plan || 'beta');
           await supabase
             .from('organizations')
             .update({
               plan: plan || 'beta',
-              transaction_fee_pct: 0.03, // 3% for beta
+              transaction_fee_pct: config.feePercent,
             })
             .eq('id', org_id);
 
@@ -437,39 +591,29 @@ serve(async (req) => {
           if (oldIndex !== newIndex) {
             console.log(`Provider ${providerSub.provider_id} plan change: ${oldPlan} -> ${newPlan}`);
             
-            // Get new limits
-            const planConfig = {
-              free: { team_limit: 0, transaction_fee_pct: 0.08 },
-              beta: { team_limit: 3, transaction_fee_pct: 0.03 },
-              growth: { team_limit: 3, transaction_fee_pct: 0.025 },
-              pro: { team_limit: 10, transaction_fee_pct: 0.02 },
-              scale: { team_limit: 25, transaction_fee_pct: 0.02 },
-            };
+            // Get new limits with dynamic fees
+            const newLimits = getPlanConfig(newPlan);
             
-            const newLimits = planConfig[newPlan as keyof typeof planConfig];
+            // Update org with new plan and limits
+            await supabase
+              .from('organizations')
+              .update({
+                plan: newPlan,
+                team_limit: newLimits.teamLimit,
+                transaction_fee_pct: newLimits.feePercent,
+              })
+              .eq('id', providerSub.provider_id);
             
-            if (newLimits) {
-              // Update org with new plan and limits
-              await supabase
-                .from('organizations')
-                .update({
-                  plan: newPlan,
-                  team_limit: newLimits.team_limit,
-                  transaction_fee_pct: newLimits.transaction_fee_pct,
-                })
-                .eq('id', providerSub.provider_id);
+            // If downgrading, check if over team limit
+            if (newIndex < oldIndex) {
+              const { count } = await supabase
+                .from('team_members')
+                .select('*', { count: 'exact', head: true })
+                .eq('organization_id', providerSub.provider_id)
+                .in('status', ['invited', 'active']);
               
-              // If downgrading, check if over team limit
-              if (newIndex < oldIndex) {
-                const { count } = await supabase
-                  .from('team_members')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('organization_id', providerSub.provider_id)
-                  .in('status', ['invited', 'active']);
-                
-                if (count && count > newLimits.team_limit) {
-                  console.warn(`⚠️  Provider ${providerSub.provider_id} has ${count} team members but limit is now ${newLimits.team_limit}`);
-                }
+              if (count && count > newLimits.teamLimit) {
+                console.warn(`⚠️  Provider ${providerSub.provider_id} has ${count} team members but limit is now ${newLimits.teamLimit}`);
               }
             }
           }
@@ -496,152 +640,8 @@ serve(async (req) => {
         .update({ status: 'canceled' })
         .eq('stripe_subscription_id', subscription.id);
 
-      console.log(`Subscription canceled: ${subscription.id}`);
-    }
-
-    // Handle disputes
-    if (event.type.startsWith('charge.dispute.')) {
-      const dispute = event.data.object as Stripe.Dispute;
-      const stripeAccount = event.account;
-
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('stripe_account_id', stripeAccount)
-        .single();
-
-      if (org) {
-        // Find related payment
-        const { data: payment } = await supabase
-          .from('payments')
-          .select('id')
-          .eq('stripe_id', dispute.payment_intent)
-          .single();
-
-        await supabase
-          .from('disputes')
-          .upsert({
-            org_id: org.id,
-            payment_id: payment?.id,
-            stripe_dispute_id: dispute.id,
-            charge_id: dispute.charge,
-            amount: dispute.amount / 100,
-            currency: dispute.currency,
-            status: dispute.status,
-            reason: dispute.reason,
-            due_by: new Date((dispute as any).evidence_details?.due_by * 1000).toISOString(),
-            evidence: dispute.evidence || {},
-          }, {
-            onConflict: 'stripe_dispute_id'
-          });
-
-        // Update payment status
-        if (payment) {
-          await supabase
-            .from('payments')
-            .update({ status: 'disputed' })
-            .eq('id', payment.id);
-        }
-      }
-    }
-
-    // Handle checkout.session.completed - Trial start
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-      
-      if (session.mode === 'subscription' && session.subscription) {
-        const { org_id, user_id, plan } = session.metadata || {};
-        
-        if (org_id && user_id) {
-          console.log(`Processing trial start for org ${org_id}`);
-          
-          // Fetch full subscription details
-          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-          
-          // Update profiles with trial info
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              stripe_customer_id: session.customer as string,
-              stripe_subscription_id: subscription.id,
-              plan: plan || 'beta',
-              trial_ends_at: subscription.trial_end 
-                ? new Date(subscription.trial_end * 1000).toISOString() 
-                : null,
-              onboarded_at: new Date().toISOString(), // Mark onboarding complete
-            })
-            .eq('user_id', user_id);
-
-          if (profileError) {
-            console.error('Profile update error:', profileError);
-          }
-          
-          // Update organization
-          const { error: orgError } = await supabase
-            .from('organizations')
-            .update({
-              plan: plan || 'beta',
-              transaction_fee_pct: 0.03,
-              team_limit: 3,
-            })
-            .eq('id', org_id);
-
-          if (orgError) {
-            console.error('Organization update error:', orgError);
-          }
-
-          // Upsert provider_subscriptions
-          const { error: subError } = await supabase
-            .from('provider_subscriptions')
-            .upsert({
-              provider_id: org_id,
-              stripe_customer_id: session.customer as string,
-              stripe_subscription_id: subscription.id,
-              plan: plan || 'beta',
-              status: subscription.status,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            });
-
-          if (subError) {
-            console.error('Subscription record error:', subError);
-          }
-
-          console.log(`Trial started successfully for org ${org_id}`);
-        }
-      }
-    }
-
-    // Handle customer.subscription.deleted - Subscription canceled
-    if (event.type === 'customer.subscription.deleted') {
-      const subscription = event.data.object as Stripe.Subscription;
-      
-      console.log(`Subscription canceled: ${subscription.id}`);
-      
-      // Revert to free plan
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          plan: 'free',
-          trial_ends_at: null,
-          stripe_subscription_id: null,
-        })
-        .eq('stripe_subscription_id', subscription.id);
-
-      if (profileError) {
-        console.error('Profile revert to free error:', profileError);
-      }
-
-      // Update provider_subscriptions status
-      const { error: subError } = await supabase
-        .from('provider_subscriptions')
-        .update({ status: 'canceled' })
-        .eq('stripe_subscription_id', subscription.id);
-
-      if (subError) {
-        console.error('Subscription cancellation update error:', subError);
-      }
-
-      // Revert organization to free plan limits
+      // Update organization to free plan with dynamic fees
+      const config = getPlanConfig('free');
       const { data: providerSub } = await supabase
         .from('provider_subscriptions')
         .select('provider_id')
@@ -653,23 +653,114 @@ serve(async (req) => {
           .from('organizations')
           .update({
             plan: 'free',
-            team_limit: 0,
-            transaction_fee_pct: 0.08,
+            team_limit: config.teamLimit,
+            transaction_fee_pct: config.feePercent,
           })
           .eq('id', providerSub.provider_id);
+
+        console.log(`Subscription canceled, reverted org ${providerSub.provider_id} to free plan`);
       }
     }
 
-    return new Response(JSON.stringify({ received: true }), {
+    // Handle disputes
+    if (event.type === 'charge.dispute.created') {
+      const dispute = event.data.object as Stripe.Dispute;
+      
+      await supabase
+        .from('disputes')
+        .insert({
+          stripe_dispute_id: dispute.id,
+          charge_id: dispute.charge as string,
+          amount: dispute.amount,
+          currency: dispute.currency,
+          reason: dispute.reason,
+          status: dispute.status,
+          evidence_due_by: dispute.evidence_details?.due_by 
+            ? new Date(dispute.evidence_details.due_by * 1000).toISOString() 
+            : null,
+          created_at: new Date(dispute.created * 1000).toISOString(),
+        });
+
+      // Update payment status
+      await supabase
+        .from('payments')
+        .update({ status: 'disputed' })
+        .eq('stripe_id', dispute.charge);
+
+      console.log(`Dispute created: ${dispute.id} for charge ${dispute.charge}`);
+    }
+
+    if (event.type === 'charge.dispute.updated') {
+      const dispute = event.data.object as Stripe.Dispute;
+      
+      await supabase
+        .from('disputes')
+        .update({
+          status: dispute.status,
+          evidence_due_by: dispute.evidence_details?.due_by 
+            ? new Date(dispute.evidence_details.due_by * 1000).toISOString() 
+            : null,
+        })
+        .eq('stripe_dispute_id', dispute.id);
+
+      console.log(`Dispute updated: ${dispute.id} status=${dispute.status}`);
+    }
+
+    if (event.type === 'charge.dispute.closed') {
+      const dispute = event.data.object as Stripe.Dispute;
+      
+      await supabase
+        .from('disputes')
+        .update({
+          status: dispute.status,
+          resolved_at: new Date().toISOString(),
+        })
+        .eq('stripe_dispute_id', dispute.id);
+
+      // Update payment status based on outcome
+      const newStatus = dispute.status === 'won' ? 'paid' : 'disputed';
+      await supabase
+        .from('payments')
+        .update({ status: newStatus })
+        .eq('stripe_id', dispute.charge);
+
+      console.log(`Dispute closed: ${dispute.id} outcome=${dispute.status}`);
+    }
+
+    // Mark event as processed
+    await supabase
+      .from('stripe_events')
+      .update({ processed_at: new Date().toISOString() })
+      .eq('stripe_event_id', event.id);
+
+    console.log(`✅ Successfully processed ${event.type} (${event.id})`);
+
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      received: true,
+      source,
+      event_type: event.type,
+      event_id: event.id 
+    }), {
       headers: { 'Content-Type': 'application/json' },
       status: 200,
     });
 
-  } catch (error) {
-    console.error('Webhook error:', error);
+  } catch (error: any) {
+    console.error('❌ Webhook processing error:', error);
+    
+    // Return structured error
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        ok: false,
+        code: error.code || 'WEBHOOK_ERROR',
+        message: error.message || 'Unknown webhook processing error',
+        type: error.type,
+      }),
+      { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

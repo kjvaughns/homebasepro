@@ -33,3 +33,31 @@ export function getPlatformFeePercent() {
 export function getWebhookSecret() {
   return readSecret("STRIPE_WEBHOOK_SECRET");
 }
+
+/**
+ * Check if an environment variable exists without revealing its value
+ */
+export function has(name: string): boolean {
+  return !!(Deno.env.get(name)?.trim());
+}
+
+/**
+ * Get an environment variable value (trimmed)
+ */
+export function get(name: string): string | undefined {
+  return Deno.env.get(name)?.trim();
+}
+
+/**
+ * Resolve webhook secrets for both platform and Connect webhooks
+ * Returns { platform, connect } where each can be null if not configured
+ */
+export function resolveWebhookSecrets(): { platform: string | null; connect: string | null } {
+  // Platform webhooks: for subscriptions, checkout, etc.
+  const platform = get('STRIPE_WEBHOOK_SECRET_PLATFORM') || get('STRIPE_WEBHOOK_SECRET') || null;
+  
+  // Connect webhooks: for account.updated, payout.paid, etc.
+  const connect = get('STRIPE_WEBHOOK_SECRET_CONNECT') || null;
+  
+  return { platform, connect };
+}
