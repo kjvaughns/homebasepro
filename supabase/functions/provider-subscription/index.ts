@@ -23,6 +23,23 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
+    // Parse request body early to check action
+    const body = await req.json().catch(() => ({}));
+    const { action, plan, paymentMethodId } = body;
+
+    // Check-config action doesn't require auth (public endpoint)
+    if (action === 'check-config') {
+      const stripePriceId = Deno.env.get('STRIPE_PRICE_BETA_MONTHLY');
+      return new Response(
+        JSON.stringify({ 
+          hasStripe: !!stripeKey, 
+          hasPrice: !!stripePriceId 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // All other actions require authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
@@ -45,7 +62,6 @@ serve(async (req) => {
     }
 
     const user = await userRes.json();
-    const { action, plan, paymentMethodId } = await req.json();
 
     // Create SetupIntent for embedded card collection
     if (action === 'create-setup-intent') {
@@ -188,17 +204,6 @@ serve(async (req) => {
       );
     }
 
-    // Check Stripe configuration
-    if (action === 'check-config') {
-      const stripePriceId = Deno.env.get('STRIPE_PRICE_BETA_MONTHLY');
-      return new Response(
-        JSON.stringify({ 
-          hasStripe: !!stripeKey, 
-          hasPrice: !!stripePriceId 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Get user's organization
     const { data: orgs, error: orgError } = await supabase

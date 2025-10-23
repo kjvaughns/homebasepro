@@ -20,15 +20,12 @@ const Pricing = () => {
 
   const checkStripeConfig = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('provider-subscription', {
-        body: { action: 'check-config' }
-      });
-      if (!error && data) {
-        setEnvCheck({ hasStripe: data.hasStripe || false, hasPrice: data.hasPrice || false });
+      const { data, error } = await supabase.functions.invoke('get-stripe-config');
+      if (!error && data?.publishableKey) {
+        setEnvCheck({ hasStripe: true, hasPrice: true });
       }
     } catch (e) {
       console.error('Stripe config check failed:', e);
-      setEnvCheck({ hasStripe: false, hasPrice: false });
     }
   };
 
@@ -38,53 +35,13 @@ const Pricing = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign up or log in to start your trial",
-        });
         navigate('/register');
         return;
       }
 
-      // Check if user has an organization
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (!org) {
-        toast({
-          title: "Complete onboarding first",
-          description: "Please finish setting up your provider profile",
-        });
-        navigate('/onboarding/provider');
-        return;
-      }
-
-      // Call edge function to create Stripe Checkout Session
-      const { data, error } = await supabase.functions.invoke('provider-subscription', {
-        body: { action: 'create-subscription', plan: 'beta' }
-      });
-
-      if (error) throw error;
-
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        toast({
-          title: "Trial started!",
-          description: "Your 14-day free trial is now active",
-        });
-        navigate('/provider/dashboard');
-      }
+      navigate('/onboarding/provider');
     } catch (error: any) {
-      console.error('Trial start error:', error);
-      toast({
-        title: "Failed to start trial",
-        description: error.message || "Please try again or contact support",
-        variant: "destructive",
-      });
+      console.error('Navigation error:', error);
     } finally {
       setLoading(false);
     }
@@ -157,23 +114,12 @@ const Pricing = () => {
               ))}
             </ul>
 
-            {!envCheck.hasStripe && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="text-xs text-amber-900 dark:text-amber-100">
-                  <p className="font-semibold">Payment processing unavailable</p>
-                  <p className="text-amber-700 dark:text-amber-300">
-                    Stripe configuration is missing. Please contact support@homebaseproapp.com
-                  </p>
-                </div>
-              </div>
-            )}
           </CardContent>
 
           <CardFooter>
             <Button
               onClick={handleStartTrial}
-              disabled={loading || !envCheck.hasStripe}
+              disabled={loading}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               size="lg"
             >

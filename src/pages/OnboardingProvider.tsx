@@ -5,10 +5,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Home, Briefcase, Settings, CreditCard, Check } from "lucide-react";
+import { Home, Briefcase, Settings, CreditCard, Check, DollarSign, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import homebaseLogo from "@/assets/homebase-logo.png";
+import EmbeddedSubscriptionSetup from "@/components/provider/EmbeddedSubscriptionSetup";
+import EmbeddedConnectOnboarding from "@/components/provider/EmbeddedConnectOnboarding";
 
 const OnboardingProvider = () => {
   const navigate = useNavigate();
@@ -54,48 +56,22 @@ const OnboardingProvider = () => {
     setStep(step + 1);
   };
 
-  const handleStartTrial = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ title: "Not authenticated", variant: "destructive" });
-        navigate("/register");
-        return;
-      }
+  const handleTrialSuccess = () => {
+    setTrialComplete(true);
+    toast({
+      title: "Trial activated!",
+      description: "Your 14-day free trial is now active",
+    });
+    setStep(4);
+  };
 
-      // Check if org exists
-      const { data: existingOrg } = await supabase
-        .from("organizations")
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (!existingOrg) {
-        toast({ title: "Please complete steps 1-2 first", variant: "destructive" });
-        setStep(1);
-        return;
-      }
-
-      // Call edge function to create trial subscription
-      const { data, error } = await supabase.functions.invoke('provider-subscription', {
-        body: { action: 'create-subscription', plan: 'beta' }
-      });
-
-      if (error) throw error;
-
-      if (data?.checkoutUrl) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.checkoutUrl;
-      } else {
-        toast({ title: "Error", description: "Failed to start trial", variant: "destructive" });
-      }
-    } catch (error: any) {
-      console.error(error);
-      toast({ title: "Error", description: error.message || "Failed to start trial", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+  const handleConnectComplete = () => {
+    setPaymentsComplete(true);
+    toast({
+      title: "Payments connected!",
+      description: "You're all set to accept payments",
+    });
+    setStep(5);
   };
 
   const handleComplete = async () => {
@@ -149,7 +125,7 @@ const OnboardingProvider = () => {
         .update({ onboarded_at: new Date().toISOString() })
         .eq('user_id', user.id);
 
-      // Move to next step (trial signup)
+      // Move to next step (trial)
       setStep(3);
     } catch (error) {
       console.error("Error:", error);
@@ -170,10 +146,12 @@ const OnboardingProvider = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <div className={`flex-1 h-2 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`flex-1 h-2 rounded-full mx-2 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`flex-1 h-2 rounded-full ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex-1 h-2 rounded-full mx-1 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex-1 h-2 rounded-full mx-1 ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex-1 h-2 rounded-full mx-1 ${step >= 4 ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`flex-1 h-2 rounded-full ${step >= 5 ? 'bg-primary' : 'bg-muted'}`} />
           </div>
-          <p className="text-center text-muted-foreground">Step {step} of 3</p>
+          <p className="text-center text-muted-foreground">Step {step} of 5</p>
         </div>
 
         {step === 1 && (
@@ -279,91 +257,105 @@ const OnboardingProvider = () => {
         {step === 3 && (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <div className="bg-primary/10 rounded-full h-24 w-24 mx-auto flex items-center justify-center mb-4">
-                <CreditCard className="h-12 w-12 text-primary" />
+              <div className="bg-primary/10 rounded-full h-20 w-20 mx-auto flex items-center justify-center mb-4">
+                <CreditCard className="h-10 w-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold">Start your free trial</h2>
-              <p className="text-muted-foreground">Get full access to HomeBase for 14 days</p>
+              <h2 className="text-2xl font-bold">Start your 14-day free trial</h2>
+              <p className="text-muted-foreground">Add a card to activate your trial</p>
             </div>
 
-            <div className="bg-gradient-to-br from-primary/5 to-accent/5 p-6 rounded-lg border-2 border-primary/20">
-              <div className="text-center mb-4">
-                <div className="inline-flex items-baseline gap-1">
-                  <span className="text-5xl font-bold text-primary">$15</span>
-                  <span className="text-muted-foreground">/month</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  after your 14-day free trial
-                </p>
-              </div>
-
-              <div className="bg-background p-4 rounded-lg mb-4">
-                <p className="text-sm font-semibold mb-3">What's included:</p>
-                <ul className="text-sm space-y-2">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>Get booked by homeowners</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>Unlimited clients</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>Payment links & invoices</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>Client messaging</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>Up to 3 team members</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>3% transaction fees</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
-                <p className="text-xs text-amber-900 dark:text-amber-100">
-                  <strong>Card required.</strong> Cancel anytime during your trial and you won't be charged.
-                </p>
-              </div>
+            <div className="bg-muted/50 p-4 rounded-lg mb-4 text-center">
+              <p className="text-sm font-semibold">
+                <span className="text-3xl font-bold text-primary">$15</span>
+                <span className="text-muted-foreground">/month</span> after 14 days
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cancel anytime before day 15 and you won't be charged
+              </p>
             </div>
+
+            <EmbeddedSubscriptionSetup onSuccess={handleTrialSuccess} />
           </div>
         )}
 
-        <div className="flex gap-4 mt-8">
-          {step > 1 && (
-            <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1" disabled={loading}>
-              Back
-            </Button>
-          )}
-          {step < 2 ? (
-            <Button onClick={handleNext} className="flex-1" disabled={loading}>
-              Next
-            </Button>
-          ) : step === 2 ? (
-            <Button onClick={handleComplete} className="flex-1" disabled={loading}>
-              {loading ? "Saving..." : "Next"}
-            </Button>
-          ) : (
-            <Button onClick={handleStartTrial} className="flex-1 bg-primary" disabled={loading}>
-              {loading ? "Starting trial..." : "Start Free Trial"}
-            </Button>
-          )}
-        </div>
+        {step === 4 && (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="bg-primary/10 rounded-full h-20 w-20 mx-auto flex items-center justify-center mb-4">
+                <DollarSign className="h-10 w-10 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold">Connect your payouts</h2>
+              <p className="text-muted-foreground">Set up where you'll receive payments from customers</p>
+            </div>
 
-        <Button
-          variant="link"
-          className="w-full mt-4"
-          onClick={() => navigate("/")}
-        >
-          Back to home
-        </Button>
+            <EmbeddedConnectOnboarding onComplete={handleConnectComplete} />
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="space-y-6 text-center">
+            <div className="bg-primary/10 rounded-full h-24 w-24 mx-auto flex items-center justify-center mb-4">
+              <CheckCircle className="h-12 w-12 text-primary" />
+            </div>
+            <h2 className="text-3xl font-bold">You're all set!</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Your account is ready. Start managing clients, sending invoices, and growing your business.
+            </p>
+            
+            <div className="bg-muted/50 p-6 rounded-lg space-y-3">
+              <div className="flex items-center gap-3">
+                <Check className="h-5 w-5 text-primary shrink-0" />
+                <p className="text-sm text-left">Business profile created</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Check className="h-5 w-5 text-primary shrink-0" />
+                <p className="text-sm text-left">14-day trial activated</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Check className="h-5 w-5 text-primary shrink-0" />
+                <p className="text-sm text-left">Payments connected</p>
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => navigate('/provider/dashboard')} 
+              className="w-full bg-primary"
+              size="lg"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        )}
+
+        {step < 5 && (
+          <div className="flex gap-4 mt-8">
+            {step > 1 && step < 3 && (
+              <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1" disabled={loading}>
+                Back
+              </Button>
+            )}
+            {step === 1 && (
+              <Button onClick={handleNext} className="flex-1" disabled={loading}>
+                Next
+              </Button>
+            )}
+            {step === 2 && (
+              <Button onClick={handleComplete} className="flex-1" disabled={loading}>
+                {loading ? "Saving..." : "Continue"}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {step < 5 && (
+          <Button
+            variant="link"
+            className="w-full mt-4"
+            onClick={() => navigate("/")}
+          >
+            Back to home
+          </Button>
+        )}
       </Card>
     </div>
   );
