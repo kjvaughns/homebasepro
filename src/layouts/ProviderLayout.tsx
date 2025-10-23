@@ -112,13 +112,6 @@ const ProviderLayout = () => {
       } else {
         setOrganization(org);
         setIsOwner(org.owner_id === user.id);
-        
-        // BUG-003 FIX: Check Stripe onboarding completion
-        if (!org.stripe_onboarding_complete && !admin) {
-          console.log('Stripe onboarding incomplete, redirecting...');
-          navigate('/provider/stripe-onboarding');
-          return;
-        }
       }
     };
     load();

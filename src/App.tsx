@@ -186,12 +186,13 @@ const App = () => {
     }
   }, []);
 
-  // Show install prompt once per session after authentication on dashboard routes
+  // Show install prompt once per device after authentication
   useEffect(() => {
-    if (user && canInstall && !isInstalled) {
+    const alreadyShown = localStorage.getItem('homebase-install-shown') === 'true';
+    if (user && canInstall && !isInstalled && !alreadyShown) {
       const timer = setTimeout(() => {
         setShowInstallDialog(true);
-        sessionStorage.setItem('homebase-install-prompted-session', 'true');
+        localStorage.setItem('homebase-install-shown', 'true');
       }, 5000); // Show after 5 seconds on first dashboard visit
       return () => clearTimeout(timer);
     }

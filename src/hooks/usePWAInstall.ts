@@ -15,7 +15,7 @@ interface PWAInstallState {
 
 const DISMISS_KEY = 'homebase-install-dismissed';
 const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
-const SESSION_PROMPT_KEY = 'homebase-install-prompted-session';
+const SHOWN_KEY = 'homebase-install-shown'; // Permanent flag - shown once per device
 
 export function usePWAInstall(): PWAInstallState {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -50,9 +50,9 @@ export function usePWAInstall(): PWAInstallState {
       return false;
     };
 
-    // Check if already prompted this session
-    const checkPromptedThisSession = () => {
-      return sessionStorage.getItem(SESSION_PROMPT_KEY) === 'true';
+    // Check if already shown once on this device
+    const checkAlreadyShown = () => {
+      return localStorage.getItem(SHOWN_KEY) === 'true';
     };
 
     checkInstalled();
@@ -64,7 +64,7 @@ export function usePWAInstall(): PWAInstallState {
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
       
-      if (!checkDismissed() && !isInstalled && !checkPromptedThisSession()) {
+      if (!checkDismissed() && !isInstalled && !checkAlreadyShown()) {
         setCanInstall(true);
       }
     };
@@ -79,8 +79,8 @@ export function usePWAInstall(): PWAInstallState {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // For iOS, show install prompt if not installed, not dismissed, and not prompted this session
-    if (isIOS && !isInstalled && !checkDismissed() && !checkPromptedThisSession()) {
+    // For iOS, show install prompt if not installed, not dismissed, and not already shown
+    if (isIOS && !isInstalled && !checkDismissed() && !checkAlreadyShown()) {
       setCanInstall(true);
     }
 
@@ -114,7 +114,7 @@ export function usePWAInstall(): PWAInstallState {
 
   const dismissInstall = () => {
     localStorage.setItem(DISMISS_KEY, Date.now().toString());
-    sessionStorage.setItem(SESSION_PROMPT_KEY, 'true');
+    localStorage.setItem(SHOWN_KEY, 'true'); // Mark as shown permanently
     setCanInstall(false);
   };
 
