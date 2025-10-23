@@ -51,7 +51,24 @@ const Revenue = () => {
   useEffect(() => {
     const fetchRevenueData = async () => {
       try {
-        // Provider Subscription Revenue
+        // Fetch active provider subscriptions for MRR
+        const { data: subscriptions } = await (supabase as any)
+          .from('provider_subscriptions')
+          .select('plan, status')
+          .eq('status', 'active');
+
+        const betaCount = subscriptions?.filter((s: any) => s.plan === 'beta').length || 0;
+        const growthCount = subscriptions?.filter((s: any) => s.plan === 'growth').length || 0;
+        const proCount = subscriptions?.filter((s: any) => s.plan === 'pro').length || 0;
+        const scaleCount = subscriptions?.filter((s: any) => s.plan === 'scale').length || 0;
+
+        const betaMRR = betaCount * 1500; // $15 in cents
+        const growthMRR = growthCount * 2900; // $29 in cents
+        const proMRR = proCount * 9900; // $99 in cents
+        const scaleMRR = scaleCount * 29900; // $299 in cents
+        const subscriptionMRR = betaMRR + growthMRR + proMRR + scaleMRR;
+
+        // Provider Subscription Revenue (legacy)
         const { data: orgSubs } = await supabase
           .from("organization_subscriptions")
           .select(`
@@ -126,17 +143,17 @@ const Revenue = () => {
           .sort((a, b) => b.revenue - a.revenue)
           .slice(0, 5);
 
-        const totalMRR = providerSubscriptionMRR + transactionFeeMRR;
+        const totalMRR = subscriptionMRR + providerSubscriptionMRR + transactionFeeMRR;
 
         setData({
-          providerSubscriptionMRR,
+          providerSubscriptionMRR: subscriptionMRR,
           transactionFeeMRR,
           totalMRR,
           totalARR: totalMRR * 12,
-          freeProviders,
-          growthProviders,
-          proProviders,
-          scaleProviders,
+          freeProviders: subscriptions?.filter((s: any) => s.plan === 'free').length || 0,
+          growthProviders: growthCount,
+          proProviders: proCount,
+          scaleProviders: scaleCount,
           avgTransactionFee,
           topProviders,
         });
@@ -312,46 +329,34 @@ const Revenue = () => {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base md:text-lg">Plan Tier Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2 p-4 rounded-lg border" style={{ borderColor: TIER_COLORS.free }}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Free Plan</span>
-                <Badge variant="secondary">{data.freeProviders}</Badge>
+          <CardHeader>
+            <CardTitle className="text-base md:text-lg">Subscription Revenue (MRR)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="text-sm">Beta ({data.freeProviders})</span>
+                <span className="text-sm font-semibold">${(data.freeProviders * 15).toFixed(0)}/mo</span>
               </div>
-              <p className="text-xs text-muted-foreground">$0/mo + 8% transaction fee</p>
-              <p className="text-lg font-bold">${((data.freeProviders * 0) / 100).toFixed(0)}/mo</p>
-            </div>
-            <div className="space-y-2 p-4 rounded-lg border" style={{ borderColor: TIER_COLORS.growth }}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Growth Plan</span>
-                <Badge variant="secondary">{data.growthProviders}</Badge>
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="text-sm">Growth ({data.growthProviders})</span>
+                <span className="text-sm font-semibold">${(data.growthProviders * 29).toFixed(0)}/mo</span>
               </div>
-              <p className="text-xs text-muted-foreground">$49/mo + 2.5% transaction fee</p>
-              <p className="text-lg font-bold">${((data.growthProviders * 4900) / 100).toFixed(0)}/mo</p>
-            </div>
-            <div className="space-y-2 p-4 rounded-lg border" style={{ borderColor: TIER_COLORS.pro }}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Pro Plan</span>
-                <Badge variant="secondary">{data.proProviders}</Badge>
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="text-sm">Pro ({data.proProviders})</span>
+                <span className="text-sm font-semibold">${(data.proProviders * 99).toFixed(0)}/mo</span>
               </div>
-              <p className="text-xs text-muted-foreground">$129/mo + 2% transaction fee</p>
-              <p className="text-lg font-bold">${((data.proProviders * 12900) / 100).toFixed(0)}/mo</p>
-            </div>
-            <div className="space-y-2 p-4 rounded-lg border" style={{ borderColor: TIER_COLORS.scale }}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Scale Plan</span>
-                <Badge variant="secondary">{data.scaleProviders}</Badge>
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="text-sm">Scale ({data.scaleProviders})</span>
+                <span className="text-sm font-semibold">${(data.scaleProviders * 299).toFixed(0)}/mo</span>
               </div>
-              <p className="text-xs text-muted-foreground">$299/mo + 1.5% transaction fee</p>
-              <p className="text-lg font-bold">${((data.scaleProviders * 29900) / 100).toFixed(0)}/mo</p>
+              <div className="flex justify-between items-center pt-2 font-bold">
+                <span className="text-sm">Total MRR</span>
+                <span className="text-sm text-primary">${(data.providerSubscriptionMRR / 100).toFixed(0)}</span>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {/* Credit Liabilities Section */}
       <Card>

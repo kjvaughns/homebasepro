@@ -142,27 +142,25 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
 
       if (error) throw error;
 
-      if (data.clientSecret) {
-        // Redirect to Stripe Checkout or use Elements for payment
-        toast({
-          title: 'Redirecting to payment...',
-          description: 'Complete your subscription payment',
-        });
-        // TODO: Implement Stripe Checkout flow
-      } else {
-        toast({
-          title: 'Plan upgraded',
-          description: `You're now on the ${selectedPlan.name} plan`,
-        });
-        setShowUpgradeDialog(false);
-        loadSubscription();
-        onPlanChanged?.();
+      // For beta plan with trial, redirect to Stripe Checkout
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
       }
-    } catch (error: any) {
-      console.error('Upgrade error:', error);
+
+      // For immediate subscriptions (no trial)
       toast({
-        title: 'Upgrade failed',
-        description: error.message || 'Failed to upgrade plan',
+        title: 'Plan activated',
+        description: `You're now on the ${selectedPlan.name} plan`,
+      });
+      setShowUpgradeDialog(false);
+      loadSubscription();
+      onPlanChanged?.();
+    } catch (error: any) {
+      console.error('Subscription error:', error);
+      toast({
+        title: 'Subscription failed',
+        description: error.message || 'Failed to activate subscription',
         variant: 'destructive',
       });
     } finally {

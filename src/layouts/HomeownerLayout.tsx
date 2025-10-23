@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { SupportDrawer } from "@/components/support/SupportDrawer";
 import { useMessaging } from "@/contexts/MessagingContext";
 
   const mobileNavigation = [

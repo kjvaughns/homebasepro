@@ -27,6 +27,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { SupportDrawer } from "@/components/support/SupportDrawer";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";

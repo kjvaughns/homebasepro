@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Wallet, ArrowUpRight, Loader2, DollarSign, Clock } from "lucide-react";
+import { Wallet, ArrowUpRight, Loader2, DollarSign, Clock, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -25,6 +25,7 @@ export default function Balance() {
   const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [processingPayout, setProcessingPayout] = useState(false);
+  const [stripeOnboarded, setStripeOnboarded] = useState(false);
 
   useEffect(() => {
     loadBalance();
@@ -40,6 +41,23 @@ export default function Balance() {
         return;
       }
 
+      // Check Stripe onboarding status FIRST
+      const { data: org } = await (supabase as any)
+        .from('organizations')
+        .select('stripe_onboarding_complete, stripe_account_id, next_payout_date')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!org?.stripe_onboarding_complete || !org?.stripe_account_id) {
+        // Show onboarding CTA instead of balance
+        setStripeOnboarded(false);
+        setLoading(false);
+        return;
+      }
+
+      setStripeOnboarded(true);
+
+      // Only fetch balance if onboarded
       const { data, error } = await supabase.functions.invoke("get-balance");
 
       if (error) throw error;
@@ -132,7 +150,29 @@ export default function Balance() {
         </p>
       </div>
 
+      {/* Stripe Onboarding CTA */}
+      {!stripeOnboarded && (
+        <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-900/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+              Complete Stripe Setup
+            </CardTitle>
+            <CardDescription>
+              Connect your Stripe account to accept payments and receive payouts
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/provider/settings?tab=payments')}>
+              Connect Stripe Account
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Balance Overview Cards */}
+      {stripeOnboarded && (
+        <>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -287,6 +327,8 @@ export default function Balance() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
+      )}
     </div>
   );
 }

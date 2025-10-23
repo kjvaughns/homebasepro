@@ -61,7 +61,8 @@ serve(async (req) => {
     const org = orgs;
 
     // Plan pricing configuration
-    const planConfig: Record<string, { priceId: string; feePercent: number; teamLimit: number; price: number }> = {
+    const planConfig: Record<string, { priceId: string; feePercent: number; teamLimit: number; price: number; trialDays?: number }> = {
+      beta: { priceId: Deno.env.get('STRIPE_PRICE_BETA_MONTHLY') || 'price_beta_monthly', feePercent: 0.03, teamLimit: 3, price: 1500, trialDays: 14 },
       growth: { priceId: 'price_growth_monthly', feePercent: 0.025, teamLimit: 3, price: 2900 },
       pro: { priceId: 'price_pro_monthly', feePercent: 0.02, teamLimit: 10, price: 9900 },
       scale: { priceId: 'price_scale_monthly', feePercent: 0.02, teamLimit: 25, price: 29900 },
@@ -121,11 +122,52 @@ serve(async (req) => {
           proration_behavior: 'always_invoice',
         });
       } else {
-        // Create new subscription
+        // Create new subscription with trial if configured
+        if (config.trialDays) {
+          // Use Checkout Session for trial with card collection
+          const checkoutSession = await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            customer: stripeCustomerId,
+            line_items: [{
+              price: config.priceId,
+              quantity: 1,
+            }],
+            subscription_data: {
+              trial_period_days: config.trialDays,
+              trial_settings: {
+                end_behavior: { missing_payment_method: 'cancel' }
+              },
+              metadata: {
+                org_id: org.id,
+                user_id: user.id,
+                plan: plan,
+              }
+            },
+            success_url: `${req.headers.get('origin')}/provider/settings?tab=billing&success=true`,
+            cancel_url: `${req.headers.get('origin')}/provider/settings?tab=billing&canceled=true`,
+            metadata: {
+              org_id: org.id,
+              user_id: user.id,
+              plan: plan,
+            }
+          });
+
+          return new Response(
+            JSON.stringify({ checkoutUrl: checkoutSession.url }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Create regular subscription without trial
         stripeSub = await stripe.subscriptions.create({
           customer: stripeCustomerId,
           items: [{ price: config.priceId }],
           expand: ['latest_invoice.payment_intent'],
+          metadata: {
+            org_id: org.id,
+            user_id: user.id,
+            plan: plan,
+          }
         });
       }
 

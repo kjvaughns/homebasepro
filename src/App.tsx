@@ -104,6 +104,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MessagingProvider } from "@/contexts/MessagingContext";
 import Messages from "./pages/Messages";
+import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 
 const queryClient = new QueryClient();
 
@@ -202,18 +203,54 @@ const App = () => {
             {/* Provider routes with shared layout */}
             <Route path="/provider" element={<ProviderLayout />}>
               <Route path="dashboard" element={<ProviderDashboard />} />
-              <Route path="clients" element={<Clients />} />
-              <Route path="clients/import" element={<ImportClients />} />
-              <Route path="clients/:id" element={<ClientDetail />} />
-              <Route path="jobs" element={<Jobs />} />
+              
+              {/* Guarded routes - require active subscription or trial */}
+              <Route path="clients" element={
+                <SubscriptionGuard requiredFeature="Client Management">
+                  <Clients />
+                </SubscriptionGuard>
+              } />
+              <Route path="clients/import" element={
+                <SubscriptionGuard requiredFeature="Client Import">
+                  <ImportClients />
+                </SubscriptionGuard>
+              } />
+              <Route path="clients/:id" element={
+                <SubscriptionGuard requiredFeature="Client Details">
+                  <ClientDetail />
+                </SubscriptionGuard>
+              } />
+              <Route path="payments" element={
+                <SubscriptionGuard requiredFeature="Payments & Invoicing">
+                  <Payments />
+                </SubscriptionGuard>
+              } />
+              <Route path="jobs" element={
+                <SubscriptionGuard requiredFeature="Job Management">
+                  <Jobs />
+                </SubscriptionGuard>
+              } />
+              <Route path="analytics" element={
+                <SubscriptionGuard requiredFeature="Analytics">
+                  <Analytics />
+                </SubscriptionGuard>
+              } />
+              <Route path="accounting" element={
+                <SubscriptionGuard requiredFeature="Accounting">
+                  <Accounting />
+                </SubscriptionGuard>
+              } />
+              <Route path="profit-loss" element={
+                <SubscriptionGuard requiredFeature="Profit & Loss">
+                  <ProfitLoss />
+                </SubscriptionGuard>
+              } />
+
+              {/* Free access routes */}
               <Route path="services" element={<Services />} />
               <Route path="parts-materials" element={<PartsMaterials />} />
               <Route path="my-jobs" element={<MyJobs />} />
-              <Route path="payments" element={<Payments />} />
               <Route path="refund-requests" element={<Navigate to="/provider/payments?tab=disputes" replace />} />
-              <Route path="accounting" element={<Accounting />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="profit-loss" element={<ProfitLoss />} />
               <Route path="balance" element={<Balance />} />
               <Route path="tutorials" element={<Tutorials />} />
               <Route path="team" element={<Team />} />

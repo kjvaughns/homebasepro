@@ -329,9 +329,65 @@ serve(async (req) => {
       }
     }
 
-    // Handle subscription updates (downgrades/upgrades)
+    // Handle trial subscription start (checkout.session.completed)
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      
+      if (session.mode === 'subscription' && session.subscription) {
+        const { org_id, user_id, plan } = session.metadata;
+        
+        if (org_id && user_id) {
+          // Fetch subscription details
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          
+          // Update profiles with trial info
+          await supabase
+            .from('profiles')
+            .update({
+              stripe_customer_id: session.customer as string,
+              stripe_subscription_id: subscription.id,
+              plan: plan || 'beta',
+              trial_ends_at: subscription.trial_end 
+                ? new Date(subscription.trial_end * 1000).toISOString() 
+                : null,
+            })
+            .eq('user_id', user_id);
+          
+          // Update organization
+          await supabase
+            .from('organizations')
+            .update({
+              plan: plan || 'beta',
+              transaction_fee_pct: 0.03, // 3% for beta
+            })
+            .eq('id', org_id);
+
+          // Update provider_subscriptions
+          await supabase
+            .from('provider_subscriptions')
+            .upsert({
+              provider_id: org_id,
+              stripe_customer_id: session.customer as string,
+              stripe_subscription_id: subscription.id,
+              plan: plan || 'beta',
+              status: subscription.status,
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            });
+
+          console.log(`Trial started for org ${org_id}: ${plan} plan`);
+        }
+      }
+    }
+
+    // Handle subscription updates (downgrades/upgrades/trial ending)
     if (event.type === 'customer.subscription.updated') {
       const subscription = event.data.object as Stripe.Subscription;
+      const prevAttributes = event.data.previous_attributes as any;
+      
+      // Check if trial just ended
+      if (prevAttributes?.status === 'trialing' && subscription.status === 'active') {
+        console.log(`Trial ended and converted to paid for subscription ${subscription.id}`);
+      }
       
       const { data: providerSub } = await supabase
         .from('provider_subscriptions')
@@ -339,56 +395,101 @@ serve(async (req) => {
         .eq('stripe_subscription_id', subscription.id)
         .single();
       
-      if (providerSub && providerSub.organizations) {
-        const oldPlan = (providerSub.organizations as any).plan;
-        const newPlan = providerSub.plan;
+      if (providerSub) {
+        // Update profiles
+        await supabase
+          .from('profiles')
+          .update({
+            plan: subscription.status === 'active' || subscription.status === 'trialing' 
+              ? (subscription.metadata.plan || providerSub.plan || 'beta') 
+              : 'free',
+            trial_ends_at: subscription.trial_end 
+              ? new Date(subscription.trial_end * 1000).toISOString() 
+              : null,
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        // Update provider_subscriptions
+        await supabase
+          .from('provider_subscriptions')
+          .update({
+            status: subscription.status,
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id);
         
-        // Check if plan changed (downgrade or upgrade)
-        const planOrder = ['free', 'growth', 'pro', 'scale'];
-        const oldIndex = planOrder.indexOf(oldPlan);
-        const newIndex = planOrder.indexOf(newPlan);
-        
-        if (oldIndex !== newIndex) {
-          console.log(`Provider ${providerSub.provider_id} plan change: ${oldPlan} -> ${newPlan}`);
+        if (providerSub.organizations) {
+          const oldPlan = (providerSub.organizations as any).plan;
+          const newPlan = providerSub.plan;
           
-          // Get new limits
-          const planConfig = {
-            free: { team_limit: 0, transaction_fee_pct: 0.08 },
-            growth: { team_limit: 3, transaction_fee_pct: 0.025 },
-            pro: { team_limit: 10, transaction_fee_pct: 0.02 },
-            scale: { team_limit: 25, transaction_fee_pct: 0.02 },
-          };
+          // Check if plan changed (downgrade or upgrade)
+          const planOrder = ['free', 'beta', 'growth', 'pro', 'scale'];
+          const oldIndex = planOrder.indexOf(oldPlan);
+          const newIndex = planOrder.indexOf(newPlan);
           
-          const newLimits = planConfig[newPlan as keyof typeof planConfig];
-          
-          if (newLimits) {
-            // Update org with new plan and limits
-            await supabase
-              .from('organizations')
-              .update({
-                plan: newPlan,
-                team_limit: newLimits.team_limit,
-                transaction_fee_pct: newLimits.transaction_fee_pct,
-              })
-              .eq('id', providerSub.provider_id);
+          if (oldIndex !== newIndex) {
+            console.log(`Provider ${providerSub.provider_id} plan change: ${oldPlan} -> ${newPlan}`);
             
-            // If downgrading, check if over team limit
-            if (newIndex < oldIndex) {
-              const { count } = await supabase
-                .from('team_members')
-                .select('*', { count: 'exact', head: true })
-                .eq('organization_id', providerSub.provider_id)
-                .in('status', ['invited', 'active']);
+            // Get new limits
+            const planConfig = {
+              free: { team_limit: 0, transaction_fee_pct: 0.08 },
+              beta: { team_limit: 3, transaction_fee_pct: 0.03 },
+              growth: { team_limit: 3, transaction_fee_pct: 0.025 },
+              pro: { team_limit: 10, transaction_fee_pct: 0.02 },
+              scale: { team_limit: 25, transaction_fee_pct: 0.02 },
+            };
+            
+            const newLimits = planConfig[newPlan as keyof typeof planConfig];
+            
+            if (newLimits) {
+              // Update org with new plan and limits
+              await supabase
+                .from('organizations')
+                .update({
+                  plan: newPlan,
+                  team_limit: newLimits.team_limit,
+                  transaction_fee_pct: newLimits.transaction_fee_pct,
+                })
+                .eq('id', providerSub.provider_id);
               
-              if (count && count > newLimits.team_limit) {
-                console.warn(`⚠️  Provider ${providerSub.provider_id} has ${count} team members but limit is now ${newLimits.team_limit}`);
-                // Future: Send email notification to provider
-                // Future: Create admin notification for manual review
+              // If downgrading, check if over team limit
+              if (newIndex < oldIndex) {
+                const { count } = await supabase
+                  .from('team_members')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('organization_id', providerSub.provider_id)
+                  .in('status', ['invited', 'active']);
+                
+                if (count && count > newLimits.team_limit) {
+                  console.warn(`⚠️  Provider ${providerSub.provider_id} has ${count} team members but limit is now ${newLimits.team_limit}`);
+                }
               }
             }
           }
         }
       }
+    }
+
+    // Handle subscription deleted/canceled
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as Stripe.Subscription;
+      
+      // Revert to free plan
+      await supabase
+        .from('profiles')
+        .update({
+          plan: 'free',
+          trial_ends_at: null,
+          stripe_subscription_id: null,
+        })
+        .eq('stripe_subscription_id', subscription.id);
+
+      await supabase
+        .from('provider_subscriptions')
+        .update({ status: 'canceled' })
+        .eq('stripe_subscription_id', subscription.id);
+
+      console.log(`Subscription canceled: ${subscription.id}`);
     }
 
     // Handle disputes
