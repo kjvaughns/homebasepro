@@ -89,6 +89,18 @@ serve(async (req) => {
     const requestBody = await req.json();
     const { action, ...payload } = requestBody;
 
+    // Validate Stripe account is fully onboarded
+    const account = await stripe.accounts.retrieve(org.stripe_account_id);
+    if (!account.details_submitted || !account.charges_enabled) {
+      await supabase.from('payment_errors').insert({
+        org_id: org.id,
+        action: action || 'unknown',
+        error_message: 'Stripe account onboarding incomplete',
+        request_body: requestBody
+      });
+      throw new Error('Stripe account onboarding incomplete. Please complete setup in Settings > Payments.');
+    }
+
     // Validate input based on action
     try {
       switch (action) {
@@ -481,26 +493,31 @@ serve(async (req) => {
 
       if (!client) throw new Error('Client not found');
 
-      // Create product and price
-      const product = await stripe.products.create(
+      // Create Stripe Checkout Session with destination charge
+      const session = await stripe.checkout.sessions.create(
         {
-          name: description || `Payment for ${client.name}`,
-        },
-        { stripeAccount: org.stripe_account_id }
-      );
-
-      const price = await stripe.prices.create(
-        {
-          product: product.id,
-          unit_amount: Math.round(amount * 100), // Convert to cents
-          currency: 'usd',
-        },
-        { stripeAccount: org.stripe_account_id }
-      );
-
-      const paymentLink = await stripe.paymentLinks.create(
-        {
-          line_items: [{ price: price.id, quantity: 1 }],
+          mode: 'payment',
+          payment_method_types: ['card'],
+          line_items: [{
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(amount * 100),
+              product_data: {
+                name: description || `Payment for ${client.name}`,
+              },
+            },
+            quantity: 1,
+          }],
+          payment_intent_data: {
+            application_fee_amount: Math.round(amount * 100 * 0.029), // 2.9% platform fee
+            metadata: {
+              org_id: org.id,
+              client_id: clientId,
+              job_id: jobId || '',
+            },
+          },
+          success_url: `${Deno.env.get('PUBLIC_URL')}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${Deno.env.get('PUBLIC_URL')}/payment/cancelled`,
           metadata: {
             org_id: org.id,
             client_id: clientId,
@@ -511,29 +528,20 @@ serve(async (req) => {
         { stripeAccount: org.stripe_account_id }
       );
 
-      // Save to database
-      const { data: payment } = await supabase
-        .from('payments')
-        .insert({
-          org_id: org.id,
-          client_id: clientId,
-          job_id: jobId,
-          type: type || 'payment_link',
-          status: 'open',
-          amount: Math.round(amount * 100),
-          currency: 'usd',
-          url: paymentLink.url,
-          stripe_id: paymentLink.id,
-          meta: {
-            client_name: client.name,
-            description,
-          },
-        })
-        .select()
-        .single();
+      // Save to payment_links table
+      await supabase.from('payment_links').insert({
+        organization_id: org.id,
+        client_id: clientId,
+        job_id: jobId,
+        description: description,
+        amount: Math.round(amount * 100),
+        stripe_session_id: session.id,
+        payment_link_url: session.url,
+        status: 'active',
+      });
 
       return new Response(
-        JSON.stringify({ id: payment.id, url: paymentLink.url }),
+        JSON.stringify({ id: session.id, url: session.url }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

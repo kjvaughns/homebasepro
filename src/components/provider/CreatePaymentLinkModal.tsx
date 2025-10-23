@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
+import QRCode from 'qrcode';
 
 interface CreatePaymentLinkModalProps {
   open: boolean;
@@ -25,6 +26,13 @@ export function CreatePaymentLinkModal({ open, onClose, clientId, jobId }: Creat
     expiresIn: "7",
   });
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [qrCode, setQRCode] = useState<string>("");
+
+  useEffect(() => {
+    if (generatedLink) {
+      QRCode.toDataURL(generatedLink, { width: 256 }).then(setQRCode).catch(console.error);
+    }
+  }, [generatedLink]);
 
   const handleCreate = async () => {
     setLoading(true);
@@ -32,42 +40,25 @@ export function CreatePaymentLinkModal({ open, onClose, clientId, jobId }: Creat
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: org } = await supabase
-        .from("organizations")
-        .select("id")
-        .eq("owner_id", user.id)
-        .single();
-
-      if (!org) return;
-
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + parseInt(formData.expiresIn));
-
-      const { data, error } = await (supabase as any)
-        .from("payment_links")
-        .insert({
-          organization_id: org.id,
-          client_id: clientId,
-          job_id: jobId,
+      // Call payment API to create Stripe checkout session
+      const { data, error } = await supabase.functions.invoke('payments-api', {
+        body: {
+          action: 'payment-link',
+          clientId,
+          jobId,
+          amount: parseFloat(formData.amount),
           description: formData.description,
-          amount: parseInt(formData.amount),
-          deposit_required: formData.requireDeposit,
-          deposit_amount: formData.requireDeposit ? parseInt(formData.depositAmount) : null,
-          expires_at: expiresAt.toISOString(),
-          status: "active",
-        })
-        .select()
-        .single();
+          type: 'payment_link'
+        }
+      });
 
       if (error) throw error;
 
-      const link = `${window.location.origin}/pay/${data.id}`;
-      setGeneratedLink(link);
-
+      setGeneratedLink(data.url);
       toast.success("Payment link created!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating payment link:", error);
-      toast.error("Failed to create payment link");
+      toast.error(error.message || "Failed to create payment link");
     } finally {
       setLoading(false);
     }
@@ -89,18 +80,19 @@ export function CreatePaymentLinkModal({ open, onClose, clientId, jobId }: Creat
       expiresIn: "7",
     });
     setGeneratedLink(null);
+    setQRCode("");
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg rounded-xl">
         <DialogHeader>
-          <DialogTitle>Create Payment Link</DialogTitle>
+          <DialogTitle className="text-2xl">Create Payment Link</DialogTitle>
         </DialogHeader>
 
         {!generatedLink ? (
-          <div className="space-y-4">
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Description</Label>
               <Input
@@ -120,59 +112,35 @@ export function CreatePaymentLinkModal({ open, onClose, clientId, jobId }: Creat
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label>Require Deposit</Label>
-              <Switch
-                checked={formData.requireDeposit}
-                onCheckedChange={(checked) => setFormData({ ...formData, requireDeposit: checked })}
-              />
-            </div>
-
-            {formData.requireDeposit && (
-              <div className="space-y-2">
-                <Label>Deposit Amount ($)</Label>
-                <Input
-                  type="number"
-                  value={formData.depositAmount}
-                  onChange={(e) => setFormData({ ...formData, depositAmount: e.target.value })}
-                  placeholder="25.00"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Link Expires In (Days)</Label>
-              <Input
-                type="number"
-                value={formData.expiresIn}
-                onChange={(e) => setFormData({ ...formData, expiresIn: e.target.value })}
-                placeholder="7"
-              />
-            </div>
-
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={handleClose} className="flex-1">
                 Cancel
               </Button>
-              <Button onClick={handleCreate} disabled={loading} className="flex-1">
+              <Button onClick={handleCreate} disabled={loading || !formData.amount} className="flex-1">
                 {loading ? "Creating..." : "Create Link"}
               </Button>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm font-medium mb-2">Payment Link Created!</p>
+          <div className="space-y-6 py-4">
+            <div className="flex justify-center">
+              {qrCode && (
+                <img src={qrCode} alt="Payment QR Code" className="w-64 h-64 rounded-lg border" />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Payment Link</Label>
               <div className="flex items-center gap-2">
-                <Input value={generatedLink} readOnly className="text-xs" />
+                <Input value={generatedLink} readOnly className="text-xs font-mono" />
                 <Button size="sm" variant="outline" onClick={handleCopy}>
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              Share this link with your client. They can pay via card and the payment will be tracked automatically.
+            <p className="text-sm text-muted-foreground text-center">
+              Share this link or QR code with your client for secure payment
             </p>
 
             <Button onClick={handleClose} className="w-full">

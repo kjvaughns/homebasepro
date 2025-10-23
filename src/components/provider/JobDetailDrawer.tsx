@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Mail, Phone, MapPin, Calendar, Clock, DollarSign } from "lucide-react";
+import { Mail, Phone, MapPin, Calendar, Clock, DollarSign, Navigation } from "lucide-react";
 
 interface JobDetailDrawerProps {
   job: any;
@@ -51,11 +51,35 @@ export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequest
           <TabsContent value="overview" className="space-y-6 mt-4">
             {/* Location */}
             {job.address && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-sm text-muted-foreground">Location</h3>
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
                   <p className="text-sm">{job.address}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const encoded = encodeURIComponent(job.address);
+                      window.open(`maps://?daddr=${encoded}`, '_blank');
+                    }}
+                  >
+                    <Navigation className="h-4 w-4 mr-2" />
+                    Apple Maps
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const encoded = encodeURIComponent(job.address);
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`, '_blank');
+                    }}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Google Maps
+                  </Button>
                 </div>
               </div>
             )}

@@ -139,7 +139,7 @@ export default function ProviderDashboard() {
                 <MessageThreadRow
                   key={t.id}
                   thread={t}
-                  onOpen={() => navigate(`/provider/messages/${t.id}`)}
+                  onOpen={() => navigate(`/provider/messages?conversation=${t.id}`)}
                 />
               ))}
               {unreadThreads.length === 0 && <EmptyRow text="You're all caught up." />}

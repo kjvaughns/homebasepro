@@ -78,6 +78,8 @@ import MyProviders from "@/pages/homeowner/MyProviders";
 import AccountIndex from "@/pages/provider/account";
 import AccountProfile from "@/pages/provider/account/Profile";
 import AccountSocial from "@/pages/provider/account/Social";
+import Tutorials from "@/pages/provider/Tutorials";
+import ProfitLoss from "@/pages/provider/ProfitLoss";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminLogin from "./pages/admin/Login";
@@ -209,7 +211,9 @@ const App = () => {
               <Route path="refund-requests" element={<Navigate to="/provider/payments?tab=disputes" replace />} />
               <Route path="accounting" element={<Accounting />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="profit-loss" element={<ProfitLoss />} />
               <Route path="balance" element={<Balance />} />
+              <Route path="tutorials" element={<Tutorials />} />
               <Route path="team" element={<Team />} />
               <Route path="payroll" element={<Navigate to="/provider/earnings" replace />} />
               <Route path="earnings" element={<EarningsLedger />} />

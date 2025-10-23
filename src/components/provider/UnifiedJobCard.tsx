@@ -58,7 +58,29 @@ const statusConfig: Record<string, {
     color: "bg-primary/20 text-primary",
     label: "Scheduled",
     actions: [
-      { label: "Start", action: "start", icon: PlayCircle }
+      { label: "En Route", action: "en_route", icon: MapPin },
+      { label: "Details", action: "view", icon: FileText, variant: "outline" }
+    ]
+  },
+  en_route: {
+    color: "bg-secondary text-secondary-foreground",
+    label: "En Route",
+    actions: [
+      { label: "Start Job", action: "started", icon: PlayCircle }
+    ]
+  },
+  started: {
+    color: "bg-primary/30 text-primary",
+    label: "In Progress",
+    actions: [
+      { label: "Complete", action: "completed", icon: CheckCircle }
+    ]
+  },
+  paused: {
+    color: "bg-muted text-muted-foreground",
+    label: "Paused",
+    actions: [
+      { label: "Resume", action: "started", icon: PlayCircle }
     ]
   },
   in_progress: {
