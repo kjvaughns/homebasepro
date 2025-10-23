@@ -4103,6 +4103,17 @@ export type Database = {
         Args: { conv_id: string; user_type: string }
         Returns: undefined
       }
+      send_message: {
+        Args: {
+          p_attachment_url?: string
+          p_content: string
+          p_conversation_id: string
+          p_message_type?: string
+          p_meta?: Json
+          p_sender_profile_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

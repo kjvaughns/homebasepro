@@ -50,6 +50,7 @@ interface MessagingContextValue {
   messages: Record<string, Message[]>;
   typingUsers: Record<string, TypingState[]>;
   unreadCounts: Record<string, number>;
+  totalUnread: number;
   userProfileId: string | null;
   loading: boolean;
   
@@ -73,6 +74,7 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, TypingState[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [totalUnread, setTotalUnread] = useState(0);
   const [userProfileId, setUserProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<Record<string, RealtimeChannel>>({});
@@ -229,6 +231,10 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
           unreads[item.conversations.id] = count || 0;
         }
         setUnreadCounts(unreads);
+        
+        // Calculate total unread
+        const total = Object.values(unreads).reduce((sum, count) => sum + count, 0);
+        setTotalUnread(total);
       }
     } catch (error) {
       console.error('Error in loadConversations:', error);
@@ -430,6 +436,7 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
         messages,
         typingUsers,
         unreadCounts,
+        totalUnread,
         userProfileId,
         loading,
         loadConversations,

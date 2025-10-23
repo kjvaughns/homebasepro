@@ -29,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { useMessaging } from "@/contexts/MessagingContext";
 
   const mobileNavigation = [
     { name: "Home", href: "/dashboard", icon: Home },
@@ -59,6 +60,7 @@ export default function HomeownerLayout() {
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const { totalUnread } = useMessaging();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -213,6 +215,30 @@ export default function HomeownerLayout() {
           <div className="flex items-center justify-around" style={{ height: `${TABBAR_H}px` }}>
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
+
+              if (item.name === "Messages") {
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={cn(
+                      "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1 relative",
+                      isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
+                    )}
+                  >
+                    <div className="relative">
+                      <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                      {totalUnread > 0 && (
+                        <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[10px] font-bold bg-[#00B67A] text-white rounded-full">
+                          {totalUnread > 9 ? '9+' : totalUnread}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11.5px] font-medium leading-tight">{item.name}</span>
+                  </Link>
+                );
+              }
+
               return (
                 <Link
                   key={item.name}

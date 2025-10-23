@@ -34,6 +34,7 @@ import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 import { JobsMenuSheet } from "@/components/provider/JobsMenuSheet";
 import { TeamMenuSheet } from "@/components/provider/TeamMenuSheet";
 import { FinancialMenuSheet } from "@/components/provider/FinancialMenuSheet";
+import { useMessaging } from "@/contexts/MessagingContext";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
@@ -57,6 +58,7 @@ const ProviderLayout = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const { totalUnread } = useMessaging();
   const [jobsSheetOpen, setJobsSheetOpen] = useState(false);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
   const [financialSheetOpen, setFinancialSheetOpen] = useState(false);
@@ -229,6 +231,30 @@ const ProviderLayout = () => {
               const isActive = location.pathname === item.href || 
                 (item.hasSubmenu && location.pathname.startsWith(item.href.split('/').slice(0, 3).join('/')));
               
+              // Messages link with unread badge
+              if (item.name === "Messages") {
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => navigate(item.href)}
+                    className={cn(
+                      "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1 relative",
+                      isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
+                    )}
+                  >
+                    <div className="relative">
+                      <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                      {totalUnread > 0 && (
+                        <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[10px] font-bold bg-[#00B67A] text-white rounded-full">
+                          {totalUnread > 9 ? '9+' : totalUnread}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11.5px] font-medium leading-tight">{item.name}</span>
+                  </button>
+                );
+              }
+
               return (
                 <button
                   key={item.name}
