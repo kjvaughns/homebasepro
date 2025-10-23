@@ -30,7 +30,7 @@ export const NewProviderWelcome = ({ hasAnyData }: NewProviderWelcomeProps) => {
             <UserPlus className="mr-2 h-4 w-4" />
             Import Clients
           </Button>
-          <Button onClick={() => navigate('/provider/settings/payment')} variant="default">
+          <Button onClick={() => navigate('/provider/settings?tab=payments')} variant="default">
             <CreditCard className="mr-2 h-4 w-4" />
             Connect Stripe
           </Button>
