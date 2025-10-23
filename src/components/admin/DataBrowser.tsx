@@ -307,27 +307,28 @@ const DataBrowser = () => {
                                 : formatValue(row[column], column)}
                             </TableCell>
                           ))}
-                          <TableCell className="text-right sticky right-0 bg-background">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditRecord(row);
-                                  setEditOpen(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeleteId(row.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                           <TableCell className="text-right sticky right-0 bg-background">
+                             <div className="flex justify-end gap-3">
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => {
+                                   setEditRecord(row);
+                                   setEditOpen(true);
+                                 }}
+                               >
+                                 <Edit className="h-4 w-4" />
+                               </Button>
+                               <Button
+                                 variant="destructive"
+                                 size="sm"
+                                 onClick={() => setDeleteId(row.id)}
+                                 className="ml-2"
+                               >
+                                 <Trash2 className="h-4 w-4" />
+                               </Button>
+                             </div>
+                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

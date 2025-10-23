@@ -82,8 +82,10 @@ import Tutorials from "@/pages/provider/Tutorials";
 import ProfitLoss from "@/pages/provider/ProfitLoss";
 
 import AdminLayout from "./layouts/AdminLayout";
-import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
+import AdminSupport from "./pages/admin/Support";
+import { MaintenanceGuard } from "./components/MaintenanceGuard";
+import { RoleGuard } from "./components/admin/RoleGuard";
 import AdminRevenue from "./pages/admin/Revenue";
 import AdminLedger from "./pages/admin/Ledger";
 import AdminData from "./pages/admin/DataManagement";
@@ -255,7 +257,7 @@ const App = () => {
             <Route path="/demo/provider" element={<DemoProvider />} />
 
             {/* Admin routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<Login />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="dashboard" element={<AdminDashboard />} />
