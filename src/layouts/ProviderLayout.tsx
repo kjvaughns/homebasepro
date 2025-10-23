@@ -197,13 +197,16 @@ const ProviderLayout = () => {
                         <span>Admin Portal</span>
                       </DropdownMenuItem>
                     </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <SupportDrawer />
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
@@ -353,13 +356,16 @@ const ProviderLayout = () => {
                       <span>Admin Portal</span>
                     </DropdownMenuItem>
                   </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <SupportDrawer />
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
