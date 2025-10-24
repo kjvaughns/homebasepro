@@ -1,10 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { PWAOnboardingFlow } from "@/components/pwa/PWAOnboardingFlow";
 
 const PWALaunch = () => {
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [targetRoute, setTargetRoute] = useState<string>('/');
 
   useEffect(() => {
     const handlePWALaunch = async () => {
@@ -31,25 +34,35 @@ const PWALaunch = () => {
           _role: "admin"
         });
 
+        // Determine target route based on role
+        let route = "/homeowner/dashboard";
+        
         if (hasAdminRole) {
-          navigate("/admin/dashboard", { replace: true });
-          return;
+          route = "/admin/dashboard";
+        } else {
+          // Check if user owns an organization (provider)
+          const { data: org } = await supabase
+            .from("organizations")
+            .select("id")
+            .eq("owner_id", session.user.id)
+            .single();
+
+          if (org) {
+            route = "/provider/dashboard";
+          }
         }
 
-        // Check if user owns an organization (provider)
-        const { data: org } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("owner_id", session.user.id)
-          .single();
-
-        if (org) {
-          navigate("/provider/dashboard", { replace: true });
-          return;
+        // Check if onboarding has been completed
+        const onboardingCompleted = localStorage.getItem('pwa_onboarding_completed');
+        
+        if (!onboardingCompleted) {
+          // Show onboarding first
+          setTargetRoute(route);
+          setShowOnboarding(true);
+        } else {
+          // Go directly to dashboard
+          navigate(route, { replace: true });
         }
-
-        // Default to homeowner dashboard
-        navigate("/homeowner/dashboard", { replace: true });
       } catch (error) {
         console.error("Error determining route:", error);
         // Fallback to login on error
@@ -60,13 +73,25 @@ const PWALaunch = () => {
     handlePWALaunch();
   }, [navigate]);
 
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    navigate(targetRoute, { replace: true });
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-        <p className="text-muted-foreground">Loading HomeBase...</p>
+    <>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Loading HomeBase...</p>
+        </div>
       </div>
-    </div>
+
+      <PWAOnboardingFlow 
+        open={showOnboarding} 
+        onComplete={handleOnboardingComplete}
+      />
+    </>
   );
 };
 

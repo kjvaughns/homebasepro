@@ -183,22 +183,28 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log('🔐 Received push notification request');
+
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    console.error('❌ Missing authorization header');
+    console.error('Available headers:', Object.fromEntries(req.headers.entries()));
+    return new Response(
+      JSON.stringify({ 
+        error: 'Missing authorization header',
+        message: 'Please ensure you are authenticated. Include your session token in the Authorization header.'
+      }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  console.log('✅ Authorization header present:', authHeader.substring(0, 20) + '...');
+
   try {
     // Accept both user auth and service role auth
-    const authHeader = req.headers.get('Authorization');
     let isServiceRole = false;
     let supabaseClient;
     let currentUserId: string | null = null;
-
-    console.log('🔐 Received push notification request');
-
-    if (!authHeader) {
-      console.error('❌ Missing authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      );
-    }
 
     // Normalize header: remove "Bearer " prefix if present, trim whitespace
     const normalizedHeader = authHeader.replace(/^Bearer\s+/i, '').trim();
@@ -224,15 +230,20 @@ serve(async (req) => {
         }
       );
 
+      console.log('👤 Verifying user authentication...');
       const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
       if (userError || !user) {
+        console.error('❌ Auth verification failed:', userError?.message || 'No user');
         return new Response(
-          JSON.stringify({ error: 'Unauthorized' }),
+          JSON.stringify({ 
+            error: 'Unauthorized',
+            message: 'Invalid or expired authentication token'
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
         );
       }
       currentUserId = user.id;
-      console.log('👤 Using user authentication');
+      console.log('✅ User authenticated:', currentUserId);
     }
 
     const { userIds, title, body, url, icon } = await req.json();

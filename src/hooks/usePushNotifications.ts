@@ -40,6 +40,17 @@ export function usePushNotifications(): PushNotificationState {
     setLoading(true);
 
     try {
+      // Check authentication first
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: 'Authentication required',
+          description: 'Please sign in to enable notifications',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
       // Request notification permission
       const result = await Notification.requestPermission();
       setPermission(result);

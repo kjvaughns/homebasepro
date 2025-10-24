@@ -60,22 +60,38 @@ export function PWASettingsCard() {
 
   const handleTestNotification = async () => {
     try {
-      await supabase.functions.invoke('send-push-notification', {
+      console.log('📤 Sending test notification...');
+      
+      // Get current session to ensure we have auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
         body: {
           title: 'Test Notification',
           body: 'This is a test notification from HomeBase!',
           url: '/provider/dashboard'
         }
       });
+
+      if (error) {
+        console.error('❌ Test notification error:', error);
+        throw error;
+      }
+
+      console.log('✅ Test notification response:', data);
       
       toast({
         title: 'Test notification sent',
         description: 'You should receive it shortly'
       });
     } catch (error) {
+      console.error('❌ Failed to send test notification:', error);
       toast({
         title: 'Failed to send test',
-        description: 'Please try again',
+        description: error instanceof Error ? error.message : 'Please try again',
         variant: 'destructive'
       });
     }
