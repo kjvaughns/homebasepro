@@ -298,6 +298,7 @@ export type Database = {
         Row: {
           address: string
           assigned_team_member_id: string | null
+          calendar_sync_status: string | null
           cancellation_reason: string | null
           completion_notes: string | null
           completion_photos: Json | null
@@ -309,11 +310,13 @@ export type Database = {
           deposit_required: boolean | null
           estimated_price_high: number | null
           estimated_price_low: number | null
+          external_calendar_event_id: string | null
           final_price: number | null
           home_id: string | null
           homeowner_profile_id: string
           id: string
           invoice_id: string | null
+          is_calendar_block: boolean | null
           lat: number | null
           lng: number | null
           notes: string | null
@@ -329,6 +332,7 @@ export type Database = {
         Insert: {
           address: string
           assigned_team_member_id?: string | null
+          calendar_sync_status?: string | null
           cancellation_reason?: string | null
           completion_notes?: string | null
           completion_photos?: Json | null
@@ -340,11 +344,13 @@ export type Database = {
           deposit_required?: boolean | null
           estimated_price_high?: number | null
           estimated_price_low?: number | null
+          external_calendar_event_id?: string | null
           final_price?: number | null
           home_id?: string | null
           homeowner_profile_id: string
           id?: string
           invoice_id?: string | null
+          is_calendar_block?: boolean | null
           lat?: number | null
           lng?: number | null
           notes?: string | null
@@ -360,6 +366,7 @@ export type Database = {
         Update: {
           address?: string
           assigned_team_member_id?: string | null
+          calendar_sync_status?: string | null
           cancellation_reason?: string | null
           completion_notes?: string | null
           completion_photos?: Json | null
@@ -371,11 +378,13 @@ export type Database = {
           deposit_required?: boolean | null
           estimated_price_high?: number | null
           estimated_price_low?: number | null
+          external_calendar_event_id?: string | null
           final_price?: number | null
           home_id?: string | null
           homeowner_profile_id?: string
           id?: string
           invoice_id?: string | null
+          is_calendar_block?: boolean | null
           lat?: number | null
           lng?: number | null
           notes?: string | null
@@ -469,6 +478,112 @@ export type Database = {
             columns: ["provider_org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_integrations: {
+        Row: {
+          access_token: string
+          calendar_id: string | null
+          calendar_name: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          last_sync_at: string | null
+          organization_id: string
+          provider: string
+          refresh_token: string | null
+          status: string | null
+          sync_direction: string | null
+          sync_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          calendar_id?: string | null
+          calendar_name?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          organization_id: string
+          provider: string
+          refresh_token?: string | null
+          status?: string | null
+          sync_direction?: string | null
+          sync_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          calendar_id?: string | null
+          calendar_name?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          organization_id?: string
+          provider?: string
+          refresh_token?: string | null
+          status?: string | null
+          sync_direction?: string | null
+          sync_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_integrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_sync_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_details: Json | null
+          events_failed: number | null
+          events_synced: number | null
+          id: string
+          integration_id: string
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          events_failed?: number | null
+          events_synced?: number | null
+          id?: string
+          integration_id: string
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          events_failed?: number | null
+          events_synced?: number | null
+          id?: string
+          integration_id?: string
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_integrations"
             referencedColumns: ["id"]
           },
         ]
@@ -2751,6 +2866,53 @@ export type Database = {
             columns: ["home_id"]
             isOneToOne: false
             referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_booking_links: {
+        Row: {
+          auto_confirm: boolean | null
+          booking_window_days: number | null
+          created_at: string | null
+          custom_message: string | null
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          require_precheck: boolean | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          auto_confirm?: boolean | null
+          booking_window_days?: number | null
+          created_at?: string | null
+          custom_message?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          require_precheck?: boolean | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          auto_confirm?: boolean | null
+          booking_window_days?: number | null
+          created_at?: string | null
+          custom_message?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          require_precheck?: boolean | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_booking_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
