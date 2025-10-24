@@ -13,6 +13,7 @@ import {
   LogOut,
   User as UserIcon,
   DollarSign,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,8 +32,8 @@ import { cn } from "@/lib/utils";
 const mobileNavigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Revenue", href: "/admin/revenue", icon: DollarSign },
+  { name: "Announce", href: "/admin/announcements", icon: Megaphone },
   { name: "Data", href: "/admin/data", icon: Database },
-  { name: "Team", href: "/admin/team", icon: Shield },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
