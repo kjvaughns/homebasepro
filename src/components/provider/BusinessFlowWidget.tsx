@@ -94,18 +94,18 @@ export function BusinessFlowWidget() {
         <CardTitle className="text-base">Your Business Flow</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
           {steps.map((step, index) => (
             <div key={index} className="flex flex-col items-center">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-auto flex-col gap-1 p-2 w-full"
+                className="h-auto flex-col gap-0.5 sm:gap-1 p-1.5 sm:p-2 w-full"
                 onClick={step.action}
               >
-                <step.icon className="h-5 w-5" />
-                <span className="text-xs text-center">{step.label}</span>
-                <span className="text-xs font-semibold text-primary">{step.count}</span>
+                <step.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-[10px] sm:text-xs text-center leading-tight">{step.label}</span>
+                <span className="text-[10px] sm:text-xs font-semibold text-primary">{step.count}</span>
               </Button>
               {index < steps.length - 1 && (
                 <ArrowRight className="h-4 w-4 text-muted-foreground mt-4 hidden md:block" />
