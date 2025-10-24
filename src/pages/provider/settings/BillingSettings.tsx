@@ -4,6 +4,7 @@ import { SubscriptionManager } from "@/components/provider/SubscriptionManager";
 
 export default function BillingSettings() {
   const [currentPlan, setCurrentPlan] = useState<string>('free');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,6 +16,22 @@ export default function BillingSettings() {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
 
+      // Check if user has admin role FIRST
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (adminRole) {
+        setIsAdmin(true);
+        setCurrentPlan('scale'); // Set to highest tier
+        setLoading(false);
+        return;
+      }
+
+      // Regular user flow - check organization plan
       const { data, error } = await supabase
         .from("organizations")
         .select("plan")
@@ -43,6 +60,7 @@ export default function BillingSettings() {
 
       <SubscriptionManager 
         currentPlan={currentPlan}
+        isAdmin={isAdmin}
         onPlanChanged={loadOrganization}
       />
     </div>

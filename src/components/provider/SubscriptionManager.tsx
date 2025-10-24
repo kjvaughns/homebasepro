@@ -75,10 +75,11 @@ const PLANS: Plan[] = [
 
 interface SubscriptionManagerProps {
   currentPlan?: string;
+  isAdmin?: boolean;
   onPlanChanged?: () => void;
 }
 
-export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: SubscriptionManagerProps) {
+export function SubscriptionManager({ currentPlan = 'free', isAdmin = false, onPlanChanged }: SubscriptionManagerProps) {
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
@@ -91,6 +92,12 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
   }, []);
 
   const loadSubscription = async () => {
+    // If admin, skip loading subscription details
+    if (isAdmin) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('payments-api', {
         body: { action: 'get-subscription' },
@@ -168,7 +175,7 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
     }
   };
 
-  const current = PLANS.find((p) => p.id === (subscription?.plan || currentPlan));
+  const current = PLANS.find((p) => p.id === (isAdmin ? 'scale' : (subscription?.plan || currentPlan)));
 
   if (loading) {
     return (
@@ -185,7 +192,12 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
       <Card>
         <CardHeader>
           <CardTitle>Your Subscription</CardTitle>
-          <CardDescription>Manage your plan and transaction fees</CardDescription>
+          <CardDescription>
+            {isAdmin 
+              ? 'You have full platform access as an administrator'
+              : 'Manage your plan and transaction fees'
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {current && (
@@ -194,22 +206,42 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-2xl font-bold">{current.name}</h3>
-                    {subscription?.cancel_at_period_end ? (
+                    {isAdmin ? (
+                      <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                        Admin Access
+                      </Badge>
+                    ) : subscription?.cancel_at_period_end ? (
                       <Badge variant="destructive">Canceling</Badge>
                     ) : (
                       <Badge variant={current.id === 'free' ? 'secondary' : 'default'}>Current Plan</Badge>
                     )}
                   </div>
-                  {current.price > 0 && (
+                  {isAdmin ? (
+                    <p className="text-muted-foreground">
+                      Full platform access • No subscription required
+                    </p>
+                  ) : current.price > 0 ? (
                     <p className="text-muted-foreground">
                       {subscription?.cancel_at_period_end 
                         ? `Active until ${new Date(subscription.current_period_end).toLocaleDateString()}`
                         : `$${current.price}/month`
                       }
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </div>
+
+              {isAdmin && (
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <p className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2">
+                    🎉 Administrator Benefits
+                  </p>
+                  <p className="text-sm text-purple-700 dark:text-purple-300">
+                    You have unrestricted access to all features, unlimited clients, team members, 
+                    and the lowest transaction fees. No subscription charges apply to your account.
+                  </p>
+                </div>
+              )}
 
               <div className="grid gap-3">
                 <div className="flex items-center gap-2">
@@ -220,7 +252,9 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-primary" />
-                  <span>Up to {current.teamLimit} team members</span>
+                  <span>
+                    {isAdmin ? 'Unlimited team members' : `Up to ${current.teamLimit} team members`}
+                  </span>
                 </div>
               </div>
 
@@ -233,7 +267,7 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
             </div>
           )}
 
-          {current?.id === 'free' && (
+          {!isAdmin && current?.id === 'free' && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 p-4 bg-primary/10 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-primary" />
@@ -289,7 +323,7 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
             </div>
           )}
 
-          {current && current.id !== 'free' && current.id !== 'scale' && (
+          {!isAdmin && current && current.id !== 'free' && current.id !== 'scale' && (
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-4">
                 Want even lower fees and more features?
@@ -319,7 +353,8 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
         </CardContent>
       </Card>
 
-      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+      {!isAdmin && (
+        <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Upgrade to {selectedPlan?.name}</DialogTitle>
@@ -386,7 +421,8 @@ export function SubscriptionManager({ currentPlan = 'free', onPlanChanged }: Sub
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+        </Dialog>
+      )}
     </>
   );
 }
