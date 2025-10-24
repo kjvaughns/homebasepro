@@ -240,11 +240,10 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="billing" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 max-w-full">
+        <TabsList className="grid w-full grid-cols-4 max-w-full">
           <TabsTrigger value="billing" className="text-xs sm:text-sm">Billing</TabsTrigger>
           <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>
           <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
-          <TabsTrigger value="calendar" className="text-xs sm:text-sm">Calendar</TabsTrigger>
           <TabsTrigger value="pwa" className="text-xs sm:text-sm">App</TabsTrigger>
         </TabsList>
 
@@ -351,11 +350,14 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-6">
+          <CalendarIntegrationCard />
+          {organization && <BookingLinkManager organizationId={organization.id} />}
+          
           <Card>
             <CardHeader>
-              <CardTitle>Integrations</CardTitle>
+              <CardTitle>Other Integrations</CardTitle>
               <CardDescription>
-                Connect third-party services to enhance your workflow
+                Connect additional third-party services
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -364,11 +366,6 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="calendar" className="space-y-6">
-          <CalendarIntegrationCard />
-          {organization && <BookingLinkManager organizationId={organization.id} />}
         </TabsContent>
 
         <TabsContent value="pwa">
