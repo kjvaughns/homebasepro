@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { SeatLimitModal } from "./SeatLimitModal";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 interface AddClientDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
     notes: "",
   });
   const { toast } = useToast();
+  const { isAdmin } = useAdminCheck();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +64,8 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
       const clientCount = existingClients?.length || 0;
       const plan = organization.plan || "free";
       
-      if (plan === "free" && clientCount >= 5) {
+      // Skip limit check for admins
+      if (plan === "free" && !isAdmin && clientCount >= 5) {
         toast({
           title: 'Client limit reached',
           description: 'Free plan is limited to 5 clients. Upgrade to Growth plan for unlimited clients.',

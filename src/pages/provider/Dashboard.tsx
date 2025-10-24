@@ -26,6 +26,7 @@ export default function ProviderDashboard() {
   const { threads: unreadThreads } = useUnrepliedMessages();
   const { insights, loading: insightsLoading } = useDashboardInsights();
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
 
@@ -36,6 +37,16 @@ export default function ProviderDashboard() {
   const loadUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Check admin status
+    const { data: adminRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    setIsAdmin(!!adminRole);
 
     const { data } = await supabase
       .from('profiles')
@@ -65,7 +76,7 @@ export default function ProviderDashboard() {
       </header>
 
       {/* Welcome banners for new users */}
-      {isNewUser && userProfile?.plan === 'free' && (
+      {isNewUser && userProfile?.plan === 'free' && !isAdmin && (
         <Alert className="mb-6 border-primary/50 bg-primary/5">
           <Info className="h-4 w-4" />
           <AlertTitle>🎉 Welcome to HomeBase!</AlertTitle>

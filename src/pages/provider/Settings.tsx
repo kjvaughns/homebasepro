@@ -44,6 +44,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,6 +102,18 @@ export default function Settings() {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
+
+      // Check if user has admin role
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (adminRole) {
+        setIsAdmin(true);
+      }
 
       const { data, error } = await supabase
         .from("organizations")
@@ -234,7 +247,8 @@ export default function Settings() {
 
         <TabsContent value="billing">
           <SubscriptionManager 
-            currentPlan={organization?.plan || 'free'}
+            currentPlan={isAdmin ? 'scale' : (organization?.plan || 'free')}
+            isAdmin={isAdmin}
             onPlanChanged={loadOrganization}
           />
         </TabsContent>

@@ -41,12 +41,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 export default function Clients() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { clients, loading, refetch } = useClientsList();
   const { isMobile } = useMobileLayout();
+  const { isAdmin } = useAdminCheck();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -80,7 +82,7 @@ export default function Clients() {
     fetchOrgPlan();
   }, []);
 
-  const isFreePlan = orgPlan === 'free';
+  const isFreePlan = orgPlan === 'free' && !isAdmin;
   const atClientLimit = isFreePlan && clients.length >= 5;
 
   const handleAddClient = () => {
