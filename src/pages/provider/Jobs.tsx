@@ -441,6 +441,7 @@ const Jobs = () => {
       <CreateJobModal
         open={showCreateJob}
         onOpenChange={setShowCreateJob}
+        client={null}
         onSuccess={() => {
           setShowCreateJob(false);
           loadJobs();

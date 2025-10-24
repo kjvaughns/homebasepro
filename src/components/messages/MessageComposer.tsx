@@ -2,9 +2,10 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Paperclip, Mic, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Send, Paperclip, Mic, Image as ImageIcon, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
+import { QuickReplies } from "./QuickReplies";
 
 interface MessageComposerProps {
   conversationId: string;
@@ -24,6 +25,7 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
   const composerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
   const keyboardHeight = useKeyboardHeight();
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
 
   // Measure composer height and notify parent
   useEffect(() => {
@@ -162,7 +164,14 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
   const handleFocus = () => {
     setTimeout(() => {
       onFocus?.();
+      setShowQuickReplies(true);
     }, 0);
+  };
+
+  const handleQuickReply = (message: string) => {
+    setText(message);
+    setShowQuickReplies(false);
+    handleTextareaResize();
   };
 
   return (
@@ -178,6 +187,12 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
         WebkitTransform: 'translateZ(0)'
       }}
     >
+      {showQuickReplies && (
+        <div className="mb-2">
+          <QuickReplies onSelect={handleQuickReply} />
+        </div>
+      )}
+
       <div className="px-4 py-3">
         <div className="flex items-end gap-2">
         <input
@@ -204,6 +219,15 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
               <Paperclip className="h-5 w-5" />
             )}
           </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 flex-shrink-0 rounded-full"
+            onClick={() => setShowQuickReplies(!showQuickReplies)}
+          >
+            <Zap className="h-5 w-5" />
+          </Button>
         
           <Textarea
             ref={textareaRef}
@@ -211,6 +235,7 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
             onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
+            onBlur={() => setTimeout(() => setShowQuickReplies(false), 200)}
             placeholder="Type a message..."
             className="flex-1 min-h-[44px] max-h-32 resize-none rounded-2xl overflow-hidden"
             rows={1}

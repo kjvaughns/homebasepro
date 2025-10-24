@@ -14,6 +14,8 @@ import { NewProviderWelcome } from "@/components/provider/NewProviderWelcome";
 import { SetupWizard } from "@/components/provider/SetupWizard";
 import { SetupChecklist } from "@/components/provider/SetupChecklist";
 import { BusinessFlowWidget } from "@/components/provider/BusinessFlowWidget";
+import { RemindersWidget } from "@/components/provider/RemindersWidget";
+import { AIChatModal } from "@/components/ai/AIChatModal";
 import {
   Tooltip,
   TooltipContent,
@@ -32,6 +34,8 @@ export default function ProviderDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
+  const [userPlan, setUserPlan] = useState<string>('free');
 
   const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
 
@@ -61,6 +65,7 @@ export default function ProviderDashboard() {
       .single();
 
     setUserProfile(data as any);
+    setUserPlan((data as any)?.plan || 'free');
 
     // Show setup wizard for new users who haven't completed setup
     if (data && !(data as any).setup_completed && (data as any).onboarded_at) {
@@ -204,7 +209,24 @@ export default function ProviderDashboard() {
               )}
             </div>
             <div className="mt-4">
-              <Button className="w-full" size="sm">Ask HomeBase AI</Button>
+              {userPlan === 'free' ? (
+                <Button 
+                  className="w-full" 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => navigate('/pricing')}
+                >
+                  Unlock AI (Upgrade to Pro)
+                </Button>
+              ) : (
+                <Button 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => setShowAIChat(true)}
+                >
+                  Ask HomeBase AI
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -214,6 +236,11 @@ export default function ProviderDashboard() {
 
       {/* Secondary panels */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Reminders Widget */}
+        <div className="lg:col-span-2">
+          <RemindersWidget />
+        </div>
+
         <Card className="lg:col-span-2 rounded-2xl">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
@@ -257,6 +284,13 @@ export default function ProviderDashboard() {
           </CardContent>
         </Card>
       </section>
+
+      {/* AI Chat Modal */}
+      <AIChatModal 
+        open={showAIChat} 
+        onOpenChange={setShowAIChat}
+        userRole="provider"
+      />
 
       {/* Setup Wizard */}
       <SetupWizard open={showSetupWizard} onClose={() => setShowSetupWizard(false)} />
