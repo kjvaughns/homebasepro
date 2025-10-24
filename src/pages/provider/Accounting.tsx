@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, TrendingUp, TrendingDown, Receipt, FileText, Plus } from "lucide-react";
-import { MobileFeatureNotice } from "@/components/provider/MobileFeatureNotice";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
@@ -151,8 +150,6 @@ export default function Accounting() {
         <h1 className="text-2xl sm:text-3xl font-bold">Accounting</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Track income, expenses, and financial reports</p>
       </div>
-
-      <MobileFeatureNotice />
 
       {/* Financial Overview Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

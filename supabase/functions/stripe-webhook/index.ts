@@ -415,6 +415,90 @@ serve(async (req) => {
       }
     }
 
+    // Handle checkout session completed (for payment links)
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const invoiceId = session.metadata?.invoice_id;
+      const orgId = session.metadata?.org_id;
+      
+      if (invoiceId && session.payment_status === 'paid') {
+        console.log(`💳 Payment link completed for invoice ${invoiceId}`);
+        
+        // Update invoice status
+        const { data: invoiceRecord } = await supabase
+          .from('invoices')
+          .update({ 
+            status: 'paid',
+            paid_at: new Date().toISOString(),
+            stripe_invoice_id: session.invoice || session.id
+          })
+          .eq('id', invoiceId)
+          .select('job_id, organization_id, amount, client_id')
+          .single();
+        
+        if (invoiceRecord) {
+          // Create payment record
+          await supabase.from('payments').insert({
+            org_id: invoiceRecord.organization_id,
+            invoice_id: invoiceId,
+            stripe_id: session.id,
+            amount: invoiceRecord.amount,
+            status: 'paid',
+            payment_date: new Date().toISOString(),
+            currency: session.currency || 'usd'
+          });
+          
+          // Update linked booking if exists
+          if (invoiceRecord.job_id) {
+            await supabase
+              .from('bookings')
+              .update({ 
+                status: 'confirmed',
+                payment_captured: true
+              })
+              .eq('id', invoiceRecord.job_id);
+            
+            console.log(`✅ Updated booking ${invoiceRecord.job_id} to confirmed`);
+          }
+          
+          // Send notification to provider
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('owner_id, profiles!organizations_owner_id_fkey(user_id, id)')
+            .eq('id', invoiceRecord.organization_id)
+            .single();
+
+          if (orgData?.profiles) {
+            await supabase.from('notifications').insert({
+              user_id: orgData.profiles.user_id,
+              profile_id: orgData.profiles.id,
+              type: 'payment',
+              title: '💰 Payment Received',
+              body: `You received a payment of $${(invoiceRecord.amount / 100).toFixed(2)}`,
+              action_url: '/provider/payments',
+              metadata: { invoice_id: invoiceId, amount: invoiceRecord.amount }
+            });
+
+            // Send push notification
+            try {
+              await supabase.functions.invoke('send-push-notification', {
+                body: {
+                  userIds: [orgData.profiles.user_id],
+                  title: '💰 Payment Received',
+                  body: `You received a payment of $${(invoiceRecord.amount / 100).toFixed(2)}`,
+                  url: '/provider/payments'
+                }
+              });
+            } catch (err) {
+              console.error('Failed to send push notification:', err);
+            }
+          }
+          
+          console.log(`✅ Payment link processed for invoice ${invoiceId}`);
+        }
+      }
+    }
+
     if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object;
       await supabase

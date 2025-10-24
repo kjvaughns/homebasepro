@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Sparkles, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import {
@@ -269,108 +269,142 @@ export default function PartsMaterials() {
     }
   };
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const formContent = (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Quick Add Mode - Essential Fields Only */}
+      <div className="space-y-4">
         <div>
-          <Label htmlFor="name">Part Name</Label>
+          <Label htmlFor="name">Part Name *</Label>
           <Input
             id="name"
+            placeholder="e.g., HVAC Filter 16x20"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="touch-manipulation"
+            style={{ fontSize: '16px' }}
           />
         </div>
-        <div>
-          <Label htmlFor="sku">SKU</Label>
-          <Input
-            id="sku"
-            value={formData.sku}
-            onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-            className="touch-manipulation"
-          />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="category">Category</Label>
-          <Input
-            id="category"
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="touch-manipulation"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="cost_price">Cost Price *</Label>
+            <Input
+              id="cost_price"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              placeholder="0.00"
+              value={formData.cost_price || ''}
+              onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
+              className="touch-manipulation"
+              style={{ fontSize: '16px' }}
+            />
+          </div>
+          <div>
+            <Label htmlFor="markup">Markup % *</Label>
+            <Input
+              id="markup"
+              type="number"
+              inputMode="decimal"
+              placeholder="50"
+              value={formData.markup_percentage || ''}
+              onChange={(e) => setFormData({ ...formData, markup_percentage: parseFloat(e.target.value) || 0 })}
+              className="touch-manipulation"
+              style={{ fontSize: '16px' }}
+            />
+          </div>
         </div>
-        <div>
-          <Label htmlFor="unit">Unit</Label>
-          <Input
-            id="unit"
-            value={formData.unit}
-            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-            className="touch-manipulation"
-          />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="cost_price">Cost Price</Label>
-          <Input
-            id="cost_price"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            value={formData.cost_price}
-            onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
-            className="touch-manipulation"
-          />
-        </div>
-        <div>
-          <Label htmlFor="markup">Markup %</Label>
-          <Input
-            id="markup"
-            type="number"
-            inputMode="decimal"
-            value={formData.markup_percentage}
-            onChange={(e) => setFormData({ ...formData, markup_percentage: parseFloat(e.target.value) || 0 })}
-            className="touch-manipulation"
-          />
-        </div>
-        <div>
-          <Label htmlFor="sell_price">Sell Price</Label>
+          <Label htmlFor="sell_price">Sell Price (Auto-calculated)</Label>
           <Input
             id="sell_price"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            value={formData.sell_price.toFixed(2)}
+            type="text"
+            value={`$${formData.sell_price.toFixed(2)}`}
             readOnly
-            className="bg-muted touch-manipulation"
+            className="bg-muted touch-manipulation font-semibold"
+            style={{ fontSize: '16px' }}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="quantity">Quantity on Hand</Label>
-          <Input
-            id="quantity"
-            type="number"
-            inputMode="numeric"
-            value={formData.quantity_on_hand}
-            onChange={(e) => setFormData({ ...formData, quantity_on_hand: parseInt(e.target.value) || 0 })}
-            className="touch-manipulation"
-          />
+      {/* Advanced Options Toggle */}
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        className="w-full justify-between touch-manipulation"
+      >
+        <span>Advanced Options</span>
+        {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+
+      {/* Advanced Mode - Optional Fields */}
+      {showAdvanced && (
+        <div className="space-y-4 pt-2 border-t">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sku">SKU</Label>
+              <Input
+                id="sku"
+                placeholder="Optional"
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                className="touch-manipulation"
+                style={{ fontSize: '16px' }}
+              />
+            </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                placeholder="e.g., HVAC, Plumbing"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="touch-manipulation"
+                style={{ fontSize: '16px' }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="unit">Unit</Label>
+              <Input
+                id="unit"
+                placeholder="e.g., each, box, roll"
+                value={formData.unit}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                className="touch-manipulation"
+                style={{ fontSize: '16px' }}
+              />
+            </div>
+            <div>
+              <Label htmlFor="quantity">Quantity on Hand</Label>
+              <Input
+                id="quantity"
+                type="number"
+                inputMode="numeric"
+                placeholder="0"
+                value={formData.quantity_on_hand || ''}
+                onChange={(e) => setFormData({ ...formData, quantity_on_hand: parseInt(e.target.value) || 0 })}
+                className="touch-manipulation"
+                style={{ fontSize: '16px' }}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+            />
+            <Label>Active</Label>
+          </div>
         </div>
-        <div className="flex items-center gap-2 pt-6">
-          <Switch
-            checked={formData.is_active}
-            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-          />
-          <Label>Active</Label>
-        </div>
-      </div>
+      )}
     </div>
   );
 

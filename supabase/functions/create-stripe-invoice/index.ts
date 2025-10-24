@@ -171,12 +171,16 @@ serve(async (req) => {
     });
 
     // Create payment link with all line items and application fee
+    const appUrl = Deno.env.get('APP_URL') || 'https://lovable.app';
     const paymentLink = await stripePost(
       'payment_links',
       {
         line_items: priceIds,
         after_completion: {
-          type: 'hosted_confirmation'
+          type: 'redirect',
+          redirect: {
+            url: `${appUrl}/invoice-payment-success?session_id={CHECKOUT_SESSION_ID}&invoice_id=${invoiceId}`
+          }
         },
         invoice_creation: {
           enabled: true

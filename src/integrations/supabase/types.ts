@@ -4886,6 +4886,10 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      is_org_member: {
+        Args: { org_id: string; user_id: string }
+        Returns: boolean
+      }
       match_providers: {
         Args: { p_home_id: string; p_limit?: number; p_service_type: string }
         Returns: {
