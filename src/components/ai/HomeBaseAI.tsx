@@ -207,7 +207,12 @@ export default function HomeBaseAI({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent sheet from capturing space bar
+    if (e.key === ' ') {
+      e.stopPropagation();
+    }
+    // Handle Enter to send message
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -516,7 +521,7 @@ export default function HomeBaseAI({
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder={isProvider ? "Ask about your business..." : "Describe your home problem..."}
             disabled={isLoading}
             className="flex-1 h-11 sm:h-10 text-base"

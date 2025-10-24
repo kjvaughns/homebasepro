@@ -43,6 +43,13 @@ export const CreateTicketDialog = ({
   const [priority, setPriority] = useState("medium");
   const [loading, setLoading] = useState(false);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent dialog from capturing space bar in inputs
+    if (e.key === ' ') {
+      e.stopPropagation();
+    }
+  };
+
   const handleSubmit = async () => {
     if (!subject.trim() || !description.trim()) {
       toast.error("Please fill in all required fields");
@@ -98,6 +105,7 @@ export const CreateTicketDialog = ({
               placeholder="Brief description of your issue"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
           </div>
           <div className="space-y-2">
@@ -137,6 +145,7 @@ export const CreateTicketDialog = ({
               className="min-h-[120px]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
           </div>
         </div>
