@@ -1322,6 +1322,83 @@ export type Database = {
         }
         Relationships: []
       }
+      help_article_feedback: {
+        Row: {
+          article_id: string | null
+          created_at: string | null
+          feedback_text: string | null
+          helpful: boolean
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string | null
+          feedback_text?: string | null
+          helpful: boolean
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string | null
+          feedback_text?: string | null
+          helpful?: boolean
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_article_feedback_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          id: string
+          order_index: number | null
+          related_article_ids: string[] | null
+          screenshot_urls: Json | null
+          slug: string
+          title: string
+          updated_at: string | null
+          user_type: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          related_article_ids?: string[] | null
+          screenshot_urls?: Json | null
+          slug: string
+          title: string
+          updated_at?: string | null
+          user_type: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          related_article_ids?: string[] | null
+          screenshot_urls?: Json | null
+          slug?: string
+          title?: string
+          updated_at?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
       home_photos: {
         Row: {
           caption: string | null
@@ -1526,7 +1603,9 @@ export type Database = {
           last_hvac_service: string | null
           last_lawn_service: string | null
           last_plumbing_service: string | null
+          lat: number | null
           lawn_sqft: number | null
+          lng: number | null
           lot_acres: number | null
           maintenance_score: number | null
           name: string
@@ -1558,7 +1637,9 @@ export type Database = {
           last_hvac_service?: string | null
           last_lawn_service?: string | null
           last_plumbing_service?: string | null
+          lat?: number | null
           lawn_sqft?: number | null
+          lng?: number | null
           lot_acres?: number | null
           maintenance_score?: number | null
           name: string
@@ -1590,7 +1671,9 @@ export type Database = {
           last_hvac_service?: string | null
           last_lawn_service?: string | null
           last_plumbing_service?: string | null
+          lat?: number | null
           lawn_sqft?: number | null
+          lng?: number | null
           lot_acres?: number | null
           maintenance_score?: number | null
           name?: string
@@ -2102,6 +2185,12 @@ export type Database = {
         Row: {
           avg_response_time_hours: number | null
           base_zip: string | null
+          business_address: string | null
+          business_city: string | null
+          business_lat: number | null
+          business_lng: number | null
+          business_state: string | null
+          business_zip: string | null
           city: string | null
           completion_rate: number | null
           cover_image_url: string | null
@@ -2142,6 +2231,12 @@ export type Database = {
         Insert: {
           avg_response_time_hours?: number | null
           base_zip?: string | null
+          business_address?: string | null
+          business_city?: string | null
+          business_lat?: number | null
+          business_lng?: number | null
+          business_state?: string | null
+          business_zip?: string | null
           city?: string | null
           completion_rate?: number | null
           cover_image_url?: string | null
@@ -2182,6 +2277,12 @@ export type Database = {
         Update: {
           avg_response_time_hours?: number | null
           base_zip?: string | null
+          business_address?: string | null
+          business_city?: string | null
+          business_lat?: number | null
+          business_lng?: number | null
+          business_state?: string | null
+          business_zip?: string | null
           city?: string | null
           completion_rate?: number | null
           cover_image_url?: string | null
@@ -4498,30 +4599,86 @@ export type Database = {
           },
         ]
       }
-      tutorial_steps: {
+      tutorial_progress: {
         Row: {
+          completed_at: string | null
           created_at: string | null
-          description: string | null
           id: string
           role: string
-          step_order: number
-          title: string
+          skipped: boolean | null
+          step_id: string | null
+          user_id: string | null
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string | null
-          description?: string | null
           id?: string
           role: string
-          step_order: number
-          title: string
+          skipped?: boolean | null
+          step_id?: string | null
+          user_id?: string | null
         }
         Update: {
+          completed_at?: string | null
           created_at?: string | null
-          description?: string | null
           id?: string
           role?: string
+          skipped?: boolean | null
+          step_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutorial_progress_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "tutorial_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutorial_steps: {
+        Row: {
+          action_required: boolean | null
+          completion_criteria: Json | null
+          created_at: string | null
+          description: string | null
+          element_selector: string | null
+          id: string
+          position: string | null
+          role: string
+          screenshot_url: string | null
+          step_order: number
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          action_required?: boolean | null
+          completion_criteria?: Json | null
+          created_at?: string | null
+          description?: string | null
+          element_selector?: string | null
+          id?: string
+          position?: string | null
+          role: string
+          screenshot_url?: string | null
+          step_order: number
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          action_required?: boolean | null
+          completion_criteria?: Json | null
+          created_at?: string | null
+          description?: string | null
+          element_selector?: string | null
+          id?: string
+          position?: string | null
+          role?: string
+          screenshot_url?: string | null
           step_order?: number
           title?: string
+          video_url?: string | null
         }
         Relationships: []
       }
