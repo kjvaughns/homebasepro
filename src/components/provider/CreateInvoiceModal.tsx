@@ -32,6 +32,12 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
   ]);
   const [notes, setNotes] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [clientMode, setClientMode] = useState<'existing' | 'new'>('existing');
+  const [newClientData, setNewClientData] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
 
   useEffect(() => {
     if (open) {
@@ -99,15 +105,66 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         return;
       }
 
-      const { data: client } = await supabase
-        .from("clients")
-        .select("email, name")
-        .eq("id", selectedClient)
-        .single();
+      let clientId = selectedClient;
+      let clientEmail = '';
+      let clientName = '';
 
-      if (!client) {
-        toast.error("Client not found");
-        return;
+      // If creating new client, insert first
+      if (clientMode === 'new') {
+        if (!newClientData.name || !newClientData.email) {
+          toast.error('Please enter client name and email');
+          return;
+        }
+
+        // Check for duplicate email
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('organization_id', org.id)
+          .eq('email', newClientData.email)
+          .single();
+
+        if (existingClient) {
+          toast.error('A client with this email already exists');
+          return;
+        }
+
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert({
+            organization_id: org.id,
+            name: newClientData.name,
+            email: newClientData.email,
+            phone: newClientData.phone || null,
+            status: 'active'
+          })
+          .select()
+          .single();
+
+        if (clientError) {
+          toast.error('Failed to create client: ' + clientError.message);
+          return;
+        }
+
+        clientId = newClient.id;
+        clientEmail = newClient.email;
+        clientName = newClient.name;
+        
+        toast.success('Client created successfully');
+      } else {
+        const { data: client } = await supabase
+          .from("clients")
+          .select("email, name")
+          .eq("id", selectedClient)
+          .single();
+
+        if (!client) {
+          toast.error("Client not found");
+          return;
+        }
+
+        clientEmail = client.email;
+        clientName = client.name;
       }
 
       const total = calculateTotal();
@@ -116,7 +173,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
       // Generate PDF
       const pdfBlob = generateInvoicePDF({
         invoice_number: invoiceNumber,
-        client_name: client.name,
+        client_name: clientName,
         provider_name: org.name,
         line_items: lineItems.map(item => ({
           description: item.description,
@@ -153,7 +210,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         .from("invoices")
         .insert([{
           organization_id: org.id,
-          client_id: selectedClient,
+          client_id: clientId,
           job_id: jobId,
           invoice_number: invoiceNumber,
           amount: Math.round(total * 100),
@@ -179,10 +236,10 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
           metadata: {
             invoice_id: invoice.id,
             invoice_number: invoiceNumber,
-            client_id: selectedClient,
+            client_id: clientId,
             type: 'invoice_payment'
           },
-          success_url: `${appUrl}/homeowner/dashboard?payment=success&invoice_id=${invoice.id}`,
+          success_url: `${appUrl}/invoice-payment-success?invoice_id=${invoice.id}&client_email=${encodeURIComponent(clientEmail)}`,
           cancel_url: `${appUrl}/homeowner/dashboard?payment=cancelled`,
         }
       });
@@ -206,14 +263,14 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         const { error: emailError } = await supabase.functions.invoke('send-invoice', {
           body: {
             invoiceId: invoice.id,
-            clientEmail: client.email,
+            clientEmail: clientEmail,
             pdfUrl: publicUrl,
             paymentUrl: checkoutData?.url || null,
             invoiceNumber: invoiceNumber,
             amount: Math.round(total * 100),
             dueDate: dueDate,
             providerName: org.name,
-            clientName: client.name,
+            clientName: clientName,
           }
         });
 
@@ -241,6 +298,8 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
     setLineItems([{ description: "", quantity: 1, rate: 0 }]);
     setNotes("");
     setDueDate("");
+    setClientMode('existing');
+    setNewClientData({ name: '', email: '', phone: '' });
     onClose();
   };
 
@@ -252,23 +311,90 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Client</Label>
-              <Select value={selectedClient} onValueChange={setSelectedClient}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Client Mode Toggle */}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={clientMode === 'existing' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setClientMode('existing')}
+            >
+              Existing Client
+            </Button>
+            <Button
+              type="button"
+              variant={clientMode === 'new' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setClientMode('new')}
+            >
+              + New Client
+            </Button>
+          </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            {/* Client Selection or New Client Form */}
+            {clientMode === 'existing' ? (
+              <div className="space-y-2">
+                <Label>Client</Label>
+                <Select value={selectedClient} onValueChange={setSelectedClient}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="col-span-2 space-y-3">
+                <div>
+                  <Label>Client Name *</Label>
+                  <Input
+                    placeholder="John Doe"
+                    value={newClientData.name}
+                    onChange={(e) => setNewClientData({...newClientData, name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Email Address *</Label>
+                  <Input
+                    type="email"
+                    placeholder="john@example.com"
+                    value={newClientData.email}
+                    onChange={(e) => setNewClientData({...newClientData, email: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Phone Number (optional)</Label>
+                  <Input
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={newClientData.phone}
+                    onChange={(e) => setNewClientData({...newClientData, phone: e.target.value})}
+                  />
+                </div>
+              </div>
+            )}
+
+            {clientMode === 'existing' && (
+              <div className="space-y-2">
+                <Label>Due Date</Label>
+                <Input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+
+          {clientMode === 'new' && (
             <div className="space-y-2">
               <Label>Due Date</Label>
               <Input
@@ -277,7 +403,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
-          </div>
+          )}
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -351,7 +477,11 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
             </Button>
             <Button
               onClick={() => handleCreate(false)}
-              disabled={loading || !selectedClient}
+              disabled={
+                loading || 
+                (clientMode === 'existing' && !selectedClient) || 
+                (clientMode === 'new' && (!newClientData.name || !newClientData.email))
+              }
               className="flex-1"
               variant="outline"
             >
@@ -359,7 +489,11 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
             </Button>
             <Button
               onClick={() => handleCreate(true)}
-              disabled={loading || !selectedClient}
+              disabled={
+                loading || 
+                (clientMode === 'existing' && !selectedClient) || 
+                (clientMode === 'new' && (!newClientData.name || !newClientData.email))
+              }
               className="flex-1"
             >
               <Send className="h-4 w-4 mr-2" />

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import HomeBaseAI from "@/components/ai/HomeBaseAI";
 import { RemindersWidget } from "@/components/homeowner/RemindersWidget";
 import { FollowUpDialog } from "@/components/homeowner/FollowUpDialog";
+import { ServiceHistory } from "@/components/homeowner/ServiceHistory";
 
 export default function HomeownerDashboard() {
   const navigate = useNavigate();
@@ -301,29 +302,11 @@ export default function HomeownerDashboard() {
         </div>
       )}
 
-      {/* Recent Activity */}
-      {recentActivity.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Recent Activity</h2>
-          <div className="space-y-2">
-            {recentActivity.map((activity) => (
-              <Card key={activity.id} className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{activity.organizations?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Completed {new Date(activity.completion_time).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Service History */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Service History</h2>
+        <ServiceHistory />
+      </div>
 
       {/* HomeBase AI Dialog */}
       <Dialog open={showAI} onOpenChange={setShowAI}>

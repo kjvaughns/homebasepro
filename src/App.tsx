@@ -78,6 +78,7 @@ import ShareLinkAnalytics from "@/pages/provider/ShareLinkAnalytics";
 import ShortLinkRedirect from "@/pages/ShortLinkRedirect";
 import Portfolio from "@/pages/provider/Portfolio";
 import Favorites from "@/pages/homeowner/Favorites";
+import InvoicePaymentSuccess from "@/pages/InvoicePaymentSuccess";
 import MyProviders from "@/pages/homeowner/MyProviders";
 import AccountIndex from "@/pages/provider/account";
 import AccountProfile from "@/pages/provider/account/Profile";
@@ -306,6 +307,7 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/l/:slug" element={<ShortLinkRedirect />} />
+            <Route path="/invoice-payment-success" element={<InvoicePaymentSuccess />} />
             <Route path="/onboarding/homeowner" element={
               <OnboardingRouteGuard userType="homeowner">
                 <OnboardingHomeowner />

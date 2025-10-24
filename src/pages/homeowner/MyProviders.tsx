@@ -45,7 +45,17 @@ export default function MyProviders() {
 
       setCurrentProviders(currentSubs || []);
 
-      // Load past providers (canceled/completed subscriptions)
+      // Load past providers from both subscriptions and completed bookings
+      const { data: completedBookings } = await supabase
+        .from('bookings')
+        .select(`
+          provider_org_id,
+          updated_at,
+          organizations(id, name, rating_avg, rating_count, logo_url, service_type)
+        `)
+        .eq('homeowner_profile_id', profile.id)
+        .eq('status', 'completed');
+
       const { data: pastSubs } = await supabase
         .from("homeowner_subscriptions")
         .select(`
@@ -57,9 +67,14 @@ export default function MyProviders() {
         .in("status", ["canceled", "completed"])
         .order("updated_at", { ascending: false });
 
-      // Dedupe by provider_org_id
+      // Merge and dedupe providers from both sources
+      const allPastProviders = [
+        ...(completedBookings || []),
+        ...(pastSubs || [])
+      ];
+
       const uniquePast = Array.from(
-        new Map(pastSubs?.map(item => [item.provider_org_id, item]) || []).values()
+        new Map(allPastProviders.map(item => [item.provider_org_id, item])).values()
       );
       setPastProviders(uniquePast);
 
