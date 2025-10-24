@@ -134,21 +134,37 @@ serve(async (req) => {
       console.log('✅ Created new customer:', customer.id);
     }
 
-    // Calculate days until due (minimum 1 day)
-    const daysUntilDue = dueDate 
-      ? Math.max(1, Math.ceil((new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-      : 30;
+    console.log('📝 Creating payment link with', lineItems.length, 'items');
 
-    console.log('📝 Creating invoice draft with', lineItems.length, 'items');
+    // Create prices for each line item
+    const priceIds = [];
+    for (const item of lineItems) {
+      const price = await stripePost(
+        'prices',
+        {
+          unit_amount: Math.round(item.rate * 100), // Convert to cents
+          currency: 'usd',
+          product_data: {
+            name: item.description
+          }
+        },
+        stripeAccountId
+      );
+      priceIds.push({ price: price.id, quantity: item.quantity || 1 });
+      console.log('✅ Created price:', price.id, 'for', item.description);
+    }
 
-    // Create the invoice in draft mode first
-    const invoice = await stripePost(
-      'invoices',
+    // Create payment link with all line items
+    const paymentLink = await stripePost(
+      'payment_links',
       {
-        customer: customer.id,
-        collection_method: 'send_invoice',
-        days_until_due: daysUntilDue,
-        auto_advance: true,
+        line_items: priceIds,
+        after_completion: {
+          type: 'hosted_confirmation'
+        },
+        invoice_creation: {
+          enabled: true
+        },
         metadata: {
           invoice_id: invoiceId,
           org_id: orgId,
@@ -158,45 +174,16 @@ serve(async (req) => {
       stripeAccountId
     );
 
-    console.log('✅ Invoice draft created:', invoice.id);
+    console.log('✅ Payment link created:', paymentLink.id);
+    console.log('🔗 Payment URL:', paymentLink.url);
 
-    // Attach line items to the specific invoice
-    for (const item of lineItems) {
-      await stripePost(
-        'invoiceitems',
-        {
-          customer: customer.id,
-          invoice: invoice.id, // Attach to this specific invoice
-          unit_amount: Math.round(item.rate * 100), // Convert to cents
-          quantity: item.quantity || 1,
-          currency: 'usd',
-          description: item.description
-        },
-        stripeAccountId
-      );
-    }
-
-    console.log('✅ All line items attached');
-
-    // Finalize the invoice to generate payment link
-    console.log('🔒 Finalizing invoice...');
-    const finalizedInvoice = await stripePost(
-      `invoices/${invoice.id}/finalize`,
-      {},
-      stripeAccountId
-    );
-
-    console.log('✅ Invoice finalized:', finalizedInvoice.id);
-    console.log('🔗 Payment URL:', finalizedInvoice.hosted_invoice_url);
-
-    // Update database with Stripe invoice data
+    // Update database with Stripe payment link data
     await supabaseClient
       .from('invoices')
       .update({
-        stripe_invoice_id: finalizedInvoice.id,
-        stripe_hosted_url: finalizedInvoice.hosted_invoice_url,
+        stripe_payment_link_id: paymentLink.id,
+        stripe_hosted_url: paymentLink.url,
         stripe_customer_id: customer.id,
-        pdf_url: finalizedInvoice.invoice_pdf,
         email_status: 'pending'
       })
       .eq('id', invoiceId);
@@ -204,10 +191,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        stripe_invoice_id: finalizedInvoice.id,
-        hosted_invoice_url: finalizedInvoice.hosted_invoice_url,
-        invoice_pdf: finalizedInvoice.invoice_pdf,
-        amount_due: finalizedInvoice.amount_due,
+        stripe_payment_link_id: paymentLink.id,
+        hosted_invoice_url: paymentLink.url,
+        payment_link_url: paymentLink.url,
         customer_id: customer.id
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

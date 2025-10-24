@@ -259,13 +259,12 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
       } else if (stripeInvoiceData?.hosted_invoice_url) {
         // Copy payment link to clipboard
         await navigator.clipboard.writeText(stripeInvoiceData.hosted_invoice_url);
-        toast.success(`Invoice created! Payment link copied to clipboard. Share it with ${clientName}`);
+        toast.success(`Payment link created! URL copied to clipboard. Share it with ${clientName}`);
         
         // Show payment link in console for easy access
-        console.log('Stripe Invoice Created:', {
-          invoice_id: stripeInvoiceData.stripe_invoice_id,
-          payment_url: stripeInvoiceData.hosted_invoice_url,
-          pdf_url: stripeInvoiceData.invoice_pdf
+        console.log('Stripe Payment Link Created:', {
+          payment_link_id: stripeInvoiceData.stripe_payment_link_id,
+          payment_url: stripeInvoiceData.hosted_invoice_url
         });
       }
 

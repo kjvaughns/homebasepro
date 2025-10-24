@@ -1533,6 +1533,7 @@ export type Database = {
           stripe_hosted_url: string | null
           stripe_invoice_id: string | null
           stripe_payment_intent_id: string | null
+          stripe_payment_link_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1557,6 +1558,7 @@ export type Database = {
           stripe_hosted_url?: string | null
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_payment_link_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1581,6 +1583,7 @@ export type Database = {
           stripe_hosted_url?: string | null
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_payment_link_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
