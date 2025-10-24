@@ -179,16 +179,41 @@ async function sendPushNotification(
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('🔐 Received push notification request');
+  // Handle GET requests (browser prefetch, health checks, etc.)
+  if (req.method === 'GET') {
+    console.info('ℹ️ GET request received (likely browser prefetch or health check)');
+    return new Response(
+      JSON.stringify({ 
+        status: 'ok', 
+        message: 'Push notification service is running. Use POST with Authorization header to send notifications.' 
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Handle unsupported methods
+  if (req.method !== 'POST') {
+    console.warn(`⚠️ Unsupported method: ${req.method}`);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Method not allowed',
+        message: 'Only POST requests are supported for sending push notifications.' 
+      }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Allow': 'POST, OPTIONS' } }
+    );
+  }
+
+  // From here on, it's a POST request - require Authorization
+  console.log('🔐 Received POST push notification request');
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
-    console.error('❌ Missing authorization header');
-    console.error('Available headers:', Object.fromEntries(req.headers.entries()));
+    console.error('❌ Missing authorization header on POST request');
     return new Response(
       JSON.stringify({ 
         error: 'Missing authorization header',
