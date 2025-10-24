@@ -60,12 +60,18 @@ export function RemindersWidget() {
 
       // Add overdue invoice reminders
       overdueInvoices?.forEach((invoice: any) => {
+        // Skip invoices without valid client data
+        if (!invoice.clients || !invoice.clients.name) {
+          console.warn('Invoice missing client data:', invoice.id);
+          return;
+        }
+        
         const daysPast = Math.floor((Date.now() - new Date(invoice.created_at).getTime()) / (1000 * 60 * 60 * 24));
         newReminders.push({
           id: `invoice-${invoice.id}`,
           type: 'invoice_overdue',
           title: `Invoice overdue (${daysPast} days)`,
-          description: `${invoice.clients?.name || 'Client'} - $${invoice.amount}`,
+          description: `${invoice.clients.name} - $${invoice.amount}`,
           dueDate: new Date(invoice.created_at),
           actionUrl: `/provider/payments`,
           priority: daysPast > 30 ? 'high' : 'medium',

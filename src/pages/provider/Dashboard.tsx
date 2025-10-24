@@ -336,9 +336,9 @@ function TodayJobRow({ job, onOpen }: { job: any; onOpen: () => void }) {
   return (
     <div className="flex items-center justify-between rounded-lg border p-3 gap-3">
       <div className="min-w-0 flex-1">
-        <p className="font-medium truncate text-sm">{job.service_name}</p>
+        <p className="font-medium truncate text-sm">{job?.service_name || "Untitled Job"}</p>
         <p className="text-xs text-muted-foreground truncate">
-          {job.address || "Address not available"}
+          {job?.address || "Address not available"}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -366,9 +366,9 @@ function MessageThreadRow({ thread, onOpen }: { thread: any; onOpen: () => void 
   return (
     <div className="flex items-center justify-between rounded-lg border p-3 gap-3">
       <div className="min-w-0 flex-1">
-        <p className="font-medium truncate text-sm">{thread.title || "Conversation"}</p>
+        <p className="font-medium truncate text-sm">{thread?.title || "Conversation"}</p>
         <p className="text-xs text-muted-foreground truncate">
-          {thread.last_message_preview || "No preview available"}
+          {thread?.last_message_preview || "No preview available"}
         </p>
       </div>
       <Button size="sm" variant="outline" onClick={onOpen} className="shrink-0">

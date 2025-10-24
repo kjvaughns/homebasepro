@@ -146,19 +146,26 @@ export function useUnpaidInvoices() {
           .from("payments")
           .select(`
             *,
-            client_subscriptions!inner (
-              clients!inner (
+            client_subscriptions (
+              clients (
                 name,
                 organization_id
               )
             )
           `)
-          .eq("client_subscriptions.clients.organization_id", org.id)
+          .eq("org_id", org.id)
           .in("status", ["unpaid", "overdue"]);
 
-        const totalAmount = data?.reduce((sum, inv) => sum + (inv.amount || 0), 0) || 0;
+        // Filter out records with missing client data
+        const validInvoices = data?.filter(inv => 
+          inv.client_subscriptions && 
+          inv.client_subscriptions.clients && 
+          inv.client_subscriptions.clients.name
+        ) || [];
 
-        setInvoices(data || []);
+        const totalAmount = validInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+        setInvoices(validInvoices);
         setTotal(totalAmount);
       } catch (error) {
         console.error("Error loading unpaid invoices:", error);
