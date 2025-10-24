@@ -51,27 +51,18 @@ export const CreateTicketDialog = ({
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      const { error } = await supabase.from("support_tickets" as any).insert({
-        user_id: user.id,
-        profile_id: profile?.id,
-        subject,
-        description,
-        category,
-        priority,
-      } as any);
+      const { data, error } = await supabase.functions.invoke('submit-support-ticket', {
+        body: { 
+          subject: subject.trim(), 
+          description: description.trim(), 
+          category: category || 'other', 
+          priority 
+        }
+      });
 
       if (error) throw error;
 
-      toast.success("Support ticket created successfully");
+      toast.success(`Support ticket ${data.ticket_number} created. Our team will respond within 24 hours.`);
       onOpenChange(false);
       
       // Reset form
