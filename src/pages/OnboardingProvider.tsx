@@ -103,6 +103,7 @@ export default function OnboardingProvider() {
   };
 
   const handleComplete = () => {
+    // Redirect to dashboard - setup wizard will auto-open for new users
     navigate("/provider/dashboard");
   };
 

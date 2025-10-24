@@ -5,9 +5,10 @@ import { Wrench, UserPlus, CreditCard } from "lucide-react";
 
 interface NewProviderWelcomeProps {
   hasAnyData: boolean;
+  onOpenWizard?: () => void;
 }
 
-export const NewProviderWelcome = ({ hasAnyData }: NewProviderWelcomeProps) => {
+export const NewProviderWelcome = ({ hasAnyData, onOpenWizard }: NewProviderWelcomeProps) => {
   const navigate = useNavigate();
 
   if (hasAnyData) return null;
@@ -18,21 +19,26 @@ export const NewProviderWelcome = ({ hasAnyData }: NewProviderWelcomeProps) => {
         <div className="space-y-2">
           <h2 className="text-2xl font-bold">Welcome to HomeBase! 🎉</h2>
           <p className="text-muted-foreground">
-            Let's get your business set up in three simple steps
+            Your business account is ready. Let's set up the essentials so you can start accepting jobs and getting paid.
           </p>
         </div>
+        {onOpenWizard && (
+          <Button onClick={onOpenWizard} size="lg" className="mb-4">
+            Start Setup Wizard
+          </Button>
+        )}
         <div className="grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-          <Button onClick={() => navigate('/provider/services')} variant="default">
-            <Wrench className="mr-2 h-4 w-4" />
-            Set Up Services
-          </Button>
-          <Button onClick={() => navigate('/provider/clients')} variant="default">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Import Clients
-          </Button>
-          <Button onClick={() => navigate('/provider/settings?tab=payments')} variant="default">
+          <Button onClick={() => navigate('/provider/settings?tab=payments')} variant="outline">
             <CreditCard className="mr-2 h-4 w-4" />
             Connect Stripe
+          </Button>
+          <Button onClick={() => navigate('/provider/clients')} variant="outline">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add Clients
+          </Button>
+          <Button onClick={() => navigate('/provider/jobs')} variant="outline">
+            <Wrench className="mr-2 h-4 w-4" />
+            Create Jobs
           </Button>
         </div>
       </CardContent>

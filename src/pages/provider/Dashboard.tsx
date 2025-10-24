@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Bot, MapPin, ArrowRight, HelpCircle, Info } from "lucide-react";
+import { Loader2, Bot, MapPin, ArrowRight, HelpCircle, Info, CreditCard } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,9 @@ import { AIInsightCard } from "@/components/provider/AIInsightCard";
 import { BalanceWidget } from "@/components/provider/BalanceWidget";
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist";
 import { NewProviderWelcome } from "@/components/provider/NewProviderWelcome";
+import { SetupWizard } from "@/components/provider/SetupWizard";
+import { SetupChecklist } from "@/components/provider/SetupChecklist";
+import { BusinessFlowWidget } from "@/components/provider/BusinessFlowWidget";
 import {
   Tooltip,
   TooltipContent,
@@ -27,11 +30,14 @@ export default function ProviderDashboard() {
   const { insights, loading: insightsLoading } = useDashboardInsights();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [stripeConnected, setStripeConnected] = useState(false);
 
   const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
 
   useEffect(() => {
     loadUserProfile();
+    checkStripeStatus();
   }, []);
 
   const loadUserProfile = async () => {
@@ -50,11 +56,32 @@ export default function ProviderDashboard() {
 
     const { data } = await supabase
       .from('profiles')
-      .select('plan, trial_ends_at, onboarded_at')
+      .select('plan, trial_ends_at, onboarded_at, setup_completed, setup_completed_at')
       .eq('user_id', user.id)
       .single();
 
-    setUserProfile(data);
+    setUserProfile(data as any);
+
+    // Show setup wizard for new users who haven't completed setup
+    if (data && !(data as any).setup_completed && (data as any).onboarded_at) {
+      const onboardedRecently = new Date((data as any).onboarded_at) > new Date(Date.now() - 5*60*1000); // 5 minutes
+      if (onboardedRecently) {
+        setShowSetupWizard(true);
+      }
+    }
+  };
+
+  const checkStripeStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("stripe_account_id")
+      .eq("owner_id", user.id)
+      .single();
+
+    setStripeConnected(!!org?.stripe_account_id);
   };
 
   const isNewUser = userProfile?.onboarded_at && 
@@ -75,32 +102,29 @@ export default function ProviderDashboard() {
         </p>
       </header>
 
-      {/* Welcome banners for new users */}
-      {isNewUser && userProfile?.plan === 'free' && !isAdmin && (
-        <Alert className="mb-6 border-primary/50 bg-primary/5">
-          <Info className="h-4 w-4" />
-          <AlertTitle>🎉 Welcome to HomeBase!</AlertTitle>
-          <AlertDescription>
-            You're on the FREE plan. Ready to accept payments?{' '}
-            <Link to="/provider/settings?tab=payments" className="underline font-medium">
-              Set up Stripe Connect
-            </Link>
+      {/* Stripe Not Connected Banner */}
+      {!stripeConnected && !isAdmin && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTitle>Action Required: Connect Stripe to Get Paid</AlertTitle>
+          <AlertDescription className="flex flex-col md:flex-row md:items-center gap-3">
+            <span className="flex-1">You can't receive payments until you connect Stripe. It only takes 2 minutes.</span>
+            <Button size="sm" onClick={() => navigate('/provider/settings?tab=payments')} variant="secondary">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Connect Now
+            </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {isNewUser && userProfile?.plan === 'beta' && trialDaysRemaining > 0 && (
-        <Alert className="mb-6 border-primary/50 bg-primary/5">
-          <Info className="h-4 w-4" />
-          <AlertTitle>🚀 Trial Active!</AlertTitle>
-          <AlertDescription>
-            {trialDaysRemaining} days remaining in your free trial. Complete Stripe Connect setup in Settings to start accepting payments.
-          </AlertDescription>
-        </Alert>
+      {/* Setup Checklist for incomplete setup */}
+      {!userProfile?.setup_completed && (
+        <div className="mb-6">
+          <SetupChecklist onOpenWizard={() => setShowSetupWizard(true)} />
+        </div>
       )}
 
       {/* Welcome state for new providers */}
-      <NewProviderWelcome hasAnyData={hasAnyData} />
+      <NewProviderWelcome hasAnyData={hasAnyData} onOpenWizard={() => setShowSetupWizard(true)} />
 
       {/* KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -109,6 +133,11 @@ export default function ProviderDashboard() {
         <KpiCard title="Monthly Revenue" value={`$${stats.mrr.toLocaleString()}`} loading={kpiLoading} helpText="Total revenue expected this month from subscriptions and jobs" />
         <KpiCard title="Upcoming (7d)" value={stats.upcoming7d} loading={kpiLoading} helpText="Number of jobs scheduled in the next 7 days" />
       </section>
+
+      <div className="h-4 md:h-6" />
+
+      {/* Business Flow */}
+      <BusinessFlowWidget />
 
       <div className="h-4 md:h-6" />
 
@@ -228,6 +257,9 @@ export default function ProviderDashboard() {
           </CardContent>
         </Card>
       </section>
+
+      {/* Setup Wizard */}
+      <SetupWizard open={showSetupWizard} onClose={() => setShowSetupWizard(false)} />
     </div>
   );
 }

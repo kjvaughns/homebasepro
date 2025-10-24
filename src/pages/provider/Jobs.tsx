@@ -7,6 +7,7 @@ import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
 import { JobsMap } from "@/components/provider/JobsMap";
 import { JobsCalendar } from "@/components/provider/JobsCalendar";
+import CreateJobModal from "@/components/provider/CreateJobModal";
 import { toast } from "sonner";
 import {
   Select,
@@ -34,6 +35,7 @@ const Jobs = () => {
   const [supportsServiceCalls, setSupportsServiceCalls] = useState(false);
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [optimizing, setOptimizing] = useState(false);
+  const [showCreateJob, setShowCreateJob] = useState(false);
 
   useEffect(() => {
     loadJobs();
@@ -271,7 +273,7 @@ const Jobs = () => {
           <h1 className="text-3xl font-bold">Jobs</h1>
           <p className="text-muted-foreground">Manage your complete job pipeline</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowCreateJob(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Job
         </Button>
@@ -434,6 +436,16 @@ const Jobs = () => {
         onClose={() => setDrawerOpen(false)}
         events={selectedJobEvents}
         reviews={selectedJobReviews}
+      />
+
+      <CreateJobModal
+        open={showCreateJob}
+        onOpenChange={setShowCreateJob}
+        onSuccess={() => {
+          setShowCreateJob(false);
+          loadJobs();
+          toast.success("Job created! What's next? Send an invoice to get paid.");
+        }}
       />
     </div>
   );

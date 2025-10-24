@@ -7,9 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface EmbeddedConnectOnboardingProps {
   onComplete?: () => void;
+  simplified?: boolean;
 }
 
-export default function EmbeddedConnectOnboarding({ onComplete }: EmbeddedConnectOnboardingProps) {
+export default function EmbeddedConnectOnboarding({ onComplete, simplified = false }: EmbeddedConnectOnboardingProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
