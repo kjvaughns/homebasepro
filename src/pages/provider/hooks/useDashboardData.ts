@@ -43,7 +43,8 @@ export function useProviderStats() {
             .from("homeowner_subscriptions")
             .select("billing_amount", { count: "exact" })
             .eq("provider_org_id", org.id)
-            .eq("status", "active"),
+            .eq("status", "active")
+            .eq("payment_method_active", true),
           
           supabase
             .from("bookings")

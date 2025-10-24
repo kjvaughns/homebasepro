@@ -46,6 +46,19 @@ serve(async (req) => {
     
     console.log('Sending push to users:', userIds);
     
+    // Create notification records
+    const notifications = members.map((m: any) => ({
+      user_id: m.profiles.user_id,
+      profile_id: m.profile_id,
+      type: 'message',
+      title: senderName,
+      body: messagePreview,
+      action_url: `/messages?conversation=${message.conversation_id}`,
+      metadata: { conversation_id: message.conversation_id, message_id: message.id }
+    }));
+    
+    await supabase.from('notifications').insert(notifications);
+    
     const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
       body: {
         userIds,

@@ -33,6 +33,8 @@ import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { SupportDrawer } from "@/components/support/SupportDrawer";
 import { useMessaging } from "@/contexts/MessagingContext";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { Bell } from "lucide-react";
 
   const mobileNavigation = [
     { name: "Home", href: "/homeowner/dashboard", icon: Home },
@@ -137,6 +139,7 @@ export default function HomeownerLayout() {
           </div>
           <div className="flex items-center gap-4">
             {!isMobile && <RoleSwitcher />}
+            <NotificationCenter />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
@@ -147,6 +150,10 @@ export default function HomeownerLayout() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                <DropdownMenuItem onClick={() => navigate("/homeowner/notifications")}>
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>Notifications</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/homeowner/dashboard")}>
                   <Home className="mr-2 h-4 w-4" />
                   <span>Dashboard</span>

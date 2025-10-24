@@ -207,6 +207,39 @@ export type Database = {
           },
         ]
       }
+      announcements: {
+        Row: {
+          body: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          priority: string | null
+          target_audience: string
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          priority?: string | null
+          target_audience: string
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          priority?: string | null
+          target_audience?: string
+          title?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -1294,6 +1327,7 @@ export type Database = {
           homeowner_id: string
           id: string
           next_service_date: string | null
+          payment_method_active: boolean | null
           provider_org_id: string
           service_plan_id: string
           start_date: string
@@ -1308,6 +1342,7 @@ export type Database = {
           homeowner_id: string
           id?: string
           next_service_date?: string | null
+          payment_method_active?: boolean | null
           provider_org_id: string
           service_plan_id: string
           start_date?: string
@@ -1322,6 +1357,7 @@ export type Database = {
           homeowner_id?: string
           id?: string
           next_service_date?: string | null
+          payment_method_active?: boolean | null
           provider_org_id?: string
           service_plan_id?: string
           start_date?: string
@@ -1837,6 +1873,53 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          body: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          profile_id: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          action_url?: string | null
+          body: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          action_url?: string | null
+          body?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          profile_id?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
