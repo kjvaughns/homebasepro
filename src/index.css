@@ -244,3 +244,6 @@ All colors MUST be HSL.
     }
   }
 }
+
+/* Capacitor native mobile enhancements */
+@import './styles/capacitor.css';

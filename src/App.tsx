@@ -9,6 +9,7 @@ import { registerServiceWorker } from "@/utils/serviceWorker";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
 import { useToast } from "@/hooks/use-toast";
+import { initializeNativeUI, isNative, platform } from "@/utils/capacitor";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
@@ -236,7 +237,18 @@ const App = () => {
   const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   useEffect(() => {
-    registerServiceWorker();
+    // Initialize Capacitor native UI
+    initializeNativeUI();
+    
+    // Add capacitor classes to body
+    if (isNative) {
+      document.body.classList.add('capacitor', platform);
+    }
+
+    // Conditionally register service worker (skip on native to avoid cache conflicts)
+    if (!isNative) {
+      registerServiceWorker();
+    }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
