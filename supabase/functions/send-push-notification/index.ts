@@ -91,7 +91,7 @@ async function createVapidAuthHeader(
   try {
     privateKey = await crypto.subtle.importKey(
       'pkcs8',
-      new Uint8Array(privateKeyBytes),
+      privateKeyBytes.buffer as ArrayBuffer,
       { name: 'ECDSA', namedCurve: 'P-256' },
       false,
       ['sign']
@@ -101,10 +101,10 @@ async function createVapidAuthHeader(
     // If PKCS#8 import fails and we have exactly 32 bytes, it's a raw key
     if (privateKeyBytes.length === 32) {
       console.log('🔑 Detected raw VAPID private key, converting to PKCS#8...');
-      const pkcs8Key = rawPrivateKeyToPKCS8(new Uint8Array(privateKeyBytes));
+      const pkcs8Key = rawPrivateKeyToPKCS8(privateKeyBytes);
       privateKey = await crypto.subtle.importKey(
         'pkcs8',
-        pkcs8Key,
+        pkcs8Key.buffer as ArrayBuffer,
         { name: 'ECDSA', namedCurve: 'P-256' },
         false,
         ['sign']
@@ -112,7 +112,8 @@ async function createVapidAuthHeader(
       console.log('✅ Raw key successfully converted and imported');
     } else {
       console.error('❌ Invalid private key format. Expected 32-byte raw key or valid PKCS#8');
-      throw new Error(`Invalid private key: ${pkcs8Error.message}`);
+      const errorMsg = pkcs8Error instanceof Error ? pkcs8Error.message : 'Unknown error';
+      throw new Error(`Invalid private key: ${errorMsg}`);
     }
   }
 
