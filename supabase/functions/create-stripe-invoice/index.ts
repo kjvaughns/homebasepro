@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { stripePost } from "../_shared/stripe-fetch.ts";
+import { stripePost, stripeGet } from "../_shared/stripe-fetch.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +36,24 @@ serve(async (req) => {
 
     console.log('Creating Stripe invoice:', { invoiceId, orgId, clientEmail });
 
+    // Validate Stripe Connect account
+    try {
+      const account = await stripeGet('account', stripeAccountId);
+      console.log('Connect account status:', {
+        id: account.id,
+        charges_enabled: account.charges_enabled,
+        payouts_enabled: account.payouts_enabled
+      });
+      
+      if (!account.charges_enabled) {
+        throw new Error('Stripe Connect account is not enabled for charges. Please complete onboarding.');
+      }
+    } catch (error) {
+      console.error('Connect account validation failed:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Invalid Stripe Connect account: ${errorMsg}`);
+    }
+
     // 1. Create or retrieve Stripe customer
     let customer;
     
@@ -50,10 +68,9 @@ serve(async (req) => {
       .single();
 
     if (existingInvoice?.stripe_customer_id) {
-      // Retrieve existing customer
-      customer = await stripePost(
+      // Retrieve existing customer - use GET not POST
+      customer = await stripeGet(
         `customers/${existingInvoice.stripe_customer_id}`,
-        {},
         stripeAccountId
       );
       console.log('Using existing customer:', customer.id);
@@ -154,12 +171,25 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error creating Stripe invoice:', error);
+    const err = error as any;
+    console.error('Full error details:', {
+      message: err?.message,
+      stack: err?.stack,
+      stripeError: err?.stripeError,
+      type: err?.type,
+      code: err?.code,
+      param: err?.param
+    });
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({
         error: errorMessage,
-        details: error
+        details: {
+          type: err?.type,
+          code: err?.code,
+          param: err?.param
+        }
       }),
       {
         status: 500,

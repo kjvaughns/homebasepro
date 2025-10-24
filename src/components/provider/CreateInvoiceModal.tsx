@@ -210,7 +210,16 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
 
       if (stripeError) {
         console.error('Stripe invoice creation error:', stripeError);
-        toast.error("Invoice created but payment link generation failed");
+        const errorMsg = stripeError.error || 'Payment link generation failed';
+        
+        // Rollback: Delete the database invoice record
+        await supabase
+          .from('invoices')
+          .delete()
+          .eq('id', invoice.id);
+        
+        toast.error(`Failed to create payment link: ${errorMsg}. Please check your Stripe Connect setup.`);
+        return;
       } else if (stripeInvoiceData?.hosted_invoice_url) {
         // Copy payment link to clipboard
         await navigator.clipboard.writeText(stripeInvoiceData.hosted_invoice_url);
