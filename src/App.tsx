@@ -279,10 +279,17 @@ const App = () => {
     }
   }, []);
 
-  // Show install prompt once per device after authentication
+  // Show install prompt once per device after authentication - ONLY on dashboard routes
   useEffect(() => {
     const alreadyShown = localStorage.getItem('homebase-install-shown') === 'true';
-    if (user && canInstall && !isInstalled && !alreadyShown) {
+    
+    // Only show on dashboard routes (not marketing pages)
+    const isDashboardRoute = 
+      window.location.pathname.startsWith('/homeowner/') ||
+      window.location.pathname.startsWith('/provider/') ||
+      window.location.pathname.startsWith('/admin/');
+    
+    if (user && canInstall && !isInstalled && !alreadyShown && isDashboardRoute) {
       const timer = setTimeout(() => {
         setShowInstallDialog(true);
         localStorage.setItem('homebase-install-shown', 'true');
