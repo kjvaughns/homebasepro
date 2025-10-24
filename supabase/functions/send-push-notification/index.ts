@@ -30,6 +30,35 @@ function uint8ArrayToBase64Url(array: Uint8Array): string {
     .replace(/=/g, '');
 }
 
+// Convert raw 32-byte EC private key to PKCS#8 format
+function rawPrivateKeyToPKCS8(rawKey: Uint8Array): Uint8Array {
+  // PKCS#8 structure for EC P-256 private key
+  // This is the ASN.1 DER encoding wrapper around a raw 32-byte EC private key
+  const pkcs8Header = new Uint8Array([
+    0x30, 0x81, 0x87, // SEQUENCE, length 135
+    0x02, 0x01, 0x00, // INTEGER version 0
+    0x30, 0x13, // SEQUENCE (algorithm)
+    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID ecPublicKey
+    0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, // OID prime256v1
+    0x04, 0x6d, // OCTET STRING, length 109
+    0x30, 0x6b, // SEQUENCE
+    0x02, 0x01, 0x01, // INTEGER version 1
+    0x04, 0x20 // OCTET STRING, length 32 (the actual private key follows)
+  ]);
+  
+  const pkcs8Footer = new Uint8Array([
+    0xa1, 0x44, 0x03, 0x42, 0x00 // Public key context tag (we don't have it, so minimal)
+  ]);
+  
+  // Combine: header + raw key + footer
+  const pkcs8 = new Uint8Array(pkcs8Header.length + rawKey.length + pkcs8Footer.length);
+  pkcs8.set(pkcs8Header, 0);
+  pkcs8.set(rawKey, pkcs8Header.length);
+  pkcs8.set(pkcs8Footer, pkcs8Header.length + rawKey.length);
+  
+  return pkcs8;
+}
+
 // Create properly signed VAPID JWT
 async function createVapidAuthHeader(
   audience: string,
@@ -56,13 +85,36 @@ async function createVapidAuthHeader(
   // Import private key for signing
   const privateKeyBytes = base64UrlToUint8Array(privateKeyBase64);
   
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    new Uint8Array(privateKeyBytes),
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  );
+  let privateKey: CryptoKey;
+  
+  // Try importing as PKCS#8 first
+  try {
+    privateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      new Uint8Array(privateKeyBytes),
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+    console.log('🔑 Using PKCS#8 VAPID private key');
+  } catch (pkcs8Error) {
+    // If PKCS#8 import fails and we have exactly 32 bytes, it's a raw key
+    if (privateKeyBytes.length === 32) {
+      console.log('🔑 Detected raw VAPID private key, converting to PKCS#8...');
+      const pkcs8Key = rawPrivateKeyToPKCS8(new Uint8Array(privateKeyBytes));
+      privateKey = await crypto.subtle.importKey(
+        'pkcs8',
+        pkcs8Key,
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false,
+        ['sign']
+      );
+      console.log('✅ Raw key successfully converted and imported');
+    } else {
+      console.error('❌ Invalid private key format. Expected 32-byte raw key or valid PKCS#8');
+      throw new Error(`Invalid private key: ${pkcs8Error.message}`);
+    }
+  }
 
   // Sign the token
   const unsignedToken = `${headerBase64}.${payloadBase64}`;
