@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  {
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,8 +13,6 @@
     "sync": "npx cap sync",
     "lint": "eslint .",
     "preview": "vite preview"
-  }
-}
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
