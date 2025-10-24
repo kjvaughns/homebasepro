@@ -1,71 +1,46 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.74.0';
+import webPush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Web Push utilities
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
 async function sendPushNotification(
   subscription: any,
   payload: any,
   vapidDetails: any
 ): Promise<boolean> {
-  const parsedUrl = new URL(subscription.endpoint);
-  const audience = `${parsedUrl.protocol}//${parsedUrl.host}`;
-
-  // Create JWT for VAPID
-  const header = {
-    typ: 'JWT',
-    alg: 'ES256'
-  };
-
-  const jwtPayload = {
-    aud: audience,
-    exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60, // 12 hours
-    sub: vapidDetails.subject
-  };
-
-  // For production, you'd need to properly sign the JWT with the private key
-  // This is a simplified version - in production use a proper JWT library
-  const headerBase64 = btoa(JSON.stringify(header));
-  const payloadBase64 = btoa(JSON.stringify(jwtPayload));
-  const token = `${headerBase64}.${payloadBase64}.unsigned`;
-
-  const headers = {
-    'Content-Type': 'application/octet-stream',
-    'Content-Encoding': 'aes128gcm',
-    'Authorization': `vapid t=${token}, k=${vapidDetails.publicKey}`,
-    'TTL': '86400'
-  };
-
   try {
-    const response = await fetch(subscription.endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
+    webPush.setVapidDetails(
+      vapidDetails.subject,
+      vapidDetails.publicKey,
+      vapidDetails.privateKey
+    );
 
-    if (response.status === 410) {
-      // Subscription expired, should be removed
+    await webPush.sendNotification(
+      subscription,
+      JSON.stringify(payload),
+      { TTL: 86400 }
+    );
+
+    console.log('✅ Successfully sent push notification');
+    return true;
+  } catch (error: any) {
+    console.error('❌ Push send error:', error);
+    console.error('Error details:', {
+      statusCode: error.statusCode,
+      body: error.body,
+      endpoint: subscription.endpoint
+    });
+    
+    // 410 = subscription expired
+    if (error.statusCode === 410) {
+      console.log('🗑️ Subscription expired, marking for removal');
       return false;
     }
-
-    return response.ok;
-  } catch (error) {
-    console.error('Error sending push:', error);
+    
     return false;
   }
 }
@@ -108,6 +83,12 @@ serve(async (req) => {
       );
     }
 
+    console.log('📤 Push notification request:', { 
+      title, 
+      userIds: userIds?.length || 'all users',
+      hasUrl: !!url 
+    });
+
     // Get VAPID keys
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
@@ -130,16 +111,19 @@ serve(async (req) => {
     const { data: subscriptions, error: subError } = await query;
 
     if (subError) {
-      console.error('Error fetching subscriptions:', subError);
+      console.error('❌ Error fetching subscriptions:', subError);
       throw subError;
     }
 
     if (!subscriptions || subscriptions.length === 0) {
+      console.log('ℹ️ No subscriptions found');
       return new Response(
         JSON.stringify({ sent: 0, failed: 0, message: 'No subscriptions found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
+
+    console.log(`📋 Found ${subscriptions.length} subscription(s) to send to`);
 
     const payload = {
       title,
@@ -178,12 +162,16 @@ serve(async (req) => {
       }
     }
 
+    console.log(`✅ Results: ${sent} sent, ❌ ${failed} failed`);
+
     // Remove expired subscriptions
     if (expiredEndpoints.length > 0) {
       await supabaseClient
         .from('push_subscriptions')
         .delete()
         .in('endpoint', expiredEndpoints);
+      
+      console.log(`🗑️ Removed ${expiredEndpoints.length} expired subscription(s)`);
     }
 
     return new Response(
@@ -191,7 +179,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
-    console.error('Error in send-push-notification:', error);
+    console.error('❌ Error in send-push-notification:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
