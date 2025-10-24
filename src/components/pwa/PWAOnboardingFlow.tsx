@@ -14,9 +14,14 @@ export function PWAOnboardingFlow({ open, onComplete }: PWAOnboardingFlowProps) 
   const { subscribe, loading } = usePushNotifications();
 
   const handleEnableNotifications = async () => {
+    console.log('📱 PWA Onboarding: User clicked "Enable Notifications"');
     const success = await subscribe();
+    console.log('📱 PWA Onboarding: Subscription result:', success);
     if (success) {
+      console.log('📱 PWA Onboarding: Moving to complete step');
       setStep('complete');
+    } else {
+      console.warn('📱 PWA Onboarding: Subscription failed, staying on notifications step');
     }
   };
 
