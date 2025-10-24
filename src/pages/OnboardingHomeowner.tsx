@@ -148,8 +148,10 @@ export default function OnboardingHomeowner() {
                       id="city"
                       name="city"
                       value={formData.city}
-                      readOnly
+                      onChange={handleInputChange}
+                      inputMode="text"
                       required
+                      style={{ fontSize: '16px' }}
                     />
                   </div>
                   <div>
@@ -158,9 +160,11 @@ export default function OnboardingHomeowner() {
                       id="state"
                       name="state"
                       value={formData.state}
-                      readOnly
+                      onChange={handleInputChange}
+                      inputMode="text"
                       maxLength={2}
                       required
+                      style={{ fontSize: '16px', textTransform: 'uppercase' }}
                     />
                   </div>
                 </div>
@@ -170,8 +174,11 @@ export default function OnboardingHomeowner() {
                     id="zipCode"
                     name="zipCode"
                     value={formData.zipCode}
-                    readOnly
+                    onChange={handleInputChange}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
+                    style={{ fontSize: '16px' }}
                   />
                 </div>
               </div>

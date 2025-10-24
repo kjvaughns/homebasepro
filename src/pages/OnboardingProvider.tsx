@@ -184,7 +184,8 @@ export default function OnboardingProvider() {
                           id="businessCity"
                           name="businessCity"
                           value={formData.businessCity}
-                          readOnly
+                          onChange={handleInputChange}
+                          inputMode="text"
                           required
                           style={{ fontSize: '16px' }}
                         />
@@ -195,10 +196,11 @@ export default function OnboardingProvider() {
                           id="businessState"
                           name="businessState"
                           value={formData.businessState}
+                          onChange={handleInputChange}
+                          inputMode="text"
                           maxLength={2}
-                          readOnly
                           required
-                          style={{ fontSize: '16px' }}
+                          style={{ fontSize: '16px', textTransform: 'uppercase' }}
                         />
                       </div>
                     </div>
@@ -208,7 +210,9 @@ export default function OnboardingProvider() {
                         id="businessZip"
                         name="businessZip"
                         value={formData.businessZip}
-                        readOnly
+                        onChange={handleInputChange}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         required
                         style={{ fontSize: '16px' }}
                       />

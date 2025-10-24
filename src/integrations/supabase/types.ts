@@ -4244,6 +4244,30 @@ export type Database = {
           },
         ]
       }
+      signup_debug_logs: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          error: string | null
+          id: string
+          stage: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          error?: string | null
+          id?: string
+          stage: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          error?: string | null
+          id?: string
+          stage?: string
+        }
+        Relationships: []
+      }
       stripe_events: {
         Row: {
           created_at: string | null
