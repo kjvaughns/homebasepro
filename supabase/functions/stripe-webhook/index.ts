@@ -446,10 +446,11 @@ serve(async (req) => {
       const { org_id, homeowner_id, job_id } = paymentIntent.metadata;
 
       if (org_id) {
+        // Check if payment already exists using stripe_id or stripe_payment_intent_id
         const { data: existing } = await supabase
           .from('payments')
           .select('*')
-          .eq('stripe_payment_intent_id', paymentIntent.id)
+          .or(`stripe_id.eq.${paymentIntent.id},stripe_payment_intent_id.eq.${paymentIntent.id}`)
           .maybeSingle();
 
         if (existing) {

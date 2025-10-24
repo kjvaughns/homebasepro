@@ -108,6 +108,7 @@ import PWALaunch from "./pages/PWALaunch";
 import AdminCommerce from "./pages/admin/Commerce";
 import AdminUsersAccess from "./pages/admin/UsersAccess";
 import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
+import BookProvider from "./pages/BookProvider";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -311,6 +312,7 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/l/:slug" element={<ShortLinkRedirect />} />
+            <Route path="/book/:slug" element={<BookProvider />} />
             <Route path="/invoice-payment-success" element={<InvoicePaymentSuccess />} />
             <Route path="/onboarding/homeowner" element={
               <OnboardingRouteGuard userType="homeowner">
