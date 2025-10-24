@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingUp, CreditCard, Users } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import StatsCard from "@/components/admin/StatsCard";
+import { StripeReportGenerator } from "@/components/admin/StripeReportGenerator";
 
 interface RevenueData {
   providerSubscriptionMRR: number;
@@ -51,7 +52,25 @@ const Revenue = () => {
   useEffect(() => {
     const fetchRevenueData = async () => {
       try {
-        // Fetch active provider subscriptions for MRR
+        // Get auth session for edge function call
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // Call edge function to get real admin analytics
+        const { data: analyticsData, error: analyticsError } = await supabase.functions.invoke(
+          'get-admin-analytics',
+          {
+            body: { timeRange: '30d' },
+            headers: {
+              Authorization: `Bearer ${session?.access_token}`
+            }
+          }
+        );
+
+        if (analyticsError) {
+          console.error('Error fetching admin analytics:', analyticsError);
+        }
+
+        // Fetch active provider subscriptions for display
         const { data: subscriptions } = await (supabase as any)
           .from('provider_subscriptions')
           .select('plan, status')
@@ -62,11 +81,9 @@ const Revenue = () => {
         const proCount = subscriptions?.filter((s: any) => s.plan === 'pro').length || 0;
         const scaleCount = subscriptions?.filter((s: any) => s.plan === 'scale').length || 0;
 
-        const betaMRR = betaCount * 1500; // $15 in cents
-        const growthMRR = growthCount * 2900; // $29 in cents
-        const proMRR = proCount * 9900; // $99 in cents
-        const scaleMRR = scaleCount * 29900; // $299 in cents
-        const subscriptionMRR = betaMRR + growthMRR + proMRR + scaleMRR;
+        // Use real data from analytics if available
+        const subscriptionMRR = analyticsData?.subscriptionMRR || 
+          ((betaCount * 1500) + (growthCount * 2900) + (proCount * 9900) + (scaleCount * 29900));
 
         // Provider Subscription Revenue (legacy)
         const { data: orgSubs } = await supabase
@@ -143,19 +160,21 @@ const Revenue = () => {
           .sort((a, b) => b.revenue - a.revenue)
           .slice(0, 5);
 
-        const totalMRR = subscriptionMRR + providerSubscriptionMRR + transactionFeeMRR;
+        // Use analytics data if available, otherwise fall back to calculated values
+        const totalMRR = analyticsData?.platformMRR || (subscriptionMRR + providerSubscriptionMRR + transactionFeeMRR);
+        const totalARR = analyticsData?.totalARR || (totalMRR * 12);
 
         setData({
-          providerSubscriptionMRR: subscriptionMRR,
-          transactionFeeMRR,
+          providerSubscriptionMRR: analyticsData?.subscriptionMRR || subscriptionMRR,
+          transactionFeeMRR: analyticsData?.transactionFeeMRR || transactionFeeMRR,
           totalMRR,
-          totalARR: totalMRR * 12,
+          totalARR,
           freeProviders: subscriptions?.filter((s: any) => s.plan === 'free').length || 0,
           growthProviders: growthCount,
           proProviders: proCount,
           scaleProviders: scaleCount,
           avgTransactionFee,
-          topProviders,
+          topProviders: analyticsData?.topProviders || topProviders,
         });
 
         // Fetch credit expenses
@@ -328,7 +347,8 @@ const Revenue = () => {
         </Card>
       </div>
 
-      <Card>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base md:text-lg">Subscription Revenue (MRR)</CardTitle>
           </CardHeader>
@@ -357,6 +377,9 @@ const Revenue = () => {
             </div>
           </CardContent>
         </Card>
+
+        <StripeReportGenerator />
+      </div>
 
       {/* Credit Liabilities Section */}
       <Card>

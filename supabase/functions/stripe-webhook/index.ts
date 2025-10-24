@@ -449,8 +449,8 @@ serve(async (req) => {
         const { data: existing } = await supabase
           .from('payments')
           .select('*')
-          .eq('stripe_id', paymentIntent.id)
-          .single();
+          .eq('stripe_payment_intent_id', paymentIntent.id)
+          .maybeSingle();
 
         if (existing) {
           await supabase
@@ -461,37 +461,66 @@ serve(async (req) => {
               payment_date: new Date().toISOString(),
             })
             .eq('id', existing.id);
+        } else {
+          // Create new payment record from payment intent
+          const charges = paymentIntent.charges?.data || [];
+          const charge = charges[0];
+          const applicationFeeAmount = charge?.application_fee_amount || 0;
+          const stripeFeeAmount = charge?.balance_transaction ? 
+            (await stripeGet(`balance_transactions/${charge.balance_transaction}`))?.fee || 0 : 0;
 
+          await supabase
+            .from('payments')
+            .insert({
+              org_id,
+              stripe_payment_intent_id: paymentIntent.id,
+              stripe_id: charge?.id || paymentIntent.id,
+              amount: paymentIntent.amount,
+              fee_amount: stripeFeeAmount,
+              application_fee_cents: applicationFeeAmount,
+              net_amount: paymentIntent.amount - stripeFeeAmount - applicationFeeAmount,
+              currency: paymentIntent.currency,
+              status: 'paid',
+              payment_date: new Date().toISOString(),
+              job_id: job_id || null,
+              homeowner_profile_id: homeowner_id || null,
+            });
+        }
+
+        // Create ledger entries for existing payment
+        if (existing) {
           const feeAmount = existing.application_fee_cents || 0;
           const transferAmount = existing.amount - feeAmount;
 
           await insertLedgerEntry({
-            occurred_at: new Date().toISOString(),
-            type: 'fee',
-            direction: 'credit',
-            amount_cents: feeAmount,
-            currency: existing.currency,
-            stripe_ref: paymentIntent.id,
-            party: 'platform',
-            job_id: job_id || null,
-            provider_id: org_id || null,
-            homeowner_id: homeowner_id || null,
-            metadata: { fee_pct: existing.fee_pct_at_time },
-          });
+              occurred_at: new Date().toISOString(),
+              type: 'fee',
+              direction: 'credit',
+              amount_cents: feeAmount,
+              currency: existing.currency,
+              stripe_ref: paymentIntent.id,
+              party: 'platform',
+              job_id: job_id || null,
+              provider_id: org_id || null,
+              homeowner_id: homeowner_id || null,
+              metadata: { fee_pct: existing.fee_pct_at_time },
+            });
 
-          await insertLedgerEntry({
-            occurred_at: new Date().toISOString(),
-            type: 'transfer',
-            direction: 'credit',
-            amount_cents: transferAmount,
-            currency: existing.currency,
-            stripe_ref: paymentIntent.id,
-            party: 'provider',
-            job_id: job_id || null,
-            provider_id: org_id || null,
-            homeowner_id: homeowner_id || null,
-            metadata: { transfer_group: existing.transfer_group },
-          });
+            await insertLedgerEntry({
+              occurred_at: new Date().toISOString(),
+              type: 'transfer',
+              direction: 'credit',
+              amount_cents: transferAmount,
+              currency: existing.currency,
+              stripe_ref: paymentIntent.id,
+              party: 'provider',
+              job_id: job_id || null,
+              provider_id: org_id || null,
+              homeowner_id: homeowner_id || null,
+              metadata: { transfer_group: existing.transfer_group },
+            });
+          }
+        }
 
           if (job_id) {
             await supabase
