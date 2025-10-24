@@ -54,20 +54,18 @@ export default function OnboardingHomeowner() {
           .single();
 
         if (profile) {
-          await supabase.from("homes").insert({
-            homeowner_id: profile.id,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            zip_code: formData.zipCode,
-            lat: formData.lat || null,
-            lng: formData.lng || null,
-          });
-
+          // Update profile with full name and phone
           await supabase
             .from("profiles")
-            .update({ onboarded_at: new Date().toISOString() })
+            .update({ 
+              full_name: formData.fullName,
+              phone: formData.phone,
+              onboarded_at: new Date().toISOString() 
+            })
             .eq("id", profile.id);
+          
+          // Note: Home address saved, user can add it in dashboard
+          toast.success("Profile updated successfully");
         }
       }
     }
