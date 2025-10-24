@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,18 +12,50 @@ interface MessageComposerProps {
   onSend: (content: string, type?: string, meta?: any) => Promise<void>;
   onTyping: (isTyping: boolean) => void;
   onFocus?: () => void;
+  onHeightChange?: (height: number) => void;
 }
 
-export function MessageComposer({ conversationId, profileId, onSend, onTyping, onFocus }: MessageComposerProps) {
+export function MessageComposer({ conversationId, profileId, onSend, onTyping, onFocus, onHeightChange }: MessageComposerProps) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
   const keyboardHeight = useKeyboardHeight();
 
+  // Measure composer height and notify parent
+  useEffect(() => {
+    if (!composerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        onHeightChange?.(height);
+      }
+    });
+
+    resizeObserver.observe(composerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [onHeightChange]);
+
+  // Auto-resize textarea
+  const handleTextareaResize = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, 128); // Max 128px
+    textarea.style.height = `${newHeight}px`;
+  }, []);
+
   const handleTextChange = useCallback((value: string) => {
     setText(value);
+    handleTextareaResize();
     
     // Typing indicator
     onTyping(true);
@@ -37,7 +69,7 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
     typingTimeoutRef.current = setTimeout(() => {
       onTyping(false);
     }, 3000);
-  }, [onTyping]);
+  }, [onTyping, handleTextareaResize]);
 
   const handleSend = async () => {
     if (!text.trim() || sending) return;
@@ -46,6 +78,11 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
     const content = text.trim();
     setText("");
     onTyping(false);
+    
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     
     try {
       await onSend(content, 'text');
@@ -130,15 +167,15 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
 
   return (
     <div 
+      ref={composerRef}
       className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t shadow-lg"
       style={{
-        transform: 'translate3d(0, 0, 0)',
+        bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px',
         paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + 12px)`,
         paddingTop: '12px',
-        ...(keyboardHeight > 0 && {
-          transform: `translate3d(0, -${keyboardHeight}px, 0)`,
-          transition: 'transform 0.2s ease-out'
-        })
+        transition: 'bottom 0.2s ease-out',
+        transform: 'translateZ(0)',
+        WebkitTransform: 'translateZ(0)'
       }}
     >
       <div className="px-4 py-3">
@@ -169,18 +206,20 @@ export function MessageComposer({ conversationId, profileId, onSend, onTyping, o
           </Button>
         
           <Textarea
+            ref={textareaRef}
             value={text}
             onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             placeholder="Type a message..."
-            className="flex-1 min-h-[44px] max-h-32 resize-none rounded-2xl"
+            className="flex-1 min-h-[44px] max-h-32 resize-none rounded-2xl overflow-hidden"
             rows={1}
             disabled={sending}
             inputMode="text"
             autoCapitalize="sentences"
             autoCorrect="on"
             enterKeyHint="send"
+            style={{ fontSize: '16px' }}
           />
         
           <Button

@@ -41,6 +41,7 @@ export default function Messages({ role }: MessagesProps) {
   
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(conversationIdFromUrl);
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
+  const [composerHeight, setComposerHeight] = useState(80); // Default composer height
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const keyboardHeight = useKeyboardHeight();
@@ -65,20 +66,25 @@ export default function Messages({ role }: MessagesProps) {
   const conversationMessages = messages[selectedConversationId || ''] || [];
   const typingInConversation = typingUsers[selectedConversationId || ''] || [];
   
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages, keyboard changes, or composer resize
   useEffect(() => {
     if (conversationMessages.length > 0) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }, 0);
     }
-  }, [conversationMessages.length]);
+  }, [conversationMessages.length, keyboardHeight, composerHeight]);
 
   // Handle composer focus - scroll to bottom
   const handleComposerFocus = () => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, 100);
+  };
+
+  // Handle composer height changes
+  const handleComposerHeightChange = (height: number) => {
+    setComposerHeight(height);
   };
   
   // Get conversation display name
@@ -267,15 +273,15 @@ export default function Messages({ role }: MessagesProps) {
               style={{
                 overscrollBehaviorY: 'contain',
                 WebkitOverflowScrolling: 'touch',
-                overflowAnchor: 'auto'
+                overflowAnchor: 'none'
               }}
             >
               {renderMessages()}
               
               {typingInConversation.length > 0 && <TypingIndicator />}
               
-              {/* Spacer for composer + keyboard */}
-              <div style={{ height: `calc(120px + ${keyboardHeight}px)` }} />
+              {/* Dynamic spacer for composer + keyboard */}
+              <div style={{ height: `${composerHeight + keyboardHeight + 16}px` }} />
               
               <div ref={messagesEndRef} />
             </div>
@@ -287,6 +293,7 @@ export default function Messages({ role }: MessagesProps) {
             onSend={handleSendMessage}
             onTyping={handleTyping}
             onFocus={handleComposerFocus}
+            onHeightChange={handleComposerHeightChange}
           />
           </>
         ) : (

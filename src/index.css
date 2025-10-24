@@ -156,10 +156,6 @@ All colors MUST be HSL.
     }
   }
 
-  /* iOS safe area support */
-  body {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
 
   .pb-safe {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
