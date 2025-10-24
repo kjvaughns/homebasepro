@@ -38,7 +38,7 @@ export default function OnboardingHomeowner() {
       return;
     }
 
-    if (step === 2 && (!formData.address || !formData.city || !formData.state || !formData.zipCode)) {
+    if (step === 2 && (!formData.city || !formData.state || !formData.zipCode)) {
       toast.error("Please fill in all address fields");
       return;
     }

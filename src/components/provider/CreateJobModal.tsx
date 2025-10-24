@@ -47,7 +47,7 @@ export default function CreateJobModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.service_name || !formData.scheduled_date) return;
+    if (!client || !formData.service_name || !formData.scheduled_date) return;
 
     setLoading(true);
     try {
@@ -130,13 +130,18 @@ export default function CreateJobModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Create Job for {client.name}</DialogTitle>
-            <DialogDescription>
-              Schedule a new service or create a quote
-            </DialogDescription>
-          </DialogHeader>
+        {!client ? (
+          <div className="p-4 text-center text-muted-foreground">
+            Please select a client first
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>Create Job for {client.name}</DialogTitle>
+              <DialogDescription>
+                Schedule a new service or create a quote
+              </DialogDescription>
+            </DialogHeader>
 
           <div className="py-4 space-y-4">
             <div>
@@ -240,6 +245,7 @@ export default function CreateJobModal({
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
