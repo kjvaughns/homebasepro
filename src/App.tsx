@@ -85,6 +85,10 @@ import AccountProfile from "@/pages/provider/account/Profile";
 import AccountSocial from "@/pages/provider/account/Social";
 import Tutorials from "@/pages/provider/Tutorials";
 import ProfitLoss from "@/pages/provider/ProfitLoss";
+import ProviderSubscriptions from "@/pages/provider/Subscriptions";
+import ProviderNotifications from "@/pages/provider/Notifications";
+import HomeownerNotifications from "@/pages/homeowner/Notifications";
+import Announcements from "@/pages/admin/Announcements";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -338,6 +342,11 @@ const App = () => {
               <Route path="settings" element={<HomeownerSettings />} />
               <Route path="settings/payments" element={<HomeownerPaymentSettings />} />
               <Route path="messages" element={<Messages role="homeowner" />} />
+              <Route path="notifications" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <HomeownerNotifications />
+                </Suspense>
+              } />
             </Route>
 
             {/* Provider routes with shared layout */}
@@ -429,6 +438,11 @@ const App = () => {
               <Route path="stripe-onboarding" element={<Navigate to="/provider/dashboard" replace />} />
               
               <Route path="messages" element={<Messages role="provider" />} />
+              <Route path="notifications" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ProviderNotifications />
+                </Suspense>
+              } />
             </Route>
 
             {/* Demo routes */}
@@ -449,6 +463,7 @@ const App = () => {
               <Route path="settings" element={<AdminSettings />} />
               <Route path="beta" element={<AdminBetaAccess />} />
               <Route path="referrals" element={<AdminReferrals />} />
+              <Route path="announcements" element={<Announcements />} />
               <Route path="commerce" element={<AdminCommerce />} />
               <Route path="access" element={<AdminUsersAccess />} />
             </Route>

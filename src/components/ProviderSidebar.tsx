@@ -43,6 +43,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 export function ProviderSidebar() {
   const { open } = useSidebar();

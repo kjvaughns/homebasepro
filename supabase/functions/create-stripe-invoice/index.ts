@@ -154,7 +154,23 @@ serve(async (req) => {
       console.log('✅ Created price:', price.id, 'for', item.description);
     }
 
-    // Create payment link with all line items
+    // Get platform fee based on provider's plan
+    const { data: org } = await supabaseClient
+      .from('organizations')
+      .select('plan, transaction_fee_pct')
+      .eq('id', orgId)
+      .single();
+
+    const platformFeePercent = org?.transaction_fee_pct || 0.05; // Default 5%
+    const platformFeeAmount = Math.round(total * 100 * platformFeePercent); // Convert to cents
+
+    console.log('💰 Platform fee calculation:', {
+      total,
+      platformFeePercent: (platformFeePercent * 100).toFixed(1) + '%',
+      platformFeeAmount
+    });
+
+    // Create payment link with all line items and application fee
     const paymentLink = await stripePost(
       'payment_links',
       {
@@ -165,10 +181,12 @@ serve(async (req) => {
         invoice_creation: {
           enabled: true
         },
+        application_fee_amount: platformFeeAmount,
         metadata: {
           invoice_id: invoiceId,
           org_id: orgId,
-          source: 'homebase'
+          source: 'homebase',
+          platform_fee: platformFeeAmount
         }
       },
       stripeAccountId

@@ -38,6 +38,7 @@ import { JobsMenuSheet } from "@/components/provider/JobsMenuSheet";
 import { TeamMenuSheet } from "@/components/provider/TeamMenuSheet";
 import { FinancialMenuSheet } from "@/components/provider/FinancialMenuSheet";
 import { useMessaging } from "@/contexts/MessagingContext";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
@@ -150,7 +151,8 @@ const ProviderLayout = () => {
                 <span className="hidden md:block">{organization?.name || "Provider"}</span>
               </Link>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <NotificationCenter />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
@@ -161,6 +163,10 @@ const ProviderLayout = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                  <DropdownMenuItem onClick={() => navigate("/provider/notifications")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Notifications</span>
+                  </DropdownMenuItem>
                   {isOwner && (
                     <>
                       <DropdownMenuItem onClick={() => setTeamSheetOpen(true)}>

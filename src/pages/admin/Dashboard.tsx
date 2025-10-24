@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import StatsCard from "@/components/admin/StatsCard";
-import { Users, DollarSign, TrendingUp, UserPlus, Building2, Calendar } from "lucide-react";
+import { Users, DollarSign, TrendingUp, UserPlus, Building2, Calendar, Megaphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { DashboardFilters } from "@/components/admin/DashboardFilters";
 import { useToast } from "@/hooks/use-toast";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
+import { Button } from "@/components/ui/button";
+import { SendAnnouncementDialog } from "@/components/admin/SendAnnouncementDialog";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardStats {
   totalWaitlist: number;
@@ -24,6 +27,8 @@ interface DashboardStats {
 
 const Dashboard = () => {
   const { isMobile } = useMobileLayout();
+  const navigate = useNavigate();
+  const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalWaitlist: 0,
     totalUsers: 0,
@@ -347,6 +352,11 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <SendAnnouncementDialog
+        open={showAnnouncementDialog}
+        onOpenChange={setShowAnnouncementDialog}
+      />
     </div>
   );
 };
