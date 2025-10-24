@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Send } from "lucide-react";
+import { copyToClipboard } from "@/utils/clipboard";
+import { PaymentLinkDialog } from "./PaymentLinkDialog";
 
 interface CreateInvoiceModalProps {
   open: boolean;
@@ -38,6 +40,9 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
     email: '',
     phone: ''
   });
+  const [showPaymentLinkDialog, setShowPaymentLinkDialog] = useState(false);
+  const [generatedPaymentLink, setGeneratedPaymentLink] = useState("");
+  const [generatedClientName, setGeneratedClientName] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -257,15 +262,26 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         toast.error(`Failed to create payment link: ${errorMsg}`);
         return;
       } else if (stripeInvoiceData?.hosted_invoice_url) {
-        // Copy payment link to clipboard
-        await navigator.clipboard.writeText(stripeInvoiceData.hosted_invoice_url);
-        toast.success(`Payment link created! URL copied to clipboard. Share it with ${clientName}`);
+        // Try auto-copy with fallback to dialog
+        const copyResult = await copyToClipboard(stripeInvoiceData.hosted_invoice_url);
         
         // Show payment link in console for easy access
         console.log('Stripe Payment Link Created:', {
           payment_link_id: stripeInvoiceData.stripe_payment_link_id,
           payment_url: stripeInvoiceData.hosted_invoice_url
         });
+        
+        if (copyResult.success) {
+          toast.success(`Payment link created! URL copied to clipboard. Share it with ${clientName}`);
+          handleClose();
+        } else {
+          // Auto-copy failed, show dialog with manual copy button
+          setGeneratedPaymentLink(stripeInvoiceData.hosted_invoice_url);
+          setGeneratedClientName(clientName);
+          setShowPaymentLinkDialog(true);
+          toast.info('Payment link created! Click "Copy Link" to copy it.');
+          return; // Don't close modal yet
+        }
       }
 
       handleClose();
@@ -288,8 +304,19 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <>
+      <PaymentLinkDialog
+        open={showPaymentLinkDialog}
+        onClose={() => {
+          setShowPaymentLinkDialog(false);
+          handleClose();
+        }}
+        paymentUrl={generatedPaymentLink}
+        clientName={generatedClientName}
+      />
+      
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Invoice</DialogTitle>
         </DialogHeader>
@@ -487,5 +514,6 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
