@@ -591,10 +591,11 @@ serve(async (req) => {
       }
     }
 
-    // Handle trial subscription start (checkout.session.completed)
+    // Handle checkout session completed (subscriptions and payment links)
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       
+      // Handle subscription checkout
       if (session.mode === 'subscription' && session.subscription) {
         const { org_id, user_id, plan } = session.metadata;
         
@@ -635,6 +636,134 @@ serve(async (req) => {
             });
 
           console.log(`Trial started for org ${org_id}: ${plan} plan`);
+        }
+      }
+      
+      // Handle payment link checkout (invoices)
+      if (session.mode === 'payment' && session.invoice) {
+        const { invoice_id, org_id } = session.metadata || {};
+        
+        if (invoice_id && org_id) {
+          console.log(`Processing payment link completion for invoice ${invoice_id}`);
+          
+          // Fetch the invoice from Stripe to get payment details
+          const invoice = await stripeGet(`invoices/${session.invoice}`);
+          
+          // Update invoice status
+          const { data: invoiceRecord } = await supabase
+            .from('invoices')
+            .update({ 
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              stripe_invoice_id: session.invoice
+            })
+            .eq('id', invoice_id)
+            .select('job_id, organization_id, client_id, amount')
+            .single();
+          
+          if (invoiceRecord) {
+            // Update linked booking if exists
+            if (invoiceRecord.job_id) {
+              await supabase
+                .from('bookings')
+                .update({ 
+                  status: 'confirmed',
+                  payment_captured: true
+                })
+                .eq('id', invoiceRecord.job_id);
+              
+              console.log(`Updated booking ${invoiceRecord.job_id} to confirmed`);
+            }
+
+            // Calculate platform fee
+            const platformFeePercent = await getDynamicPlatformFee(org_id);
+            const totalAmount = session.amount_total || 0;
+            const applicationFeeAmount = Math.round(totalAmount * platformFeePercent);
+            const netAmount = totalAmount - applicationFeeAmount;
+
+            // Create payment record
+            await supabase.from('payments').insert({
+              org_id: invoiceRecord.organization_id,
+              invoice_id: invoice_id,
+              stripe_id: session.invoice,
+              stripe_payment_intent_id: session.payment_intent,
+              amount: totalAmount,
+              application_fee_cents: applicationFeeAmount,
+              fee_amount: 0, // Will be updated when charge details are available
+              net_amount: netAmount,
+              status: 'paid',
+              captured: true,
+              payment_date: new Date().toISOString(),
+              currency: session.currency || 'usd',
+              type: 'invoice'
+            });
+
+            // Create ledger entries for platform fee and provider transfer
+            await insertLedgerEntry({
+              occurred_at: new Date().toISOString(),
+              type: 'fee',
+              direction: 'credit',
+              amount_cents: applicationFeeAmount,
+              currency: session.currency || 'usd',
+              stripe_ref: session.payment_intent || session.invoice,
+              party: 'platform',
+              provider_id: org_id,
+              metadata: { 
+                invoice_id,
+                fee_pct: platformFeePercent,
+                source: 'payment_link'
+              },
+            });
+
+            await insertLedgerEntry({
+              occurred_at: new Date().toISOString(),
+              type: 'transfer',
+              direction: 'credit',
+              amount_cents: netAmount,
+              currency: session.currency || 'usd',
+              stripe_ref: session.payment_intent || session.invoice,
+              party: 'provider',
+              provider_id: org_id,
+              metadata: { 
+                invoice_id,
+                source: 'payment_link'
+              },
+            });
+
+            // Send notification to provider
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('owner_id, profiles!organizations_owner_id_fkey(user_id, id)')
+              .eq('id', invoiceRecord.organization_id)
+              .single();
+
+            if (orgData?.profiles) {
+              await supabase.from('notifications').insert({
+                user_id: orgData.profiles.user_id,
+                profile_id: orgData.profiles.id,
+                type: 'payment',
+                title: '💰 Payment Received',
+                body: `You received a payment of $${(totalAmount / 100).toFixed(2)} from an invoice`,
+                action_url: '/provider/payments',
+                metadata: { invoice_id, amount: totalAmount }
+              });
+
+              try {
+                await supabase.functions.invoke('send-push-notification', {
+                  body: {
+                    userIds: [orgData.profiles.user_id],
+                    title: '💰 Payment Received',
+                    body: `You received a payment of $${(totalAmount / 100).toFixed(2)}`,
+                    url: '/provider/payments'
+                  }
+                });
+              } catch (err) {
+                console.error('Failed to send push notification:', err);
+              }
+            }
+
+            console.log(`✅ Created payment record for invoice ${invoice_id}: $${(totalAmount / 100).toFixed(2)}`);
+          }
         }
       }
     }

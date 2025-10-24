@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Receipt, DollarSign, ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
+import { Download, Receipt, DollarSign, ArrowUpRight, Sparkles, TrendingUp, RefreshCw, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentDrawer } from "@/components/provider/PaymentDrawer";
 import { CreateInvoiceModal } from "@/components/provider/CreateInvoiceModal";
@@ -29,13 +29,29 @@ interface Payment {
   job_id?: string;
 }
 
+interface Invoice {
+  id: string;
+  invoice_number?: string;
+  client_name?: string;
+  client_email?: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  due_date?: string;
+  stripe_hosted_url?: string;
+  org_id?: string;
+  [key: string]: any;
+}
+
 export default function PaymentsPage() {
   const { isMobile } = useMobileLayout();
   const [metrics, setMetrics] = useState<any>({});
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [tab, setTab] = useState("transactions");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -76,6 +92,20 @@ export default function PaymentsPage() {
         .limit(500);
 
       setPayments(paymentsData || []);
+
+      // Load invoices
+      try {
+        const invoiceRes: any = await supabase
+          .from('invoices')
+          .select('id, invoice_number, client_name, client_email, amount, status, created_at, due_date, stripe_hosted_url, org_id')
+          .eq('org_id', org.id)
+          .order('created_at', { ascending: false })
+          .limit(500);
+
+        setInvoices(invoiceRes?.data || []);
+      } catch (err) {
+        console.error('Error loading invoices:', err);
+      }
 
       // Load payouts
       const { data: payoutsData } = await supabase
@@ -169,6 +199,33 @@ export default function PaymentsPage() {
     }
   };
 
+  const syncPayments = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('backfill-payments', {
+        body: { daysBack: 90 }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sync Complete",
+        description: `Synced ${data.totalSynced || 0} payments from Stripe`,
+      });
+
+      await loadData();
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast({
+        title: "Sync Failed",
+        description: error.message || "Failed to sync payments",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const exportCsv = () => {
     const header = ['Date', 'Type', 'Status', 'Client', 'Amount', 'Fee', 'Net'];
     const rows = filteredPayments.map(p => [
@@ -258,6 +315,10 @@ export default function PaymentsPage() {
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="flex flex-wrap gap-2 sm:ml-auto">
+          <Button variant="outline" size="sm" onClick={syncPayments} disabled={syncing} className="flex-1 sm:flex-initial">
+            <RefreshCw className={`h-4 w-4 sm:mr-1 ${syncing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync Payments'}</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={loadAiSuggestions} className="flex-1 sm:flex-initial">
             <Sparkles className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">AI Insights</span>
@@ -400,10 +461,62 @@ export default function PaymentsPage() {
         </TabsContent>
 
         <TabsContent value="invoices">
-          <Card className="p-6">
-            <p className="text-sm text-muted-foreground">
-              Invoices view - filtered transactions with type='invoice'
-            </p>
+          <Card>
+            {invoices.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <Receipt className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p className="font-medium">No invoices yet</p>
+                <p className="text-sm mt-1">Send your first invoice to get started</p>
+                <Button size="sm" className="mt-4" onClick={() => setShowInvoice(true)}>
+                  <Receipt className="h-4 w-4 mr-1" />
+                  Create Invoice
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <TH>Invoice #</TH>
+                      <TH>Client</TH>
+                      <TH>Date</TH>
+                      <TH>Due Date</TH>
+                      <TH>Amount</TH>
+                      <TH>Status</TH>
+                      <TH></TH>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map((inv) => (
+                      <tr key={inv.id} className="border-b hover:bg-muted/30">
+                        <TD className="font-mono text-xs">{inv.invoice_number || inv.id.slice(0, 8)}</TD>
+                        <TD>
+                          <div>
+                            <p className="font-medium">{inv.client_name}</p>
+                            <p className="text-xs text-muted-foreground">{inv.client_email}</p>
+                          </div>
+                        </TD>
+                        <TD>{new Date(inv.created_at).toLocaleDateString()}</TD>
+                        <TD>{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</TD>
+                        <TD className="font-medium">{currency(inv.amount / 100)}</TD>
+                        <TD><StatusBadge s={inv.status} /></TD>
+                        <TD>
+                          {inv.stripe_hosted_url && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => window.open(inv.stripe_hosted_url, '_blank')}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TD>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         </TabsContent>
 
