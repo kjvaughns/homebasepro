@@ -4,11 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "lint": "eslint .",
-    "preview": "vite preview"
+  "dev": "vite",
+  "build": "vite build",
+  "build:dev": "vite build --mode development",
+  "build:native": "vite build && npx cap sync",
+  "ios": "npm run build:native && npx cap open ios",
+  "android": "npm run build:native && npx cap open android",
+  "sync": "npx cap sync",
+  "lint": "eslint .",
+  "preview": "vite preview"
+}
+
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
