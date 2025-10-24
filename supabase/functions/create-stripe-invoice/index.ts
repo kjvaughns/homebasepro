@@ -98,10 +98,10 @@ serve(async (req) => {
         'invoiceitems',
         {
           customer: customer.id,
-          amount: Math.round(item.amount * 100), // Convert to cents
+          unit_amount: Math.round(item.rate * 100), // Convert to cents
+          quantity: item.quantity || 1,
           currency: 'usd',
-          description: item.description,
-          quantity: item.quantity || 1
+          description: item.description
         },
         stripeAccountId
       );

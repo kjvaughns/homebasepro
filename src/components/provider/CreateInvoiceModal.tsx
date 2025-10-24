@@ -199,7 +199,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
           lineItems: lineItems.map(item => ({
             description: item.description,
             quantity: item.quantity,
-            amount: item.quantity * item.rate
+            rate: item.rate
           })),
           dueDate,
           orgId: org.id,
