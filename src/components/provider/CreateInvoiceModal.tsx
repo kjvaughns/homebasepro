@@ -105,6 +105,32 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         return;
       }
 
+      // Validate line items before submission
+      const totalAmount = calculateTotal();
+      if (totalAmount < 0.50) {
+        toast.error(`Invoice total must be at least $0.50 (current: $${totalAmount.toFixed(2)})`);
+        setLoading(false);
+        return;
+      }
+
+      for (const item of lineItems) {
+        if (!item.description.trim()) {
+          toast.error('All line items must have a description');
+          setLoading(false);
+          return;
+        }
+        if (item.quantity < 1) {
+          toast.error('Quantity must be at least 1');
+          setLoading(false);
+          return;
+        }
+        if (item.rate <= 0) {
+          toast.error('Rate must be greater than $0');
+          setLoading(false);
+          return;
+        }
+      }
+
       let clientId = selectedClient;
       let clientEmail = '';
       let clientName = '';
@@ -210,7 +236,17 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
 
       if (stripeError) {
         console.error('Stripe invoice creation error:', stripeError);
-        const errorMsg = stripeError.error || 'Payment link generation failed';
+        
+        // Extract detailed error message
+        let errorMsg = 'Payment link generation failed';
+        
+        if (stripeError.message) {
+          errorMsg = stripeError.message;
+        } else if (typeof stripeError === 'string') {
+          errorMsg = stripeError;
+        } else if (stripeError.error) {
+          errorMsg = stripeError.error;
+        }
         
         // Rollback: Delete the database invoice record
         await supabase
@@ -218,7 +254,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
           .delete()
           .eq('id', invoice.id);
         
-        toast.error(`Failed to create payment link: ${errorMsg}. Please check your Stripe Connect setup.`);
+        toast.error(`Failed to create payment link: ${errorMsg}`);
         return;
       } else if (stripeInvoiceData?.hosted_invoice_url) {
         // Copy payment link to clipboard
