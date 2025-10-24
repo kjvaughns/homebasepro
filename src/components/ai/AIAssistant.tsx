@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Bot, User, Home, DollarSign, Loader2 } from 'lucide-react';
+import { Bot, User, Home, DollarSign, Loader2 } from 'lucide-react';
+import { AIComposer } from './AIComposer';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 
 interface ChatMessage {
   id: string;
@@ -34,11 +34,13 @@ export default function AIAssistant({
   userRole = 'homeowner'
 }: AIAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
+  const [composerHeight, setComposerHeight] = useState(80);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const keyboardHeight = useKeyboardHeight();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,19 +48,18 @@ export default function AIAssistant({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, keyboardHeight, composerHeight]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return;
 
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: input.trim()
+      content: messageText.trim()
     };
 
     setMessages(prev => [...prev, userMsg]);
-    setInput('');
     setIsLoading(true);
 
     try {
@@ -137,16 +138,16 @@ export default function AIAssistant({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-4 p-4">
+    <div className="flex flex-col h-full relative">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto space-y-4 p-4"
+        style={{
+          overflowAnchor: 'none',
+          paddingBottom: `${composerHeight + keyboardHeight + 16}px`,
+        }}
+      >
         {messages.length === 0 && (
           <Card className="border-primary/20">
             <CardContent className="p-6">
@@ -325,28 +326,12 @@ export default function AIAssistant({
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t p-4">
-        <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask about property details or service pricing..."
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button 
-            onClick={sendMessage} 
-            disabled={!input.trim() || isLoading}
-            size="icon"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Try: "123 Main St, Jackson MS" or "How much for lawn mowing?"
-        </p>
-      </div>
+      <AIComposer
+        onSend={sendMessage}
+        disabled={isLoading}
+        placeholder="Ask about property details or service pricing..."
+        onHeightChange={setComposerHeight}
+      />
     </div>
   );
 }

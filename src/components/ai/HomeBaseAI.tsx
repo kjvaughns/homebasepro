@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Bot, User, Home, DollarSign, Loader2, CheckCircle2, AlertCircle, Star } from 'lucide-react';
+import { Bot, User, Home, DollarSign, Loader2, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ProviderCard } from '@/components/marketplace/ProviderCard';
 import { BookingDialog } from '@/components/marketplace/BookingDialog';
+import { AIComposer } from './AIComposer';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 
 interface ChatMessage {
   id: string;
@@ -39,7 +40,6 @@ export default function HomeBaseAI({
   autoFocus = false
 }: HomeBaseAIProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(initialSessionId);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -48,10 +48,12 @@ export default function HomeBaseAI({
   const [currentServiceType, setCurrentServiceType] = useState<string>('');
   const [currentEstimate, setCurrentEstimate] = useState<any>(null);
   const [defaultProperty, setDefaultProperty] = useState<any>(null);
+  const [composerHeight, setComposerHeight] = useState(80);
   const { toast } = useToast();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const keyboardHeight = useKeyboardHeight();
 
   const isProvider = userRole === 'provider';
 
@@ -103,28 +105,18 @@ export default function HomeBaseAI({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, keyboardHeight, composerHeight]);
 
-  // Auto-focus input when autoFocus prop changes
-  useEffect(() => {
-    if (autoFocus && inputRef.current) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-    }
-  }, [autoFocus]);
-
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return;
 
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: input.trim()
+      content: messageText.trim()
     };
 
     setMessages(prev => [...prev, userMsg]);
-    setInput('');
     setIsLoading(true);
 
     try {
@@ -207,18 +199,6 @@ export default function HomeBaseAI({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Prevent sheet from capturing space bar
-    if (e.key === ' ') {
-      e.stopPropagation();
-    }
-    // Handle Enter to send message
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   const getSeverityColor = (severity: string) => {
     switch(severity) {
       case 'high': return 'text-destructive';
@@ -260,8 +240,15 @@ export default function HomeBaseAI({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-4 p-3 sm:p-4 touch-manipulation">
+    <div className="flex flex-col h-full relative">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto space-y-4 p-3 sm:p-4 touch-manipulation"
+        style={{
+          overflowAnchor: 'none',
+          paddingBottom: `${composerHeight + keyboardHeight + 16}px`,
+        }}
+      >
         {messages.length === 0 && (
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="p-6">
@@ -512,42 +499,12 @@ export default function HomeBaseAI({
         />
       )}
 
-      <div 
-        className="flex-shrink-0 border-t p-3 sm:p-4 bg-background"
-        style={{ paddingBottom: `max(env(safe-area-inset-bottom, 12px), 12px)` }}
-      >
-        <div className="flex gap-2">
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isProvider ? "Ask about your business..." : "Describe your home problem..."}
-            disabled={isLoading}
-            className="flex-1 h-11 sm:h-10 text-base"
-            inputMode="text"
-            enterKeyHint="send"
-            autoCapitalize="sentences"
-            autoCorrect="on"
-            autoComplete="off"
-            autoFocus={autoFocus}
-            style={{ touchAction: 'manipulation' }}
-          />
-          <Button 
-            onClick={sendMessage} 
-            disabled={!input.trim() || isLoading}
-            size="icon"
-            className="rounded-full h-11 w-11 sm:h-10 sm:w-10 active:scale-95 transition-transform"
-          >
-            <Send className="w-5 h-5 sm:w-4 sm:h-4" />
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          {isProvider 
-            ? 'Try: "What should I work on today?" or "Help me quote an HVAC job"'
-            : 'Try: "My AC is blowing warm air" or "Need lawn mowing"'}
-        </p>
-      </div>
+      <AIComposer
+        onSend={sendMessage}
+        disabled={isLoading}
+        placeholder={isProvider ? "Ask about your business..." : "Describe your home problem..."}
+        onHeightChange={setComposerHeight}
+      />
     </div>
   );
 }

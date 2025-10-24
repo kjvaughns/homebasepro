@@ -21,6 +21,8 @@ import { HeroImageUpload } from "@/components/provider/HeroImageUpload";
 import { SocialLinksEditor } from "@/components/provider/SocialLinksEditor";
 import { CalendarIntegrationCard } from "@/components/provider/CalendarIntegrationCard";
 import { BookingLinkManager } from "@/components/provider/BookingLinkManager";
+import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 
 interface Organization {
   id: string;
@@ -48,6 +50,10 @@ export default function Settings() {
   const [stripeLoading, setStripeLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+  const keyboardHeight = useKeyboardHeight();
+  
+  // Enable auto-scroll to focused inputs on mobile
+  useAutoScrollToInput();
 
   useEffect(() => {
     loadOrganization();
@@ -228,7 +234,14 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-4 sm:p-8 space-y-4 sm:space-y-6 pb-20 md:pb-6 max-w-full overflow-x-hidden">
+    <div 
+      className="p-4 sm:p-8 space-y-4 sm:space-y-6 pb-20 md:pb-6 max-w-full overflow-x-hidden"
+      style={{
+        paddingBottom: keyboardHeight > 0 
+          ? `${keyboardHeight + 80}px` 
+          : undefined
+      }}
+    >
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold break-words">{organization.name}</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Manage your organization settings</p>

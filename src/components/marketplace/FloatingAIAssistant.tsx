@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, X } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -11,6 +11,20 @@ interface FloatingAIAssistantProps {
 
 export const FloatingAIAssistant = ({ context, onPropertyFound }: FloatingAIAssistantProps) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Close drawer when keyboard might interfere (mobile optimization)
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleResize = () => {
+      if (window.visualViewport && window.visualViewport.height < window.innerHeight * 0.7) {
+        // Keyboard likely open, don't close - just note it for styling
+      }
+    };
+
+    window.visualViewport?.addEventListener('resize', handleResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+  }, [isOpen]);
 
   return (
     <>
@@ -25,7 +39,7 @@ export const FloatingAIAssistant = ({ context, onPropertyFound }: FloatingAIAssi
 
       {/* Drawer */}
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
-        <DrawerContent className="h-[85vh]">
+        <DrawerContent className="h-[85vh] max-h-[85vh]">
           <DrawerHeader className="border-b">
             <div className="flex items-center justify-between">
               <DrawerTitle>HomeBase AI</DrawerTitle>
