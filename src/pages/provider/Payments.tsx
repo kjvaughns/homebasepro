@@ -93,19 +93,15 @@ export default function PaymentsPage() {
 
       setPayments(paymentsData || []);
 
-      // Load invoices
-      try {
-        const invoiceRes: any = await supabase
-          .from('invoices')
-          .select('id, invoice_number, client_name, client_email, amount, status, created_at, due_date, stripe_hosted_url, org_id')
-          .eq('org_id', org.id)
-          .order('created_at', { ascending: false })
-          .limit(500);
+      // Load invoices - using type assertion to avoid deep type instantiation
+      const invoicesQuery = await (supabase as any)
+        .from('invoices')
+        .select('*')
+        .eq('org_id', org.id)
+        .order('created_at', { ascending: false })
+        .limit(500);
 
-        setInvoices(invoiceRes?.data || []);
-      } catch (err) {
-        console.error('Error loading invoices:', err);
-      }
+      setInvoices(invoicesQuery?.data || []);
 
       // Load payouts
       const { data: payoutsData } = await supabase
