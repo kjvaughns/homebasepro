@@ -131,26 +131,49 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+    // Accept both user auth and service role auth
+    const authHeader = req.headers.get('Authorization');
+    let isServiceRole = false;
+    let supabaseClient;
+    let currentUserId: string | null = null;
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser();
-
-    if (userError || !user) {
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Missing authorization header' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
+    }
+
+    // Check if it's a service role call
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (serviceRoleKey && authHeader.includes(serviceRoleKey)) {
+      isServiceRole = true;
+      supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        serviceRoleKey
+      );
+      console.log('🔑 Using service role authentication');
+    } else {
+      // Regular user authentication
+      supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: { Authorization: authHeader },
+          },
+        }
+      );
+
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      currentUserId = user.id;
+      console.log('👤 Using user authentication');
     }
 
     const { userIds, title, body, url, icon } = await req.json();
@@ -176,8 +199,8 @@ serve(async (req) => {
     
     if (userIds && userIds.length > 0) {
       query = query.in('user_id', userIds);
-    } else {
-      query = query.eq('user_id', user.id);
+    } else if (!isServiceRole && currentUserId) {
+      query = query.eq('user_id', currentUserId);
     }
 
     const { data: subscriptions, error: subError } = await query;
@@ -198,10 +221,11 @@ serve(async (req) => {
     console.log(`📋 Sending to ${subscriptions.length} subscription(s)`);
 
     // Store notification in database so service worker can fetch it
+    const notificationUserId = userIds && userIds.length > 0 ? userIds[0] : currentUserId;
     const { data: notification } = await supabaseClient
       .from('notifications')
       .insert({
-        user_id: userIds && userIds.length > 0 ? userIds[0] : user.id,
+        user_id: notificationUserId,
         title,
         message: body,
         link: url || '/',

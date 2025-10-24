@@ -99,6 +99,9 @@ Deno.serve(async (req) => {
       try {
         const userIds = profiles.map(p => p.user_id);
         await serviceSupabase.functions.invoke('send-push-notification', {
+          headers: {
+            Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
           body: {
             userIds,
             title: `📢 ${title}`,
