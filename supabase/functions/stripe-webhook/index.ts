@@ -453,6 +453,7 @@ serve(async (req) => {
           .maybeSingle();
 
         if (existing) {
+          // Update existing payment
           await supabase
             .from('payments')
             .update({ 
@@ -461,6 +462,50 @@ serve(async (req) => {
               payment_date: new Date().toISOString(),
             })
             .eq('id', existing.id);
+
+          // Create ledger entries
+          const feeAmount = existing.application_fee_cents || 0;
+          const transferAmount = existing.amount - feeAmount;
+
+          await insertLedgerEntry({
+            occurred_at: new Date().toISOString(),
+            type: 'fee',
+            direction: 'credit',
+            amount_cents: feeAmount,
+            currency: existing.currency,
+            stripe_ref: paymentIntent.id,
+            party: 'platform',
+            job_id: job_id || null,
+            provider_id: org_id || null,
+            homeowner_id: homeowner_id || null,
+            metadata: { fee_pct: existing.fee_pct_at_time },
+          });
+
+          await insertLedgerEntry({
+            occurred_at: new Date().toISOString(),
+            type: 'transfer',
+            direction: 'credit',
+            amount_cents: transferAmount,
+            currency: existing.currency,
+            stripe_ref: paymentIntent.id,
+            party: 'provider',
+            job_id: job_id || null,
+            provider_id: org_id || null,
+            homeowner_id: homeowner_id || null,
+            metadata: { transfer_group: existing.transfer_group },
+          });
+
+          // Update booking if job_id exists
+          if (job_id) {
+            await supabase
+              .from('bookings')
+              .update({
+                deposit_paid: true,
+                payment_captured: true,
+                status: 'confirmed',
+              })
+              .eq('id', job_id);
+          }
         } else {
           // Create new payment record from payment intent
           const charges = paymentIntent.charges?.data || [];
@@ -484,69 +529,6 @@ serve(async (req) => {
               payment_date: new Date().toISOString(),
               job_id: job_id || null,
               homeowner_profile_id: homeowner_id || null,
-            });
-        }
-
-        // Create ledger entries for existing payment
-        if (existing) {
-          const feeAmount = existing.application_fee_cents || 0;
-          const transferAmount = existing.amount - feeAmount;
-
-          await insertLedgerEntry({
-              occurred_at: new Date().toISOString(),
-              type: 'fee',
-              direction: 'credit',
-              amount_cents: feeAmount,
-              currency: existing.currency,
-              stripe_ref: paymentIntent.id,
-              party: 'platform',
-              job_id: job_id || null,
-              provider_id: org_id || null,
-              homeowner_id: homeowner_id || null,
-              metadata: { fee_pct: existing.fee_pct_at_time },
-            });
-
-            await insertLedgerEntry({
-              occurred_at: new Date().toISOString(),
-              type: 'transfer',
-              direction: 'credit',
-              amount_cents: transferAmount,
-              currency: existing.currency,
-              stripe_ref: paymentIntent.id,
-              party: 'provider',
-              job_id: job_id || null,
-              provider_id: org_id || null,
-              homeowner_id: homeowner_id || null,
-              metadata: { transfer_group: existing.transfer_group },
-            });
-          }
-        }
-
-          if (job_id) {
-            await supabase
-              .from('bookings')
-              .update({
-                deposit_paid: true,
-                payment_captured: true,
-                status: 'confirmed',
-              })
-              .eq('id', job_id);
-          }
-        } else {
-          await supabase
-            .from('payments')
-            .insert({
-              org_id: org_id,
-              homeowner_profile_id: homeowner_id || null,
-              job_id: job_id || null,
-              type: paymentIntent.metadata.type || 'payment_link',
-              status: 'paid',
-              amount: paymentIntent.amount,
-              currency: paymentIntent.currency,
-              stripe_id: paymentIntent.id,
-              payment_date: new Date().toISOString(),
-              captured: true,
-              meta: paymentIntent.metadata,
             });
         }
       }
