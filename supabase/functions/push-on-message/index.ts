@@ -60,6 +60,9 @@ serve(async (req) => {
     await supabase.from('notifications').insert(notifications);
     
     const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
+      headers: {
+        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      },
       body: {
         userIds,
         title: senderName,

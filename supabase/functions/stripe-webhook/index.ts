@@ -380,6 +380,7 @@ serve(async (req) => {
             // Send push notification
             try {
               await supabase.functions.invoke('send-push-notification', {
+                headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
                 body: {
                   userIds: [orgData.profiles.user_id],
                   title: '💰 Payment Received',
@@ -482,6 +483,7 @@ serve(async (req) => {
             // Send push notification
             try {
               await supabase.functions.invoke('send-push-notification', {
+                headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
                 body: {
                   userIds: [orgData.profiles.user_id],
                   title: '💰 Payment Received',
@@ -834,6 +836,7 @@ serve(async (req) => {
 
               try {
                 await supabase.functions.invoke('send-push-notification', {
+                  headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
                   body: {
                     userIds: [orgData.profiles.user_id],
                     title: '💰 Payment Received',
