@@ -137,16 +137,22 @@ serve(async (req) => {
     let supabaseClient;
     let currentUserId: string | null = null;
 
+    console.log('🔐 Received push notification request');
+
     if (!authHeader) {
+      console.error('❌ Missing authorization header');
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
     }
 
+    // Normalize header: remove "Bearer " prefix if present, trim whitespace
+    const normalizedHeader = authHeader.replace(/^Bearer\s+/i, '').trim();
+
     // Check if it's a service role call
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (serviceRoleKey && authHeader.includes(serviceRoleKey)) {
+    if (serviceRoleKey && normalizedHeader === serviceRoleKey) {
       isServiceRole = true;
       supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',

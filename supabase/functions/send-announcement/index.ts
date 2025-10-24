@@ -98,7 +98,9 @@ Deno.serve(async (req) => {
     if (send_push) {
       try {
         const userIds = profiles.map(p => p.user_id);
-        await serviceSupabase.functions.invoke('send-push-notification', {
+        console.log(`📤 Invoking send-push-notification for ${userIds.length} users...`);
+        
+        const { data: pushResult, error: pushError } = await serviceSupabase.functions.invoke('send-push-notification', {
           headers: {
             Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
           },
@@ -109,8 +111,14 @@ Deno.serve(async (req) => {
             url: '/notifications',
           },
         });
+
+        if (pushError) {
+          console.error('❌ Push notification invoke error:', pushError);
+        } else {
+          console.log('✅ Push notification result:', pushResult);
+        }
       } catch (pushErr) {
-        console.error('Failed to send push notifications:', pushErr);
+        console.error('❌ Exception sending push notifications:', pushErr);
       }
     }
 
