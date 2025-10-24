@@ -1529,6 +1529,9 @@ export type Database = {
           status: string | null
           stripe_checkout_session_id: string | null
           stripe_checkout_url: string | null
+          stripe_customer_id: string | null
+          stripe_hosted_url: string | null
+          stripe_invoice_id: string | null
           stripe_payment_intent_id: string | null
           updated_at: string | null
         }
@@ -1550,6 +1553,9 @@ export type Database = {
           status?: string | null
           stripe_checkout_session_id?: string | null
           stripe_checkout_url?: string | null
+          stripe_customer_id?: string | null
+          stripe_hosted_url?: string | null
+          stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
         }
@@ -1571,6 +1577,9 @@ export type Database = {
           status?: string | null
           stripe_checkout_session_id?: string | null
           stripe_checkout_url?: string | null
+          stripe_customer_id?: string | null
+          stripe_hosted_url?: string | null
+          stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
         }

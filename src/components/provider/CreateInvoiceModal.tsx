@@ -170,42 +170,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
       const total = calculateTotal();
       const invoiceNumber = `INV-${Date.now()}`;
 
-      // Generate PDF
-      const pdfBlob = generateInvoicePDF({
-        invoice_number: invoiceNumber,
-        client_name: clientName,
-        provider_name: org.name,
-        line_items: lineItems.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          rate: Math.round(item.rate * 100),
-          amount: Math.round(item.quantity * item.rate * 100),
-        })),
-        subtotal: Math.round(total * 100),
-        tax_amount: 0,
-        discount_amount: 0,
-        total_amount: Math.round(total * 100),
-        due_date: dueDate,
-        created_at: new Date().toISOString(),
-      });
-
-      // Upload PDF to storage
-      const pdfPath = `invoices/${org.id}/${invoiceNumber}.pdf`;
-      const { error: uploadError } = await supabase.storage
-        .from('provider-images')
-        .upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: true });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        toast.error("Failed to generate PDF");
-        return;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('provider-images')
-        .getPublicUrl(pdfPath);
-
-      // Create invoice record
+      // Create invoice record first
       const { data: invoice, error: insertError } = await supabase
         .from("invoices")
         .insert([{
@@ -218,7 +183,6 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
           line_items: lineItems as any,
           notes: notes,
           status: "pending",
-          pdf_url: publicUrl,
           email_status: sendEmail ? 'pending' : 'not_sent',
         }])
         .select()
@@ -226,62 +190,38 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
 
       if (insertError) throw insertError;
 
-      // Generate Stripe Checkout session for payment
-      const appUrl = window.location.origin;
-      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('payments-api', {
+      // Create Stripe Invoice with payment link
+      const { data: stripeInvoiceData, error: stripeError } = await supabase.functions.invoke('create-stripe-invoice', {
         body: {
-          action: 'create-payment-checkout',
-          amount: Math.round(total * 100),
-          currency: 'usd',
-          metadata: {
-            invoice_id: invoice.id,
-            invoice_number: invoiceNumber,
-            client_id: clientId,
-            type: 'invoice_payment'
-          },
-          success_url: `${appUrl}/invoice-payment-success?invoice_id=${invoice.id}&client_email=${encodeURIComponent(clientEmail)}`,
-          cancel_url: `${appUrl}/homeowner/dashboard?payment=cancelled`,
+          clientEmail,
+          clientName,
+          clientPhone: newClientData?.phone || '',
+          lineItems: lineItems.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            amount: item.quantity * item.rate
+          })),
+          dueDate,
+          orgId: org.id,
+          stripeAccountId: org.stripe_account_id,
+          invoiceId: invoice.id
         }
       });
 
-      if (checkoutError) {
-        console.error('Checkout creation error:', checkoutError);
+      if (stripeError) {
+        console.error('Stripe invoice creation error:', stripeError);
         toast.error("Invoice created but payment link generation failed");
-      } else if (checkoutData?.url) {
-        // Update invoice with Stripe Checkout URL
-        await supabase
-          .from('invoices')
-          .update({
-            stripe_checkout_url: checkoutData.url,
-            stripe_checkout_session_id: checkoutData.session_id
-          })
-          .eq('id', invoice.id);
-      }
-
-      // Send email if requested
-      if (sendEmail) {
-        const { error: emailError } = await supabase.functions.invoke('send-invoice', {
-          body: {
-            invoiceId: invoice.id,
-            clientEmail: clientEmail,
-            pdfUrl: publicUrl,
-            paymentUrl: checkoutData?.url || null,
-            invoiceNumber: invoiceNumber,
-            amount: Math.round(total * 100),
-            dueDate: dueDate,
-            providerName: org.name,
-            clientName: clientName,
-          }
+      } else if (stripeInvoiceData?.hosted_invoice_url) {
+        // Copy payment link to clipboard
+        await navigator.clipboard.writeText(stripeInvoiceData.hosted_invoice_url);
+        toast.success(`Invoice created! Payment link copied to clipboard. Share it with ${clientName}`);
+        
+        // Show payment link in console for easy access
+        console.log('Stripe Invoice Created:', {
+          invoice_id: stripeInvoiceData.stripe_invoice_id,
+          payment_url: stripeInvoiceData.hosted_invoice_url,
+          pdf_url: stripeInvoiceData.invoice_pdf
         });
-
-        if (emailError) {
-          console.error('Email send failed:', emailError);
-          toast.error("Invoice created but notification failed. Client can view in their portal.");
-        } else {
-          toast.success("Invoice created and sent with payment link!");
-        }
-      } else {
-        toast.success("Invoice created with payment link!");
       }
 
       handleClose();

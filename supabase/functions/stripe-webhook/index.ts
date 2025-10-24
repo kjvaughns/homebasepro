@@ -277,11 +277,13 @@ serve(async (req) => {
       }
     }
 
-    // Handle provider subscription invoices
+    // Handle provider subscription invoices AND custom invoices
     if (event.type === 'invoice.paid') {
       const invoice = event.data.object;
       const orgId = invoice.metadata.org_id;
+      const invoiceId = invoice.metadata.invoice_id;
 
+      // Handle subscription invoices
       if (invoice.subscription) {
         const { data: subscription } = await supabase
           .from('provider_subscriptions')
@@ -317,7 +319,51 @@ serve(async (req) => {
         }
       }
 
-      if (orgId) {
+      // Handle custom invoices from providers to clients
+      if (invoiceId) {
+        console.log(`Updating invoice ${invoiceId} to paid status`);
+        
+        const { data: invoiceRecord } = await supabase
+          .from('invoices')
+          .update({ 
+            status: 'paid',
+            paid_at: new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+          })
+          .eq('stripe_invoice_id', invoice.id)
+          .select('job_id, organization_id, client_id, amount')
+          .single();
+        
+        if (invoiceRecord) {
+          // Update linked booking if exists
+          if (invoiceRecord.job_id) {
+            await supabase
+              .from('bookings')
+              .update({ 
+                status: 'confirmed',
+                payment_captured: true
+              })
+              .eq('id', invoiceRecord.job_id);
+            
+            console.log(`Updated booking ${invoiceRecord.job_id} to confirmed`);
+          }
+
+          // Create payment record
+          await supabase.from('payments').insert({
+            org_id: invoiceRecord.organization_id,
+            invoice_id: invoiceId,
+            stripe_id: invoice.id,
+            amount: invoiceRecord.amount,
+            status: 'paid',
+            payment_date: new Date().toISOString(),
+            currency: invoice.currency
+          });
+
+          console.log(`Created payment record for invoice ${invoiceId}`);
+        }
+      }
+
+      // Legacy payment handling
+      if (orgId && !invoiceId) {
         await supabase
           .from('payments')
           .update({ 
