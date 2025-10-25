@@ -207,13 +207,24 @@ async function createVapidAuthHeader(
     new TextEncoder().encode(unsignedToken)
   );
 
-  // Convert DER signature to raw format (required by VAPID spec)
-  const derSignature = new Uint8Array(signature);
-  console.log('🔏 DER signature length:', derSignature.length);
+  // Handle signature format (crypto.subtle.sign may return raw or DER depending on environment)
+  const signatureBytes = new Uint8Array(signature);
+  console.log('🔏 Signature length:', signatureBytes.length);
 
-  const rawSignature = derToRaw(derSignature);
+  let rawSignature: Uint8Array;
+  if (signatureBytes.length === 64) {
+    // Already in raw format (r || s)
+    console.log('✅ Signature already in raw format');
+    rawSignature = signatureBytes;
+  } else if (signatureBytes.length >= 70 && signatureBytes.length <= 72) {
+    // DER-encoded, needs conversion
+    console.log('🔄 Converting DER signature to raw format');
+    rawSignature = derToRaw(signatureBytes);
+  } else {
+    throw new Error(`Unexpected signature length: ${signatureBytes.length} (expected 64 or 70-72)`);
+  }
+
   console.log('✅ Raw signature length:', rawSignature.length, '(should be 64)');
-
   const signatureBase64 = uint8ArrayToBase64Url(rawSignature);
   
   return `vapid t=${unsignedToken}.${signatureBase64}, k=${publicKey}`;
