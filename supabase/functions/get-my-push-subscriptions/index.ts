@@ -35,48 +35,31 @@ serve(async (req) => {
       );
     }
 
-    const { endpoint, keys } = await req.json();
+    console.log(`📋 Fetching subscriptions for user ${user.id}`);
 
-    if (!endpoint || !keys?.p256dh || !keys?.auth) {
-      console.error('❌ Invalid subscription data received');
-      return new Response(
-        JSON.stringify({ error: 'Invalid subscription data' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    const endpointHash = endpoint.substring(endpoint.length - 8);
-    console.log(`📥 Subscription request for user ${user.id}, endpoint: ...${endpointHash}`);
-
-    // Upsert subscription
-    const { data, error } = await supabaseClient
+    // Get all subscriptions for this user
+    const { data: subscriptions, error } = await supabaseClient
       .from('push_subscriptions')
-      .upsert(
-        {
-          user_id: user.id,
-          endpoint,
-          p256dh: keys.p256dh,
-          auth: keys.auth,
-          user_agent: req.headers.get('user-agent') || '',
-        },
-        { onConflict: 'endpoint' }
-      )
-      .select()
-      .single();
+      .select('id, endpoint, created_at, user_agent')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Error saving subscription:', error);
+      console.error('❌ Error fetching subscriptions:', error);
       throw error;
     }
 
-    console.log(`✅ Subscription saved: ${data.id}, endpoint: ...${endpointHash}`);
+    console.log(`✅ Found ${subscriptions?.length || 0} subscription(s)`);
 
     return new Response(
-      JSON.stringify({ success: true, subscriptionId: data.id }),
+      JSON.stringify({ 
+        count: subscriptions?.length || 0,
+        subscriptions: subscriptions || [] 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
-    console.error('Error in subscribe-push:', error);
+    console.error('Error in get-my-push-subscriptions:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

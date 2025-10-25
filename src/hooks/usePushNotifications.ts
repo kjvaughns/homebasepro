@@ -17,10 +17,28 @@ export function usePushNotifications(): PushNotificationState {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Auto-sync subscription to backend on mount
   useEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);
       checkSubscription();
+      
+      // If permission granted, ensure backend is synced
+      if (Notification.permission === 'granted') {
+        ensureBackendSync();
+      }
+    }
+
+    // Listen for service worker messages
+    if ('serviceWorker' in navigator) {
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === 'PUSH_SUBSCRIPTION_CHANGED') {
+          console.log('🔄 Push subscription changed, re-syncing...');
+          ensureBackendSync();
+        }
+      };
+      navigator.serviceWorker.addEventListener('message', handleMessage);
+      return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
     }
   }, []);
 
@@ -33,6 +51,57 @@ export function usePushNotifications(): PushNotificationState {
       setIsSubscribed(!!subscription);
     } catch (error) {
       console.error('Error checking subscription:', error);
+    }
+  };
+
+  // Ensure browser subscription is saved to backend
+  const ensureBackendSync = async () => {
+    if (!('serviceWorker' in navigator)) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return; // Not authenticated
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) return; // No browser subscription
+
+      console.log('🔄 Syncing existing subscription to backend...');
+      
+      const p256dhKey = subscription.getKey('p256dh');
+      const authKey = subscription.getKey('auth');
+      
+      if (!p256dhKey || !authKey) return;
+
+      const subscriptionData = {
+        endpoint: subscription.endpoint,
+        keys: {
+          p256dh: btoa(String.fromCharCode(...new Uint8Array(p256dhKey))),
+          auth: btoa(String.fromCharCode(...new Uint8Array(authKey)))
+        }
+      };
+
+      // Try to save with retry
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const { error } = await supabase.functions.invoke('subscribe-push', {
+          body: subscriptionData
+        });
+
+        if (!error) {
+          console.log('✅ Backend sync successful');
+          return;
+        }
+
+        if (attempt === 1) {
+          console.warn('⚠️ Backend sync failed, retrying in 500ms...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } else {
+          console.error('❌ Backend sync failed after retry:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing subscription:', error);
     }
   };
 
@@ -117,6 +186,19 @@ export function usePushNotifications(): PushNotificationState {
       }
       console.log('✅ VAPID public key received:', vapidData.publicKey.substring(0, 20) + '...');
 
+      // Validate VAPID key format
+      try {
+        const vapidKeyBytes = urlBase64ToUint8Array(vapidData.publicKey);
+        console.log('🔍 VAPID key length:', vapidKeyBytes.length, 'bytes');
+        if (vapidKeyBytes.length !== 65) {
+          throw new Error(`Invalid VAPID key length: ${vapidKeyBytes.length} bytes (expected 65)`);
+        }
+        console.log('✅ VAPID key validated');
+      } catch (validationError) {
+        console.error('❌ VAPID key validation failed:', validationError);
+        throw new Error('Invalid VAPID public key format');
+      }
+
       // Step 6: Clear any existing subscription (handles VAPID key changes and stale subs)
       console.log('🔍 Step 6: Checking for existing subscription');
       const existingSubscription = await registration.pushManager.getSubscription();
@@ -134,7 +216,7 @@ export function usePushNotifications(): PushNotificationState {
       });
       console.log('✅ Push subscription created:', subscription.endpoint.substring(0, 50) + '...');
 
-      // Step 8: Send subscription to backend
+      // Step 8: Send subscription to backend with retry
       console.log('🔍 Step 8: Sending subscription to backend');
       const p256dhKey = subscription.getKey('p256dh');
       const authKey = subscription.getKey('auth');
@@ -152,9 +234,22 @@ export function usePushNotifications(): PushNotificationState {
       };
       console.log('📤 Subscription data prepared, sending to subscribe-push function');
 
-      const { data: subData, error: subError } = await supabase.functions.invoke('subscribe-push', {
-        body: subscriptionData
-      });
+      // Try with retry
+      let subData, subError;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const result = await supabase.functions.invoke('subscribe-push', {
+          body: subscriptionData
+        });
+        subData = result.data;
+        subError = result.error;
+
+        if (!subError) break;
+
+        if (attempt === 1) {
+          console.warn('⚠️ Backend save failed, retrying in 500ms...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
 
       if (subError) {
         console.error('❌ Error from subscribe-push function:', subError);

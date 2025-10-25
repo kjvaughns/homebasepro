@@ -109,6 +109,7 @@ import PWALaunch from "./pages/PWALaunch";
 import AdminCommerce from "./pages/admin/Commerce";
 import AdminUsersAccess from "./pages/admin/UsersAccess";
 import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
+import PushDebug from "./pages/debug/PushDebug";
 import BookProvider from "./pages/BookProvider";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -245,10 +246,7 @@ const App = () => {
       document.body.classList.add('capacitor', platform);
     }
 
-    // Conditionally register service worker (skip on native to avoid cache conflicts)
-    if (!isNative) {
-      registerServiceWorker();
-    }
+    // Service worker registered in main.tsx - avoid double registration
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
@@ -345,6 +343,9 @@ const App = () => {
             } />
 
             <Route path="/become-provider" element={<BecomeProvider />} />
+            
+            {/* Debug Routes (dev only) */}
+            <Route path="/debug/pwa" element={<PushDebug />} />
 
             {/* Homeowner Routes */}
             <Route path="/homeowner" element={<OnboardingGuard requiredFor="homeowner"><HomeownerLayout /></OnboardingGuard>}>

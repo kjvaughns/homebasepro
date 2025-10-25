@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, Bell, Download, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Smartphone, Bell, Download, CheckCircle, XCircle, AlertCircle, Bug } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { InstallPromptDialog } from './InstallPromptDialog';
 import { PushPermissionDialog } from './PushPermissionDialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 export function PWASettingsCard() {
   const { canInstall, isInstalled, isIOS, promptInstall, dismissInstall } = usePWAInstall();
@@ -17,7 +18,9 @@ export function PWASettingsCard() {
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const [showPushDialog, setShowPushDialog] = useState(false);
   const [vapidAvailable, setVapidAvailable] = useState(false);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Check if VAPID keys are configured
   useEffect(() => {
@@ -55,7 +58,21 @@ export function PWASettingsCard() {
       });
       return;
     }
-    setShowPushDialog(true);
+    setSaving(true);
+    toast({
+      title: 'Saving device...',
+      description: 'Registering this device for notifications'
+    });
+    
+    const success = await subscribe();
+    setSaving(false);
+    
+    if (success) {
+      toast({
+        title: 'Device saved',
+        description: 'Push notifications are now enabled'
+      });
+    }
   };
 
   const handleTestNotification = async () => {
@@ -196,36 +213,50 @@ export function PWASettingsCard() {
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  {!isSubscribed ? (
-                    <Button 
-                      onClick={handleEnablePush} 
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      <Bell className="h-4 w-4 mr-2" />
-                      Enable Notifications
-                    </Button>
-                  ) : (
-                    <>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    {!isSubscribed ? (
                       <Button 
-                        onClick={unsubscribe} 
-                        disabled={loading}
-                        variant="outline"
+                        onClick={handleEnablePush} 
+                        disabled={loading || saving}
                         className="flex-1"
                       >
-                        Disable Notifications
+                        <Bell className="h-4 w-4 mr-2" />
+                        Enable Notifications
                       </Button>
-                      {import.meta.env.DEV && (
+                    ) : (
+                      <>
                         <Button 
-                          onClick={handleTestNotification}
-                          variant="secondary"
-                          size="sm"
+                          onClick={unsubscribe} 
+                          disabled={loading}
+                          variant="outline"
+                          className="flex-1"
                         >
-                          Test
+                          Disable Notifications
                         </Button>
-                      )}
-                    </>
+                        {import.meta.env.DEV && (
+                          <Button 
+                            onClick={handleTestNotification}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Test
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  
+                  {import.meta.env.DEV && (
+                    <Button 
+                      onClick={() => navigate('/debug/pwa')}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Bug className="h-4 w-4 mr-2" />
+                      Debug Panel
+                    </Button>
                   )}
                 </div>
               </div>

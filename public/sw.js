@@ -126,3 +126,17 @@ self.addEventListener('notificationclick', (event) => {
       })
   );
 });
+
+// Handle push subscription changes (browser refresh/invalidation)
+self.addEventListener('pushsubscriptionchange', (event) => {
+  console.log('🔄 Push subscription changed event');
+  
+  event.waitUntil(
+    // Notify all clients to re-sync their subscriptions
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage({ type: 'PUSH_SUBSCRIPTION_CHANGED' });
+      });
+    })
+  );
+});
