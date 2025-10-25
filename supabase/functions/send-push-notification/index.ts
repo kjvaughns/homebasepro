@@ -76,6 +76,51 @@ function rawPrivateKeyToPKCS8(rawKey: Uint8Array): Uint8Array {
   return pkcs8;
 }
 
+// Convert DER-encoded ECDSA signature to raw format (r || s)
+function derToRaw(der: Uint8Array): Uint8Array {
+  // DER format: 0x30 [total-length] 0x02 [r-length] [r] 0x02 [s-length] [s]
+  // We need to extract r and s and concatenate them (each should be 32 bytes for P-256)
+  
+  let offset = 2; // Skip 0x30 and total length
+  
+  // Parse r
+  if (der[offset++] !== 0x02) throw new Error('Invalid DER signature');
+  let rLength = der[offset++];
+  
+  // Skip leading zero byte if present (r might be 33 bytes with leading 0x00)
+  let rStart = offset;
+  if (rLength === 33 && der[rStart] === 0x00) {
+    rStart++;
+    rLength = 32;
+  }
+  const r = der.slice(rStart, rStart + rLength);
+  
+  // Parse s
+  offset = rStart + (der[rStart - 1] === 0x00 ? 33 : 32);
+  if (der[offset++] !== 0x02) throw new Error('Invalid DER signature');
+  let sLength = der[offset++];
+  
+  let sStart = offset;
+  if (sLength === 33 && der[sStart] === 0x00) {
+    sStart++;
+    sLength = 32;
+  }
+  const s = der.slice(sStart, sStart + sLength);
+  
+  // Pad r and s to 32 bytes if needed
+  const rPadded = new Uint8Array(32);
+  const sPadded = new Uint8Array(32);
+  rPadded.set(r, 32 - r.length);
+  sPadded.set(s, 32 - s.length);
+  
+  // Concatenate r || s
+  const raw = new Uint8Array(64);
+  raw.set(rPadded, 0);
+  raw.set(sPadded, 32);
+  
+  return raw;
+}
+
 // Create properly signed VAPID JWT
 async function createVapidAuthHeader(
   audience: string,
@@ -162,7 +207,14 @@ async function createVapidAuthHeader(
     new TextEncoder().encode(unsignedToken)
   );
 
-  const signatureBase64 = uint8ArrayToBase64Url(new Uint8Array(signature));
+  // Convert DER signature to raw format (required by VAPID spec)
+  const derSignature = new Uint8Array(signature);
+  console.log('🔏 DER signature length:', derSignature.length);
+
+  const rawSignature = derToRaw(derSignature);
+  console.log('✅ Raw signature length:', rawSignature.length, '(should be 64)');
+
+  const signatureBase64 = uint8ArrayToBase64Url(rawSignature);
   
   return `vapid t=${unsignedToken}.${signatureBase64}, k=${publicKey}`;
 }
