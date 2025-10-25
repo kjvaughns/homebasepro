@@ -135,11 +135,10 @@ function derToRaw(der: Uint8Array): Uint8Array {
   return raw;
 }
 
-// Create properly signed VAPID JWT
-async function createVapidAuthHeader(
+// Create properly signed VAPID JWT (returns just the JWT, not the full Authorization header)
+async function createVapidJWT(
   audience: string,
   subject: string,
-  publicKey: string,
   privateKeyBase64: string
 ): Promise<string> {
   // JWT header
@@ -239,7 +238,8 @@ async function createVapidAuthHeader(
   console.log('✅ Raw signature length:', rawSignature.length, '(should be 64)');
   const signatureBase64 = uint8ArrayToBase64Url(rawSignature);
   
-  return `vapid t=${unsignedToken}.${signatureBase64}, k=${publicKey}`;
+  // Return just the JWT
+  return `${unsignedToken}.${signatureBase64}`;
 }
 
 interface PushResult {
@@ -257,27 +257,57 @@ async function sendPushNotification(
   try {
     const parsedUrl = new URL(subscription.endpoint);
     const audience = `${parsedUrl.protocol}//${parsedUrl.host}`;
+    const endpointHost = parsedUrl.host;
 
-    // Create proper VAPID authorization header
-    const authHeader = await createVapidAuthHeader(
+    console.log(`📍 Endpoint: ${endpointHost}, Audience: ${audience}`);
+
+    // Validate VAPID public key is 65 bytes (uncompressed P-256 point)
+    const publicKeyBytes = base64UrlToUint8Array(vapidDetails.publicKey);
+    if (publicKeyBytes.length !== 65) {
+      console.error(`❌ Invalid VAPID public key length: ${publicKeyBytes.length} (expected 65)`);
+      throw new Error(`Invalid VAPID public key length: ${publicKeyBytes.length}, expected 65 bytes`);
+    }
+    console.log('✅ VAPID public key validated (65 bytes)');
+
+    // Create VAPID JWT
+    const jwt = await createVapidJWT(
       audience,
       vapidDetails.subject,
-      vapidDetails.publicKey,
       vapidDetails.privateKey
     );
 
-    // For simplicity, we'll send a minimal notification trigger
-    // The service worker will handle displaying the notification
-    const headers = {
-      'Authorization': authHeader,
+    // Try primary scheme: WebPush with separate Crypto-Key header (most widely supported)
+    console.log('🔐 Attempting WebPush scheme (primary)');
+    const primaryHeaders = {
+      'Authorization': `WebPush ${jwt}`,
+      'Crypto-Key': `p256ecdsa=${vapidDetails.publicKey}`,
       'TTL': '86400',
       'Content-Length': '0'
     };
 
-    const response = await fetch(subscription.endpoint, {
+    let response = await fetch(subscription.endpoint, {
       method: 'POST',
-      headers
+      headers: primaryHeaders
     });
+
+    // If primary scheme fails with auth error, retry with fallback vapid scheme
+    if ((response.status === 401 || response.status === 403) && !response.ok) {
+      const errorText = await response.text().catch(() => '');
+      console.warn(`⚠️ WebPush scheme rejected: ${response.status} ${errorText}`);
+      console.log('🔐 Retrying with vapid scheme (fallback)');
+      
+      const fallbackHeaders = {
+        'Authorization': `vapid t=${jwt}, k=${vapidDetails.publicKey}`,
+        'Crypto-Key': `p256ecdsa=${vapidDetails.publicKey}`,
+        'TTL': '86400',
+        'Content-Length': '0'
+      };
+
+      response = await fetch(subscription.endpoint, {
+        method: 'POST',
+        headers: fallbackHeaders
+      });
+    }
 
     // Only mark as expired for permanent failures (404 Not Found or 410 Gone)
     if (response.status === 410 || response.status === 404) {
@@ -292,7 +322,8 @@ async function sendPushNotification(
 
     // Other errors (401, 403, 5xx) are temporary - don't delete subscription
     const text = await response.text().catch(() => '');
-    console.error(`❌ Push failed (non-fatal): ${response.status} ${text}`);
+    console.error(`❌ Push failed (both schemes): ${response.status} ${text}`);
+    console.error(`📊 Endpoint: ${endpointHost}, Audience: ${audience}`);
     return { success: false, expired: false, status: response.status, reason: text };
   } catch (error) {
     console.error('❌ Push send error (non-fatal):', error);
