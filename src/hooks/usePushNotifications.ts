@@ -117,16 +117,25 @@ export function usePushNotifications(): PushNotificationState {
       }
       console.log('✅ VAPID public key received:', vapidData.publicKey.substring(0, 20) + '...');
 
-      // Step 6: Subscribe to push manager
-      console.log('🔍 Step 6: Subscribing to push manager');
+      // Step 6: Clear any existing subscription (handles VAPID key changes and stale subs)
+      console.log('🔍 Step 6: Checking for existing subscription');
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        console.log('⚠️ Found existing subscription, unsubscribing first to ensure fresh subscription');
+        await existingSubscription.unsubscribe().catch((e) => console.warn('Unsubscribe failed:', e));
+        console.log('✅ Old subscription cleared');
+      }
+
+      // Step 7: Subscribe to push manager
+      console.log('🔍 Step 7: Subscribing to push manager');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey) as BufferSource
       });
       console.log('✅ Push subscription created:', subscription.endpoint.substring(0, 50) + '...');
 
-      // Step 7: Send subscription to backend
-      console.log('🔍 Step 7: Sending subscription to backend');
+      // Step 8: Send subscription to backend
+      console.log('🔍 Step 8: Sending subscription to backend');
       const p256dhKey = subscription.getKey('p256dh');
       const authKey = subscription.getKey('auth');
       

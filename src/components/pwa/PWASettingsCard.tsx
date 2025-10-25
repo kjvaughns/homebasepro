@@ -83,9 +83,19 @@ export function PWASettingsCard() {
 
       console.log('✅ Test notification response:', data);
       
+      // Check if no subscriptions found
+      if (data?.message === 'No subscriptions found') {
+        toast({
+          title: 'No subscriptions found',
+          description: 'No subscriptions found for this account on this device. Please enable notifications on this device, or toggle them off and on again.',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
       toast({
         title: 'Test notification sent',
-        description: 'You should receive it shortly'
+        description: data?.sent > 0 ? `Sent to ${data.sent} device(s)` : 'You should receive it shortly'
       });
     } catch (error) {
       console.error('❌ Failed to send test notification:', error);

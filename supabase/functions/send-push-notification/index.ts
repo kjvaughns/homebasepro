@@ -332,7 +332,8 @@ serve(async (req) => {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      console.log('ℹ️ No subscriptions found');
+      console.log('ℹ️ No subscriptions found for user:', currentUserId || '(service role - no user filter)');
+      console.log('📋 Query filters:', { userIds: userIds?.length || 0, isServiceRole, currentUserId });
       return new Response(
         JSON.stringify({ sent: 0, failed: 0, message: 'No subscriptions found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
