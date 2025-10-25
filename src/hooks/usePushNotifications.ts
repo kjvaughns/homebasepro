@@ -15,6 +15,7 @@ export function usePushNotifications(): PushNotificationState {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
 
   // Auto-sync subscription to backend on mount
@@ -23,9 +24,9 @@ export function usePushNotifications(): PushNotificationState {
       setPermission(Notification.permission);
       checkSubscription();
       
-      // If permission granted, ensure backend is synced
+      // Delay backend sync to avoid race conditions with initial subscribe flows
       if (Notification.permission === 'granted') {
-        ensureBackendSync();
+        setTimeout(() => ensureBackendSync(), 1000);
       }
     }
 
@@ -56,6 +57,11 @@ export function usePushNotifications(): PushNotificationState {
 
   // Ensure browser subscription is saved to backend
   const ensureBackendSync = async () => {
+    if (isSubscribing) {
+      console.log('⏭️ Skipping backend sync - subscription in progress');
+      return;
+    }
+    
     if (!('serviceWorker' in navigator)) return;
 
     try {
@@ -107,6 +113,7 @@ export function usePushNotifications(): PushNotificationState {
 
   const subscribe = async (): Promise<boolean> => {
     console.log('🔔 Starting push notification subscription flow');
+    setIsSubscribing(true);
     setLoading(true);
 
     try {
@@ -203,9 +210,21 @@ export function usePushNotifications(): PushNotificationState {
       console.log('🔍 Step 6: Checking for existing subscription');
       const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
-        console.log('⚠️ Found existing subscription, unsubscribing first to ensure fresh subscription');
+        console.log('⚠️ Found existing subscription, cleaning up backend first');
+        
+        // DELETE FROM BACKEND FIRST
+        try {
+          await supabase.functions.invoke('unsubscribe-push', {
+            body: { endpoint: existingSubscription.endpoint }
+          });
+          console.log('✅ Old subscription removed from backend');
+        } catch (e) {
+          console.warn('⚠️ Backend cleanup failed (non-fatal):', e);
+        }
+        
+        // THEN delete from browser
         await existingSubscription.unsubscribe().catch((e) => console.warn('Unsubscribe failed:', e));
-        console.log('✅ Old subscription cleared');
+        console.log('✅ Old subscription cleared from browser');
       }
 
       // Step 7: Subscribe to push manager
@@ -281,6 +300,7 @@ export function usePushNotifications(): PushNotificationState {
       return false;
     } finally {
       setLoading(false);
+      setIsSubscribing(false);
     }
   };
 
