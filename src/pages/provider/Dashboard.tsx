@@ -16,6 +16,7 @@ import { SetupChecklist } from "@/components/provider/SetupChecklist";
 import { BusinessFlowWidget } from "@/components/provider/BusinessFlowWidget";
 import { RemindersWidget } from "@/components/provider/RemindersWidget";
 import { AIChatModal } from "@/components/ai/AIChatModal";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,

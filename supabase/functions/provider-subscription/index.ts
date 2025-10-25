@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.74.0';
+import { getAppUrl } from '../_shared/env.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -339,7 +340,7 @@ serve(async (req) => {
                 plan: plan,
               }
             },
-            success_url: `${req.headers.get('origin') || 'https://homebaseproapp.com'}/provider/dashboard?setup=complete`,
+            success_url: `${getAppUrl()}/provider/dashboard?setup=complete`,
             cancel_url: `${req.headers.get('origin') || 'https://homebaseproapp.com'}/onboarding/provider?canceled=true`,
             payment_method_collection: 'always',
             metadata: {
@@ -439,16 +440,6 @@ serve(async (req) => {
       );
     }
 
-    if (action === 'get-stripe-subscription') {
-      const { subscriptionId } = await req.json();
-      const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-      return new Response(
-        JSON.stringify({ subscription: { cancel_at_period_end: stripeSub.cancel_at_period_end } }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // BUG-007 FIX: Get full Stripe subscription details
     if (action === 'get-stripe-subscription') {
       const { subscriptionId } = await req.json();
       
