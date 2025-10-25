@@ -78,46 +78,60 @@ function rawPrivateKeyToPKCS8(rawKey: Uint8Array): Uint8Array {
 
 // Convert DER-encoded ECDSA signature to raw format (r || s)
 function derToRaw(der: Uint8Array): Uint8Array {
-  // DER format: 0x30 [total-length] 0x02 [r-length] [r] 0x02 [s-length] [s]
-  // We need to extract r and s and concatenate them (each should be 32 bytes for P-256)
-  
-  let offset = 2; // Skip 0x30 and total length
-  
-  // Parse r
-  if (der[offset++] !== 0x02) throw new Error('Invalid DER signature');
-  let rLength = der[offset++];
-  
-  // Skip leading zero byte if present (r might be 33 bytes with leading 0x00)
-  let rStart = offset;
-  if (rLength === 33 && der[rStart] === 0x00) {
-    rStart++;
-    rLength = 32;
-  }
-  const r = der.slice(rStart, rStart + rLength);
-  
-  // Parse s
-  offset = rStart + (der[rStart - 1] === 0x00 ? 33 : 32);
-  if (der[offset++] !== 0x02) throw new Error('Invalid DER signature');
-  let sLength = der[offset++];
-  
-  let sStart = offset;
-  if (sLength === 33 && der[sStart] === 0x00) {
-    sStart++;
-    sLength = 32;
-  }
-  const s = der.slice(sStart, sStart + sLength);
-  
-  // Pad r and s to 32 bytes if needed
-  const rPadded = new Uint8Array(32);
-  const sPadded = new Uint8Array(32);
-  rPadded.set(r, 32 - r.length);
-  sPadded.set(s, 32 - s.length);
-  
-  // Concatenate r || s
+  // DER structure: SEQUENCE { INTEGER r, INTEGER s }
+  let offset = 0;
+
+  // Expect SEQUENCE (0x30)
+  if (der[offset++] !== 0x30) throw new Error('Invalid DER: expected SEQUENCE');
+
+  // Read DER length (supports short and long forms)
+  const readLen = (buf: Uint8Array, off: number) => {
+    let lenByte = buf[off++];
+    if (lenByte < 0x80) return { len: lenByte, off };
+    const numBytes = lenByte & 0x7f;
+    if (numBytes === 0 || numBytes > 4) throw new Error('Invalid DER: length too long');
+    let len = 0;
+    for (let i = 0; i < numBytes; i++) {
+      len = (len << 8) | buf[off++];
+    }
+    return { len, off };
+  };
+
+  const seq = readLen(der, offset);
+  const seqLen = seq.len; // Not strictly used but validated implicitly by parsing
+  offset = seq.off;
+
+  // Expect INTEGER (r)
+  if (der[offset++] !== 0x02) throw new Error('Invalid DER: expected INTEGER (r)');
+  const rInfo = readLen(der, offset); let rLen = rInfo.len; offset = rInfo.off;
+  let r = der.slice(offset, offset + rLen); offset += rLen;
+
+  // Expect INTEGER (s)
+  if (der[offset++] !== 0x02) throw new Error('Invalid DER: expected INTEGER (s)');
+  const sInfo = readLen(der, offset); let sLen = sInfo.len; offset = sInfo.off;
+  let s = der.slice(offset, offset + sLen);
+
+  // Helper to trim leading zeros (positive INTEGER encoding)
+  const trim = (arr: Uint8Array) => {
+    let i = 0;
+    while (i < arr.length - 1 && arr[i] === 0) i++;
+    return arr.slice(i);
+  };
+
+  r = trim(r);
+  s = trim(s);
+
+  // Ensure at most 32 bytes (P-256 component size). If longer, take the rightmost 32 bytes.
+  if (r.length > 32) r = r.slice(r.length - 32);
+  if (s.length > 32) s = s.slice(s.length - 32);
+
+  // Left-pad to 32 bytes
+  const rPadded = new Uint8Array(32); rPadded.set(r, 32 - r.length);
+  const sPadded = new Uint8Array(32); sPadded.set(s, 32 - s.length);
+
   const raw = new Uint8Array(64);
   raw.set(rPadded, 0);
   raw.set(sPadded, 32);
-  
   return raw;
 }
 
@@ -216,12 +230,10 @@ async function createVapidAuthHeader(
     // Already in raw format (r || s)
     console.log('✅ Signature already in raw format');
     rawSignature = signatureBytes;
-  } else if (signatureBytes.length >= 70 && signatureBytes.length <= 72) {
-    // DER-encoded, needs conversion
-    console.log('🔄 Converting DER signature to raw format');
-    rawSignature = derToRaw(signatureBytes);
   } else {
-    throw new Error(`Unexpected signature length: ${signatureBytes.length} (expected 64 or 70-72)`);
+    // Attempt DER -> raw conversion for any other length
+    console.log('🔄 Attempting to convert DER signature to raw format');
+    rawSignature = derToRaw(signatureBytes);
   }
 
   console.log('✅ Raw signature length:', rawSignature.length, '(should be 64)');
