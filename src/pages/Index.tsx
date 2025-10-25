@@ -94,7 +94,7 @@ const Index = () => {
                 size="sm" 
                 className="h-9 text-sm px-4 whitespace-nowrap"
               >
-                Get Started Free
+                Get Started
               </Button>
             </div>
 
@@ -110,7 +110,7 @@ const Index = () => {
           <p className="text-center text-sm md:text-base">
             <span className="font-semibold text-[hsl(var(--primary))]">🎉 BETA LAUNCH</span>
             {" · "}
-            Provider plans at $15/mo with 14-day free trial (card required)
+            Free for homeowners · Provider plans available
             {" · "}
             <button 
               onClick={() => navigate("/pricing")} 
@@ -130,7 +130,7 @@ const Index = () => {
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in">
                 <Star className="h-4 w-4" />
-                <span className="text-xs sm:text-sm font-medium">🎉 Now Open: Start Your Free Trial Today</span>
+                <span className="text-xs sm:text-sm font-medium">Get Started Today · Free for Homeowners</span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
                 Never forget maintenance again
@@ -145,7 +145,7 @@ const Index = () => {
                   onClick={() => navigate("/register")}
                   className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
                 >
-                  Start Free Trial
+                  Get Started
                 </Button>
                 
                 <div className="flex flex-wrap gap-3 justify-center md:justify-start">

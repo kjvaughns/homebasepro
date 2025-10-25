@@ -68,11 +68,11 @@ const Pricing = () => {
           ⚡ BETA LAUNCH SPECIAL
         </Badge>
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          Start Your Free Trial Today
+          Simple, Transparent Pricing
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Get booked, manage clients, and get paid—all in one platform.<br />
-          <strong>14 days free, then just $15/month.</strong>
+          Free forever for homeowners. Flexible plans for service providers.<br />
+          Get booked, manage clients, and get paid—all in one platform.
         </p>
       </section>
 
@@ -89,8 +89,8 @@ const Pricing = () => {
               <span className="text-5xl font-bold">$0</span>
               <span className="text-muted-foreground">/month</span>
             </div>
-            <CardDescription className="mt-2">
-              Perfect to get started
+            <CardDescription className="mt-2 text-base font-medium">
+              For Homeowners & New Providers
             </CardDescription>
           </CardHeader>
 
@@ -131,11 +131,14 @@ const Pricing = () => {
             <div className="flex justify-center mb-4">
               <Badge className="bg-primary text-primary-foreground">BETA ACCESS</Badge>
             </div>
-            <CardTitle className="text-3xl">HomeBase BETA</CardTitle>
+            <CardTitle className="text-3xl">Beta Plan</CardTitle>
             <div className="mt-4">
               <span className="text-5xl font-bold text-primary">$15</span>
               <span className="text-muted-foreground">/month</span>
             </div>
+            <CardDescription className="mt-2 text-base font-medium">
+              For Growing Service Providers
+            </CardDescription>
             <CardDescription className="mt-2">
               <Badge variant="outline" className="text-xs">
                 14-day free trial (card required)
@@ -214,6 +217,12 @@ const Pricing = () => {
               <h3 className="font-semibold mb-2">What are the 3% transaction fees?</h3>
               <p className="text-muted-foreground text-sm">
                 When you receive payments through HomeBase, we charge 3% per transaction. This covers payment processing and platform costs.
+              </p>
+            </Card>
+            <Card className="p-6">
+              <h3 className="font-semibold mb-2">Is HomeBase really free for homeowners?</h3>
+              <p className="text-muted-foreground text-sm">
+                Yes! Homeowners can browse providers, book services, and manage appointments completely free. Service providers pay a subscription to access business tools and accept bookings.
               </p>
             </Card>
           </div>

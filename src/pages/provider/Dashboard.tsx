@@ -42,6 +42,14 @@ export default function ProviderDashboard() {
   useEffect(() => {
     loadUserProfile();
     checkStripeStatus();
+    
+    // Check if returning from Stripe checkout
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('setup') === 'complete') {
+      toast.success("🎉 Subscription activated! Welcome to HomeBase Beta.");
+      // Clear the URL parameter
+      window.history.replaceState({}, '', '/provider/dashboard');
+    }
   }, []);
 
   const loadUserProfile = async () => {

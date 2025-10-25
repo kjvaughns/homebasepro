@@ -339,7 +339,7 @@ serve(async (req) => {
                 plan: plan,
               }
             },
-            success_url: `${req.headers.get('origin') || 'https://homebaseproapp.com'}/provider/dashboard?trial_started=true`,
+            success_url: `${req.headers.get('origin') || 'https://homebaseproapp.com'}/provider/dashboard?setup=complete`,
             cancel_url: `${req.headers.get('origin') || 'https://homebaseproapp.com'}/onboarding/provider?canceled=true`,
             payment_method_collection: 'always',
             metadata: {
