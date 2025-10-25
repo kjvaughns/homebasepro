@@ -30,6 +30,23 @@ function uint8ArrayToBase64Url(array: Uint8Array): string {
     .replace(/=/g, '');
 }
 
+// Parse PEM format private key and return raw PKCS#8 bytes
+function parsePemPrivateKey(pemKey: string): Uint8Array {
+  // Remove PEM headers/footers and whitespace
+  const base64 = pemKey
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\s/g, '');
+  
+  // Decode standard Base64 (not URL-safe)
+  const rawData = atob(base64);
+  const bytes = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    bytes[i] = rawData.charCodeAt(i);
+  }
+  return bytes;
+}
+
 // Convert raw 32-byte EC private key to PKCS#8 format
 function rawPrivateKeyToPKCS8(rawKey: Uint8Array): Uint8Array {
   // PKCS#8 structure for EC P-256 private key
@@ -83,7 +100,16 @@ async function createVapidAuthHeader(
   );
 
   // Import private key for signing
-  const privateKeyBytes = base64UrlToUint8Array(privateKeyBase64);
+  let privateKeyBytes: Uint8Array;
+  
+  // Check if it's a PEM format key
+  if (privateKeyBase64.includes('-----BEGIN PRIVATE KEY-----')) {
+    console.log('🔑 Detected PEM format VAPID private key');
+    privateKeyBytes = parsePemPrivateKey(privateKeyBase64);
+  } else {
+    // Base64 URL-safe encoded raw bytes
+    privateKeyBytes = base64UrlToUint8Array(privateKeyBase64);
+  }
   
   let privateKey: CryptoKey;
   
