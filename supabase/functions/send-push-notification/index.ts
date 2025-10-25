@@ -107,8 +107,19 @@ async function createVapidAuthHeader(
     console.log('🔑 Detected PEM format VAPID private key');
     privateKeyBytes = parsePemPrivateKey(privateKeyBase64);
   } else {
-    // Base64 URL-safe encoded raw bytes
-    privateKeyBytes = base64UrlToUint8Array(privateKeyBase64);
+    // Try decoding as standard Base64 first (raw 32-byte EC key)
+    try {
+      const rawData = atob(privateKeyBase64);
+      privateKeyBytes = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; i++) {
+        privateKeyBytes[i] = rawData.charCodeAt(i);
+      }
+      console.log('🔑 Decoded as standard Base64, length:', privateKeyBytes.length);
+    } catch (e) {
+      // Fall back to Base64 URL-safe
+      console.log('🔑 Using Base64 URL-safe decoding');
+      privateKeyBytes = base64UrlToUint8Array(privateKeyBase64);
+    }
   }
   
   let privateKey: CryptoKey;
