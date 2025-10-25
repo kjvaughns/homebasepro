@@ -167,11 +167,18 @@ async function createVapidAuthHeader(
   return `vapid t=${unsignedToken}.${signatureBase64}, k=${publicKey}`;
 }
 
+interface PushResult {
+  success: boolean;
+  expired: boolean;
+  status: number;
+  reason?: string;
+}
+
 async function sendPushNotification(
   subscription: any,
   payload: any,
   vapidDetails: any
-): Promise<boolean> {
+): Promise<PushResult> {
   try {
     const parsedUrl = new URL(subscription.endpoint);
     const audience = `${parsedUrl.protocol}//${parsedUrl.host}`;
@@ -197,21 +204,25 @@ async function sendPushNotification(
       headers
     });
 
+    // Only mark as expired for permanent failures (404 Not Found or 410 Gone)
     if (response.status === 410 || response.status === 404) {
-      console.log('🗑️ Subscription expired or not found');
-      return false;
+      console.log('🗑️ Subscription expired or not found (will be deleted)');
+      return { success: false, expired: true, status: response.status };
     }
 
     if (response.status === 201 || response.status === 200) {
       console.log('✅ Push notification sent successfully');
-      return true;
+      return { success: true, expired: false, status: response.status };
     }
 
-    console.error('❌ Push failed:', response.status, await response.text());
-    return false;
+    // Other errors (401, 403, 5xx) are temporary - don't delete subscription
+    const text = await response.text().catch(() => '');
+    console.error(`❌ Push failed (non-fatal): ${response.status} ${text}`);
+    return { success: false, expired: false, status: response.status, reason: text };
   } catch (error) {
-    console.error('❌ Push send error:', error);
-    return false;
+    console.error('❌ Push send error (non-fatal):', error);
+    const reason = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, expired: false, status: 0, reason };
   }
 }
 
@@ -375,6 +386,7 @@ serve(async (req) => {
 
     let sent = 0;
     let failed = 0;
+    let expired = 0;
     const expiredEndpoints: string[] = [];
 
     for (const sub of subscriptions) {
@@ -386,18 +398,22 @@ serve(async (req) => {
         }
       };
 
-      const success = await sendPushNotification(subscription, notification, vapidDetails);
+      const result = await sendPushNotification(subscription, notification, vapidDetails);
       
-      if (success) {
+      if (result.success) {
         sent++;
       } else {
         failed++;
-        expiredEndpoints.push(sub.endpoint);
+        if (result.expired) {
+          expired++;
+          expiredEndpoints.push(sub.endpoint);
+        }
       }
     }
 
-    console.log(`✅ Results: ${sent} sent, ❌ ${failed} failed`);
+    console.log(`✅ Results: ${sent} sent, ❌ ${failed} failed (${expired} expired)`);
 
+    // Only delete subscriptions that are truly expired (404/410), not temporary failures
     if (expiredEndpoints.length > 0) {
       await supabaseClient
         .from('push_subscriptions')
