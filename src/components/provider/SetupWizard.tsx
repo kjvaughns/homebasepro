@@ -190,7 +190,7 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
       <CreateJobModal
         open={showCreateJob}
         onOpenChange={setShowCreateJob}
-        client={firstClient}
+        preSelectedClient={firstClient}
         onSuccess={() => {
           setShowCreateJob(false);
           handleStepComplete(3);

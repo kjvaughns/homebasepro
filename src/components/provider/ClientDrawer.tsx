@@ -482,7 +482,13 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
       <CreateJobModal
         open={showJobModal}
         onOpenChange={setShowJobModal}
-        client={client}
+        preSelectedClient={{
+          id: client.id,
+          name: client.name,
+          email: client.email,
+          homeowner_profile_id: client.homeowner_profile_id,
+          address: client.address,
+        }}
         onSuccess={() => {
           setShowJobModal(false);
           refetch();
