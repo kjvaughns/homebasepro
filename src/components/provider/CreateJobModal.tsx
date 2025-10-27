@@ -59,6 +59,76 @@ export default function CreateJobModal({
 
     if (!client) {
       toast({
+        title: "Error",
+        description: "No client selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      if (!org) {
+        toast({
+          title: "Setup Required",
+          description: "Please complete your business setup",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const startDateTime = new Date(formData.scheduled_date);
+      const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+
+      const { data: result, error: bookingError } = await supabase.rpc('check_and_create_booking', {
+        p_provider_org_id: org.id,
+        p_homeowner_profile_id: client.homeowner_profile_id,
+        p_service_name: formData.service_name,
+        p_address: client.address || 'Address not provided',
+        p_date_time_start: startDateTime.toISOString(),
+        p_date_time_end: endDateTime.toISOString(),
+        p_notes: formData.notes || null,
+        p_home_id: null
+      }) as { data: any; error: any };
+
+      if (bookingError) throw bookingError;
+
+      if (!result?.success) {
+        toast({
+          title: "Scheduling Conflict",
+          description: result?.error || "This time slot is already booked",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Job created successfully",
+      });
+      onSuccess();
+    } catch (error: any) {
+      console.error("Job creation error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create job",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+      toast({
         title: "No Client Selected",
         description: "Please select a client first",
         variant: "destructive",

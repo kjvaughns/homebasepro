@@ -170,8 +170,10 @@ serve(async (req) => {
       platformFeeAmount
     });
 
-    // Create payment link with all line items and application fee
+    // Create payment link with all line items, application fee, and 30-day expiration
     const appUrl = Deno.env.get('APP_URL') || 'https://lovable.app';
+    const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days from now
+    
     const paymentLink = await stripePost(
       'payment_links',
       {
@@ -186,6 +188,7 @@ serve(async (req) => {
           enabled: true
         },
         application_fee_amount: platformFeeAmount,
+        expires_at: expiresAt,
         metadata: {
           invoice_id: invoiceId,
           org_id: orgId,
@@ -199,14 +202,17 @@ serve(async (req) => {
     console.log('✅ Payment link created:', paymentLink.id);
     console.log('🔗 Payment URL:', paymentLink.url);
 
-    // Update database with Stripe payment link data
+    // Update database with Stripe payment link data and expiration
+    const expiresAtDate = new Date(expiresAt * 1000).toISOString();
+    
     await supabaseClient
       .from('invoices')
       .update({
         stripe_payment_link_id: paymentLink.id,
         stripe_hosted_url: paymentLink.url,
         stripe_customer_id: customer.id,
-        email_status: 'pending'
+        email_status: 'pending',
+        expires_at: expiresAtDate
       })
       .eq('id', invoiceId);
 

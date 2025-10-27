@@ -75,6 +75,21 @@ export function BalanceWidget() {
     setProcessingPayout(true);
 
     try {
+      // Check instant payout eligibility first
+      const { data: eligibility } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'check-payout-eligibility' }
+      });
+
+      if (eligibility && !eligibility.eligible) {
+        toast({
+          title: 'Instant payouts not available',
+          description: eligibility.reason || 'Standard payouts will arrive in 2-3 business days',
+          variant: 'default',
+        });
+        setShowPayoutDialog(false);
+        return;
+      }
+
       const { error } = await supabase.functions.invoke('payments-api', {
         body: {
           action: 'instant-payout',
@@ -94,9 +109,21 @@ export function BalanceWidget() {
       loadBalance();
     } catch (error: any) {
       console.error('Payout error:', error);
+      
+      // Parse specific error messages
+      let errorMessage = error.message || 'Failed to process instant payout';
+      
+      if (errorMessage.includes('insufficient_funds')) {
+        errorMessage = 'Insufficient balance for payout';
+      } else if (errorMessage.includes('account_not_verified')) {
+        errorMessage = 'Complete account verification to enable payouts';
+      } else if (errorMessage.includes('payout_limit_exceeded')) {
+        errorMessage = 'Payout limit exceeded. Try a smaller amount or wait 24 hours';
+      }
+
       toast({
         title: 'Payout failed',
-        description: error.message || 'Failed to process instant payout',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

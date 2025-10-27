@@ -186,6 +186,32 @@ serve(async (req) => {
       }
     }
 
+    // CHECK INSTANT PAYOUT ELIGIBILITY
+    if (action === 'check-payout-eligibility') {
+      if (!user || !org || !org.stripe_account_id) {
+        return errorResponse('UNAUTHORIZED', 'User authentication required', 401);
+      }
+
+      try {
+        const account = await stripeGet(`accounts/${org.stripe_account_id}`);
+        
+        const hasInstantPayouts = account.capabilities?.instant_payouts === 'active';
+        const hasBalance = account.balance && (account.balance.available?.[0]?.amount || 0) > 0;
+
+        return successResponse({
+          eligible: hasInstantPayouts,
+          reason: !hasInstantPayouts ? 'Instant payouts not enabled for your account' : null,
+          hasBalance,
+          capabilities: account.capabilities
+        });
+      } catch (error: any) {
+        await logError(supabase, org.id, 'stripe-connect:check-eligibility', { action }, error.message, error);
+        return errorResponse('ELIGIBILITY_CHECK_FAILED', 'Failed to check payout eligibility', 500, {
+          stripe_error: formatStripeError(error)
+        });
+      }
+    }
+
     // CHECK STATUS (public - can work without full auth)
     if (action === 'check-status') {
       if (!user || !org || !org.stripe_account_id) {

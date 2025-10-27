@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Calendar, momentLocalizer, View, Event } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Loader2, Route } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import './JobsCalendar.css';
@@ -24,6 +27,8 @@ const DnDCalendar = withDragAndDrop(Calendar);
 
 export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
   const localizer = momentLocalizer(moment);
+  const [optimizing, setOptimizing] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const events: JobEvent[] = jobs
     .filter(job => job.window_start && job.window_end)
@@ -82,7 +87,6 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
         `Job rescheduled to ${moment(start).format('MMM DD, YYYY [at] h:mm A')}`
       );
 
-      // Force refresh by calling parent's load function
       window.location.reload();
     } catch (error) {
       console.error('Error rescheduling job:', error);
@@ -110,23 +114,81 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
     }
   };
 
+  const handleOptimizeRoute = async () => {
+    if (!selectedDate) {
+      toast.error('Please select a date by clicking on it');
+      return;
+    }
+
+    const dayStart = moment(selectedDate).startOf('day');
+    const dayEnd = moment(selectedDate).endOf('day');
+    
+    const dayJobs = jobs.filter(job => {
+      const jobDate = moment(job.window_start);
+      return jobDate.isBetween(dayStart, dayEnd) && job.lat && job.lng;
+    });
+
+    if (dayJobs.length < 2) {
+      toast.error('Need at least 2 jobs with addresses on this day to optimize');
+      return;
+    }
+
+    setOptimizing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('optimize-route', {
+        body: { jobIds: dayJobs.map(j => j.id) }
+      });
+
+      if (error) throw error;
+
+      toast.success(
+        `Route optimized! Saved ${data.distanceSaved} miles (${data.timeSaved})`
+      );
+
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Route optimization error:', error);
+      toast.error(error.message || 'Failed to optimize route');
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const handleSelectSlot = (slotInfo: any) => {
+    setSelectedDate(slotInfo.start);
+  };
+
   return (
-    <div className="jobs-calendar-wrapper">
-      <DnDCalendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 600 }}
-        eventPropGetter={eventStyleGetter}
-        onSelectEvent={(event) => onSelectJob(event.resource)}
-        onEventDrop={handleEventDrop}
-        onEventResize={handleEventResize}
-        views={['month', 'week', 'day']}
-        defaultView="week"
-        resizable
-        draggableAccessor={() => true}
-      />
+    <div className="space-y-4">
+      {selectedDate && (
+        <div className="flex items-center gap-2">
+          <Button onClick={handleOptimizeRoute} disabled={optimizing}>
+            {optimizing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Route className="h-4 w-4 mr-2" />}
+            Optimize Route for {moment(selectedDate).format('MMM DD, YYYY')}
+          </Button>
+        </div>
+      )}
+      
+      <div className="jobs-calendar-wrapper">
+        <DnDCalendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 600 }}
+          eventPropGetter={eventStyleGetter}
+          onSelectEvent={(event) => onSelectJob(event.resource)}
+          onSelectSlot={handleSelectSlot}
+          onEventDrop={handleEventDrop}
+          onEventResize={handleEventResize}
+          views={['month', 'week', 'day']}
+          defaultView="week"
+          resizable
+          selectable
+          draggableAccessor={() => true}
+        />
+      </div>
     </div>
   );
 }

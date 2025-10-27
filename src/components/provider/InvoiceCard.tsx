@@ -15,6 +15,7 @@ interface InvoiceCardProps {
     status: string;
     created_at: string;
     pdf_url?: string;
+    expires_at?: string;
     clients?: {
       name: string;
       email: string;
@@ -34,6 +35,9 @@ const statusColors: Record<string, string> = {
 export function InvoiceCard({ invoice, onRecordPayment, onResend }: InvoiceCardProps) {
   const dueDate = new Date(invoice.due_date);
   const isOverdue = invoice.status === "pending" && dueDate < new Date();
+  const expiresAt = invoice.expires_at ? new Date(invoice.expires_at) : null;
+  const isExpired = invoice.status === "open" && expiresAt && expiresAt < new Date();
+  const daysUntilExpiration = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
 
   const handleDownload = async () => {
     if (!invoice.pdf_url) return;
@@ -72,9 +76,16 @@ export function InvoiceCard({ invoice, onRecordPayment, onResend }: InvoiceCardP
               </p>
             </div>
           </div>
-          <Badge className={statusColors[isOverdue ? "overdue" : invoice.status]} variant="secondary">
-            {isOverdue ? "Overdue" : invoice.status}
-          </Badge>
+          <div className="flex flex-col gap-1 items-end">
+            <Badge className={statusColors[isExpired ? "overdue" : (isOverdue ? "overdue" : invoice.status)]} variant="secondary">
+              {isExpired ? "Expired" : (isOverdue ? "Overdue" : invoice.status)}
+            </Badge>
+            {daysUntilExpiration !== null && daysUntilExpiration > 0 && daysUntilExpiration <= 7 && invoice.status === "open" && (
+              <span className="text-xs text-muted-foreground">
+                Expires in {daysUntilExpiration} day{daysUntilExpiration !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
@@ -101,10 +112,10 @@ export function InvoiceCard({ invoice, onRecordPayment, onResend }: InvoiceCardP
               Record Payment
             </Button>
           )}
-          {invoice.status === "pending" && onResend && (
+          {(invoice.status === "pending" || isExpired) && onResend && (
             <Button size="sm" variant="ghost" onClick={() => onResend(invoice.id)}>
               <Send className="h-4 w-4 mr-2" />
-              Resend
+              {isExpired ? 'Resend Link' : 'Resend'}
             </Button>
           )}
         </div>

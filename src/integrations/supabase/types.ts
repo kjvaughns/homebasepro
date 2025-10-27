@@ -1752,6 +1752,7 @@ export type Database = {
           due_date: string
           email_sent_at: string | null
           email_status: string | null
+          expires_at: string | null
           id: string
           invoice_number: string
           job_id: string | null
@@ -1777,6 +1778,7 @@ export type Database = {
           due_date: string
           email_sent_at?: string | null
           email_status?: string | null
+          expires_at?: string | null
           id?: string
           invoice_number: string
           job_id?: string | null
@@ -1802,6 +1804,7 @@ export type Database = {
           due_date?: string
           email_sent_at?: string | null
           email_status?: string | null
+          expires_at?: string | null
           id?: string
           invoice_number?: string
           job_id?: string | null
@@ -3398,6 +3401,50 @@ export type Database = {
           },
         ]
       }
+      push_notification_logs: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          error_message: string | null
+          id: string
+          notification_type: string
+          payload: Json | null
+          profile_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          notification_type: string
+          payload?: Json | null
+          profile_id?: string | null
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          notification_type?: string
+          payload?: Json | null
+          profile_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_notification_logs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -4888,6 +4935,19 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           status: string
         }[]
+      }
+      check_and_create_booking: {
+        Args: {
+          p_address: string
+          p_date_time_end: string
+          p_date_time_start: string
+          p_home_id?: string
+          p_homeowner_profile_id: string
+          p_notes?: string
+          p_provider_org_id: string
+          p_service_name: string
+        }
+        Returns: Json
       }
       check_beta_access: {
         Args: { account_type: string; user_email: string }

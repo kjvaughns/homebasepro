@@ -506,6 +506,17 @@ serve(async (req) => {
 
       const result = await sendPushNotification(subscription, notification, vapidDetails);
       
+      // Log delivery result to database
+      await supabaseClient.from('push_notification_logs').insert({
+        user_id: sub.user_id,
+        profile_id: sub.user_id,
+        notification_type: 'push',
+        endpoint: sub.endpoint.substring(0, 100),
+        status: result.success ? 'sent' : 'failed',
+        error_message: result.reason || null,
+        payload: { title, body }
+      });
+      
       if (result.success) {
         sent++;
       } else {

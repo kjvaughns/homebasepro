@@ -53,48 +53,41 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
         .eq('user_id', user.id)
         .single();
 
-      // Check provider availability before booking
+      // Check provider availability and create booking atomically
       const startTime = new Date(`${formData.date.toDateString()} ${formData.time}`);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Add 1 hour
 
-      const { data: isAvailable, error: availError } = await supabase.rpc('check_provider_availability', {
-        p_provider_id: provider.id,
-        p_start_time: startTime.toISOString(),
-        p_end_time: endTime.toISOString(),
-      });
+      const { data: result, error: bookingError } = await supabase.rpc('check_and_create_booking', {
+        p_provider_org_id: provider.id,
+        p_homeowner_profile_id: profile?.id,
+        p_service_name: formData.service_name,
+        p_address: formData.address,
+        p_date_time_start: startTime.toISOString(),
+        p_date_time_end: endTime.toISOString(),
+        p_notes: formData.description,
+        p_home_id: null
+      }) as { data: any; error: any };
 
-      if (availError) {
-        console.error('Error checking availability:', availError);
-        // Continue anyway - don't block on availability check failure
-      } else if (!isAvailable) {
+      if (bookingError) throw bookingError;
+
+      if (!result?.success) {
         toast({
           title: 'Time slot unavailable',
-          description: 'This time slot is already booked. Please choose a different time.',
+          description: result?.error || 'This time slot is already booked. Please choose a different time.',
           variant: 'destructive',
         });
         setLoading(false);
         return;
       }
 
-      // Create booking
-      const { data: newBooking, error } = await supabase
+      // Fetch the created booking
+      const { data: newBooking, error: fetchError } = await supabase
         .from('bookings')
-        .insert({
-          provider_org_id: provider.id,
-          homeowner_profile_id: profile?.id,
-          service_name: formData.service_name,
-          description: formData.description,
-          address: formData.address,
-          date_time_start: new Date(`${formData.date.toDateString()} ${formData.time}`).toISOString(),
-          date_time_end: new Date(`${formData.date.toDateString()} ${formData.time}`).toISOString(),
-          status: 'pending_payment',
-          deposit_required: true,
-          deposit_amount: service?.price ? Math.round(service.price * 100 * 0.25) : 5000, // 25% deposit or $50
-        })
-        .select()
+        .select('*')
+        .eq('id', result.booking_id)
         .single();
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
       setBooking(newBooking);
       setStep('payment');
