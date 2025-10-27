@@ -216,16 +216,17 @@ export default function OnboardingProvider() {
                       label="Business Address"
                       placeholder="Start typing your business address..."
                       defaultValue={formData.businessAddress}
+                      onManualChange={(street) => setFormData(prev => ({ ...prev, businessAddress: street }))}
                       onAddressSelect={(address) => {
-                        setFormData({
-                          ...formData,
-                          businessAddress: address.street,
-                          businessCity: address.city,
-                          businessState: address.state,
-                          businessZip: address.zip,
-                          businessLat: address.lat,
-                          businessLng: address.lng,
-                        });
+                        setFormData(prev => ({
+                          ...prev,
+                          businessAddress: address.street || address.fullAddress,
+                          businessCity: address.city || prev.businessCity,
+                          businessState: address.state || prev.businessState,
+                          businessZip: address.zip || prev.businessZip,
+                          businessLat: address.lat || 0,
+                          businessLng: address.lng || 0,
+                        }));
                       }}
                       required
                     />

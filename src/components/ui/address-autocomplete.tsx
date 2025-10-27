@@ -17,6 +17,7 @@ interface AddressComponents {
 
 interface AddressAutocompleteProps {
   onAddressSelect: (address: AddressComponents) => void;
+  onManualChange?: (street: string) => void;
   defaultValue?: string;
   label?: string;
   placeholder?: string;
@@ -25,6 +26,7 @@ interface AddressAutocompleteProps {
 
 export function AddressAutocomplete({
   onAddressSelect,
+  onManualChange,
   defaultValue = '',
   label = 'Address',
   placeholder = 'Start typing your address...',
@@ -110,7 +112,23 @@ export function AddressAutocomplete({
           type="text"
           placeholder={placeholder}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            onManualChange?.(e.target.value);
+          }}
+          onBlur={() => {
+            if (inputValue?.trim()) {
+              onAddressSelect({
+                street: inputValue.trim(),
+                city: '',
+                state: '',
+                zip: '',
+                fullAddress: inputValue.trim(),
+                lat: 0,
+                lng: 0
+              });
+            }
+          }}
           required={required}
           style={{ fontSize: '16px' }} // Prevents iOS zoom
         />
@@ -131,7 +149,23 @@ export function AddressAutocomplete({
             type="text"
             placeholder={placeholder}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              onManualChange?.(e.target.value);
+            }}
+            onBlur={() => {
+              if (inputValue?.trim()) {
+                onAddressSelect({
+                  street: inputValue.trim(),
+                  city: '',
+                  state: '',
+                  zip: '',
+                  fullAddress: inputValue.trim(),
+                  lat: 0,
+                  lng: 0
+                });
+              }
+            }}
             required={required}
             style={{ fontSize: '16px' }} // Prevents iOS zoom on mobile
           />
