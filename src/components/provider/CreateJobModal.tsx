@@ -24,6 +24,8 @@ import { Loader2, UserPlus, Users } from "lucide-react";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import { useMobileLayout } from "@/hooks/useMobileLayout";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 
 interface CreateJobModalProps {
   open: boolean;
@@ -51,6 +53,8 @@ export default function CreateJobModal({
   onSuccess,
 }: CreateJobModalProps) {
   const { toast } = useToast();
+  const { isMobile } = useMobileLayout();
+  const keyboardHeight = useKeyboardHeight();
   const [loading, setLoading] = useState(false);
   const [clientMode, setClientMode] = useState<ClientMode>(preSelectedClient ? "existing" : "new");
   const [clients, setClients] = useState<Client[]>([]);
@@ -368,17 +372,22 @@ export default function CreateJobModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
+      <DialogContent 
+        className={`max-w-2xl flex flex-col p-0 ${
+          isMobile ? 'h-[100dvh] max-h-[100dvh]' : 'max-h-[90vh]'
+        }`}
+        style={isMobile && keyboardHeight > 0 ? { paddingBottom: `${keyboardHeight}px` } : undefined}
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+          <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
             <DialogTitle>Create New Job</DialogTitle>
             <DialogDescription>
               Schedule a service appointment for a client
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="space-y-6 py-4">
+          <ScrollArea className="flex-1 px-6 overflow-y-auto">
+            <div className="space-y-6 pb-6">
               {/* Client Mode Toggle */}
               {!preSelectedClient && (
                 <div className="flex gap-2 p-1 bg-muted rounded-lg">
@@ -603,7 +612,7 @@ export default function CreateJobModal({
             </div>
           </ScrollArea>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="px-6 py-4 shrink-0 border-t">
             <Button
               type="button"
               variant="outline"
