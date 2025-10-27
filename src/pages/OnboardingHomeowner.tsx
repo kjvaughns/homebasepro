@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { PaymentMethodManager } from "@/components/homeowner/PaymentMethodManager";
 import { CheckCircle2 } from "lucide-react";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export default function OnboardingHomeowner() {
@@ -24,6 +24,21 @@ export default function OnboardingHomeowner() {
     lat: 0,
     lng: 0,
   });
+
+  // Pre-populate form with user data from auth metadata
+  useEffect(() => {
+    const loadUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setFormData(prev => ({
+          ...prev,
+          fullName: user.user_metadata?.full_name || prev.fullName,
+          phone: user.user_metadata?.phone || prev.phone,
+        }));
+      }
+    };
+    loadUserData();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({

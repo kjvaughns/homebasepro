@@ -43,6 +43,7 @@ export default function ProviderDashboard() {
   useEffect(() => {
     loadUserProfile();
     checkStripeStatus();
+    checkOrganization();
     
     // Check if returning from Stripe checkout
     const params = new URLSearchParams(window.location.search);
@@ -96,6 +97,25 @@ export default function ProviderDashboard() {
       .single();
 
     setStripeConnected(!!org?.stripe_account_id);
+  };
+
+  const checkOrganization = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: org, error } = await supabase
+      .from("organizations")
+      .select("id, name")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error checking organization:", error);
+    }
+
+    if (!org) {
+      console.warn("No organization found for user. User may need to complete onboarding.");
+    }
   };
 
   const isNewUser = userProfile?.onboarded_at && 

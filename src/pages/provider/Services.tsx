@@ -122,17 +122,41 @@ export default function Services() {
   };
 
   const handleSave = async () => {
+    if (!formData.name) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter a service name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      if (!user.user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to create services",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const { data: organization } = await supabase
+      const { data: organization, error: orgError } = await supabase
         .from("organizations")
         .select("id")
         .eq("owner_id", user.user.id)
-        .single();
+        .maybeSingle();
 
-      if (!organization) return;
+      if (orgError || !organization) {
+        console.error("Organization lookup error:", orgError);
+        toast({
+          title: "Setup Required",
+          description: "Please complete your business profile setup first",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const serviceData = {
         organization_id: organization.id,
@@ -167,11 +191,11 @@ export default function Services() {
 
       setDialogOpen(false);
       loadServices();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving service:", error);
       toast({
         title: "Error",
-        description: "Failed to save service",
+        description: error.message || "Failed to save service. Please try again.",
         variant: "destructive",
       });
     }

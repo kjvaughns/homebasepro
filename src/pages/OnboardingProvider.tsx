@@ -11,7 +11,7 @@ import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import EmbeddedSubscriptionSetup from "@/components/provider/EmbeddedSubscriptionSetup";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function OnboardingProvider() {
   const navigate = useNavigate();
@@ -31,6 +31,21 @@ export default function OnboardingProvider() {
     businessLng: 0,
     selectedPlan: "free" as "free" | "beta",
   });
+
+  // Pre-populate form with user data from auth metadata
+  useEffect(() => {
+    const loadUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setFormData(prev => ({
+          ...prev,
+          companyName: user.user_metadata?.full_name || prev.companyName,
+          phone: user.user_metadata?.phone || prev.phone,
+        }));
+      }
+    };
+    loadUserData();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({

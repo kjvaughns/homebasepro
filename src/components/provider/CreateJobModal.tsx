@@ -47,20 +47,53 @@ export default function CreateJobModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!client || !formData.service_name || !formData.scheduled_date) return;
+    
+    if (!formData.service_name || !formData.scheduled_date) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter a service name and scheduled date",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!client) {
+      toast({
+        title: "No Client Selected",
+        description: "Please select a client first",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     try {
       const user = (await supabase.auth.getUser()).data.user;
-      if (!user) throw new Error("Not authenticated");
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to create jobs",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const { data: org } = await supabase
+      const { data: org, error: orgError } = await supabase
         .from("organizations")
         .select("id")
         .eq("owner_id", user.id)
         .maybeSingle();
 
-      if (!org) throw new Error("Organization not found");
+      if (orgError || !org) {
+        console.error("Organization lookup error:", orgError);
+        toast({
+          title: "Setup Required",
+          description: "Please complete your business profile setup first. Go to Settings to finish setup.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       // Convert datetime-local to ISO format and create end time (1 hour later)
       const startDate = new Date(formData.scheduled_date);
@@ -119,7 +152,7 @@ export default function CreateJobModal({
       console.error("Error creating job:", error);
       toast({
         title: "Failed to create job",
-        description: error.message,
+        description: error.message || "Please check your business setup and try again",
         variant: "destructive",
       });
     } finally {
