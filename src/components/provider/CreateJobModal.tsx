@@ -20,12 +20,13 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Users } from "lucide-react";
+import { Loader2, UserPlus, Users, Sparkles } from "lucide-react";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
+import { Card } from "@/components/ui/card";
 
 interface CreateJobModalProps {
   open: boolean;
@@ -60,6 +61,10 @@ export default function CreateJobModal({
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(preSelectedClient || null);
+  const [services, setServices] = useState<any[]>([]);
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [aiQuote, setAiQuote] = useState<any>(null);
+  const [loadingAiQuote, setLoadingAiQuote] = useState(false);
   
   const [formData, setFormData] = useState({
     service_name: "",
@@ -78,10 +83,13 @@ export default function CreateJobModal({
     address: "",
   });
 
-  // Load existing clients
+  // Load existing clients and services
   useEffect(() => {
     if (open && clientMode === "existing") {
       loadClients();
+    }
+    if (open) {
+      loadServices();
     }
   }, [open, clientMode]);
 
@@ -124,6 +132,126 @@ export default function CreateJobModal({
       });
     } finally {
       setLoadingClients(false);
+    }
+  };
+
+  const loadServices = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      if (!org) return;
+
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("organization_id", org.id)
+        .order("name");
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error: any) {
+      console.error("Error loading services:", error);
+    }
+  };
+
+  const handleServiceSelect = (serviceId: string) => {
+    if (serviceId === "custom") {
+      setSelectedService(null);
+      setFormData(prev => ({
+        ...prev,
+        service_name: "",
+        quote_amount: "",
+      }));
+      setAiQuote(null);
+      return;
+    }
+
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      setSelectedService(service);
+      setFormData(prev => ({
+        ...prev,
+        service_name: service.name,
+        quote_amount: service.default_price ? (service.default_price / 100).toFixed(2) : "",
+        duration: service.estimated_duration_minutes ? Math.ceil(service.estimated_duration_minutes / 60).toString() : prev.duration,
+      }));
+      setAiQuote(null); // Clear previous AI quote when changing service
+    }
+  };
+
+  const handleGetAIQuote = async () => {
+    if (!selectedService || !selectedClient) {
+      toast({
+        title: "Missing information",
+        description: "Please select both a service and a client first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingAiQuote(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('assistant-provider', {
+        body: {
+          message: 'Generate quote for this job',
+          context: {
+            action: 'generate_job_quote',
+            service_id: selectedService.id,
+            service_name: formData.service_name,
+            base_price: selectedService.default_price || 0,
+            client_id: selectedClient.homeowner_profile_id,
+            client_address: formData.address,
+            parts_ids: [],
+            custom_notes: formData.notes
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Extract quote from tool_results
+      const quoteData = data.tool_results?.find((r: any) => 
+        r.type === 'generate_job_quote'
+      )?.data;
+
+      if (quoteData) {
+        setAiQuote(quoteData);
+        toast({
+          title: "AI quote generated",
+          description: "Review the suggested pricing below",
+        });
+      } else {
+        throw new Error("No quote data returned");
+      }
+    } catch (error: any) {
+      console.error("AI quote error:", error);
+      toast({
+        title: "AI Quote Failed",
+        description: error.message || "Failed to generate quote. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingAiQuote(false);
+    }
+  };
+
+  const handleAcceptAIQuote = () => {
+    if (aiQuote) {
+      setFormData(prev => ({
+        ...prev,
+        quote_amount: aiQuote.estimated_total?.toFixed(2) || prev.quote_amount
+      }));
+      toast({ 
+        title: "AI quote applied",
+        description: `Quote set to $${aiQuote.estimated_total?.toFixed(2)}`
+      });
     }
   };
 
@@ -355,6 +483,8 @@ export default function CreateJobModal({
       });
       setNewClientData({ name: "", email: "", phone: "", address: "" });
       setSelectedClient(null);
+      setSelectedService(null);
+      setAiQuote(null);
       
       onSuccess();
       onOpenChange(false);
@@ -503,17 +633,39 @@ export default function CreateJobModal({
                 <h4 className="font-medium">Job Details</h4>
 
                 <div>
-                  <Label htmlFor="service_name">Service *</Label>
-                  <Input
-                    id="service_name"
-                    value={formData.service_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, service_name: e.target.value })
-                    }
-                    placeholder="e.g., Lawn Mowing, Gutter Cleaning"
-                    required
-                  />
+                  <Label htmlFor="service">Service *</Label>
+                  <Select
+                    value={selectedService?.id || "custom"}
+                    onValueChange={handleServiceSelect}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a service from your catalog" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name} {service.default_price ? `- $${(service.default_price / 100).toFixed(2)}` : ''}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">Custom Service (Manual Entry)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {!selectedService && (
+                  <div>
+                    <Label htmlFor="service_name">Custom Service Name *</Label>
+                    <Input
+                      id="service_name"
+                      value={formData.service_name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, service_name: e.target.value })
+                      }
+                      placeholder="e.g., Lawn Mowing, Gutter Cleaning"
+                      required
+                    />
+                  </div>
+                )}
 
                 <div>
                   <Label>Date & Time *</Label>
@@ -581,8 +733,88 @@ export default function CreateJobModal({
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="quote_amount">Quote Amount ($)</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="quote_amount">Quote Amount ($)</Label>
+                    {selectedService && selectedClient && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGetAIQuote}
+                        disabled={loadingAiQuote}
+                      >
+                        {loadingAiQuote ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="mr-2 h-4 w-4" /> 
+                            Get AI Quote
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  {aiQuote && (
+                    <Card className="p-4 bg-primary/5 border-primary/20">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">AI Suggested Price</span>
+                          <span className="text-lg font-bold text-primary">
+                            ${aiQuote.suggested_price_low?.toFixed(2)} - ${aiQuote.suggested_price_high?.toFixed(2)}
+                          </span>
+                        </div>
+                        
+                        <p className="text-xs text-muted-foreground">{aiQuote.justification}</p>
+                        
+                        {aiQuote.parts_breakdown && aiQuote.parts_breakdown.length > 0 && (
+                          <div className="text-xs space-y-1 pt-2 border-t">
+                            <div className="font-medium">Parts Breakdown:</div>
+                            {aiQuote.parts_breakdown.map((part: any, i: number) => (
+                              <div key={i} className="flex justify-between">
+                                <span>{part.name}</span>
+                                <span>${part.cost.toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {aiQuote.service_base && (
+                          <div className="text-xs space-y-1 pt-2 border-t">
+                            <div className="flex justify-between">
+                              <span>Service Base:</span>
+                              <span>${aiQuote.service_base.toFixed(2)}</span>
+                            </div>
+                            {aiQuote.parts_total > 0 && (
+                              <div className="flex justify-between">
+                                <span>Parts Total:</span>
+                                <span>${aiQuote.parts_total.toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-medium">
+                              <span>Estimated Total:</span>
+                              <span>${aiQuote.estimated_total?.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          className="w-full mt-2"
+                          onClick={handleAcceptAIQuote}
+                        >
+                          Accept AI Quote
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+
                   <Input
                     id="quote_amount"
                     type="number"
@@ -592,7 +824,7 @@ export default function CreateJobModal({
                     onChange={(e) =>
                       setFormData({ ...formData, quote_amount: e.target.value })
                     }
-                    placeholder="0.00"
+                    placeholder="Enter quote amount or use AI suggestion"
                   />
                 </div>
 

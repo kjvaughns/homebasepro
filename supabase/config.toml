@@ -102,3 +102,6 @@ verify_jwt = true
 
 [functions.auto-renew-subscriptions]
 verify_jwt = false
+
+[functions.pricing-engine]
+verify_jwt = false

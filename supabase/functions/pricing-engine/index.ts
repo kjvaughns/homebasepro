@@ -1,30 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface PricingInput {
-  service_name: string;
-  unit_type: 'acre' | 'sqft' | 'linear_foot' | 'pane' | 'system_count' | 'flat';
-  units?: number;
-  lot_acres?: number;
-  sqft?: number;
-  beds?: number;
-  baths?: number;
-  year_built?: number;
-  zip?: string;
-  month?: number;
-  base_per_unit?: number;
-  base_flat?: number;
-  min_fee?: number;
-  travel_fee?: number;
-  max_fee?: number;
-  session_id?: string;
-  property_lookup_id?: string;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -32,158 +11,113 @@ serve(async (req) => {
   }
 
   try {
-    const input: PricingInput = await req.json();
+    const { service_name, base_price, context } = await req.json();
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
+
+    console.log('Pricing analysis request:', { service_name, base_price });
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a pricing expert for home service businesses. Analyze service requests and suggest fair market pricing based on industry standards, location, and complexity. Always provide practical price ranges that balance profitability with market competitiveness.'
+          },
+          {
+            role: 'user',
+            content: `Analyze this service request and suggest pricing:\n\n${context}\n\nProvide a price range (low/high) and brief justification. Consider local market rates, parts cost, labor, and complexity.`
+          }
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "suggest_pricing",
+            description: "Suggest pricing range for service",
+            parameters: {
+              type: "object",
+              properties: {
+                price_low: { type: "number", description: "Lower bound in cents" },
+                price_high: { type: "number", description: "Upper bound in cents" },
+                reasoning: { type: "string", description: "Brief explanation (1-2 sentences)" },
+                confidence: { type: "string", enum: ["low", "medium", "high"] }
+              },
+              required: ["price_low", "price_high", "reasoning"],
+              additionalProperties: false
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "suggest_pricing" } }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AI gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again in a moment.' 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ 
+          error: 'AI credits exhausted. Please add credits to your workspace.' 
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      throw new Error(`AI request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('AI response received');
     
-    const toNum = (v: any) => (v === null || v === undefined || v === '' ? 0 : Number(v));
-    const svc = (input.service_name || 'Service').trim();
-    const unit = input.unit_type || 'flat';
-
-    // Determine units
-    let units = toNum(input.units);
-    if (!units) {
-      if (unit === 'acre') units = toNum(input.lot_acres);
-      if (unit === 'sqft') units = toNum(input.sqft);
-      if (unit === 'system_count') units = 1;
-      if (unit === 'flat') units = 1;
-    }
-
-    // Service defaults
-    const DEFAULTS: Record<string, Partial<PricingInput>> = {
-      'Lawn Mowing': { base_per_unit: 50, min_fee: 60 },
-      'Lawn Care': { base_per_unit: 50, min_fee: 60 },
-      'HVAC Tune-Up': { base_per_unit: 80, base_flat: 40, min_fee: 120 },
-      'HVAC Service': { base_per_unit: 80, base_flat: 40, min_fee: 120 },
-      'Gutter Cleaning': { base_per_unit: 1.2, min_fee: 120 },
-      'Window Cleaning': { base_per_unit: 5, min_fee: 100 },
-      'Pool Cleaning': { base_flat: 100, min_fee: 100 },
-      'Pressure Washing': { base_per_unit: 0.15, min_fee: 150 },
-    };
-
-    const d = DEFAULTS[svc] || { base_per_unit: 50, min_fee: 100 };
-
-    const base_per_unit = toNum(input.base_per_unit ?? d.base_per_unit ?? 0);
-    const base_flat = toNum(input.base_flat ?? d.base_flat ?? 0);
-    const min_fee = toNum(input.min_fee ?? d.min_fee ?? 0);
-    const travel_fee = toNum(input.travel_fee ?? 0);
-    const max_fee = toNum(input.max_fee ?? 0);
-
-    // Calculate multipliers
-    const month = toNum(input.month) || (new Date().getMonth() + 1);
-    const zip = (input.zip || '').toString();
-    const year_built = toNum(input.year_built);
-    const lot_acres = toNum(input.lot_acres);
-    const sqft = toNum(input.sqft);
-
-    const mult: Record<string, number> = {
-      seasonal: 1.0,
-      region: 1.0,
-      age: 1.0,
-      size: 1.0,
-      big_lot: 1.0
-    };
-
-    // Seasonal multipliers
-    const s = svc.toLowerCase();
-    if (s.includes('lawn')) {
-      if ([4, 5, 6, 7, 8, 9].includes(month)) mult.seasonal = 1.10;
-    }
-    if (s.includes('gutter')) {
-      if ([3, 4, 10, 11].includes(month)) mult.seasonal = 1.15;
-    }
-    if (s.includes('hvac')) {
-      if ([5, 6, 7, 8].includes(month)) mult.seasonal = 1.12;
-    }
-    if (s.includes('pool')) {
-      if ([4, 5, 6, 7, 8, 9].includes(month)) mult.seasonal = 1.08;
-    }
-
-    // Region (Mississippi cheaper)
-    if (zip.startsWith('39')) mult.region = 0.95;
-
-    // Age factor
-    if (year_built) {
-      const age = new Date().getFullYear() - year_built;
-      if (age >= 25 && age < 40) mult.age = 1.08;
-      else if (age >= 40) mult.age = 1.15;
-    }
-
-    // Size factor for sqft services
-    if (unit === 'sqft' && sqft) {
-      if (sqft <= 1200) mult.size = 0.9;
-      else if (sqft <= 2000) mult.size = 1.0;
-      else if (sqft <= 3000) mult.size = 1.15;
-      else mult.size = 1.3;
-    }
-
-    // Big lot factor
-    if (s.includes('lawn') && unit === 'acre' && lot_acres > 2) {
-      mult.big_lot = 1.10;
-    }
-
-    // Calculate estimate
-    const variable = base_per_unit * units;
-    let est = base_flat + variable;
-    let multProd = 1.0;
-    for (const v of Object.values(mult)) multProd *= v;
-    est = est * multProd + travel_fee;
-    if (est < min_fee) est = min_fee;
-    if (max_fee && est > max_fee) est = max_fee;
-
-    // Confidence score
-    let confidence = 0.75;
-    if (units) confidence += 0.1;
-    if (year_built) confidence += 0.05;
-    if (zip) confidence += 0.05;
-    confidence = Math.min(0.95, confidence);
-
-    const result = {
-      service: svc,
-      unit_type: unit,
-      units: Number(units.toFixed(2)),
-      base_flat: Number(base_flat.toFixed(2)),
-      base_per_unit: Number(base_per_unit.toFixed(2)),
-      multipliers_applied: mult,
-      multiplier_product: Number(multProd.toFixed(3)),
-      travel_fee: Number(travel_fee.toFixed(2)),
-      min_fee: Number(min_fee.toFixed(2)),
-      max_fee: Number(max_fee.toFixed(2)),
-      estimate: Math.round(est),
-      confidence: Number(confidence.toFixed(2)),
-    };
-
-    // Store in database if session_id provided
-    if (input.session_id) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
-      await supabase.from('price_estimates').insert({
-        session_id: input.session_id,
-        property_lookup_id: input.property_lookup_id || null,
-        service_name: svc,
-        unit_type: unit,
-        units: result.units,
-        base_flat: result.base_flat,
-        base_per_unit: result.base_per_unit,
-        multipliers: mult,
-        estimate: result.estimate,
-        confidence: result.confidence
+    const toolCall = data.choices[0]?.message?.tool_calls?.[0];
+    
+    if (!toolCall) {
+      console.warn('No tool call in response, using fallback');
+      const fallbackPricing = {
+        price_low: Math.round(base_price * 0.9),
+        price_high: Math.round(base_price * 1.2),
+        reasoning: "Based on your service catalog pricing with typical market adjustments.",
+        confidence: "medium"
+      };
+      
+      return new Response(JSON.stringify(fallbackPricing), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    const pricing = JSON.parse(toolCall.function.arguments);
+    console.log('Pricing analysis complete:', pricing);
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error('Error in pricing-engine:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'internal_error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(pricing), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+    
+  } catch (error: any) {
+    console.error('Pricing engine error:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Failed to generate pricing suggestion'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

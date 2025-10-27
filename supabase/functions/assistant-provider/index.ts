@@ -196,6 +196,15 @@ serve(async (req) => {
         booking_id: { type: "string" },
         client_id: { type: "string" }
       }, ["client_id"]),
+      fn("generate_job_quote", "Generate intelligent AI-powered quote for a job based on service catalog, client history, and parts.", {
+        service_id: { type: "string", description: "Service ID from catalog" },
+        service_name: { type: "string" },
+        base_price: { type: "number", description: "Base service price in cents" },
+        client_id: { type: "string" },
+        client_address: { type: "string" },
+        parts_ids: { type: "array", items: { type: "string" }, description: "Selected parts/materials IDs" },
+        custom_notes: { type: "string", description: "Any special requirements or notes" }
+      }, ["service_name", "client_id"]),
     ];
 
     const first = await llm(LOVABLE_KEY, {
@@ -859,6 +868,104 @@ async function routeTool(sb: any, name: string, args: any) {
       sent: true,
       client_id: args.client_id,
       booking_id: args.booking_id
+    };
+  }
+
+  if (name === "generate_job_quote") {
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id, service_type")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org?.id) return { error: "no_organization" };
+
+    // Get service details if service_id provided
+    let serviceData = null;
+    if (args.service_id) {
+      const { data: service } = await sb
+        .from("services")
+        .select("*")
+        .eq("id", args.service_id)
+        .single();
+      serviceData = service;
+    }
+
+    // Get client history
+    const { data: clientHistory } = await sb
+      .from("bookings")
+      .select("service_name, final_price, created_at")
+      .eq("homeowner_profile_id", args.client_id)
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    // Get parts if provided
+    let partsCost = 0;
+    let partsDetails: any[] = [];
+    if (args.parts_ids?.length) {
+      const { data: parts } = await sb
+        .from("parts_materials")
+        .select("*")
+        .in("id", args.parts_ids);
+      
+      if (parts) {
+        partsCost = parts.reduce((sum: number, p: any) => sum + (p.sell_price || 0), 0);
+        partsDetails = parts.map((p: any) => ({
+          name: p.name,
+          cost: (p.sell_price || 0) / 100
+        }));
+      }
+    }
+
+    // Build context for AI
+    const context = `
+Service: ${args.service_name}
+Base Price: $${(args.base_price || 0) / 100}
+Business Type: ${org.service_type?.join(", ") || "General Services"}
+Client Location: ${args.client_address || "Not specified"}
+Client History: ${clientHistory?.length || 0} previous jobs${clientHistory && clientHistory.length > 0 ? `, avg $${Math.round(clientHistory.reduce((sum: number, j: any) => sum + (j.final_price || 0), 0) / clientHistory.length / 100)}` : ""}
+Parts/Materials Cost: $${partsCost / 100}
+${args.custom_notes ? `Special Notes: ${args.custom_notes}` : ""}
+${serviceData ? `Service Description: ${serviceData.description || ""}` : ""}
+    `.trim();
+
+    console.log("Generating AI quote with context:", context);
+
+    // Call pricing engine
+    const { data: priceData, error: priceError } = await sb.functions.invoke("pricing-engine", {
+      body: {
+        service_name: args.service_name,
+        base_price: args.base_price || 0,
+        context
+      }
+    });
+
+    if (priceError) {
+      console.error("Pricing engine error:", priceError);
+      // Return fallback pricing
+      return {
+        suggested_price_low: Math.round((args.base_price || 0) * 0.9 / 100),
+        suggested_price_high: Math.round((args.base_price || 0) * 1.2 / 100),
+        justification: "Based on your service catalog pricing",
+        parts_breakdown: partsDetails,
+        parts_total: partsCost / 100,
+        service_base: (args.base_price || 0) / 100,
+        estimated_total: ((args.base_price || 0) + partsCost) / 100,
+        confidence: "medium"
+      };
+    }
+
+    return {
+      suggested_price_low: (priceData.price_low || 0) / 100,
+      suggested_price_high: (priceData.price_high || 0) / 100,
+      justification: priceData.reasoning || "AI-generated pricing based on market analysis",
+      parts_breakdown: partsDetails,
+      parts_total: partsCost / 100,
+      service_base: (args.base_price || 0) / 100,
+      estimated_total: ((priceData.price_low || args.base_price || 0) + partsCost) / 100,
+      confidence: priceData.confidence || "medium"
     };
   }
 
