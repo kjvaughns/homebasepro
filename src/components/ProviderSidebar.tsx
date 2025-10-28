@@ -26,6 +26,7 @@ import {
   Smartphone,
   Share2,
   BarChart,
+  GitBranch,
 } from "lucide-react";
 import {
   Sidebar,
@@ -81,6 +82,7 @@ export function ProviderSidebar() {
     { to: "/provider/dashboard", title: "Dashboard", icon: Home, showFor: "all" },
     { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
     { to: "/provider/clients", title: "Clients", icon: Users, showFor: "owner" },
+    { to: "/provider/workflows", title: "Workflows", icon: GitBranch, showFor: "owner" },
     { 
       title: "Jobs & Services", 
       icon: Briefcase, 
