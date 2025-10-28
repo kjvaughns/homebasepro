@@ -36,11 +36,7 @@ interface ServiceCall {
   organizations: {
     name: string;
   };
-  team_members: {
-    profiles: {
-      full_name: string;
-    };
-  } | null;
+  team_members: any | null;
 }
 
 export function ServiceCallStatus({ serviceCallId }: ServiceCallStatusProps) {
