@@ -3,7 +3,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Mail, Phone, MapPin, Calendar, Clock, DollarSign, Navigation } from "lucide-react";
+import { Mail, Phone, MapPin, Calendar, Clock, DollarSign, Navigation, FileText, Stethoscope } from "lucide-react";
+import { QuoteBuilder } from "./QuoteBuilder";
+import { DiagnosisForm } from "./DiagnosisForm";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface JobDetailDrawerProps {
   job: any;
@@ -15,6 +19,36 @@ interface JobDetailDrawerProps {
 }
 
 export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequestReview }: JobDetailDrawerProps) => {
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [loadingQuotes, setLoadingQuotes] = useState(false);
+
+  useEffect(() => {
+    if (job && open) {
+      loadQuotes();
+    }
+  }, [job, open]);
+
+  const loadQuotes = async () => {
+    if (!job?.id) return;
+    
+    setLoadingQuotes(true);
+    try {
+      const { data, error } = await supabase
+        .from("quotes")
+        .select("*")
+        .eq("service_request_id", job.id)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setQuotes(data);
+      }
+    } catch (error) {
+      console.error("Error loading quotes:", error);
+    } finally {
+      setLoadingQuotes(false);
+    }
+  };
+
   if (!job) return null;
   
   const statusConfig: Record<string, string> = {
@@ -31,21 +65,28 @@ export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequest
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="bottom" className="h-[90vh] overflow-y-auto rounded-t-3xl">
+        <SheetHeader className="pb-4">
           <div className="space-y-2">
-            <SheetTitle className="text-2xl">{job.service_name}</SheetTitle>
+            <SheetTitle className="text-left text-2xl">{job.service_name}</SheetTitle>
             <Badge className={statusConfig[job.status]}>{job.status.replace('_', ' ')}</Badge>
           </div>
         </SheetHeader>
         
-        <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="client">Client</TabsTrigger>
+            <TabsTrigger value="quotes">
+              <FileText className="h-4 w-4 mr-1" />
+              Quotes
+            </TabsTrigger>
+            {job.is_service_call && (
+              <TabsTrigger value="diagnostic">
+                <Stethoscope className="h-4 w-4 mr-1" />
+                Diagnostic
+              </TabsTrigger>
+            )}
             <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            <TabsTrigger value="media">Media</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-6 mt-4">
@@ -140,30 +181,13 @@ export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequest
                 </div>
               </div>
             )}
-            
-            {/* Notes */}
-            {job.pre_job_notes && (
+
+            {/* Client Info */}
+            {job.clients && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-muted-foreground">Pre-Job Notes</h3>
-                <p className="text-sm bg-muted p-3 rounded-lg">{job.pre_job_notes}</p>
-              </div>
-            )}
-            
-            {job.post_job_notes && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-muted-foreground">Post-Job Notes</h3>
-                <p className="text-sm bg-muted p-3 rounded-lg">{job.post_job_notes}</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="client" className="mt-4">
-            {job.clients ? (
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-semibold text-lg">{job.clients.name}</p>
-                  </div>
+                <h3 className="font-semibold text-sm text-muted-foreground">Client</h3>
+                <div className="space-y-2">
+                  <p className="font-semibold">{job.clients.name}</p>
                   {job.clients.email && (
                     <div className="flex items-center gap-2 text-sm">
                       <Mail className="h-4 w-4 text-muted-foreground" />
@@ -181,17 +205,79 @@ export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequest
                     </div>
                   )}
                 </div>
-                <Button variant="outline" size="sm" className="w-full">
-                  View Full Client History
-                </Button>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">No client linked to this job</p>
+            )}
+            
+            {/* Notes */}
+            {job.pre_job_notes && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm text-muted-foreground">Pre-Job Notes</h3>
+                <p className="text-sm bg-muted p-3 rounded-lg">{job.pre_job_notes}</p>
+              </div>
+            )}
+            
+            {job.post_job_notes && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm text-muted-foreground">Post-Job Notes</h3>
+                <p className="text-sm bg-muted p-3 rounded-lg">{job.post_job_notes}</p>
               </div>
             )}
           </TabsContent>
-          
+
+          {/* Quotes Tab */}
+          <TabsContent value="quotes" className="space-y-4">
+            {loadingQuotes ? (
+              <div className="text-center py-8 text-muted-foreground">Loading quotes...</div>
+            ) : quotes.length > 0 ? (
+              <div className="space-y-3 mb-4">
+                {quotes.map((quote) => (
+                  <div key={quote.id} className="p-4 border rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{quote.service_name}</div>
+                      <Badge variant={
+                        quote.status === 'accepted' ? 'default' :
+                        quote.status === 'rejected' ? 'destructive' : 'secondary'
+                      }>
+                        {quote.status}
+                      </Badge>
+                    </div>
+                    <div className="text-2xl font-bold text-primary">
+                      ${(quote.total_amount / 100).toFixed(2)}
+                    </div>
+                    {quote.description && (
+                      <p className="text-sm text-muted-foreground">{quote.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            
+            <div className="py-4">
+              <QuoteBuilder
+                serviceRequestId={job.id}
+                homeownerId={job.homeowner_id || ""}
+                homeId={job.home_id || ""}
+                onSuccess={() => {
+                  loadQuotes();
+                }}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Diagnostic Tab */}
+          {job.is_service_call && (
+            <TabsContent value="diagnostic" className="space-y-4">
+              <DiagnosisForm
+                serviceCallId={job.service_call_id}
+                onSuccess={() => {
+                  loadQuotes();
+                  onClose();
+                }}
+              />
+            </TabsContent>
+          )}
+
+          {/* Activity Tab */}
           <TabsContent value="activity" className="mt-4">
             {events && events.length > 0 ? (
               <div className="space-y-4">
@@ -218,50 +304,6 @@ export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequest
                 <p className="text-sm text-muted-foreground">No activity recorded yet</p>
               </div>
             )}
-          </TabsContent>
-          
-          <TabsContent value="reviews" className="mt-4 space-y-4">
-            {reviews && reviews.length > 0 ? (
-              <div className="space-y-4">
-                {reviews.map((review: any) => (
-                  <div key={review.id} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold">{review.reviewer_name || "Anonymous"}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          {[...Array(5)].map((_, i) => (
-                            <span key={i} className="text-yellow-500">
-                              {i < review.rating ? "★" : "☆"}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(review.created_at), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                    {review.comment && (
-                      <p className="text-sm text-muted-foreground">{review.comment}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 space-y-3">
-                <p className="text-sm text-muted-foreground">No reviews yet</p>
-                {job.status === 'completed' && onRequestReview && (
-                  <Button onClick={onRequestReview} size="sm">
-                    Request Review
-                  </Button>
-                )}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="media" className="mt-4">
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">Media uploads coming soon</p>
-            </div>
           </TabsContent>
         </Tabs>
       </SheetContent>

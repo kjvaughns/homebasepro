@@ -49,7 +49,6 @@ import { Bell } from "lucide-react";
     { name: "Home", href: "/homeowner/dashboard", icon: Home },
     { name: "Properties", href: "/homeowner/homes", icon: Building2 },
     { name: "Explore", href: "/homeowner/browse", icon: Search },
-    { name: "Quotes", href: "/homeowner/quotes", icon: FileText },
     { name: "My Providers", href: "/homeowner/providers", icon: Users },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
     { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
