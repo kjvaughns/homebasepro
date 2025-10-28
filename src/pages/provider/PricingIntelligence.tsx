@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import ProviderLayout from "@/layouts/ProviderLayout";
 import { TrendingUp, TrendingDown, Target, Sparkles, DollarSign } from "lucide-react";
 
 export default function PricingIntelligence() {
@@ -110,19 +109,18 @@ export default function PricingIntelligence() {
   }
 
   return (
-    <ProviderLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-primary" />
-            Pricing Intelligence
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            AI-powered insights to optimize your pricing strategy
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Sparkles className="h-8 w-8 text-primary" />
+          Pricing Intelligence
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          AI-powered insights to optimize your pricing strategy
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
@@ -256,7 +254,6 @@ export default function PricingIntelligence() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </ProviderLayout>
+    </div>
   );
 }
