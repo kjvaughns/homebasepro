@@ -18,14 +18,15 @@ import {
   Wallet,
   LayoutGrid,
   Wrench,
-  FileText,
   Package,
   User,
+  Share2,
+  BarChart,
   CreditCard,
   Plug,
   Smartphone,
-  Share2,
-  BarChart,
+  FileText,
+  Calendar,
   GitBranch,
 } from "lucide-react";
 import {
@@ -82,6 +83,8 @@ export function ProviderSidebar() {
     { to: "/provider/dashboard", title: "Dashboard", icon: Home, showFor: "all" },
     { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
     { to: "/provider/clients", title: "Clients", icon: Users, showFor: "owner" },
+    { to: "/provider/quotes", title: "Quotes", icon: FileText, showFor: "owner" },
+    { to: "/provider/service-calls", title: "Service Calls", icon: Calendar, showFor: "owner" },
     { 
       title: "Jobs & Services", 
       icon: Briefcase, 

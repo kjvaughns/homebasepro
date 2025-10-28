@@ -119,6 +119,12 @@ import Messages from "./pages/Messages";
 import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 import ServiceProgress from "./pages/homeowner/ServiceProgress";
 import PricingIntelligence from "./pages/provider/PricingIntelligence";
+import { lazy } from "react";
+
+const ProviderQuotes = lazy(() => import("./pages/provider/Quotes"));
+const HomeownerQuotes = lazy(() => import("./pages/homeowner/Quotes"));
+const ProviderServiceCalls = lazy(() => import("./pages/provider/ServiceCalls"));
+const HomeownerServiceCalls = lazy(() => import("./pages/homeowner/ServiceCalls"));
 
 const queryClient = new QueryClient();
 
@@ -353,6 +359,8 @@ const App = () => {
             <Route path="/homeowner" element={<OnboardingGuard requiredFor="homeowner"><HomeownerLayout /></OnboardingGuard>}>
               <Route path="dashboard" element={<HomeownerDashboard />} />
               <Route path="service-progress/:serviceRequestId" element={<ServiceProgress />} />
+              <Route path="quotes" element={<Suspense fallback={<div>Loading...</div>}><HomeownerQuotes /></Suspense>} />
+              <Route path="service-calls" element={<Suspense fallback={<div>Loading...</div>}><HomeownerServiceCalls /></Suspense>} />
               <Route path="homes" element={<Homes />} />
               <Route path="homes/new" element={<AddHome />} />
               <Route path="homes/:id" element={<HomeDetail />} />
@@ -377,6 +385,8 @@ const App = () => {
             {/* Provider routes with shared layout */}
             <Route path="/provider" element={<OnboardingGuard requiredFor="provider"><ProviderLayout /></OnboardingGuard>}>
               <Route path="dashboard" element={<ProviderDashboard />} />
+              <Route path="quotes" element={<SubscriptionGuard requiredFeature="Quotes"><Suspense fallback={<div>Loading...</div>}><ProviderQuotes /></Suspense></SubscriptionGuard>} />
+              <Route path="service-calls" element={<SubscriptionGuard requiredFeature="Service Calls"><Suspense fallback={<div>Loading...</div>}><ProviderServiceCalls /></Suspense></SubscriptionGuard>} />
               
               {/* Guarded routes - require active subscription or trial */}
               <Route path="clients" element={
