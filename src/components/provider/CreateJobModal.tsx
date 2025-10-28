@@ -63,6 +63,8 @@ export default function CreateJobModal({
   const [selectedClient, setSelectedClient] = useState<Client | null>(preSelectedClient || null);
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<any>(null);
+  const [parts, setParts] = useState<any[]>([]);
+  const [selectedParts, setSelectedParts] = useState<any[]>([]);
   const [aiQuote, setAiQuote] = useState<any>(null);
   const [loadingAiQuote, setLoadingAiQuote] = useState(false);
   
@@ -83,13 +85,14 @@ export default function CreateJobModal({
     address: "",
   });
 
-  // Load existing clients and services
+  // Load existing clients, services, and parts
   useEffect(() => {
     if (open && clientMode === "existing") {
       loadClients();
     }
     if (open) {
       loadServices();
+      loadParts();
     }
   }, [open, clientMode]);
 
@@ -158,6 +161,32 @@ export default function CreateJobModal({
       setServices(data || []);
     } catch (error: any) {
       console.error("Error loading services:", error);
+    }
+  };
+
+  const loadParts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      if (!org) return;
+
+      const { data, error } = await supabase
+        .from("parts_materials")
+        .select("*")
+        .eq("organization_id", org.id)
+        .order("name");
+
+      if (error) throw error;
+      setParts(data || []);
+    } catch (error: any) {
+      console.error("Error loading parts:", error);
     }
   };
 
@@ -436,6 +465,11 @@ export default function CreateJobModal({
         return;
       }
 
+      // Calculate total parts cost
+      const totalPartsCost = selectedParts.reduce((sum, part) => 
+        sum + (part.sell_price || 0), 0
+      );
+
       // Create job using atomic RPC function
       const startDateTime = formData.scheduled_date;
       const durationHours = parseFloat(formData.duration);
@@ -464,6 +498,36 @@ export default function CreateJobModal({
           variant: "destructive",
         });
         return;
+      }
+
+      const bookingId = result?.booking_id;
+
+      // Update booking with service_id and final_price including parts
+      if (bookingId) {
+        const finalPrice = (parseFloat(formData.quote_amount || "0") * 100) + totalPartsCost;
+        
+        await supabase
+          .from('bookings')
+          .update({
+            service_id: selectedService?.id || null,
+            final_price: finalPrice > 0 ? finalPrice : null
+          })
+          .eq('id', bookingId);
+
+        // Link parts to job if any selected
+        if (selectedParts.length > 0) {
+          const jobPartsData = selectedParts.map(part => ({
+            job_id: bookingId,
+            part_id: part.id,
+            quantity: 1,
+            cost_per_unit: part.cost_price || 0,
+            markup_percentage: part.markup_percentage || 50,
+            sell_price_per_unit: part.sell_price || 0,
+          }));
+
+          // @ts-ignore - job_parts table exists but not in generated types yet
+          await supabase.from('job_parts').insert(jobPartsData);
+        }
       }
 
       toast({

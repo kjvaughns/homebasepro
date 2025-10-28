@@ -64,6 +64,43 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     loadData();
+
+    // Set up realtime subscription for payments
+    let channel: any;
+
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!org) return;
+
+      channel = supabase
+        .channel(`payments-realtime-${org.id}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'payments',
+          filter: `org_id=eq.${org.id}`
+        }, () => {
+          console.log('Payments updated, reloading...');
+          loadData();
+        })
+        .subscribe();
+    };
+
+    setupRealtime();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   const loadData = async () => {
