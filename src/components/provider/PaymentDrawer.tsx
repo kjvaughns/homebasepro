@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ExternalLink, Copy, Send, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefundDialog } from "./RefundDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface PaymentDrawerProps {
   payment: any;
@@ -16,6 +18,46 @@ interface PaymentDrawerProps {
 export function PaymentDrawer({ payment, onClose, onRefresh }: PaymentDrawerProps) {
   const { toast } = useToast();
   const [showRefund, setShowRefund] = useState(false);
+  const [relatedJob, setRelatedJob] = useState<any>(null);
+  const [relatedInvoice, setRelatedInvoice] = useState<any>(null);
+  const [relatedClient, setRelatedClient] = useState<any>(null);
+
+  useEffect(() => {
+    loadRelatedData();
+  }, [payment]);
+
+  const loadRelatedData = async () => {
+    if (payment.job_id) {
+      const { data: job } = await supabase
+        .from("bookings")
+        .select(`
+          *,
+          service:services(name),
+          parts:job_parts(*, part:parts_materials(*))
+        `)
+        .eq("id", payment.job_id)
+        .maybeSingle();
+      setRelatedJob(job);
+    }
+    
+    if (payment.invoice_id) {
+      const { data: invoice } = await supabase
+        .from("invoices")
+        .select("*")
+        .eq("id", payment.invoice_id)
+        .maybeSingle();
+      setRelatedInvoice(invoice);
+    }
+    
+    if (payment.client_id) {
+      const { data: client } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", payment.client_id)
+        .maybeSingle();
+      setRelatedClient(client);
+    }
+  };
 
   const copyLink = () => {
     if (payment.url) {
@@ -81,6 +123,49 @@ export function PaymentDrawer({ payment, onClose, onRefresh }: PaymentDrawerProp
             </div>
 
             <Separator />
+
+            {/* Related Job */}
+            {relatedJob && (
+              <>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Related Job</h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <p className="font-medium">{relatedJob.service_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {relatedJob.date_time_start && format(new Date(relatedJob.date_time_start), 'MMM d, yyyy')}
+                    </p>
+                    {relatedJob.service && (
+                      <Badge variant="outline">{relatedJob.service.name}</Badge>
+                    )}
+                    {relatedJob.parts && relatedJob.parts.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Parts: {relatedJob.parts.map((p: any) => p.part?.name).filter(Boolean).join(", ")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            {/* Related Client */}
+            {relatedClient && (
+              <>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Client</h4>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <p className="font-medium">{relatedClient.name}</p>
+                    <p className="text-sm text-muted-foreground">{relatedClient.email}</p>
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                      <span>LTV: ${relatedClient.lifetime_value || 0}</span>
+                      <span>•</span>
+                      <span>Jobs: {relatedClient.total_jobs || 0}</span>
+                    </div>
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
 
             {/* Actions */}
             <div className="space-y-2">

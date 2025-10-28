@@ -100,48 +100,69 @@ export default function Analytics() {
 
       setOrganizationId(org.id);
 
-      // Get auth token for edge function call
-      const { data: { session } } = await supabase.auth.getSession();
+      // Try materialized view first, fallback to direct queries
+      const { data: analyticsData } = await supabase
+        .from("provider_analytics")
+        .select("*")
+        .eq("org_id", org.id)
+        .maybeSingle();
       
-      // Call edge function to get real Stripe analytics
-      const { data: analyticsData, error } = await supabase.functions.invoke(
-        'get-provider-analytics',
-        {
-          body: { timeRange },
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`
-          }
-        }
-      );
-
-      if (error) {
-        console.error("Error fetching analytics:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load analytics data",
-          variant: "destructive",
+      if (analyticsData) {
+        // Use materialized view data
+        setMetrics({
+          totalRevenue: analyticsData.total_revenue || 0,
+          revenueChange: analyticsData.revenue_change || 0,
+          activeClients: analyticsData.total_clients || 0,
+          clientsChange: 0,
+          avgTransactionValue: analyticsData.avg_transaction || 0,
+          avgChange: 0,
+          completedServices: analyticsData.total_jobs || 0,
+          servicesChange: 0,
         });
-        return;
+        
+        setRevenueData(analyticsData.revenue_breakdown || []);
+        setServiceTypeData(analyticsData.service_breakdown || []);
+      } else {
+        // Fallback: Calculate on-the-fly
+        const startDate = getStartDate(timeRange);
+        
+        const { data: payments } = await supabase
+          .from("payments")
+          .select("amount, status, created_at")
+          .eq("org_id", org.id)
+          .gte("created_at", startDate);
+        
+        const totalRevenue = payments
+          ?.filter(p => p.status === "paid")
+          .reduce((sum, p) => sum + p.amount, 0) || 0;
+        
+        const { data: clients } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("organization_id", org.id);
+        
+        const avgTransaction = payments?.length 
+          ? totalRevenue / payments.filter(p => p.status === "paid").length 
+          : 0;
+        
+        setMetrics({
+          totalRevenue,
+          revenueChange: 0,
+          activeClients: clients?.length || 0,
+          clientsChange: 0,
+          avgTransactionValue: avgTransaction,
+          avgChange: 0,
+          completedServices: payments?.filter(p => p.status === "paid").length || 0,
+          servicesChange: 0
+        });
+        
+        // Generate revenue chart from payments
+        setRevenueData(generateRevenueChart(payments || [], timeRange));
+        setServiceTypeData([]);
       }
-
-      // Set metrics from Stripe data
-      setMetrics({
-        totalRevenue: analyticsData.totalRevenue,
-        revenueChange: analyticsData.revenueChange,
-        activeClients: analyticsData.activeClients,
-        clientsChange: 0, // Can be calculated from trend data
-        avgTransactionValue: analyticsData.avgTransactionValue,
-        avgChange: 0,
-        completedServices: analyticsData.transactionCount,
-        servicesChange: 0,
-      });
-
-      setRevenueData(analyticsData.revenueByMonth);
       
-      // Generate client growth data (could be enhanced with actual data)
+      // Generate client growth data
       setClientGrowthData(generateClientGrowthData(timeRange));
-      
-      setServiceTypeData(analyticsData.serviceTypeData);
 
     } catch (error) {
       console.error("Error loading analytics:", error);
@@ -153,6 +174,40 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getStartDate = (range: string) => {
+    const date = new Date();
+    if (range === "30d") date.setDate(date.getDate() - 30);
+    else if (range === "90d") date.setDate(date.getDate() - 90);
+    else date.setFullYear(date.getFullYear() - 1);
+    return date.toISOString();
+  };
+
+  const generateRevenueChart = (payments: any[], range: string) => {
+    const months = range === "30d" ? 4 : range === "90d" ? 12 : 12;
+    const data = [];
+    
+    for (let i = 0; i < months; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (months - i - 1));
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      
+      const monthRevenue = payments
+        .filter(p => {
+          const pDate = new Date(p.created_at);
+          return pDate >= monthStart && pDate <= monthEnd && p.status === "paid";
+        })
+        .reduce((sum, p) => sum + p.amount, 0) / 100;
+      
+      data.push({
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        revenue: monthRevenue
+      });
+    }
+    
+    return data;
   };
 
   const generateClientGrowthData = (range: string) => {

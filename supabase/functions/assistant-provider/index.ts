@@ -205,6 +205,31 @@ serve(async (req) => {
         parts_ids: { type: "array", items: { type: "string" }, description: "Selected parts/materials IDs" },
         custom_notes: { type: "string", description: "Any special requirements or notes" }
       }, ["service_name", "client_id"]),
+      fn("complete_job_with_invoice", "Complete job and auto-create invoice with itemized parts breakdown", {
+        job_id: { type: "string" },
+        final_amount: { type: "number", description: "Final total in cents" },
+        parts_used: { 
+          type: "array", 
+          items: { 
+            type: "object",
+            properties: {
+              part_id: { type: "string" },
+              quantity: { type: "integer" }
+            }
+          },
+          description: "Parts used in the job"
+        },
+        labor_hours: { type: "number" },
+        post_job_notes: { type: "string" }
+      }, ["job_id", "final_amount"]),
+      fn("suggest_upsell_opportunities", "Analyze client history and suggest additional services they might need", {
+        client_id: { type: "string" }
+      }, ["client_id"]),
+      fn("forecast_job_profitability", "Calculate expected profit margin and breakdown for a planned job", {
+        service_id: { type: "string" },
+        part_ids: { type: "array", items: { type: "string" } },
+        labor_hours: { type: "number" }
+      }, ["service_id"]),
     ];
 
     const first = await llm(LOVABLE_KEY, {
@@ -966,6 +991,142 @@ ${serviceData ? `Service Description: ${serviceData.description || ""}` : ""}
       service_base: (args.base_price || 0) / 100,
       estimated_total: ((priceData.price_low || args.base_price || 0) + partsCost) / 100,
       confidence: priceData.confidence || "medium"
+    };
+  }
+
+  if (name === "complete_job_with_invoice") {
+    const { job_id, final_amount, parts_used, labor_hours, post_job_notes } = args;
+    
+    // 1. Update job status
+    const { error: jobError } = await sb.from("jobs" as any).update({
+      status: "completed",
+      final_amount: Math.round(final_amount * 100), // Convert to cents
+      actual_labor_hours: labor_hours,
+      post_job_notes
+    }).eq("id", job_id);
+    
+    if (jobError) throw jobError;
+    
+    // 2. Link parts to job
+    if (parts_used?.length > 0) {
+      const { data: parts } = await sb.from("parts_materials")
+        .select("*")
+        .in("id", parts_used.map((p: any) => p.part_id));
+      
+      const jobParts = parts_used.map((pu: any) => {
+        const part = parts?.find((p: any) => p.id === pu.part_id);
+        return {
+          job_id,
+          part_id: pu.part_id,
+          quantity: pu.quantity,
+          cost_per_unit: part?.cost_price || 0,
+          markup_percentage: part?.markup_percentage || 0,
+          sell_price_per_unit: part?.sell_price || 0
+        };
+      });
+      
+      await sb.from("job_parts" as any).insert(jobParts);
+    }
+    
+    // 3. Log event
+    await sb.from("job_events" as any).insert({
+      job_id,
+      event_type: 'completed',
+      payload: { final_amount, labor_hours, parts_count: parts_used?.length || 0 }
+    });
+    
+    // 4. Invoice auto-created by trigger ✓
+    
+    return { 
+      success: true, 
+      message: "Job completed and invoice created automatically",
+      parts_recorded: parts_used?.length || 0
+    };
+  }
+
+  if (name === "suggest_upsell_opportunities") {
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!org?.id) return { suggestions: [] };
+
+    // Get client's job history
+    const { data: jobs } = await sb
+      .from("jobs" as any)
+      .select("service_name, status, created_at")
+      .eq("client_id", args.client_id)
+      .eq("provider_org_id", org.id)
+      .order("created_at", { ascending: false });
+
+    // Get all available services
+    const { data: services } = await sb
+      .from("services")
+      .select("name, category, default_price")
+      .eq("organization_id", org.id);
+
+    // Simple logic: suggest services not yet used
+    const usedServices = new Set(jobs?.map((j: any) => j.service_name) || []);
+    const suggestions = services
+      ?.filter((s: any) => !usedServices.has(s.name))
+      .slice(0, 3)
+      .map((s: any) => ({
+        service: s.name,
+        category: s.category,
+        price: (s.default_price || 0) / 100,
+        reason: `Based on ${jobs?.length || 0} previous services, this might be relevant`
+      })) || [];
+
+    return { 
+      suggestions,
+      client_history: jobs?.length || 0
+    };
+  }
+
+  if (name === "forecast_job_profitability") {
+    // Get service
+    const { data: service } = await sb
+      .from("services")
+      .select("*")
+      .eq("id", args.service_id)
+      .single();
+
+    if (!service) return { error: "service_not_found" };
+
+    // Get parts
+    let partsCost = 0;
+    if (args.part_ids?.length) {
+      const { data: parts } = await sb
+        .from("parts_materials")
+        .select("cost_price")
+        .in("id", args.part_ids);
+      
+      partsCost = parts?.reduce((sum: number, p: any) => sum + (p.cost_price || 0), 0) || 0;
+    }
+
+    // Calculate labor cost (assuming $50/hr)
+    const laborRate = 5000; // $50 in cents
+    const laborCost = (args.labor_hours || 0) * laborRate;
+    
+    const totalCost = partsCost + laborCost;
+    const revenue = service.default_price || 0;
+    const profit = revenue - totalCost;
+    const profitMargin = revenue > 0 ? (profit / revenue * 100) : 0;
+
+    return {
+      service_name: service.name,
+      revenue: revenue / 100,
+      costs: {
+        parts: partsCost / 100,
+        labor: laborCost / 100,
+        total: totalCost / 100
+      },
+      profit: profit / 100,
+      profit_margin: profitMargin.toFixed(1) + '%',
+      recommendation: profitMargin > 20 ? 'Good margin' : 'Consider adjusting pricing'
     };
   }
 

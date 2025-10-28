@@ -94,7 +94,17 @@ const Jobs = () => {
 
       let query = supabase
         .from("jobs" as any)
-        .select("*, clients(name, email, phone)")
+        .select(`
+          *,
+          clients(name, email, phone, lifetime_value, total_jobs),
+          service:services(name, default_price, estimated_duration_minutes),
+          parts:job_parts(
+            quantity,
+            sell_price_per_unit,
+            part:parts_materials(name, category)
+          ),
+          invoice:invoices(id, status, amount, due_date)
+        `)
         .eq("provider_org_id", org.id)
         .order("window_start", { ascending: true, nullsFirst: false });
 

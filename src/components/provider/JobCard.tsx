@@ -15,6 +15,19 @@ interface JobCardProps {
     clients?: {
       name: string;
     };
+    service?: {
+      name: string;
+      default_price: number;
+    };
+    parts?: Array<{
+      part: { name: string };
+      quantity: number;
+    }>;
+    invoice?: {
+      id: string;
+      status: string;
+      amount: number;
+    };
   };
   onComplete?: (id: string) => void;
   onReschedule?: (id: string) => void;
@@ -65,6 +78,34 @@ export const JobCard = ({ job, onComplete, onReschedule, onAddNotes }: JobCardPr
             </span>
           </div>
         </div>
+
+        {/* Service & Parts Info */}
+        {job.service && (
+          <div className="flex items-center gap-2 text-sm pt-2 border-t">
+            <Badge variant="outline">{job.service.name}</Badge>
+            <span className="text-muted-foreground">
+              ${(job.service.default_price / 100).toFixed(2)}
+            </span>
+          </div>
+        )}
+
+        {job.parts && job.parts.length > 0 && (
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium">Parts:</span> {job.parts.map(p => 
+              `${p.part.name} (${p.quantity}x)`
+            ).join(", ")}
+          </div>
+        )}
+
+        {job.invoice && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Invoice:</span>
+            <Badge variant={job.invoice.status === 'paid' ? 'default' : 'secondary'}>
+              {job.invoice.status}
+            </Badge>
+            <span className="font-medium">${(job.invoice.amount / 100).toFixed(2)}</span>
+          </div>
+        )}
 
         {job.status !== 'completed' && job.status !== 'cancelled' && (
           <div className="flex gap-2 pt-2">
