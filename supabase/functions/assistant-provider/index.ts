@@ -997,21 +997,22 @@ ${serviceData ? `Service Description: ${serviceData.description || ""}` : ""}
   if (name === "complete_job_with_invoice") {
     const { job_id, final_amount, parts_used, labor_hours, post_job_notes } = args;
     
-    // 1. Update job status
+    // 1. Update job status (final_amount already in cents from tool definition)
     const { error: jobError } = await sb.from("jobs" as any).update({
       status: "completed",
-      final_amount: Math.round(final_amount * 100), // Convert to cents
+      final_amount: final_amount,
       actual_labor_hours: labor_hours,
       post_job_notes
     }).eq("id", job_id);
     
-    if (jobError) throw jobError;
+    if (jobError) return { error: jobError.message };
     
     // 2. Link parts to job
-    if (parts_used?.length > 0) {
+    if (parts_used && Array.isArray(parts_used) && parts_used.length > 0) {
+      const partIds = parts_used.map((p: any) => p.part_id);
       const { data: parts } = await sb.from("parts_materials")
         .select("*")
-        .in("id", parts_used.map((p: any) => p.part_id));
+        .in("id", partIds);
       
       const jobParts = parts_used.map((pu: any) => {
         const part = parts?.find((p: any) => p.id === pu.part_id);
@@ -1025,7 +1026,8 @@ ${serviceData ? `Service Description: ${serviceData.description || ""}` : ""}
         };
       });
       
-      await sb.from("job_parts" as any).insert(jobParts);
+      const { error: partsError } = await sb.from("job_parts" as any).insert(jobParts);
+      if (partsError) console.error("Error linking parts:", partsError);
     }
     
     // 3. Log event
@@ -1039,7 +1041,7 @@ ${serviceData ? `Service Description: ${serviceData.description || ""}` : ""}
     
     return { 
       success: true, 
-      message: "Job completed and invoice created automatically",
+      message: "Job completed and invoice will be created automatically",
       parts_recorded: parts_used?.length || 0
     };
   }

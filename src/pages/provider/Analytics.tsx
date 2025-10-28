@@ -100,69 +100,48 @@ export default function Analytics() {
 
       setOrganizationId(org.id);
 
-      // Try materialized view first, fallback to direct queries
-      const { data: analyticsData } = await supabase
-        .from("provider_analytics")
-        .select("*")
-        .eq("org_id", org.id)
-        .maybeSingle();
+      // Calculate metrics using direct queries
+      const startDate = getStartDate(timeRange);
       
-      if (analyticsData) {
-        // Use materialized view data
-        setMetrics({
-          totalRevenue: analyticsData.total_revenue || 0,
-          revenueChange: analyticsData.revenue_change || 0,
-          activeClients: analyticsData.total_clients || 0,
-          clientsChange: 0,
-          avgTransactionValue: analyticsData.avg_transaction || 0,
-          avgChange: 0,
-          completedServices: analyticsData.total_jobs || 0,
-          servicesChange: 0,
-        });
-        
-        setRevenueData(analyticsData.revenue_breakdown || []);
-        setServiceTypeData(analyticsData.service_breakdown || []);
-      } else {
-        // Fallback: Calculate on-the-fly
-        const startDate = getStartDate(timeRange);
-        
-        const { data: payments } = await supabase
-          .from("payments")
-          .select("amount, status, created_at")
-          .eq("org_id", org.id)
-          .gte("created_at", startDate);
-        
-        const totalRevenue = payments
-          ?.filter(p => p.status === "paid")
-          .reduce((sum, p) => sum + p.amount, 0) || 0;
-        
-        const { data: clients } = await supabase
-          .from("clients")
-          .select("id")
-          .eq("organization_id", org.id);
-        
-        const avgTransaction = payments?.length 
-          ? totalRevenue / payments.filter(p => p.status === "paid").length 
-          : 0;
-        
-        setMetrics({
-          totalRevenue,
-          revenueChange: 0,
-          activeClients: clients?.length || 0,
-          clientsChange: 0,
-          avgTransactionValue: avgTransaction,
-          avgChange: 0,
-          completedServices: payments?.filter(p => p.status === "paid").length || 0,
-          servicesChange: 0
-        });
-        
-        // Generate revenue chart from payments
-        setRevenueData(generateRevenueChart(payments || [], timeRange));
-        setServiceTypeData([]);
-      }
+      const { data: payments } = await supabase
+        .from("payments")
+        .select("amount, status, created_at")
+        .eq("org_id", org.id)
+        .gte("created_at", startDate);
+      
+      const totalRevenue = (payments || [])
+        .filter(p => p.status === "paid")
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("organization_id", org.id);
+      
+      const paidPayments = (payments || []).filter(p => p.status === "paid");
+      const avgTransaction = paidPayments.length 
+        ? totalRevenue / paidPayments.length 
+        : 0;
+      
+      setMetrics({
+        totalRevenue,
+        revenueChange: 0,
+        activeClients: clients?.length || 0,
+        clientsChange: 0,
+        avgTransactionValue: avgTransaction,
+        avgChange: 0,
+        completedServices: paidPayments.length,
+        servicesChange: 0
+      });
+      
+      // Generate revenue chart from payments
+      setRevenueData(generateRevenueChart(payments || [], timeRange));
       
       // Generate client growth data
       setClientGrowthData(generateClientGrowthData(timeRange));
+      
+      // Generate service type data if available
+      setServiceTypeData([]);
 
     } catch (error) {
       console.error("Error loading analytics:", error);
