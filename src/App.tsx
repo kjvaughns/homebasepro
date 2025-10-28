@@ -118,7 +118,6 @@ import { MessagingProvider } from "@/contexts/MessagingContext";
 import Messages from "./pages/Messages";
 import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 import ServiceProgress from "./pages/homeowner/ServiceProgress";
-import WorkflowManager from "./pages/provider/WorkflowManager";
 import PricingIntelligence from "./pages/provider/PricingIntelligence";
 
 const queryClient = new QueryClient();
@@ -403,11 +402,6 @@ const App = () => {
               <Route path="jobs" element={
                 <SubscriptionGuard requiredFeature="Job Management">
                   <Jobs />
-                </SubscriptionGuard>
-              } />
-              <Route path="workflows" element={
-                <SubscriptionGuard requiredFeature="Workflow Management">
-                  <WorkflowManager />
                 </SubscriptionGuard>
               } />
               <Route path="pricing-intelligence" element={

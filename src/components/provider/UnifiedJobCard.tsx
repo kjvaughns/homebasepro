@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Clock, DollarSign, CheckCircle, PlayCircle, FileText, CreditCard } from "lucide-react";
-import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, MapPin, Clock, DollarSign, CheckCircle, PlayCircle, FileText, CreditCard, ArrowRight, AlertCircle } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 
 interface UnifiedJobCardProps {
   job: {
@@ -22,6 +23,11 @@ interface UnifiedJobCardProps {
       name: string;
       phone?: string;
     };
+    workflow?: Array<{
+      workflow_stage: string;
+      stage_started_at: string;
+      stage_completed_at?: string;
+    }>;
   };
   onAction?: (jobId: string, action: string) => void;
 }
@@ -121,16 +127,38 @@ export const UnifiedJobCard = ({ job, onAction }: UnifiedJobCardProps) => {
   const primaryAction = config.actions[0];
   const PrimaryIcon = primaryAction?.icon;
   
+  // Calculate workflow progress
+  const workflowStages = ['request_submitted', 'providers_matched', 'diagnostic_scheduled', 'quote_sent', 'job_scheduled', 'job_in_progress', 'job_completed', 'invoice_sent', 'payment_received'];
+  const currentWorkflow = job.workflow?.[0];
+  const currentStageIndex = currentWorkflow ? workflowStages.indexOf(currentWorkflow.workflow_stage) : -1;
+  const progress = currentStageIndex >= 0 ? ((currentStageIndex + 1) / workflowStages.length) * 100 : 0;
+  
+  // Calculate time in current stage
+  const timeInStage = currentWorkflow?.stage_started_at 
+    ? formatDistanceToNow(new Date(currentWorkflow.stage_started_at), { addSuffix: true })
+    : null;
+  
+  // Check if stuck (>48 hours in same stage)
+  const isStuck = currentWorkflow?.stage_started_at && !currentWorkflow.stage_completed_at
+    ? (Date.now() - new Date(currentWorkflow.stage_started_at).getTime()) > 48 * 60 * 60 * 1000
+    : false;
+  
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="space-y-1 flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold truncate">{job.clients?.name || "New Client"}</h3>
               <Badge className={config.color} variant="secondary">
                 {config.label}
               </Badge>
+              {isStuck && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  At Risk
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground truncate">{job.service_name}</p>
           </div>
@@ -165,6 +193,20 @@ export const UnifiedJobCard = ({ job, onAction }: UnifiedJobCardProps) => {
             </div>
           )}
         </div>
+        
+        {/* Workflow Progress */}
+        {currentWorkflow && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                Workflow: {currentWorkflow.workflow_stage.replace(/_/g, ' ')}
+                {timeInStage && ` (${timeInStage})`}
+              </span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="h-1" />
+          </div>
+        )}
         
         {/* Primary Action Button */}
         {primaryAction && onAction && (

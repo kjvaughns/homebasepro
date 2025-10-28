@@ -9,6 +9,7 @@ import { JobsMap } from "@/components/provider/JobsMap";
 import { JobsCalendar } from "@/components/provider/JobsCalendar";
 import CreateJobModal from "@/components/provider/CreateJobModal";
 import { toast } from "sonner";
+import { syncJobToWorkflow } from "@/lib/workflow-sync";
 import {
   Select,
   SelectContent,
@@ -103,7 +104,12 @@ const Jobs = () => {
             sell_price_per_unit,
             part:parts_materials(name, category)
           ),
-          invoice:invoices(id, status, amount, due_date)
+          invoice:invoices(id, status, amount, due_date),
+          workflow:workflow_states!workflow_states_service_request_id_fkey(
+            workflow_stage,
+            stage_started_at,
+            stage_completed_at
+          )
         `)
         .eq("provider_org_id", org.id)
         .order("window_start", { ascending: true, nullsFirst: false });
@@ -172,6 +178,25 @@ const Jobs = () => {
     });
 
     if (error) throw error;
+    
+    // Sync job status to workflow_states
+    try {
+      // Map action to job status
+      const actionToStatusMap: Record<string, string> = {
+        'start': 'in_progress',
+        'complete': 'completed',
+        'started': 'in_progress',
+        'completed': 'completed',
+        'schedule': 'scheduled',
+        'en_route': 'en_route'
+      };
+      
+      const jobStatus = actionToStatusMap[action] || action;
+      await syncJobToWorkflow(jobId, jobStatus);
+    } catch (workflowError) {
+      console.error("Failed to sync workflow:", workflowError);
+      // Don't block the UI if workflow sync fails
+    }
     
     toast.success("Job updated");
     loadJobs();
