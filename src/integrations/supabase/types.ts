@@ -207,6 +207,96 @@ export type Database = {
           },
         ]
       }
+      ai_learning_events: {
+        Row: {
+          accuracy_score: number | null
+          actual_outcome: Json | null
+          ai_predicted: Json | null
+          booking_id: string | null
+          complexity_factors: Json | null
+          created_at: string
+          event_type: string
+          id: string
+          property_size_bucket: string | null
+          provider_org_id: string | null
+          quote_id: string | null
+          region_zip: string | null
+          service_call_id: string | null
+          service_category: string | null
+          service_request_id: string | null
+        }
+        Insert: {
+          accuracy_score?: number | null
+          actual_outcome?: Json | null
+          ai_predicted?: Json | null
+          booking_id?: string | null
+          complexity_factors?: Json | null
+          created_at?: string
+          event_type: string
+          id?: string
+          property_size_bucket?: string | null
+          provider_org_id?: string | null
+          quote_id?: string | null
+          region_zip?: string | null
+          service_call_id?: string | null
+          service_category?: string | null
+          service_request_id?: string | null
+        }
+        Update: {
+          accuracy_score?: number | null
+          actual_outcome?: Json | null
+          ai_predicted?: Json | null
+          booking_id?: string | null
+          complexity_factors?: Json | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          property_size_bucket?: string | null
+          provider_org_id?: string | null
+          quote_id?: string | null
+          region_zip?: string | null
+          service_call_id?: string | null
+          service_category?: string | null
+          service_request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_learning_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_learning_events_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_learning_events_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_learning_events_service_call_id_fkey"
+            columns: ["service_call_id"]
+            isOneToOne: false
+            referencedRelation: "service_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_learning_events_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           body: string
@@ -3478,6 +3568,120 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          accepted_at: string | null
+          ai_confidence: number | null
+          ai_generated: boolean | null
+          converted_to_booking_id: string | null
+          created_at: string
+          description: string | null
+          home_id: string
+          homeowner_id: string
+          id: string
+          labor_cost: number | null
+          line_items: Json | null
+          parts_cost: number | null
+          pricing_factors: Json | null
+          provider_org_id: string
+          quote_type: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          service_name: string
+          service_request_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          ai_confidence?: number | null
+          ai_generated?: boolean | null
+          converted_to_booking_id?: string | null
+          created_at?: string
+          description?: string | null
+          home_id: string
+          homeowner_id: string
+          id?: string
+          labor_cost?: number | null
+          line_items?: Json | null
+          parts_cost?: number | null
+          pricing_factors?: Json | null
+          provider_org_id: string
+          quote_type: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          service_name: string
+          service_request_id?: string | null
+          status?: string
+          total_amount: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          ai_confidence?: number | null
+          ai_generated?: boolean | null
+          converted_to_booking_id?: string | null
+          created_at?: string
+          description?: string | null
+          home_id?: string
+          homeowner_id?: string
+          id?: string
+          labor_cost?: number | null
+          line_items?: Json | null
+          parts_cost?: number | null
+          pricing_factors?: Json | null
+          provider_org_id?: string
+          quote_type?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          service_name?: string
+          service_request_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_converted_to_booking_id_fkey"
+            columns: ["converted_to_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receipts: {
         Row: {
           amount: number | null
@@ -3818,6 +4022,132 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "referral_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_calls: {
+        Row: {
+          assigned_team_member_id: string | null
+          completed_at: string | null
+          converted_to_booking_id: string | null
+          created_at: string
+          diagnosis_summary: string | null
+          diagnostic_fee: number
+          fee_paid: boolean | null
+          generated_quote_id: string | null
+          home_id: string
+          homeowner_id: string
+          id: string
+          payment_id: string | null
+          photos: Json | null
+          provider_org_id: string
+          recommended_actions: Json | null
+          scheduled_date: string | null
+          service_request_id: string | null
+          status: string
+          technician_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_team_member_id?: string | null
+          completed_at?: string | null
+          converted_to_booking_id?: string | null
+          created_at?: string
+          diagnosis_summary?: string | null
+          diagnostic_fee: number
+          fee_paid?: boolean | null
+          generated_quote_id?: string | null
+          home_id: string
+          homeowner_id: string
+          id?: string
+          payment_id?: string | null
+          photos?: Json | null
+          provider_org_id: string
+          recommended_actions?: Json | null
+          scheduled_date?: string | null
+          service_request_id?: string | null
+          status?: string
+          technician_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_team_member_id?: string | null
+          completed_at?: string | null
+          converted_to_booking_id?: string | null
+          created_at?: string
+          diagnosis_summary?: string | null
+          diagnostic_fee?: number
+          fee_paid?: boolean | null
+          generated_quote_id?: string | null
+          home_id?: string
+          homeowner_id?: string
+          id?: string
+          payment_id?: string | null
+          photos?: Json | null
+          provider_org_id?: string
+          recommended_actions?: Json | null
+          scheduled_date?: string | null
+          service_request_id?: string | null
+          status?: string
+          technician_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_calls_assigned_team_member_id_fkey"
+            columns: ["assigned_team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_calls_converted_to_booking_id_fkey"
+            columns: ["converted_to_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_calls_generated_quote_id_fkey"
+            columns: ["generated_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_calls_home_id_fkey"
+            columns: ["home_id"]
+            isOneToOne: false
+            referencedRelation: "homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_calls_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_calls_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_calls_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_calls_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -4872,6 +5202,120 @@ export type Database = {
           zip_code?: string | null
         }
         Relationships: []
+      }
+      workflow_states: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          homeowner_id: string
+          homeowner_notified_at: string | null
+          id: string
+          invoice_id: string | null
+          payment_id: string | null
+          provider_notified_at: string | null
+          provider_org_id: string | null
+          quote_id: string | null
+          service_call_id: string | null
+          service_request_id: string | null
+          stage_completed_at: string | null
+          stage_started_at: string
+          updated_at: string
+          workflow_stage: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          homeowner_id: string
+          homeowner_notified_at?: string | null
+          id?: string
+          invoice_id?: string | null
+          payment_id?: string | null
+          provider_notified_at?: string | null
+          provider_org_id?: string | null
+          quote_id?: string | null
+          service_call_id?: string | null
+          service_request_id?: string | null
+          stage_completed_at?: string | null
+          stage_started_at?: string
+          updated_at?: string
+          workflow_stage: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          homeowner_id?: string
+          homeowner_notified_at?: string | null
+          id?: string
+          invoice_id?: string | null
+          payment_id?: string | null
+          provider_notified_at?: string | null
+          provider_org_id?: string | null
+          quote_id?: string | null
+          service_call_id?: string | null
+          service_request_id?: string | null
+          stage_completed_at?: string | null
+          stage_started_at?: string
+          updated_at?: string
+          workflow_stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_states_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_states_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_states_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_states_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_states_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_states_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_states_service_call_id_fkey"
+            columns: ["service_call_id"]
+            isOneToOne: false
+            referencedRelation: "service_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_states_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
