@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -369,6 +369,11 @@ const App = () => {
               <Route path="providers" element={<MyProviders />} />
               <Route path="settings" element={<HomeownerSettings />} />
               <Route path="settings/payments" element={<HomeownerPaymentSettings />} />
+              <Route path="settings/notifications" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(lazy(() => import('./pages/homeowner/NotificationSettings')))}
+                </Suspense>
+              } />
               <Route path="messages" element={<Messages role="homeowner" />} />
               <Route path="notifications" element={
                 <Suspense fallback={<div>Loading...</div>}>
@@ -460,6 +465,11 @@ const App = () => {
               <Route path="settings/payments" element={<ProviderPaymentSettings />} />
               <Route path="settings/integrations" element={<IntegrationSettings />} />
               <Route path="settings/app" element={<AppSettings />} />
+              <Route path="settings/notifications" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(lazy(() => import('./pages/provider/NotificationSettings')))}
+                </Suspense>
+              } />
               
               {/* Legacy Routes - Redirect to Account */}
               <Route path="portfolio" element={<Navigate to="/provider/account/portfolio" replace />} />
