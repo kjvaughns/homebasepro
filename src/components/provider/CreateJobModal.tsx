@@ -580,7 +580,7 @@ export default function CreateJobModal({
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 px-6 overflow-y-auto">
+          <div className="flex-1 px-6 overflow-y-auto">
             <div className="space-y-6 pb-6">
               {/* Client Mode Toggle */}
               {!preSelectedClient && (
@@ -906,7 +906,7 @@ export default function CreateJobModal({
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
           <DialogFooter className="px-6 py-4 shrink-0 border-t">
             <Button

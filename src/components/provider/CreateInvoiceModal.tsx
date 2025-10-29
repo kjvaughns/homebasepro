@@ -221,36 +221,41 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
 
       if (insertError) throw insertError;
 
-      // Create Stripe Invoice with payment link
-      const { data: stripeInvoiceData, error: stripeError } = await supabase.functions.invoke('create-stripe-invoice', {
-        body: {
-          clientEmail,
-          clientName,
-          clientPhone: newClientData?.phone || '',
-          lineItems: lineItems.map(item => ({
-            description: item.description,
-            quantity: item.quantity,
-            rate: item.rate
-          })),
-          dueDate,
-          orgId: org.id,
-          stripeAccountId: org.stripe_account_id,
-          invoiceId: invoice.id
+      // Create payment link using payments-api
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+        "payments-api",
+        {
+          body: {
+            action: "payment-link",
+            organizationId: org.id,
+            stripeAccountId: org.stripe_account_id,
+            clientEmail,
+            clientName,
+            lineItems: lineItems.map(item => ({
+              description: item.description,
+              quantity: item.quantity,
+              amount: Math.round(item.rate * item.quantity * 100) // Total in cents
+            })),
+            invoiceId: invoice.id,
+            dueDate: dueDate || undefined,
+            successUrl: `${window.location.origin}/invoice/${invoice.id}/success`,
+            cancelUrl: `${window.location.origin}/provider/accounting`
+          },
         }
-      });
+      );
 
-      if (stripeError) {
-        console.error('Stripe invoice creation error:', stripeError);
+      if (paymentError) {
+        console.error('Payment link creation error:', paymentError);
         
         // Extract detailed error message
         let errorMsg = 'Payment link generation failed';
         
-        if (stripeError.message) {
-          errorMsg = stripeError.message;
-        } else if (typeof stripeError === 'string') {
-          errorMsg = stripeError;
-        } else if (stripeError.error) {
-          errorMsg = stripeError.error;
+        if (paymentError.message) {
+          errorMsg = paymentError.message;
+        } else if (typeof paymentError === 'string') {
+          errorMsg = paymentError;
+        } else if (paymentError.error) {
+          errorMsg = paymentError.error;
         }
         
         // Rollback: Delete the database invoice record
@@ -261,14 +266,23 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         
         toast.error(`Failed to create payment link: ${errorMsg}`);
         return;
-      } else if (stripeInvoiceData?.hosted_invoice_url) {
+      } else if (paymentData?.url) {
         // Try auto-copy with fallback to dialog
-        const copyResult = await copyToClipboard(stripeInvoiceData.hosted_invoice_url);
+        const copyResult = await copyToClipboard(paymentData.url);
+        
+        // Update invoice with Stripe payment link URL
+        await supabase
+          .from('invoices')
+          .update({
+            stripe_payment_link_url: paymentData.url,
+            stripe_session_id: paymentData.sessionId
+          })
+          .eq('id', invoice.id);
         
         // Show payment link in console for easy access
         console.log('Stripe Payment Link Created:', {
-          payment_link_id: stripeInvoiceData.stripe_payment_link_id,
-          payment_url: stripeInvoiceData.hosted_invoice_url
+          session_id: paymentData.sessionId,
+          payment_url: paymentData.url
         });
         
         if (copyResult.success) {
@@ -276,7 +290,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
           handleClose();
         } else {
           // Auto-copy failed, show dialog with manual copy button
-          setGeneratedPaymentLink(stripeInvoiceData.hosted_invoice_url);
+          setGeneratedPaymentLink(paymentData.url);
           setGeneratedClientName(clientName);
           setShowPaymentLinkDialog(true);
           toast.info('Payment link created! Click "Copy Link" to copy it.');

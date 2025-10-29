@@ -515,25 +515,70 @@ Deno.serve(async (req) => {
       return ok({ payoutId: payout.id, status: payout.status });
     }
 
-    // PAYMENT LINK (Create Stripe Checkout for ad-hoc payment)
+    // PAYMENT LINK (Create Stripe Checkout for invoices and ad-hoc payments)
     if (action === 'payment-link') {
-      const { amount, description, clientId, jobId } = body;
-      if (!amount || !description) return err('MISSING_FIELDS', 'amount and description required');
+      const { amount, description, clientId, jobId, lineItems, invoiceId, organizationId, stripeAccountId, successUrl, cancelUrl } = body;
+      
+      // Support both direct amount OR lineItems array
+      if (!stripeAccountId || (!amount && !lineItems)) {
+        return err('MISSING_FIELDS', 'stripeAccountId and either amount or lineItems required');
+      }
 
-      const { data: org } = await supabase.from('organizations').select('stripe_account_id').eq('owner_id', user.id).single();
-      if (!org?.stripe_account_id) return err('NO_STRIPE_ACCOUNT', 'Connect Stripe account first');
+      let sessionLineItems: any[];
+      let totalAmount = 0;
+      let platformFee = 0;
+
+      if (lineItems && Array.isArray(lineItems)) {
+        // Invoice mode: Multiple line items
+        sessionLineItems = lineItems.map((item: any) => ({
+          price_data: {
+            currency: CURRENCY,
+            product_data: { name: item.description || 'Service' },
+            unit_amount: item.amount // Already in cents
+          },
+          quantity: item.quantity || 1
+        }));
+        
+        totalAmount = lineItems.reduce((sum: number, item: any) => 
+          sum + (item.amount * (item.quantity || 1)), 0
+        );
+        platformFee = Math.round(totalAmount * 0.08); // 8% platform fee
+      } else {
+        // Simple payment mode: Single amount
+        const amountInCents = Math.round(amount * 100);
+        sessionLineItems = [{
+          price_data: {
+            currency: CURRENCY,
+            product_data: { name: description || 'Service Payment' },
+            unit_amount: amountInCents
+          },
+          quantity: 1
+        }];
+        totalAmount = amountInCents;
+        platformFee = Math.round(totalAmount * 0.05); // 5% for simple payments
+      }
 
       const session = await stripePOST('checkout/sessions', {
         mode: 'payment',
-        line_items: [{ price_data: { currency: CURRENCY, product_data: { name: description }, unit_amount: Math.round(amount * 100) }, quantity: 1 }],
-        success_url: `${APP_URL}/provider/payments?success=1&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${APP_URL}/provider/payments?canceled=1`,
+        line_items: sessionLineItems,
+        success_url: successUrl || `${APP_URL}/invoice/${invoiceId}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: cancelUrl || `${APP_URL}/provider/accounting?canceled=1`,
         payment_intent_data: {
-          application_fee_amount: Math.round(amount * 100 * 0.05),
-          transfer_data: { destination: org.stripe_account_id },
-          metadata: { client_id: clientId || '', job_id: jobId || '' }
+          application_fee_amount: platformFee,
+          transfer_data: { destination: stripeAccountId },
+          metadata: { 
+            client_id: clientId || '', 
+            job_id: jobId || '', 
+            invoice_id: invoiceId || '',
+            organization_id: organizationId || ''
+          }
+        },
+        metadata: {
+          invoice_id: invoiceId || '',
+          organization_id: organizationId || ''
         }
       });
+      
       return ok({ url: session.url, sessionId: session.id });
     }
 
