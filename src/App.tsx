@@ -80,6 +80,7 @@ import ShortLinkRedirect from "@/pages/ShortLinkRedirect";
 import Portfolio from "@/pages/provider/Portfolio";
 import Favorites from "@/pages/homeowner/Favorites";
 import InvoicePaymentSuccess from "@/pages/InvoicePaymentSuccess";
+import InvoiceThankYou from "@/pages/InvoiceThankYou";
 import MyProviders from "@/pages/homeowner/MyProviders";
 import AccountIndex from "@/pages/provider/account";
 import AccountProfile from "@/pages/provider/account/Profile";
@@ -334,6 +335,7 @@ const App = () => {
             <Route path="/l/:slug" element={<ShortLinkRedirect />} />
             <Route path="/book/:slug" element={<BookProvider />} />
             <Route path="/invoice-payment-success" element={<InvoicePaymentSuccess />} />
+            <Route path="/invoice/:invoiceId/thank-you" element={<InvoiceThankYou />} />
             <Route path="/onboarding/homeowner" element={
               <OnboardingRouteGuard userType="homeowner">
                 <OnboardingHomeowner />

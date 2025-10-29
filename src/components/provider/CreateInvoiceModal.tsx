@@ -43,6 +43,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
   const [showPaymentLinkDialog, setShowPaymentLinkDialog] = useState(false);
   const [generatedPaymentLink, setGeneratedPaymentLink] = useState("");
   const [generatedClientName, setGeneratedClientName] = useState("");
+  const [sendEmail, setSendEmail] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -274,7 +275,8 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         await supabase
           .from('invoices')
           .update({
-            stripe_payment_link_id: paymentData.sessionId,
+            stripe_checkout_session_id: paymentData.sessionId,
+            stripe_checkout_url: paymentData.url,
             stripe_session_id: paymentData.sessionId
           })
           .eq('id', invoice.id);
@@ -286,7 +288,22 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         });
         
         if (copyResult.success) {
-          toast.success(`Payment link created! URL copied to clipboard. Share it with ${clientName}`);
+          // Send email if requested
+          if (sendEmail && invoice.id) {
+            try {
+              const { error: emailError } = await supabase.functions.invoke('send-invoice-email', {
+                body: { invoiceId: invoice.id }
+              });
+
+              if (emailError) throw emailError;
+              toast.success(`Payment link created and emailed to ${clientName}!`);
+            } catch (emailError: any) {
+              console.error("Error sending email:", emailError);
+              toast.warning(`Payment link created but email failed to send. URL copied to clipboard.`);
+            }
+          } else {
+            toast.success(`Payment link created! URL copied to clipboard. Share it with ${clientName}`);
+          }
           handleClose();
         } else {
           // Auto-copy failed, show dialog with manual copy button
@@ -494,6 +511,19 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
               placeholder="Add any additional notes or payment terms"
               rows={3}
             />
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <input
+              type="checkbox"
+              id="sendEmail"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+              className="h-4 w-4 rounded border-input"
+            />
+            <Label htmlFor="sendEmail" className="text-sm font-normal cursor-pointer">
+              Send invoice via email to client
+            </Label>
           </div>
 
           <div className="flex gap-2 pt-4">

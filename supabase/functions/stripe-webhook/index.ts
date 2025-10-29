@@ -725,15 +725,13 @@ serve(async (req) => {
         }
       }
       
-      // Handle payment link checkout (invoices)
-      if (session.mode === 'payment' && session.invoice) {
-        const { invoice_id, org_id } = session.metadata || {};
+      // Handle payment link checkout (invoices) - FIXED to work with Checkout Sessions
+      if (session.mode === 'payment') {
+        const { invoice_id, organization_id, org_id } = session.metadata || {};
+        const actualOrgId = org_id || organization_id;
         
-        if (invoice_id && org_id) {
+        if (invoice_id && actualOrgId) {
           console.log(`Processing payment link completion for invoice ${invoice_id}`);
-          
-          // Fetch the invoice from Stripe to get payment details
-          const invoice = await stripeGet(`invoices/${session.invoice}`);
           
           // Update invoice status
           const { data: invoiceRecord } = await supabase
@@ -741,7 +739,7 @@ serve(async (req) => {
             .update({ 
               status: 'paid',
               paid_at: new Date().toISOString(),
-              stripe_invoice_id: session.invoice
+              stripe_session_id: session.id
             })
             .eq('id', invoice_id)
             .select('job_id, organization_id, client_id, amount')
@@ -762,7 +760,7 @@ serve(async (req) => {
             }
 
             // Calculate platform fee
-            const platformFeePercent = await getDynamicPlatformFee(org_id);
+            const platformFeePercent = await getDynamicPlatformFee(actualOrgId);
             const totalAmount = session.amount_total || 0;
             const applicationFeeAmount = Math.round(totalAmount * platformFeePercent);
             const netAmount = totalAmount - applicationFeeAmount;
@@ -771,11 +769,11 @@ serve(async (req) => {
             await supabase.from('payments').insert({
               org_id: invoiceRecord.organization_id,
               invoice_id: invoice_id,
-              stripe_id: session.invoice,
+              stripe_id: session.payment_intent || session.id,
               stripe_payment_intent_id: session.payment_intent,
               amount: totalAmount,
               application_fee_cents: applicationFeeAmount,
-              fee_amount: 0, // Will be updated when charge details are available
+              fee_amount: 0,
               net_amount: netAmount,
               status: 'paid',
               captured: true,
@@ -791,9 +789,9 @@ serve(async (req) => {
               direction: 'credit',
               amount_cents: applicationFeeAmount,
               currency: session.currency || 'usd',
-              stripe_ref: session.payment_intent || session.invoice,
+              stripe_ref: session.payment_intent || session.id,
               party: 'platform',
-              provider_id: org_id,
+              provider_id: actualOrgId,
               metadata: { 
                 invoice_id,
                 fee_pct: platformFeePercent,
@@ -807,9 +805,9 @@ serve(async (req) => {
               direction: 'credit',
               amount_cents: netAmount,
               currency: session.currency || 'usd',
-              stripe_ref: session.payment_intent || session.invoice,
+              stripe_ref: session.payment_intent || session.id,
               party: 'provider',
-              provider_id: org_id,
+              provider_id: actualOrgId,
               metadata: { 
                 invoice_id,
                 source: 'payment_link'

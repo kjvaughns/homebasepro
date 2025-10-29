@@ -517,7 +517,7 @@ Deno.serve(async (req) => {
 
     // PAYMENT LINK (Create Stripe Checkout for invoices and ad-hoc payments)
     if (action === 'payment-link') {
-      const { amount, description, clientId, jobId, lineItems, invoiceId, organizationId, stripeAccountId, successUrl, cancelUrl } = body;
+      const { amount, description, clientId, jobId, lineItems, invoiceId, organizationId, stripeAccountId, successUrl, cancelUrl, clientEmail } = body;
       
       // Support both direct amount OR lineItems array
       if (!stripeAccountId || (!amount && !lineItems)) {
@@ -561,8 +561,10 @@ Deno.serve(async (req) => {
       const session = await stripePOST('checkout/sessions', {
         mode: 'payment',
         line_items: sessionLineItems,
-        success_url: successUrl || `${APP_URL}/invoice/${invoiceId}/success?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: successUrl || `${APP_URL}/invoice/${invoiceId}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancelUrl || `${APP_URL}/provider/accounting?canceled=1`,
+        expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // Expires in 24 hours
+        customer_email: clientEmail || undefined,
         payment_intent_data: {
           application_fee_amount: platformFee,
           transfer_data: { destination: stripeAccountId },
@@ -575,7 +577,8 @@ Deno.serve(async (req) => {
         },
         metadata: {
           invoice_id: invoiceId || '',
-          organization_id: organizationId || ''
+          organization_id: organizationId || '',
+          client_email: clientEmail || ''
         }
       });
       
