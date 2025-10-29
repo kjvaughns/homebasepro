@@ -4618,13 +4618,19 @@ export type Database = {
           created_at: string | null
           default_price: number | null
           description: string | null
+          duration_max_minutes: number | null
+          duration_min_minutes: number | null
           estimated_duration_minutes: number | null
           id: string
           includes_features: string[] | null
           is_active: boolean | null
           is_recurring: boolean | null
+          labor_price: number | null
+          materials_price: number | null
           name: string
           organization_id: string
+          price_max: number | null
+          price_min: number | null
           pricing_type: string | null
           required_skills: string[] | null
           updated_at: string | null
@@ -4635,13 +4641,19 @@ export type Database = {
           created_at?: string | null
           default_price?: number | null
           description?: string | null
+          duration_max_minutes?: number | null
+          duration_min_minutes?: number | null
           estimated_duration_minutes?: number | null
           id?: string
           includes_features?: string[] | null
           is_active?: boolean | null
           is_recurring?: boolean | null
+          labor_price?: number | null
+          materials_price?: number | null
           name: string
           organization_id: string
+          price_max?: number | null
+          price_min?: number | null
           pricing_type?: string | null
           required_skills?: string[] | null
           updated_at?: string | null
@@ -4652,13 +4664,19 @@ export type Database = {
           created_at?: string | null
           default_price?: number | null
           description?: string | null
+          duration_max_minutes?: number | null
+          duration_min_minutes?: number | null
           estimated_duration_minutes?: number | null
           id?: string
           includes_features?: string[] | null
           is_active?: boolean | null
           is_recurring?: boolean | null
+          labor_price?: number | null
+          materials_price?: number | null
           name?: string
           organization_id?: string
+          price_max?: number | null
+          price_min?: number | null
           pricing_type?: string | null
           required_skills?: string[] | null
           updated_at?: string | null
