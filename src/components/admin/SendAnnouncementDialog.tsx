@@ -41,6 +41,7 @@ const formSchema = z.object({
   priority: z.enum(["low", "normal", "high"]),
   expires_at: z.string().optional(),
   send_push: z.boolean(),
+  send_email: z.boolean(),
 });
 
 interface SendAnnouncementDialogProps {
@@ -64,6 +65,7 @@ export function SendAnnouncementDialog({
       priority: "normal",
       expires_at: "",
       send_push: true,
+      send_email: false,
     },
   });
 
@@ -78,14 +80,19 @@ export function SendAnnouncementDialog({
           priority: values.priority,
           expires_at: values.expires_at || null,
           send_push: values.send_push,
+          send_email: values.send_email,
         },
       });
 
       if (error) throw error;
 
+      const emailStats = data.emails_sent !== undefined 
+        ? ` (${data.emails_sent} emails sent${data.emails_failed ? `, ${data.emails_failed} failed` : ''})` 
+        : '';
+
       toast({
         title: "Announcement sent",
-        description: `Sent to ${data.recipients} users`,
+        description: `Sent to ${data.recipients} users${emailStats}`,
       });
 
       form.reset();
@@ -204,6 +211,27 @@ export function SendAnnouncementDialog({
                     <FormLabel className="text-base">Send Push Notification</FormLabel>
                     <FormDescription>
                       Also send as push notification to users' devices
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="send_email"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Send via Email</FormLabel>
+                    <FormDescription>
+                      Send branded announcement emails to users' inboxes
                     </FormDescription>
                   </div>
                   <FormControl>

@@ -1,9 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.74.0';
+import { Resend } from 'npm:resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -42,7 +45,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { title, body, target_audience, priority, expires_at, send_push } = await req.json();
+    const { title, body, target_audience, priority, expires_at, send_push, send_email } = await req.json();
 
     // Create announcement
     const { data: announcement, error: annError } = await supabase
@@ -94,6 +97,135 @@ Deno.serve(async (req) => {
 
     if (notifError) throw notifError;
 
+    // Optionally send emails
+    let emails_sent = 0;
+    let emails_failed = 0;
+    
+    if (send_email) {
+      console.log(`📧 Sending announcement emails to ${profiles.length} users...`);
+      
+      for (const profile of profiles) {
+        try {
+          // Get user email from auth
+          const { data: authUser } = await serviceSupabase.auth.admin.getUserById(profile.user_id);
+          if (!authUser?.user?.email) {
+            console.log(`⚠️ No email found for user ${profile.user_id}`);
+            emails_failed++;
+            continue;
+          }
+
+          const userEmail = authUser.user.email;
+          const userType = profile.user_type === 'provider' ? 'Provider' : 'Homeowner';
+          
+          // Priority badge styling
+          const priorityColors = {
+            high: { bg: '#ef4444', text: '#ffffff' },
+            normal: { bg: '#3b82f6', text: '#ffffff' },
+            low: { bg: '#6b7280', text: '#ffffff' }
+          };
+          const priorityColor = priorityColors[priority as keyof typeof priorityColors] || priorityColors.normal;
+          const showPriorityBadge = priority !== 'normal';
+
+          const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${title}</title>
+              </head>
+              <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+                <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f3f4f6;">
+                  <tr>
+                    <td style="padding: 40px 20px;">
+                      <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+                        <tr>
+                          <td style="padding: 40px 32px; text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 12px;">🏠</div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; line-height: 1.3;">
+                              📢 Announcement from HomeBase
+                            </h1>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background-color: #ffffff; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <tr>
+                          <td style="padding: 40px 32px;">
+                            <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                              Hello ${userType},
+                            </p>
+                            
+                            ${showPriorityBadge ? `
+                              <div style="margin-bottom: 24px;">
+                                <span style="display: inline-block; padding: 6px 16px; background-color: ${priorityColor.bg}; color: ${priorityColor.text}; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                  ${priority} Priority
+                                </span>
+                              </div>
+                            ` : ''}
+                            
+                            <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 22px; font-weight: 700; line-height: 1.3;">
+                              ${title}
+                            </h2>
+                            
+                            <p style="margin: 0 0 32px 0; color: #4b5563; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">
+                              ${body}
+                            </p>
+                            
+                            <table role="presentation" style="margin: 0 auto;">
+                              <tr>
+                                <td style="border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                  <a href="${Deno.env.get('APP_URL') || 'https://homebaseproapp.com'}/notifications" 
+                                     style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
+                                    View in HomeBase
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <tr>
+                          <td style="padding: 24px 32px; border-top: 1px solid #e5e7eb; background-color: #f9fafb;">
+                            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; text-align: center; line-height: 1.5;">
+                              Powered by <strong style="color: #667eea;">HomeBase</strong>
+                            </p>
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center; line-height: 1.5;">
+                              You're receiving this because you're a HomeBase user.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+          `;
+
+          const { error: emailError } = await resend.emails.send({
+            from: 'HomeBase <announcements@homebaseproapp.com>',
+            to: [userEmail],
+            subject: `📢 ${title}`,
+            html: htmlContent,
+          });
+
+          if (emailError) {
+            console.error(`❌ Failed to send email to ${userEmail}:`, emailError);
+            emails_failed++;
+          } else {
+            console.log(`✅ Email sent to ${userEmail}`);
+            emails_sent++;
+          }
+        } catch (emailErr) {
+          console.error(`❌ Exception sending email:`, emailErr);
+          emails_failed++;
+        }
+      }
+      
+      console.log(`📧 Email summary: ${emails_sent} sent, ${emails_failed} failed`);
+    }
+
     // Optionally send push notifications
     if (send_push) {
       try {
@@ -129,6 +261,8 @@ Deno.serve(async (req) => {
         success: true,
         announcement,
         recipients: profiles.length,
+        emails_sent: send_email ? emails_sent : undefined,
+        emails_failed: send_email ? emails_failed : undefined,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
