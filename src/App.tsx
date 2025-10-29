@@ -99,6 +99,7 @@ import { MaintenanceGuard } from "./components/MaintenanceGuard";
 import { RoleGuard } from "./components/admin/RoleGuard";
 import AdminRevenue from "./pages/admin/Revenue";
 import AdminLedger from "./pages/admin/Ledger";
+import AdminNotificationsHealth from "./pages/admin/NotificationsHealth";
 import AdminData from "./pages/admin/DataManagement";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminTeam from "./pages/admin/TeamManagement";

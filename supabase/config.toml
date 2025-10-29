@@ -1,5 +1,17 @@
 project_id = "mqaplaplgfcbaaafylpf"
 
+[functions.notification-cron-worker]
+verify_jwt = false
+
+[functions.notification-retry-worker]
+verify_jwt = false
+
+[functions.dispatch-notification]
+verify_jwt = false
+
+[functions.notifications-test]
+verify_jwt = false
+
 # DEPRECATED: Use payments-api instead
 # [functions.provider-subscription]
 # verify_jwt = true
@@ -104,4 +116,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.pricing-engine]
+verify_jwt = false
+
+[functions.notifications-health]
 verify_jwt = false

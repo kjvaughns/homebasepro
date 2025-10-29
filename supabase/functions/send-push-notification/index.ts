@@ -256,10 +256,13 @@ async function sendPushNotification(
 ): Promise<PushResult> {
   try {
     const parsedUrl = new URL(subscription.endpoint);
-    const audience = `${parsedUrl.protocol}//${parsedUrl.host}`;
     const endpointHost = parsedUrl.host;
+    const isAppleEndpoint = endpointHost.includes('apple.com');
+    
+    // Apple requires audience to be just the origin, not the full endpoint path
+    const audience = `${parsedUrl.protocol}//${parsedUrl.host}`;
 
-    console.log(`📍 Endpoint: ${endpointHost}, Audience: ${audience}`);
+    console.log(`📍 Endpoint: ${endpointHost}, Audience: ${audience}, IsApple: ${isAppleEndpoint}`);
 
     // Validate VAPID public key is 65 bytes (uncompressed P-256 point)
     const publicKeyBytes = base64UrlToUint8Array(vapidDetails.publicKey);
@@ -269,35 +272,66 @@ async function sendPushNotification(
     }
     console.log('✅ VAPID public key validated (65 bytes)');
 
-    // Create VAPID JWT
+    // Create VAPID JWT with detailed logging
+    console.log('🔐 Creating VAPID JWT...');
+    console.log(`   Audience: ${audience}`);
+    console.log(`   Subject: ${vapidDetails.subject}`);
+    
     const jwt = await createVapidJWT(
       audience,
       vapidDetails.subject,
       vapidDetails.privateKey
     );
+    
+    console.log(`✅ JWT created, length: ${jwt.length}`);
+    console.log(`   JWT preview: ${jwt.substring(0, 50)}...`);
 
-    // Try primary scheme: WebPush with separate Crypto-Key header (most widely supported)
-    console.log('🔐 Attempting WebPush scheme (primary)');
-    const primaryHeaders = {
-      'Authorization': `WebPush ${jwt}`,
-      'Crypto-Key': `p256ecdsa=${vapidDetails.publicKey}`,
-      'TTL': '86400',
-      'Content-Length': '0'
-    };
+    // For Apple endpoints, try vapid scheme first (more compatible with Apple)
+    const tryVapidFirst = isAppleEndpoint;
+    
+    let response: Response;
+    let triedSchemes = [];
 
-    let response = await fetch(subscription.endpoint, {
-      method: 'POST',
-      headers: primaryHeaders
-    });
-
-    // If primary scheme fails with auth error, retry with fallback vapid scheme
-    if ((response.status === 401 || response.status === 403) && !response.ok) {
-      const errorText = await response.text().catch(() => '');
-      console.warn(`⚠️ WebPush scheme rejected: ${response.status} ${errorText}`);
-      console.log('🔐 Retrying with vapid scheme (fallback)');
-      
-      const fallbackHeaders = {
+    if (tryVapidFirst) {
+      // Try vapid scheme first for Apple
+      console.log('🍎 Apple endpoint detected - trying vapid scheme first');
+      const vapidHeaders = {
         'Authorization': `vapid t=${jwt}, k=${vapidDetails.publicKey}`,
+        'TTL': '86400',
+        'Content-Length': '0'
+      };
+      
+      console.log('📤 Sending with vapid scheme:', vapidHeaders);
+      response = await fetch(subscription.endpoint, {
+        method: 'POST',
+        headers: vapidHeaders
+      });
+      triedSchemes.push('vapid');
+
+      // Fallback to WebPush if vapid fails
+      if ((response.status === 401 || response.status === 403) && !response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.warn(`⚠️ vapid scheme rejected: ${response.status} ${errorText}`);
+        console.log('🔄 Retrying with WebPush scheme (fallback)');
+        
+        const webpushHeaders = {
+          'Authorization': `WebPush ${jwt}`,
+          'Crypto-Key': `p256ecdsa=${vapidDetails.publicKey}`,
+          'TTL': '86400',
+          'Content-Length': '0'
+        };
+
+        response = await fetch(subscription.endpoint, {
+          method: 'POST',
+          headers: webpushHeaders
+        });
+        triedSchemes.push('WebPush');
+      }
+    } else {
+      // For non-Apple, try WebPush first
+      console.log('🌐 Non-Apple endpoint - trying WebPush scheme first');
+      const webpushHeaders = {
+        'Authorization': `WebPush ${jwt}`,
         'Crypto-Key': `p256ecdsa=${vapidDetails.publicKey}`,
         'TTL': '86400',
         'Content-Length': '0'
@@ -305,8 +339,28 @@ async function sendPushNotification(
 
       response = await fetch(subscription.endpoint, {
         method: 'POST',
-        headers: fallbackHeaders
+        headers: webpushHeaders
       });
+      triedSchemes.push('WebPush');
+
+      // Fallback to vapid if WebPush fails
+      if ((response.status === 401 || response.status === 403) && !response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.warn(`⚠️ WebPush scheme rejected: ${response.status} ${errorText}`);
+        console.log('🔄 Retrying with vapid scheme (fallback)');
+        
+        const vapidHeaders = {
+          'Authorization': `vapid t=${jwt}, k=${vapidDetails.publicKey}`,
+          'TTL': '86400',
+          'Content-Length': '0'
+        };
+
+        response = await fetch(subscription.endpoint, {
+          method: 'POST',
+          headers: vapidHeaders
+        });
+        triedSchemes.push('vapid');
+      }
     }
 
     // Only mark as expired for permanent failures (404 Not Found or 410 Gone)
@@ -320,10 +374,25 @@ async function sendPushNotification(
       return { success: true, expired: false, status: response.status };
     }
 
-    // Other errors (401, 403, 5xx) are temporary - don't delete subscription
+    // For 403 errors, log detailed debugging info
     const text = await response.text().catch(() => '');
-    console.error(`❌ Push failed (both schemes): ${response.status} ${text}`);
-    console.error(`📊 Endpoint: ${endpointHost}, Audience: ${audience}`);
+    if (response.status === 403) {
+      console.error('🚨 403 DEBUGGING INFO:');
+      console.error(`   Endpoint: ${endpointHost}`);
+      console.error(`   Audience used: ${audience}`);
+      console.error(`   Subject: ${vapidDetails.subject}`);
+      console.error(`   Schemes tried: ${triedSchemes.join(', ')}`);
+      console.error(`   Response: ${text}`);
+      console.error(`   JWT (first 100 chars): ${jwt.substring(0, 100)}`);
+      console.error('   This is likely a VAPID configuration issue.');
+      console.error('   Please verify:');
+      console.error('   1. VAPID_PRIVATE_KEY is in valid PEM PKCS#8 format');
+      console.error('   2. VAPID_PUBLIC_KEY matches the private key');
+      console.error('   3. VAPID_SUBJECT is in mailto: format');
+    }
+
+    // Other errors (401, 403, 5xx) are temporary - don't delete subscription, allow retry
+    console.error(`❌ Push failed (all schemes): ${response.status} ${text}`);
     return { success: false, expired: false, status: response.status, reason: text };
   } catch (error) {
     console.error('❌ Push send error (non-fatal):', error);

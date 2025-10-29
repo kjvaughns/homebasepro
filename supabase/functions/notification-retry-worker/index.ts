@@ -49,8 +49,11 @@ Deno.serve(async (req) => {
       processed++;
       const notification = item.notifications as any;
 
+      console.log(`🔄 Processing ${item.channel} notification ${notification.id} (attempt ${item.attempts + 1}/5)`);
+
       try {
         if (item.channel === 'push') {
+          console.log(`📲 Attempting push for user ${notification.user_id}...`);
           await sendPushNotification(supabase, notification);
           
           // Mark as sent
@@ -67,7 +70,9 @@ Deno.serve(async (req) => {
           succeeded++;
           console.log(`✅ Push sent for notification ${notification.id}`);
         } else if (item.channel === 'email') {
-          await sendEmailNotification(supabase, notification);
+          console.log(`📧 Attempting email for user ${notification.user_id}...`);
+          const emailResult = await sendEmailNotification(supabase, notification);
+          console.log(`📬 Email API response:`, emailResult);
 
           // Mark as sent
           await supabase
@@ -85,15 +90,25 @@ Deno.serve(async (req) => {
         }
       } catch (error: any) {
         failed++;
-        console.error(`❌ Failed to send ${item.channel} for notification ${notification.id}:`, error.message);
+        const errorMessage = error.message || String(error);
+        console.error(`❌ Failed to send ${item.channel} for notification ${notification.id}:`);
+        console.error(`   Error: ${errorMessage}`);
+        console.error(`   Attempt: ${item.attempts + 1}/5`);
+        
+        // Calculate next retry with exponential backoff
+        const nextRetryMinutes = Math.pow(2, item.attempts) * 5; // 5, 10, 20, 40, 80 minutes
+        const nextRetryAt = new Date(Date.now() + nextRetryMinutes * 60 * 1000).toISOString();
+        
+        console.error(`   Next retry in ${nextRetryMinutes} minutes: ${nextRetryAt}`);
 
-        // Update outbox with error
+        // Update outbox with error and backoff
         await supabase
           .from('notification_outbox')
           .update({
             attempts: item.attempts + 1,
-            last_error: error.message,
+            last_error: errorMessage.substring(0, 500), // Limit error length
             last_attempt_at: new Date().toISOString(),
+            next_retry_at: item.attempts + 1 < 5 ? nextRetryAt : null,
             status: item.attempts + 1 >= 5 ? 'failed' : 'pending',
           })
           .eq('id', item.id);
@@ -116,7 +131,7 @@ Deno.serve(async (req) => {
 });
 
 async function sendPushNotification(supabase: any, notification: any) {
-  console.log('📲 Sending push notification:', notification.id);
+  console.log('📲 Invoking send-push-notification function...');
 
   const { data: pushResult, error: pushError } = await supabase.functions.invoke(
     'send-push-notification',
@@ -124,31 +139,60 @@ async function sendPushNotification(supabase: any, notification: any) {
       body: {
         userIds: [notification.user_id],
         title: notification.title,
-        body: notification.body,
+        body: notification.message || notification.body,
         url: notification.action_url || '/notifications',
       },
     }
   );
 
-  if (pushError) throw pushError;
+  if (pushError) {
+    console.error('❌ Push function invocation error:', pushError);
+    throw new Error(`Push failed: ${pushError.message || JSON.stringify(pushError)}`);
+  }
+  
+  console.log('📊 Push result:', pushResult);
+  
+  // Check if any notifications actually sent
+  if (pushResult && pushResult.sent === 0 && pushResult.failed > 0) {
+    throw new Error('All push notification attempts failed');
+  }
+  
   return pushResult;
 }
 
 async function sendEmailNotification(supabase: any, notification: any) {
-  console.log('📧 Sending email notification:', notification.id);
+  console.log('📧 Preparing email notification...');
 
   // Get user email
-  const { data: authUser } = await supabase.auth.admin.getUserById(notification.user_id);
+  console.log(`🔍 Fetching email for user ${notification.user_id}...`);
+  const { data: authUser, error: userError } = await supabase.auth.admin.getUserById(notification.user_id);
+  
+  if (userError) {
+    console.error('❌ Error fetching user:', userError);
+    throw new Error(`Failed to get user: ${userError.message}`);
+  }
+  
   if (!authUser?.user?.email) {
+    console.error('❌ No email found for user');
     throw new Error('No email found for user');
   }
 
   const userEmail = authUser.user.email;
+  console.log(`✅ Found email: ${userEmail}`);
+  
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-  if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
+  if (!RESEND_API_KEY) {
+    console.error('❌ RESEND_API_KEY not configured');
+    throw new Error('RESEND_API_KEY not configured');
+  }
+  console.log('✅ Resend API key configured');
 
   const APP_URL = Deno.env.get('APP_URL') || 'https://homebaseproapp.com';
   const actionUrl = notification.action_url ? `${APP_URL}${notification.action_url}` : `${APP_URL}/notifications`;
+  
+  console.log(`📧 Sending to: ${userEmail}`);
+  console.log(`📧 Subject: ${notification.title}`);
+  console.log(`📧 Action URL: ${actionUrl}`);
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -211,24 +255,43 @@ async function sendEmailNotification(supabase: any, notification: any) {
     </html>
   `;
 
+  const emailPayload = {
+    from: 'HomeBase <notifications@homebaseproapp.com>',
+    to: [userEmail],
+    subject: notification.title,
+    html: htmlContent,
+  };
+  
+  console.log('📤 Calling Resend API...');
   const resendResponse = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      from: 'HomeBase <notifications@homebaseproapp.com>',
-      to: [userEmail],
-      subject: notification.title,
-      html: htmlContent,
-    }),
+    body: JSON.stringify(emailPayload),
   });
+
+  console.log(`📊 Resend response status: ${resendResponse.status}`);
 
   if (!resendResponse.ok) {
     const errorText = await resendResponse.text();
-    throw new Error(`Resend API error: ${errorText}`);
+    console.error('❌ Resend API error response:', errorText);
+    
+    // Parse error details
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.message) {
+        throw new Error(`Resend API: ${errorJson.message}`);
+      }
+    } catch (parseError) {
+      // If not JSON, use raw text
+    }
+    
+    throw new Error(`Resend API error (${resendResponse.status}): ${errorText}`);
   }
 
-  return await resendResponse.json();
+  const result = await resendResponse.json();
+  console.log('✅ Email sent successfully:', result);
+  return result;
 }
