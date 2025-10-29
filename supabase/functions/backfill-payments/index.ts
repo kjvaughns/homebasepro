@@ -23,37 +23,23 @@ serve(async (req) => {
       return errorResponse('UNAUTHORIZED', 'Authentication required', 401);
     }
 
-    // Check if user is admin
-    const { data: isAdmin } = await supabase.rpc('is_admin');
-    
-    if (!isAdmin) {
-      return errorResponse('FORBIDDEN', 'Admin access required', 403);
-    }
+    const { daysBack = 30 } = await req.json();
 
-    const { daysBack = 30, organizationId } = await req.json();
-
-    console.log(`Backfilling payments for last ${daysBack} days`, { organizationId });
-
-    // Get all organizations with Stripe accounts
-    let orgsQuery = supabase
+    // Get user's organization (providers can only sync their own payments)
+    const { data: userOrg, error: orgError } = await supabase
       .from('organizations')
       .select('id, name, stripe_account_id')
-      .not('stripe_account_id', 'is', null);
+      .eq('owner_id', user.id)
+      .not('stripe_account_id', 'is', null)
+      .single();
 
-    if (organizationId) {
-      orgsQuery = orgsQuery.eq('id', organizationId);
+    if (orgError || !userOrg) {
+      return errorResponse('NO_ORG', 'Organization not found or Stripe not connected', 404);
     }
 
-    const { data: orgs, error: orgsError } = await orgsQuery;
+    console.log(`Backfilling payments for last ${daysBack} days for org: ${userOrg.name}`);
 
-    if (orgsError) {
-      console.error('Error fetching organizations:', orgsError);
-      return errorResponse('DB_ERROR', 'Failed to fetch organizations', 500);
-    }
-
-    if (!orgs || orgs.length === 0) {
-      return successResponse({ message: 'No organizations with Stripe accounts found', synced: 0 });
-    }
+    const orgs = [userOrg]; // Only sync for the user's organization
 
     const startDate = Math.floor(Date.now() / 1000) - (daysBack * 24 * 60 * 60);
     let totalSynced = 0;

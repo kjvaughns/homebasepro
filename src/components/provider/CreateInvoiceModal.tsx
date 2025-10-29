@@ -274,7 +274,7 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
         await supabase
           .from('invoices')
           .update({
-            stripe_payment_link_url: paymentData.url,
+            stripe_payment_link_id: paymentData.sessionId,
             stripe_session_id: paymentData.sessionId
           })
           .eq('id', invoice.id);
