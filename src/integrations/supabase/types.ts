@@ -303,8 +303,10 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           expires_at: string | null
+          filters: Json | null
           id: string
           priority: string | null
+          send_via: string | null
           target_audience: string
           title: string
         }
@@ -313,8 +315,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           expires_at?: string | null
+          filters?: Json | null
           id?: string
           priority?: string | null
+          send_via?: string | null
           target_audience: string
           title: string
         }
@@ -323,8 +327,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           expires_at?: string | null
+          filters?: Json | null
           id?: string
           priority?: string | null
+          send_via?: string | null
           target_audience?: string
           title?: string
         }
@@ -2170,15 +2176,162 @@ export type Database = {
           },
         ]
       }
+      notification_outbox: {
+        Row: {
+          attempts: number | null
+          channel: string
+          created_at: string | null
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          notification_id: string
+          status: string
+        }
+        Insert: {
+          attempts?: number | null
+          channel: string
+          created_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          notification_id: string
+          status?: string
+        }
+        Update: {
+          attempts?: number | null
+          channel?: string
+          created_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          notification_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          announce_email: boolean | null
+          announce_inapp: boolean | null
+          announce_push: boolean | null
+          booking_email: boolean | null
+          booking_inapp: boolean | null
+          booking_push: boolean | null
+          created_at: string | null
+          id: string
+          job_email: boolean | null
+          job_inapp: boolean | null
+          job_push: boolean | null
+          message_email: boolean | null
+          message_inapp: boolean | null
+          message_push: boolean | null
+          payment_email: boolean | null
+          payment_inapp: boolean | null
+          payment_push: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          quote_email: boolean | null
+          quote_inapp: boolean | null
+          quote_push: boolean | null
+          review_email: boolean | null
+          review_inapp: boolean | null
+          review_push: boolean | null
+          role: string
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+          weekly_digest_email: boolean | null
+        }
+        Insert: {
+          announce_email?: boolean | null
+          announce_inapp?: boolean | null
+          announce_push?: boolean | null
+          booking_email?: boolean | null
+          booking_inapp?: boolean | null
+          booking_push?: boolean | null
+          created_at?: string | null
+          id?: string
+          job_email?: boolean | null
+          job_inapp?: boolean | null
+          job_push?: boolean | null
+          message_email?: boolean | null
+          message_inapp?: boolean | null
+          message_push?: boolean | null
+          payment_email?: boolean | null
+          payment_inapp?: boolean | null
+          payment_push?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          quote_email?: boolean | null
+          quote_inapp?: boolean | null
+          quote_push?: boolean | null
+          review_email?: boolean | null
+          review_inapp?: boolean | null
+          review_push?: boolean | null
+          role: string
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+          weekly_digest_email?: boolean | null
+        }
+        Update: {
+          announce_email?: boolean | null
+          announce_inapp?: boolean | null
+          announce_push?: boolean | null
+          booking_email?: boolean | null
+          booking_inapp?: boolean | null
+          booking_push?: boolean | null
+          created_at?: string | null
+          id?: string
+          job_email?: boolean | null
+          job_inapp?: boolean | null
+          job_push?: boolean | null
+          message_email?: boolean | null
+          message_inapp?: boolean | null
+          message_push?: boolean | null
+          payment_email?: boolean | null
+          payment_inapp?: boolean | null
+          payment_push?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          quote_email?: boolean | null
+          quote_inapp?: boolean | null
+          quote_push?: boolean | null
+          review_email?: boolean | null
+          review_inapp?: boolean | null
+          review_push?: boolean | null
+          role?: string
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_digest_email?: boolean | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_url: string | null
           body: string
+          channel_email: boolean | null
+          channel_inapp: boolean | null
+          channel_push: boolean | null
           created_at: string | null
+          delivered_email: boolean | null
+          delivered_inapp: boolean | null
+          delivered_push: boolean | null
           id: string
           metadata: Json | null
           profile_id: string | null
           read_at: string | null
+          role: string | null
           title: string
           type: string
           user_id: string | null
@@ -2186,11 +2339,18 @@ export type Database = {
         Insert: {
           action_url?: string | null
           body: string
+          channel_email?: boolean | null
+          channel_inapp?: boolean | null
+          channel_push?: boolean | null
           created_at?: string | null
+          delivered_email?: boolean | null
+          delivered_inapp?: boolean | null
+          delivered_push?: boolean | null
           id?: string
           metadata?: Json | null
           profile_id?: string | null
           read_at?: string | null
+          role?: string | null
           title: string
           type: string
           user_id?: string | null
@@ -2198,11 +2358,18 @@ export type Database = {
         Update: {
           action_url?: string | null
           body?: string
+          channel_email?: boolean | null
+          channel_inapp?: boolean | null
+          channel_push?: boolean | null
           created_at?: string | null
+          delivered_email?: boolean | null
+          delivered_inapp?: boolean | null
+          delivered_push?: boolean | null
           id?: string
           metadata?: Json | null
           profile_id?: string | null
           read_at?: string | null
+          role?: string | null
           title?: string
           type?: string
           user_id?: string | null

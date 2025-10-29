@@ -1,12 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.74.0';
-import { Resend } from 'npm:resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -203,15 +200,31 @@ Deno.serve(async (req) => {
             </html>
           `;
 
-          const { error: emailError } = await resend.emails.send({
-            from: 'HomeBase <announcements@homebaseproapp.com>',
-            to: [userEmail],
-            subject: `📢 ${title}`,
-            html: htmlContent,
+          // Send email via Resend API
+          const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+          if (!RESEND_API_KEY) {
+            console.error('❌ RESEND_API_KEY not configured');
+            emails_failed++;
+            continue;
+          }
+
+          const resendResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'HomeBase <notifications@homebaseproapp.com>',
+              to: [userEmail],
+              subject: `📢 ${title}`,
+              html: htmlContent,
+            }),
           });
 
-          if (emailError) {
-            console.error(`❌ Failed to send email to ${userEmail}:`, emailError);
+          if (!resendResponse.ok) {
+            const errorText = await resendResponse.text();
+            console.error(`❌ Failed to send email to ${userEmail}:`, errorText);
             emails_failed++;
           } else {
             console.log(`✅ Email sent to ${userEmail}`);
