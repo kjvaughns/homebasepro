@@ -141,6 +141,13 @@ async function createVapidJWT(
   subject: string,
   privateKeyBase64: string
 ): Promise<string> {
+  console.log(`🔐 Creating VAPID JWT with aud="${audience}", sub="${subject}"`);
+  
+  // Normalize subject to mailto: format if not already
+  const normalizedSubject = subject.startsWith('mailto:') ? subject : `mailto:${subject}`;
+  if (normalizedSubject !== subject) {
+    console.log(`📧 Normalized VAPID subject from "${subject}" to "${normalizedSubject}"`);
+  }
   // JWT header
   const header = { typ: 'JWT', alg: 'ES256' };
   const headerBase64 = uint8ArrayToBase64Url(
@@ -151,7 +158,7 @@ async function createVapidJWT(
   const payload = {
     aud: audience,
     exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60,
-    sub: subject
+    sub: normalizedSubject
   };
   const payloadBase64 = uint8ArrayToBase64Url(
     new TextEncoder().encode(JSON.stringify(payload))
@@ -374,8 +381,10 @@ async function sendPushNotification(
       return { success: true, expired: false, status: response.status };
     }
 
-    // For 403 errors, log detailed debugging info
+    // Get response text for error analysis
     const text = await response.text().catch(() => '');
+    
+    // For 403 errors, check if it's BadJwtToken (stale VAPID key mismatch)
     if (response.status === 403) {
       console.error('🚨 403 DEBUGGING INFO:');
       console.error(`   Endpoint: ${endpointHost}`);
@@ -384,6 +393,15 @@ async function sendPushNotification(
       console.error(`   Schemes tried: ${triedSchemes.join(', ')}`);
       console.error(`   Response: ${text}`);
       console.error(`   JWT (first 100 chars): ${jwt.substring(0, 100)}`);
+      
+      // Treat "BadJwtToken" as stale subscription (force client to re-subscribe)
+      if (text.includes('BadJwtToken')) {
+        console.log('🔄 Apple 403 BadJwtToken detected - marking subscription as stale/expired');
+        console.log('   This subscription was likely created with a different VAPID key.');
+        console.log('   Client should re-enable notifications to create fresh subscription.');
+        return { success: false, expired: true, status: response.status, reason: 'BadJwtToken - stale VAPID key' };
+      }
+      
       console.error('   This is likely a VAPID configuration issue.');
       console.error('   Please verify:');
       console.error('   1. VAPID_PRIVATE_KEY is in valid PEM PKCS#8 format');
@@ -391,7 +409,7 @@ async function sendPushNotification(
       console.error('   3. VAPID_SUBJECT is in mailto: format');
     }
 
-    // Other errors (401, 403, 5xx) are temporary - don't delete subscription, allow retry
+    // Other errors (401, 5xx) are temporary - don't delete subscription, allow retry
     console.error(`❌ Push failed (all schemes): ${response.status} ${text}`);
     return { success: false, expired: false, status: response.status, reason: text };
   } catch (error) {
@@ -507,7 +525,12 @@ serve(async (req) => {
 
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:support@homebaseapp.com';
+    const rawVapidSubject = Deno.env.get('VAPID_SUBJECT') || 'support@homebaseapp.com';
+    
+    // Normalize VAPID subject to mailto: format
+    const vapidSubject = rawVapidSubject.startsWith('mailto:') 
+      ? rawVapidSubject 
+      : `mailto:${rawVapidSubject}`;
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       throw new Error('VAPID keys not configured');

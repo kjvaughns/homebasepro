@@ -2,6 +2,7 @@ project_id = "mqaplaplgfcbaaafylpf"
 
 [functions.notification-cron-worker]
 verify_jwt = false
+schedule = "*/5 * * * *"
 
 [functions.notification-retry-worker]
 verify_jwt = false
