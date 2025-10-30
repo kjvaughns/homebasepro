@@ -8,6 +8,7 @@ const corsHeaders = {
 interface NotificationEvent {
   type: string; // e.g., 'payment.succeeded', 'quote.ready', 'booking.confirmed'
   userId: string;
+  profileId?: string; // Optional profile ID for linking
   role: 'admin' | 'provider' | 'homeowner';
   title: string;
   body: string;
@@ -89,6 +90,7 @@ Deno.serve(async (req) => {
       .from('notifications')
       .insert({
         user_id: event.userId,
+        profile_id: event.profileId || null,
         role: event.role,
         type: event.type,
         title: event.title,
