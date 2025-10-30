@@ -101,6 +101,9 @@ Deno.serve(async (req) => {
     if (send_email) {
       console.log(`📧 Sending announcement emails to ${profiles.length} users...`);
       
+      // Helper to avoid rate limits
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
       for (const profile of profiles) {
         try {
           // Get user email from auth
@@ -234,6 +237,9 @@ Deno.serve(async (req) => {
           console.error(`❌ Exception sending email:`, emailErr);
           emails_failed++;
         }
+        
+        // Throttle to avoid rate limits (600ms between emails)
+        await delay(600);
       }
       
       console.log(`📧 Email summary: ${emails_sent} sent, ${emails_failed} failed`);

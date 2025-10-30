@@ -141,12 +141,20 @@ async function createVapidJWT(
   subject: string,
   privateKeyBase64: string
 ): Promise<string> {
-  console.log(`🔐 Creating VAPID JWT with aud="${audience}", sub="${subject}"`);
+  console.log(`🔐 Creating VAPID JWT with aud="${audience}", sub (raw)="${subject.substring(0, 60)}"`);
   
-  // Normalize subject to mailto: format if not already
-  const normalizedSubject = subject.startsWith('mailto:') ? subject : `mailto:${subject}`;
+  // Sanitize VAPID_SUBJECT: trim, remove angle brackets, strip mailto: prefix
+  const subjectRaw = subject.trim();
+  const subjectClean = subjectRaw
+    .replace(/[<>]/g, '')              // Remove angle brackets
+    .replace(/^mailto:\s*/i, '')       // Remove mailto: prefix (case insensitive)
+    .trim();                           // Final trim
+  
+  // Ensure proper mailto: format
+  const normalizedSubject = `mailto:${subjectClean}`;
+  
   if (normalizedSubject !== subject) {
-    console.log(`📧 Normalized VAPID subject from "${subject}" to "${normalizedSubject}"`);
+    console.log(`📧 Sanitized VAPID subject: "${subject.substring(0, 60)}" → "${normalizedSubject}"`);
   }
   // JWT header
   const header = { typ: 'JWT', alg: 'ES256' };
