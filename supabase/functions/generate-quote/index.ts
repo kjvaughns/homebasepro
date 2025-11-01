@@ -81,24 +81,64 @@ serve(async (req) => {
       confidence = 0.3;
     }
 
-    // Generate line items based on service type
+    // Seasonal pricing adjustments
+    const currentMonth = new Date().getMonth();
+    const isHighSeason = [5, 6, 7, 11, 0, 1].includes(currentMonth); // Summer & Winter
+    const seasonalMultiplier = isHighSeason ? 1.15 : 1.0;
+
+    avgLabor = Math.round(avgLabor * seasonalMultiplier);
+    avgParts = Math.round(avgParts * seasonalMultiplier);
+
+    // Generate enhanced line items based on service type
     const lineItems = [];
-    if (service_name.toLowerCase().includes('hvac')) {
+    const serviceLower = service_name.toLowerCase();
+    
+    if (serviceLower.includes('hvac') || serviceLower.includes('ac') || serviceLower.includes('heating')) {
       lineItems.push(
-        { name: "System Inspection", description: "Complete diagnostic check", amount: 5000 },
-        { name: "Filter Replacement", description: "Premium air filter", amount: 3000 }
+        { name: "System Inspection", description: "Complete diagnostic check", amount: Math.round(5000 * seasonalMultiplier) },
+        { name: "Filter Replacement", description: "Premium air filter", amount: Math.round(3000 * seasonalMultiplier) }
       );
-    } else if (service_name.toLowerCase().includes('plumb')) {
+      if (isHighSeason) {
+        lineItems.push(
+          { name: "Priority Service Fee", description: "Peak season scheduling", amount: 2500 }
+        );
+      }
+    } else if (serviceLower.includes('plumb')) {
       lineItems.push(
         { name: "Leak Detection", description: "Advanced leak detection", amount: 7500 },
         { name: "Parts & Fittings", description: "Standard plumbing parts", amount: 5000 }
       );
-    } else if (service_name.toLowerCase().includes('electric')) {
+    } else if (serviceLower.includes('electric')) {
       lineItems.push(
         { name: "Electrical Inspection", description: "Safety inspection", amount: 10000 },
         { name: "Circuit Testing", description: "Complete circuit analysis", amount: 5000 }
       );
+    } else if (serviceLower.includes('lawn') || serviceLower.includes('landscape')) {
+      lineItems.push(
+        { name: "Service Visit", description: "Professional maintenance", amount: 8000 },
+        { name: "Materials", description: "Fertilizer and supplies", amount: 4000 }
+      );
+    } else if (serviceLower.includes('clean')) {
+      lineItems.push(
+        { name: "Deep Cleaning", description: "Comprehensive service", amount: 12000 },
+        { name: "Supplies", description: "Professional-grade products", amount: 2000 }
+      );
     }
+
+    // Add upsell suggestion if confidence is high
+    let upsellSuggestion = null;
+    if (confidence > 0.7 && validEvents && validEvents.length > 5) {
+      if (serviceLower.includes('hvac')) {
+        upsellSuggestion = "Consider adding preventive maintenance plan for 15% discount on future services";
+      } else if (serviceLower.includes('plumb')) {
+        upsellSuggestion = "Water heater inspection recommended with this service";
+      }
+    }
+
+    // Calculate price range
+    const totalEstimate = avgLabor + avgParts;
+    const lowEstimate = Math.round(totalEstimate * 0.85);
+    const highEstimate = Math.round(totalEstimate * 1.15);
 
     const response = {
       suggested_labor_cost: avgLabor,
@@ -106,13 +146,21 @@ serve(async (req) => {
       confidence: confidence,
       line_items: lineItems,
       similar_jobs: learningEvents?.length || 0,
+      price_range: {
+        low: lowEstimate,
+        mid: totalEstimate,
+        high: highEstimate
+      },
+      upsell_suggestion: upsellSuggestion,
       pricing_factors: {
         service_type: service_name,
         data_points: learningEvents?.length || 0,
         region: serviceCallData?.homes?.zip_code?.slice(0, 3) + "XX" || "unknown",
-        confidence_level: confidence > 0.7 ? 'high' : confidence > 0.4 ? 'medium' : 'low'
+        confidence_level: confidence > 0.7 ? 'high' : confidence > 0.4 ? 'medium' : 'low',
+        seasonal_adjustment: isHighSeason ? '+15% (peak season)' : 'standard',
+        market_position: confidence > 0.7 ? 'competitive' : 'estimated'
       },
-      explanation: `Based on ${learningEvents?.length || 0} similar jobs, we suggest starting with $${(avgLabor / 100).toFixed(2)} for labor and $${(avgParts / 100).toFixed(2)} for parts. Adjust based on your specific situation.`
+      explanation: `${isHighSeason ? '🔥 Peak season pricing applied. ' : ''}Based on ${learningEvents?.length || 0} similar jobs in your area, we suggest $${(lowEstimate / 100).toFixed(0)}-${(highEstimate / 100).toFixed(0)}. Labor: $${(avgLabor / 100).toFixed(2)}, Parts: $${(avgParts / 100).toFixed(2)}. ${upsellSuggestion ? '💡 ' + upsellSuggestion : ''}`
     };
 
     return new Response(

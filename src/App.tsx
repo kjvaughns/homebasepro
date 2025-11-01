@@ -121,6 +121,7 @@ import Messages from "./pages/Messages";
 import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 import ServiceProgress from "./pages/homeowner/ServiceProgress";
 import PricingIntelligence from "./pages/provider/PricingIntelligence";
+import QuotesManagement from "./pages/provider/QuotesManagement";
 import { lazy } from "react";
 
 const queryClient = new QueryClient();
@@ -416,6 +417,11 @@ const App = () => {
               <Route path="pricing-intelligence" element={
                 <SubscriptionGuard requiredFeature="AI Pricing Intelligence">
                   <PricingIntelligence />
+                </SubscriptionGuard>
+              } />
+              <Route path="quotes" element={
+                <SubscriptionGuard requiredFeature="Quote Management">
+                  <QuotesManagement />
                 </SubscriptionGuard>
               } />
               <Route path="analytics" element={

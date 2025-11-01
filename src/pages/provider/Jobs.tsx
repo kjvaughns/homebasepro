@@ -162,10 +162,41 @@ const Jobs = () => {
         await handleStatusUpdate(jobId, "start");
       } else if (action === "complete") {
         await handleStatusUpdate(jobId, "complete");
+      } else if (action === "auto_invoice") {
+        await handleAutoInvoice(jobId);
       }
     } catch (error) {
       console.error("Error handling action:", error);
       toast.error("Failed to perform action");
+    }
+  };
+
+  const handleAutoInvoice = async (jobId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-generate-invoice', {
+        body: { bookingId: jobId }
+      });
+
+      if (error) throw error;
+
+      if (data.already_exists) {
+        toast.info("Invoice already exists for this job");
+      } else {
+        toast.success(
+          `Invoice ${data.invoice.invoice_number} created!`,
+          {
+            action: {
+              label: "View",
+              onClick: () => window.location.href = `/provider/accounting?invoice=${data.invoice.id}`
+            }
+          }
+        );
+      }
+
+      loadJobs();
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      toast.error("Failed to generate invoice");
     }
   };
 

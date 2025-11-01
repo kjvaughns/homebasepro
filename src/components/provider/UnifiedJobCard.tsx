@@ -100,7 +100,7 @@ const statusConfig: Record<string, {
     color: "bg-primary/10 text-primary",
     label: "Completed",
     actions: [
-      { label: "Invoice", action: "invoice", icon: FileText }
+      { label: "Generate Invoice", action: "auto_invoice", icon: FileText }
     ]
   },
   invoiced: {

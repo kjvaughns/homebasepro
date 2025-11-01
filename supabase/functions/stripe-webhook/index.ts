@@ -339,12 +339,31 @@ serve(async (req) => {
             await supabase
               .from('bookings')
               .update({ 
-                status: 'confirmed',
+                status: 'paid',
                 payment_captured: true
               })
               .eq('id', invoiceRecord.job_id);
             
-            console.log(`Updated booking ${invoiceRecord.job_id} to confirmed`);
+            console.log(`Updated booking ${invoiceRecord.job_id} to paid`);
+
+            // Update workflow to payment_received
+            try {
+              await supabase.functions.invoke('workflow-orchestrator', {
+                body: {
+                  action: 'payment_received',
+                  invoiceId: invoiceId,
+                  bookingId: invoiceRecord.job_id,
+                  homeownerId: null, // Will be fetched from booking
+                  providerOrgId: invoiceRecord.organization_id,
+                  metadata: {
+                    amount: invoiceRecord.amount,
+                    payment_method: 'stripe'
+                  }
+                }
+              });
+            } catch (workflowError) {
+              console.error('Failed to update workflow:', workflowError);
+            }
           }
 
           // Create payment record
@@ -454,12 +473,27 @@ serve(async (req) => {
             await supabase
               .from('bookings')
               .update({ 
-                status: 'confirmed',
+                status: 'paid',
                 payment_captured: true
               })
               .eq('id', invoiceRecord.job_id);
             
-            console.log(`✅ Updated booking ${invoiceRecord.job_id} to confirmed`);
+            console.log(`✅ Updated booking ${invoiceRecord.job_id} to paid`);
+
+            // Update workflow
+            try {
+              await supabase.functions.invoke('workflow-orchestrator', {
+                body: {
+                  action: 'payment_received',
+                  invoiceId: invoiceId,
+                  bookingId: invoiceRecord.job_id,
+                  providerOrgId: invoiceRecord.organization_id,
+                  metadata: { amount: invoiceRecord.amount }
+                }
+              });
+            } catch (workflowError) {
+              console.error('Workflow update failed:', workflowError);
+            }
           }
           
           // Send notification to provider

@@ -201,6 +201,25 @@ export function QuoteBuilder({
           .eq("id", serviceCallId);
       }
 
+      // Create workflow and send notifications
+      try {
+        await supabase.functions.invoke('workflow-orchestrator', {
+          body: {
+            action: 'quote_created',
+            quoteId: data.id,
+            homeownerId: homeownerId,
+            providerOrgId: orgId,
+            metadata: {
+              service_name: serviceName,
+              total_amount: totalAmount
+            }
+          }
+        });
+      } catch (workflowError) {
+        console.error('Workflow creation failed:', workflowError);
+        // Don't block quote creation if workflow fails
+      }
+
       toast.success("Quote created and sent to homeowner!");
       
       if (onSuccess) {
