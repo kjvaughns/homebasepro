@@ -4,7 +4,7 @@
 @media (max-width: 768px) {
   /* Reposition Intercom launcher above bottom nav */
   #intercom-container .intercom-launcher {
-    bottom: calc(80px + env(safe-area-inset-bottom) + 16px) !important;
+    bottom: calc(80px + env(safe-area-inset-bottom) + 30px) !important;
     right: 16px !important;
     left: auto !important;
   }
@@ -33,7 +33,7 @@
 
 /* iOS-specific adjustments for native app */
 .capacitor.ios #intercom-container .intercom-launcher {
-  bottom: calc(80px + env(safe-area-inset-bottom) + 20px) !important;
+  bottom: calc(80px + env(safe-area-inset-bottom) + 35px) !important;
   right: 16px !important;
   left: auto !important;
 }
@@ -44,7 +44,7 @@
 
 /* Android-specific adjustments */
 .capacitor.android #intercom-container .intercom-launcher {
-  bottom: calc(80px + 16px) !important;
+  bottom: calc(80px + 30px) !important;
   right: 16px !important;
   left: auto !important;
 }
