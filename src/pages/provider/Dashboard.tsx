@@ -86,8 +86,9 @@ export default function ProviderDashboard() {
       const onboardedRecently = new Date((data as any).onboarded_at) > new Date(Date.now() - 5*60*1000); // 5 minutes
       const wizardDismissed = localStorage.getItem('setup_wizard_dismissed');
 
-      // Do NOT auto-open on mobile to avoid popup flicker; users can open from Tutorials or checklist
-      if (!isMobile && onboardedRecently && !wizardDismissed) {
+      // Do NOT auto-open on mobile to avoid popup flicker; compute synchronously to avoid hook race
+      const isMobileNow = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+      if (!isMobileNow && onboardedRecently && !wizardDismissed) {
         // Add delay to prevent flash during page transition
         setTimeout(() => setShowSetupWizard(true), 500);
       }

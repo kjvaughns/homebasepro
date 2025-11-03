@@ -134,6 +134,11 @@ export default function More() {
       },
     },
     {
+      title: "In-app Tutorial (Guided Tour)",
+      icon: BookOpen,
+      action: () => navigate('/provider/tutorials'),
+    },
+    {
       title: "Getting Started Guide",
       icon: BookOpen,
       action: () => window.open('https://homebasepro.com/guides/getting-started', '_blank'),

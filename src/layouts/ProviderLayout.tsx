@@ -329,7 +329,7 @@ const ProviderLayout = () => {
         {/* AI Chat Modal */}
         <AIChatModal open={showAIChat} onOpenChange={setShowAIChat} userRole="provider" />
 
-        <TutorialOverlay />
+        {!isMobile && <TutorialOverlay />}
       </div>
       </TutorialProvider>
     );
@@ -452,7 +452,7 @@ const ProviderLayout = () => {
       <AIChatModal open={showAIChat} onOpenChange={setShowAIChat} userRole="provider" />
       
       {/* Tutorial Overlay */}
-      <TutorialOverlay />
+      {!isMobile && <TutorialOverlay />}
     </SidebarProvider>
     </TutorialProvider>
   );
