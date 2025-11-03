@@ -19,6 +19,7 @@ import { AIChatModal } from "@/components/ai/AIChatModal";
 import { DailySnapshotCard } from "@/components/provider/DailySnapshotCard";
 import { SmartToDos } from "@/components/provider/SmartToDos";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Tooltip,
   TooltipContent,
@@ -39,6 +40,7 @@ export default function ProviderDashboard() {
   const [stripeConnected, setStripeConnected] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [userPlan, setUserPlan] = useState<string>('free');
+  const isMobile = useIsMobile();
 
   const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
 
@@ -83,8 +85,9 @@ export default function ProviderDashboard() {
     if (data && !(data as any).setup_completed && (data as any).onboarded_at) {
       const onboardedRecently = new Date((data as any).onboarded_at) > new Date(Date.now() - 5*60*1000); // 5 minutes
       const wizardDismissed = localStorage.getItem('setup_wizard_dismissed');
-      
-      if (onboardedRecently && !wizardDismissed) {
+
+      // Do NOT auto-open on mobile to avoid popup flicker; users can open from Tutorials or checklist
+      if (!isMobile && onboardedRecently && !wizardDismissed) {
         // Add delay to prevent flash during page transition
         setTimeout(() => setShowSetupWizard(true), 500);
       }
