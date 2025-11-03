@@ -152,12 +152,6 @@ export default function ProviderDashboard() {
         </Alert>
       )}
 
-      {/* Setup Checklist for incomplete setup */}
-      {!userProfile?.setup_completed && (
-        <div className="mb-6">
-          <SetupChecklist />
-        </div>
-      )}
 
       {/* Daily Snapshot */}
       <DailySnapshotCard 
