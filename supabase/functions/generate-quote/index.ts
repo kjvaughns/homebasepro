@@ -127,7 +127,7 @@ serve(async (req) => {
 
     // Add upsell suggestion if confidence is high
     let upsellSuggestion = null;
-    if (confidence > 0.7 && validEvents && validEvents.length > 5) {
+    if (confidence > 0.7 && learningEvents && learningEvents.length > 5) {
       if (serviceLower.includes('hvac')) {
         upsellSuggestion = "Consider adding preventive maintenance plan for 15% discount on future services";
       } else if (serviceLower.includes('plumb')) {

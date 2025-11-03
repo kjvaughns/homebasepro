@@ -136,11 +136,11 @@ serve(async (req) => {
         .eq('id', providerOrgId)
         .single();
 
-      if (org?.profiles) {
+      if (org?.profiles && Array.isArray(org.profiles) && org.profiles.length > 0) {
         await supabaseClient.functions.invoke('dispatch-notification', {
           body: {
-            userId: org.profiles.user_id,
-            profileId: org.profiles.id,
+            userId: org.profiles[0].user_id,
+            profileId: org.profiles[0].id,
             type: 'quote_accepted',
             title: '🎉 Quote Accepted!',
             message: `Your quote for ${metadata?.service_name} was accepted`,

@@ -160,11 +160,11 @@ serve(async (req) => {
       .eq('id', booking.provider_org_id)
       .single();
 
-    if (org?.profiles) {
+    if (org?.profiles && Array.isArray(org.profiles) && org.profiles.length > 0) {
       await supabaseClient.functions.invoke('dispatch-notification', {
         body: {
-          userId: org.profiles.user_id,
-          profileId: org.profiles.id,
+          userId: org.profiles[0].user_id,
+          profileId: org.profiles[0].id,
           type: 'invoice_created',
           title: '📄 Invoice Auto-Generated',
           message: `Invoice ${invoice.invoice_number} created for completed job`,
