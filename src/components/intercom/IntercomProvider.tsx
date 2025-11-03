@@ -89,7 +89,7 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
           email: user.email,
           created_at: Math.floor(new Date(user.created_at).getTime() / 1000),
           user_hash: userHash, // Identity verification
-          alignment: 'right',
+          alignment: isMobile ? 'left' : 'right',
           vertical_padding: isMobile ? 96 : 20,
           horizontal_padding: isMobile ? 16 : 20,
           hide_default_launcher: false,
