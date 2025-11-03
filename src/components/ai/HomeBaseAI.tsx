@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ProviderCard } from '@/components/marketplace/ProviderCard';
 import { BookingDialog } from '@/components/marketplace/BookingDialog';
 import { AIComposer } from './AIComposer';
+import { AIEscalateButton } from './AIEscalateButton';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 
 interface ChatMessage {
@@ -485,6 +486,14 @@ export default function HomeBaseAI({
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Show escalation after 3+ messages */}
+      {messages.length >= 6 && (
+        <AIEscalateButton 
+          conversationContext={messages.map(m => ({ role: m.role, content: m.content }))}
+          reason="conversation_length"
+        />
+      )}
 
       {/* Booking Dialog */}
       {selectedProvider && defaultProperty && (

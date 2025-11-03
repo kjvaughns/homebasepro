@@ -10,6 +10,7 @@ import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
 import { useToast } from "@/hooks/use-toast";
 import { initializeNativeUI, isNative, platform } from "@/utils/capacitor";
+import { IntercomProvider } from "@/components/intercom/IntercomProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
@@ -315,13 +316,14 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AIWidgetWrapper 
-              user={user} 
-              userRole={userRole} 
-              shouldShowAI={shouldShowAI} 
-            />
-            <ErrorBoundary>
-              <Routes>
+            <IntercomProvider>
+              <AIWidgetWrapper 
+                user={user} 
+                userRole={userRole} 
+                shouldShowAI={shouldShowAI} 
+              />
+              <ErrorBoundary>
+                <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<Pricing />} />
@@ -541,7 +543,8 @@ const App = () => {
                 }
               }}
               onDismiss={dismissInstall}
-            />
+              />
+            </IntercomProvider>
           </BrowserRouter>
         </MessagingProvider>
       </TooltipProvider>

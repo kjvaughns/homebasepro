@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { HelpCircle, Bot } from 'lucide-react';
+import { HelpCircle, Bot, MessageCircle } from 'lucide-react';
 import HomeBaseAI from '@/components/ai/HomeBaseAI';
 import { CreateTicketDialog } from './CreateTicketDialog';
 
@@ -45,15 +45,34 @@ export function SupportDrawer() {
             <div>
               <h3 className="font-semibold mb-2">Still Need Help?</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Create a support ticket and our team will respond within 24 hours.
+                Choose the best support option for your situation
               </p>
-              <Button 
-                onClick={() => setShowTicketForm(true)}
-                variant="outline"
-                className="w-full"
-              >
-                Create Support Ticket
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => {
+                    try {
+                      if (typeof window !== 'undefined' && (window as any).Intercom) {
+                        (window as any).Intercom('show');
+                      }
+                    } catch (error) {
+                      console.error('Error opening Intercom:', error);
+                    }
+                  }}
+                  variant="default"
+                  className="w-full"
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Live Chat (Urgent Issues)
+                </Button>
+                <Button 
+                  onClick={() => setShowTicketForm(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Create Support Ticket (24hr)
+                </Button>
+              </div>
             </div>
           </div>
         </SheetContent>
