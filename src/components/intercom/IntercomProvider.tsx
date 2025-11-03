@@ -66,19 +66,19 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Get identity verification hash
-        let userHash: string | undefined;
+        // Get identity verification JWT token
+        let userJwt: string | undefined;
         try {
-          const { data: hashData } = await supabase.functions.invoke('generate-intercom-hash', {
+          const { data: tokenData } = await supabase.functions.invoke('generate-intercom-hash', {
             headers: {
               Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
             }
           });
-          if (hashData?.hash) {
-            userHash = hashData.hash;
+          if (tokenData?.token) {
+            userJwt = tokenData.token;
           }
         } catch (error) {
-          console.warn('Failed to get Intercom hash:', error);
+          console.warn('Failed to get Intercom JWT:', error);
         }
 
         // Initialize Intercom with context and identity verification
@@ -88,7 +88,7 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
           name: profile.full_name || user.email?.split('@')[0] || 'User',
           email: user.email,
           created_at: Math.floor(new Date(user.created_at).getTime() / 1000),
-          user_hash: userHash, // Identity verification
+          intercom_user_jwt: userJwt, // Use JWT token for identity verification
           alignment: 'right',
           vertical_padding: 20,
           horizontal_padding: isMobile ? 16 : 20,
