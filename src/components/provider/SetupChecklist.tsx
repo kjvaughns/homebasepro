@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 interface SetupChecklistProps {
-  onOpenWizard: () => void;
+  onOpenWizard?: () => void;
 }
 
 export function SetupChecklist({ onOpenWizard }: SetupChecklistProps) {
@@ -109,9 +109,11 @@ export function SetupChecklist({ onOpenWizard }: SetupChecklistProps) {
           );
         })}
         
-        <Button variant="outline" size="sm" className="w-full mt-2" onClick={onOpenWizard}>
-          Reopen Setup Wizard
-        </Button>
+        {onOpenWizard && (
+          <Button variant="outline" size="sm" className="w-full mt-2" onClick={onOpenWizard}>
+            Reopen Setup Wizard
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

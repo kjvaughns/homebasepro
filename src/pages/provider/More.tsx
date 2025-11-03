@@ -126,14 +126,6 @@ export default function More() {
 
   const tutorialsItems = [
     {
-      title: "Setup Wizard",
-      icon: Sparkles,
-      action: () => {
-        localStorage.removeItem('setup_wizard_dismissed');
-        navigate('/provider/dashboard');
-      },
-    },
-    {
       title: "In-app Tutorial (Guided Tour)",
       icon: BookOpen,
       action: () => navigate('/provider/tutorials'),

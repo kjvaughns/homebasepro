@@ -10,8 +10,6 @@ import { useDashboardInsights } from "./hooks/useDashboardInsights";
 import { AIInsightCard } from "@/components/provider/AIInsightCard";
 import { BalanceWidget } from "@/components/provider/BalanceWidget";
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist";
-import { NewProviderWelcome } from "@/components/provider/NewProviderWelcome";
-import { SetupWizard } from "@/components/provider/SetupWizard";
 import { SetupChecklist } from "@/components/provider/SetupChecklist";
 import { BusinessFlowWidget } from "@/components/provider/BusinessFlowWidget";
 import { RemindersWidget } from "@/components/provider/RemindersWidget";
@@ -36,7 +34,6 @@ export default function ProviderDashboard() {
   const { insights, loading: insightsLoading } = useDashboardInsights();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [userPlan, setUserPlan] = useState<string>('free');
@@ -80,19 +77,6 @@ export default function ProviderDashboard() {
 
     setUserProfile(data as any);
     setUserPlan((data as any)?.plan || 'free');
-
-    // Show setup wizard for new users who haven't completed setup
-    if (data && !(data as any).setup_completed && (data as any).onboarded_at) {
-      const onboardedRecently = new Date((data as any).onboarded_at) > new Date(Date.now() - 5*60*1000); // 5 minutes
-      const wizardDismissed = localStorage.getItem('setup_wizard_dismissed');
-
-      // Do NOT auto-open on mobile to avoid popup flicker; compute synchronously to avoid hook race
-      const isMobileNow = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-      if (!isMobileNow && onboardedRecently && !wizardDismissed) {
-        // Add delay to prevent flash during page transition
-        setTimeout(() => setShowSetupWizard(true), 500);
-      }
-    }
   };
 
   const checkStripeStatus = async () => {
@@ -171,18 +155,9 @@ export default function ProviderDashboard() {
       {/* Setup Checklist for incomplete setup */}
       {!userProfile?.setup_completed && (
         <div className="mb-6">
-          <SetupChecklist onOpenWizard={() => {
-            localStorage.removeItem('setup_wizard_dismissed');
-            setShowSetupWizard(true);
-          }} />
+          <SetupChecklist />
         </div>
       )}
-
-      {/* Welcome state for new providers */}
-      <NewProviderWelcome hasAnyData={hasAnyData} onOpenWizard={() => {
-        localStorage.removeItem('setup_wizard_dismissed');
-        setShowSetupWizard(true);
-      }} />
 
       {/* Daily Snapshot */}
       <DailySnapshotCard 
@@ -358,17 +333,6 @@ export default function ProviderDashboard() {
           open={showAIChat} 
           onOpenChange={setShowAIChat}
           userRole="provider"
-        />
-      )}
-
-      {/* Only mount Setup Wizard when open or setup not completed */}
-      {(showSetupWizard || !userProfile?.setup_completed) && (
-        <SetupWizard 
-          open={showSetupWizard} 
-          onClose={() => {
-            setShowSetupWizard(false);
-            localStorage.setItem('setup_wizard_dismissed', 'true');
-          }} 
         />
       )}
     </div>
