@@ -1840,6 +1840,47 @@ export type Database = {
           },
         ]
       }
+      intercom_sessions: {
+        Row: {
+          context: Json | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          last_activity_at: string | null
+          session_id: string | null
+          user_id: string | null
+          user_role: string
+        }
+        Insert: {
+          context?: Json | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          user_role: string
+        }
+        Update: {
+          context?: Json | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          user_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intercom_sessions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
