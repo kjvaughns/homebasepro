@@ -21,6 +21,7 @@ import {
   Gift,
   LogOut,
   MessageSquare,
+  BookOpen,
 } from "lucide-react";
 
 export default function More() {
@@ -120,6 +121,27 @@ export default function More() {
       title: "Marketing Tools",
       icon: Megaphone,
       action: () => {}, // TODO: Marketing tools
+    },
+  ];
+
+  const tutorialsItems = [
+    {
+      title: "Setup Wizard",
+      icon: Sparkles,
+      action: () => {
+        localStorage.removeItem('setup_wizard_dismissed');
+        navigate('/provider/dashboard');
+      },
+    },
+    {
+      title: "Getting Started Guide",
+      icon: BookOpen,
+      action: () => window.open('https://homebasepro.com/guides/getting-started', '_blank'),
+    },
+    {
+      title: "Video Tutorials",
+      icon: BookOpen,
+      action: () => window.open('https://homebasepro.com/tutorials', '_blank'),
     },
   ];
 
@@ -225,6 +247,25 @@ export default function More() {
         </h2>
         <Card className="divide-y">
           {toolsItems.map((item) => (
+            <button
+              key={item.title}
+              onClick={item.action}
+              className="flex items-center gap-3 p-4 hover:bg-accent/50 active:bg-accent transition-colors w-full text-left"
+            >
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm font-medium">{item.title}</span>
+            </button>
+          ))}
+        </Card>
+      </div>
+
+      {/* Tutorials Section */}
+      <div>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
+          Tutorials & Guides
+        </h2>
+        <Card className="divide-y">
+          {tutorialsItems.map((item) => (
             <button
               key={item.title}
               onClick={item.action}

@@ -60,6 +60,15 @@
   }
 }
 
+/* Completely hide Intercom launcher */
+.intercom-launcher,
+#intercom-container .intercom-launcher-frame {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 /* Hide launcher on routes where it might conflict */
 [data-hide-intercom="true"] #intercom-container .intercom-launcher {
   display: none !important;

@@ -82,8 +82,11 @@ export default function ProviderDashboard() {
     // Show setup wizard for new users who haven't completed setup
     if (data && !(data as any).setup_completed && (data as any).onboarded_at) {
       const onboardedRecently = new Date((data as any).onboarded_at) > new Date(Date.now() - 5*60*1000); // 5 minutes
-      if (onboardedRecently) {
-        setShowSetupWizard(true);
+      const wizardDismissed = localStorage.getItem('setup_wizard_dismissed');
+      
+      if (onboardedRecently && !wizardDismissed) {
+        // Add delay to prevent flash during page transition
+        setTimeout(() => setShowSetupWizard(true), 500);
       }
     }
   };
@@ -164,12 +167,18 @@ export default function ProviderDashboard() {
       {/* Setup Checklist for incomplete setup */}
       {!userProfile?.setup_completed && (
         <div className="mb-6">
-          <SetupChecklist onOpenWizard={() => setShowSetupWizard(true)} />
+          <SetupChecklist onOpenWizard={() => {
+            localStorage.removeItem('setup_wizard_dismissed');
+            setShowSetupWizard(true);
+          }} />
         </div>
       )}
 
       {/* Welcome state for new providers */}
-      <NewProviderWelcome hasAnyData={hasAnyData} onOpenWizard={() => setShowSetupWizard(true)} />
+      <NewProviderWelcome hasAnyData={hasAnyData} onOpenWizard={() => {
+        localStorage.removeItem('setup_wizard_dismissed');
+        setShowSetupWizard(true);
+      }} />
 
       {/* Daily Snapshot */}
       <DailySnapshotCard 
@@ -339,15 +348,25 @@ export default function ProviderDashboard() {
         </Card>
       </section>
 
-      {/* AI Chat Modal */}
-      <AIChatModal 
-        open={showAIChat} 
-        onOpenChange={setShowAIChat}
-        userRole="provider"
-      />
+      {/* Only mount AI Chat Modal when open */}
+      {showAIChat && (
+        <AIChatModal 
+          open={showAIChat} 
+          onOpenChange={setShowAIChat}
+          userRole="provider"
+        />
+      )}
 
-      {/* Setup Wizard */}
-      <SetupWizard open={showSetupWizard} onClose={() => setShowSetupWizard(false)} />
+      {/* Only mount Setup Wizard when open or setup not completed */}
+      {(showSetupWizard || !userProfile?.setup_completed) && (
+        <SetupWizard 
+          open={showSetupWizard} 
+          onClose={() => {
+            setShowSetupWizard(false);
+            localStorage.setItem('setup_wizard_dismissed', 'true');
+          }} 
+        />
+      )}
     </div>
   );
 }

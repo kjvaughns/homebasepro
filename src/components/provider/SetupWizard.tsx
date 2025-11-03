@@ -167,6 +167,12 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
       {/* Stripe Onboarding */}
       <Dialog open={showStripeOnboarding} onOpenChange={setShowStripeOnboarding}>
         <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Connect Stripe</DialogTitle>
+            <DialogDescription>
+              Set up your payment account to start receiving payments
+            </DialogDescription>
+          </DialogHeader>
           <EmbeddedConnectOnboarding 
             onComplete={() => {
               setShowStripeOnboarding(false);
