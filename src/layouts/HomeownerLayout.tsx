@@ -37,6 +37,7 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { Bell } from "lucide-react";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
+import { initPWADetection } from "@/utils/pwaDetection";
 
   const mobileNavigation = [
     { name: "Home", href: "/homeowner/dashboard", icon: Home },
@@ -72,6 +73,9 @@ export default function HomeownerLayout() {
   useAutoScrollToInput();
 
   useEffect(() => {
+    // Initialize PWA detection
+    initPWADetection();
+    
     const checkUser = async () => {
       const {
         data: { user },
@@ -133,7 +137,7 @@ export default function HomeownerLayout() {
   return (
     <TutorialProvider role="homeowner">
     <div className="min-h-[100svh] overflow-hidden bg-background flex flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
+      <header className="safe-area-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/homeowner/dashboard" className="flex items-center gap-2 font-semibold text-lg">
@@ -209,11 +213,14 @@ export default function HomeownerLayout() {
         style={
           isMobile
             ? {
-                // viewport minus header minus (tabbar + safe area) minus keyboard
-                height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)) - ${keyboardHeight}px)`,
+                // viewport minus header (+ safe-area-inset-top) minus (tabbar + safe area) minus keyboard
+                height: `calc(100svh - 56px - env(safe-area-inset-top) - (${TABBAR_H}px + env(safe-area-inset-bottom)) - ${keyboardHeight}px)`,
                 paddingBottom: 12, // tiny breathing room for last item
               }
-            : undefined
+            : {
+                // desktop: viewport minus header with safe area
+                height: "calc(100svh - 56px - env(safe-area-inset-top))",
+              }
         }
       >
         <Outlet />

@@ -28,6 +28,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { initPWADetection } from "@/utils/pwaDetection";
 
 const mobileNavigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -46,6 +47,9 @@ const AdminLayout = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize PWA detection
+    initPWADetection();
+    
     const checkAdminStatus = async () => {
       try {
         const {
@@ -120,7 +124,7 @@ const AdminLayout = () => {
   return (
     <div className="min-h-[100dvh] overflow-hidden bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
+      <header className="safe-area-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/admin/dashboard" className="flex items-center gap-2 font-semibold text-lg">
@@ -184,13 +188,13 @@ const AdminLayout = () => {
         style={
           isMobile
             ? {
-                // mobile: viewport minus header (56px) minus tab bar (80px + safe area)
-                height: "calc(100svh - 56px - (80px + env(safe-area-inset-bottom)))",
+                // mobile: viewport minus header (56px + safe-area-inset-top) minus tab bar (80px + safe area)
+                height: "calc(100svh - 56px - env(safe-area-inset-top) - (80px + env(safe-area-inset-bottom)))",
                 paddingBottom: 16, // tiny breathing room so last item isn't jammed
               }
             : {
                 // desktop: viewport minus header (no bottom bar on desktop)
-                height: "calc(100vh - 56px)",
+                height: "calc(100vh - 56px - env(safe-area-inset-top))",
               }
         }
       >

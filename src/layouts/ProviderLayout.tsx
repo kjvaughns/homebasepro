@@ -40,6 +40,7 @@ import { useMessaging } from "@/contexts/MessagingContext";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
+import { initPWADetection } from "@/utils/pwaDetection";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
@@ -74,6 +75,9 @@ const ProviderLayout = () => {
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Initialize PWA detection
+    initPWADetection();
+    
     const load = async () => {
       const {
         data: { user },
@@ -146,7 +150,7 @@ const ProviderLayout = () => {
     return (
       <TutorialProvider role="provider">
       <div className="min-h-[100svh] overflow-hidden bg-background flex flex-col">
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
+        <header className="safe-area-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14">
           <div className="container flex h-full items-center justify-between">
             <div className="flex items-center gap-2">
               <Link to="/provider/dashboard" className="flex items-center gap-2 font-semibold text-lg">
@@ -219,7 +223,7 @@ const ProviderLayout = () => {
           ref={mainRef}
           className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-4")}
           style={{
-            height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)) - ${keyboardHeight}px)`,
+            height: `calc(100svh - 56px - env(safe-area-inset-top) - (${TABBAR_H}px + env(safe-area-inset-bottom)) - ${keyboardHeight}px)`,
           }}
         >
           <Outlet />
@@ -305,7 +309,7 @@ const ProviderLayout = () => {
     <SidebarProvider>
       <header
         id="provider-topbar"
-        className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14"
+        className="safe-area-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 h-14"
       >
         <div className="container flex h-full items-center justify-between">
           <div className="flex items-center gap-2">
@@ -377,7 +381,7 @@ const ProviderLayout = () => {
         <main
           ref={mainRef}
           className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-[120px] md:pb-8")}
-          style={{ height: "calc(100vh - 56px)" }}
+          style={{ height: "calc(100vh - 56px - env(safe-area-inset-top))" }}
         >
           <Outlet />
         </main>
