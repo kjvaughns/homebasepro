@@ -92,6 +92,7 @@ import ProviderSubscriptions from "@/pages/provider/Subscriptions";
 import ProviderNotifications from "@/pages/provider/Notifications";
 import HomeownerNotifications from "@/pages/homeowner/Notifications";
 import Announcements from "@/pages/admin/Announcements";
+import MorePage from "@/pages/provider/More";
 
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -478,6 +479,7 @@ const App = () => {
               <Route path="stripe-onboarding" element={<Navigate to="/provider/dashboard" replace />} />
               
               <Route path="messages" element={<Messages role="provider" />} />
+              <Route path="more" element={<MorePage />} />
               <Route path="notifications" element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <ProviderNotifications />
