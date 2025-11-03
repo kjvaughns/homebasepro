@@ -243,3 +243,6 @@ All colors MUST be HSL.
 
 /* Capacitor native mobile enhancements */
 @import './styles/capacitor.css';
+
+/* Intercom mobile optimizations */
+@import './styles/intercom.css';

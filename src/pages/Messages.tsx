@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { isSameDay } from 'date-fns';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAutoScrollToInput } from '@/hooks/useAutoScrollToInput';
 
 interface MessagesProps {
   role: 'homeowner' | 'provider';
@@ -45,6 +46,7 @@ export default function Messages({ role }: MessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const keyboardHeight = useKeyboardHeight();
+  useAutoScrollToInput();
   
   useEffect(() => {
     if (conversationIdFromUrl && conversationIdFromUrl !== selectedConversationId) {

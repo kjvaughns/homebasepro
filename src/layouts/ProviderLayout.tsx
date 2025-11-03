@@ -38,6 +38,8 @@ import { TeamMenuSheet } from "@/components/provider/TeamMenuSheet";
 import { FinancialMenuSheet } from "@/components/provider/FinancialMenuSheet";
 import { useMessaging } from "@/contexts/MessagingContext";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
+import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
@@ -56,6 +58,8 @@ const ProviderLayout = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const isMessagesPage = location.pathname.startsWith('/provider/messages');
+  const keyboardHeight = useKeyboardHeight();
+  useAutoScrollToInput();
 
   const [organization, setOrganization] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -215,7 +219,7 @@ const ProviderLayout = () => {
           ref={mainRef}
           className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-4")}
           style={{
-            height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)))`,
+            height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)) - ${keyboardHeight}px)`,
           }}
         >
           <Outlet />

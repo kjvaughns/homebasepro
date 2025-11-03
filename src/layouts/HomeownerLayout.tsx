@@ -35,6 +35,8 @@ import { SupportDrawer } from "@/components/support/SupportDrawer";
 import { useMessaging } from "@/contexts/MessagingContext";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Bell } from "lucide-react";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
+import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
 
   const mobileNavigation = [
     { name: "Home", href: "/homeowner/dashboard", icon: Home },
@@ -66,6 +68,8 @@ export default function HomeownerLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { totalUnread } = useMessaging();
+  const keyboardHeight = useKeyboardHeight();
+  useAutoScrollToInput();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -205,8 +209,8 @@ export default function HomeownerLayout() {
         style={
           isMobile
             ? {
-                // viewport minus header minus (tabbar + safe area)
-                height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)))`,
+                // viewport minus header minus (tabbar + safe area) minus keyboard
+                height: `calc(100svh - 56px - (${TABBAR_H}px + env(safe-area-inset-bottom)) - ${keyboardHeight}px)`,
                 paddingBottom: 12, // tiny breathing room for last item
               }
             : undefined

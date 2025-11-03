@@ -1,0 +1,58 @@
+/* Intercom Widget Mobile Optimizations */
+
+/* Base mobile adjustments */
+@media (max-width: 768px) {
+  /* Reposition Intercom launcher above bottom nav */
+  #intercom-container .intercom-launcher {
+    bottom: calc(80px + env(safe-area-inset-bottom) + 16px) !important;
+    right: 16px !important;
+  }
+  
+  /* Adjust messenger frame for mobile */
+  #intercom-container .intercom-messenger-frame {
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    max-height: calc(100vh - 56px - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Ensure proper z-index stacking */
+  #intercom-container {
+    z-index: 9999 !important;
+  }
+  
+  /* Prevent Intercom from blocking touch targets */
+  #intercom-container {
+    pointer-events: none;
+  }
+  
+  #intercom-container .intercom-launcher,
+  #intercom-container .intercom-messenger-frame {
+    pointer-events: auto;
+  }
+}
+
+/* iOS-specific adjustments for native app */
+.capacitor.ios #intercom-container .intercom-launcher {
+  bottom: calc(80px + env(safe-area-inset-bottom) + 20px) !important;
+}
+
+.capacitor.ios #intercom-container .intercom-messenger-frame {
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
+
+/* Android-specific adjustments */
+.capacitor.android #intercom-container .intercom-launcher {
+  bottom: calc(80px + 16px) !important;
+}
+
+/* Desktop - keep default positioning */
+@media (min-width: 769px) {
+  #intercom-container .intercom-launcher {
+    bottom: 20px !important;
+    right: 20px !important;
+  }
+}
+
+/* Hide launcher on routes where it might conflict */
+[data-hide-intercom="true"] #intercom-container .intercom-launcher {
+  display: none !important;
+}

@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
 import Intercom from '@intercom/messenger-js-sdk';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function IntercomProvider({ children }: { children: React.ReactNode }) {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     const initializeIntercom = async () => {
       try {
@@ -86,6 +89,10 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
           email: user.email,
           created_at: Math.floor(new Date(user.created_at).getTime() / 1000),
           user_hash: userHash, // Identity verification
+          alignment: 'right',
+          vertical_padding: isMobile ? 96 : 20,
+          horizontal_padding: isMobile ? 16 : 20,
+          hide_default_launcher: false,
           ...customAttributes
         });
 
@@ -116,7 +123,7 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isMobile]);
 
   return <>{children}</>;
 }
