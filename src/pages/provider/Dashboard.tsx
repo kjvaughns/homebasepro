@@ -16,6 +16,8 @@ import { SetupChecklist } from "@/components/provider/SetupChecklist";
 import { BusinessFlowWidget } from "@/components/provider/BusinessFlowWidget";
 import { RemindersWidget } from "@/components/provider/RemindersWidget";
 import { AIChatModal } from "@/components/ai/AIChatModal";
+import { DailySnapshotCard } from "@/components/provider/DailySnapshotCard";
+import { SmartToDos } from "@/components/provider/SmartToDos";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -125,14 +127,23 @@ export default function ProviderDashboard() {
     ? Math.ceil((new Date(userProfile.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : 0;
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
+  const firstName = userProfile?.full_name?.split(' ')[0] || 'there';
+
   return (
     <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
       <header className="py-4 md:py-6 pt-safe">
         <h1 className="font-bold tracking-tight" style={{ fontSize: "clamp(20px, 2.6vw, 32px)" }}>
-          Dashboard
+          {getGreeting()}, {firstName} ☀️
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Welcome back! Here's an overview of your business.
+          Here's what's happening today
         </p>
       </header>
 
@@ -159,6 +170,20 @@ export default function ProviderDashboard() {
 
       {/* Welcome state for new providers */}
       <NewProviderWelcome hasAnyData={hasAnyData} onOpenWizard={() => setShowSetupWizard(true)} />
+
+      {/* Daily Snapshot */}
+      <DailySnapshotCard 
+        todayJobs={jobs.length}
+        unpaidInvoices={invoices.length}
+        onOptimizeRoute={() => navigate('/provider/jobs')}
+      />
+
+      <div className="h-4 md:h-6" />
+
+      {/* Smart To-Dos */}
+      <SmartToDos />
+
+      <div className="h-4 md:h-6" />
 
       {/* KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">

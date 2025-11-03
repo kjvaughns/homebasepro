@@ -25,6 +25,8 @@ import {
   Briefcase,
   CreditCard,
   RotateCcw,
+  Home,
+  MoreHorizontal,
 } from "lucide-react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { SupportDrawer } from "@/components/support/SupportDrawer";
@@ -41,16 +43,18 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
 import { initPWADetection } from "@/utils/pwaDetection";
+import { FloatingAIButton } from "@/components/provider/FloatingAIButton";
+import { AIChatModal } from "@/components/ai/AIChatModal";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
 
 const mobileNavigation = [
-  { name: "Dashboard", href: "/provider/dashboard", icon: LayoutDashboard },
-  { name: "Clients", href: "/provider/clients", icon: Users },
+  { name: "Home", href: "/provider/dashboard", icon: Home },
   { name: "Jobs", href: "/provider/jobs", icon: Briefcase, hasSubmenu: true },
+  { name: "Clients", href: "/provider/clients", icon: Users },
   { name: "Messages", href: "/provider/messages", icon: MessageSquare },
-  { name: "Financial", href: "/provider/payments", icon: CreditCard, hasSubmenu: true },
+  { name: "More", href: "/provider/more", icon: MoreHorizontal },
 ];
 
 const ProviderLayout = () => {
@@ -70,6 +74,7 @@ const ProviderLayout = () => {
   const [jobsSheetOpen, setJobsSheetOpen] = useState(false);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
   const [financialSheetOpen, setFinancialSheetOpen] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   const isMessagesRoute = location.pathname.startsWith("/provider/messages");
   const mainRef = useRef<HTMLDivElement>(null);
@@ -274,7 +279,6 @@ const ProviderLayout = () => {
                   onClick={() => {
                     if (item.hasSubmenu) {
                       if (item.name === 'Jobs') setJobsSheetOpen(true);
-                      else if (item.name === 'Financial') setFinancialSheetOpen(true);
                     } else {
                       navigate(item.href);
                     }
@@ -296,6 +300,12 @@ const ProviderLayout = () => {
         <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />
         {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
         <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
+
+        {/* Floating AI Button */}
+        <FloatingAIButton onAIChat={() => setShowAIChat(true)} />
+
+        {/* AI Chat Modal */}
+        <AIChatModal open={showAIChat} onOpenChange={setShowAIChat} userRole="provider" />
 
         <TutorialOverlay />
       </div>
@@ -391,6 +401,12 @@ const ProviderLayout = () => {
       <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />
       {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
       <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
+      
+      {/* Floating AI Button */}
+      <FloatingAIButton onAIChat={() => setShowAIChat(true)} />
+
+      {/* AI Chat Modal */}
+      <AIChatModal open={showAIChat} onOpenChange={setShowAIChat} userRole="provider" />
       
       {/* Tutorial Overlay */}
       <TutorialOverlay />
