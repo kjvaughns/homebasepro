@@ -121,3 +121,9 @@ verify_jwt = false
 
 [functions.notifications-health]
 verify_jwt = false
+
+[functions.intercom-webhook]
+verify_jwt = false
+
+[functions.generate-intercom-hash]
+verify_jwt = true
