@@ -111,7 +111,6 @@ import AdminReferrals from "./pages/admin/Referrals";
 import PWALaunch from "./pages/PWALaunch";
 import AdminCommerce from "./pages/admin/Commerce";
 import AdminUsersAccess from "./pages/admin/UsersAccess";
-import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 import PushDebug from "./pages/debug/PushDebug";
 import BookProvider from "./pages/BookProvider";
 import { useState } from "react";
@@ -303,12 +302,6 @@ const App = () => {
     }
   }, [user, canInstall, isInstalled]);
 
-  // Helper to determine if AI widget should show
-  const shouldShowAI = (pathname: string) => {
-    const appRoutes = ['/homeowner', '/provider', '/admin'];
-    return appRoutes.some(route => pathname.startsWith(route));
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -317,11 +310,6 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <IntercomProvider>
-              <AIWidgetWrapper 
-                user={user} 
-                userRole={userRole} 
-                shouldShowAI={shouldShowAI} 
-              />
               <ErrorBoundary>
                 <Routes>
             {/* Public routes */}
@@ -551,24 +539,5 @@ const App = () => {
     </QueryClientProvider>
   );
 };
-
-// Wrapper component to access useLocation inside BrowserRouter
-function AIWidgetWrapper({ 
-  user, 
-  userRole, 
-  shouldShowAI 
-}: { 
-  user: any; 
-  userRole: 'homeowner' | 'provider' | null; 
-  shouldShowAI: (pathname: string) => boolean;
-}) {
-  const location = useLocation();
-  
-  if (!user || !shouldShowAI(location.pathname)) {
-    return null;
-  }
-  
-  return <FloatingAIAssistant userRole={userRole} />;
-}
 
 export default App;

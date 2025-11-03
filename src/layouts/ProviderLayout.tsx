@@ -33,7 +33,6 @@ import { TutorialProvider } from "@/contexts/TutorialContext";
 import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { FloatingAIAssistant } from "@/components/ai/FloatingAIAssistant";
 import { JobsMenuSheet } from "@/components/provider/JobsMenuSheet";
 import { TeamMenuSheet } from "@/components/provider/TeamMenuSheet";
 import { FinancialMenuSheet } from "@/components/provider/FinancialMenuSheet";
@@ -290,13 +289,6 @@ const ProviderLayout = () => {
         {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
         <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
 
-        {/* Floating AI Assistant */}
-        {!isMessagesPage && (
-          <FloatingAIAssistant 
-            userRole="provider"
-            context={{ userId: userProfile?.user_id, orgId: organization?.id }}
-          />
-        )}
         <TutorialOverlay />
       </div>
       </TutorialProvider>
@@ -386,14 +378,6 @@ const ProviderLayout = () => {
           <Outlet />
         </main>
       </div>
-
-      {/* Floating AI Assistant */}
-      {!isMessagesPage && (
-        <FloatingAIAssistant 
-          userRole="provider"
-          context={{ userId: userProfile?.user_id, orgId: organization?.id }}
-        />
-      )}
 
       {/* Sheet Menus (Desktop) */}
       <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />

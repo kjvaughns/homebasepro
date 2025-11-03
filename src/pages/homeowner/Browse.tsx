@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Search, MapPin, Calendar, SlidersHorizontal, Star, Droplet, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { FloatingAIAssistant } from "@/components/marketplace/FloatingAIAssistant";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FavoriteToggle } from "@/components/homeowner/FavoriteToggle";
 
@@ -253,8 +252,6 @@ export default function Browse() {
           </div>
         )}
       </div>
-      
-      <FloatingAIAssistant />
     </div>
   );
 }

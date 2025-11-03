@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { HelpCircle, Bot, MessageCircle } from 'lucide-react';
-import HomeBaseAI from '@/components/ai/HomeBaseAI';
+import { HelpCircle, MessageCircle } from 'lucide-react';
 import { CreateTicketDialog } from './CreateTicketDialog';
 
 export function SupportDrawer() {
@@ -25,25 +23,8 @@ export function SupportDrawer() {
           </SheetHeader>
 
           <div className="space-y-6 mt-6">
-            {/* AI First Section */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Bot className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Ask HomeBase AI First</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                I can help troubleshoot issues, answer questions about features, and guide you through platform tasks.
-              </p>
-              <div className="border rounded-lg p-4 max-h-[400px] overflow-y-auto">
-                <HomeBaseAI autoFocus />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Create Ticket Section */}
-            <div>
-              <h3 className="font-semibold mb-2">Still Need Help?</h3>
+              <h3 className="font-semibold mb-2">Get Support</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Choose the best support option for your situation
               </p>
