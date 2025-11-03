@@ -63,13 +63,29 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Initialize Intercom with context
+        // Get identity verification hash
+        let userHash: string | undefined;
+        try {
+          const { data: hashData } = await supabase.functions.invoke('generate-intercom-hash', {
+            headers: {
+              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            }
+          });
+          if (hashData?.hash) {
+            userHash = hashData.hash;
+          }
+        } catch (error) {
+          console.warn('Failed to get Intercom hash:', error);
+        }
+
+        // Initialize Intercom with context and identity verification
         Intercom({
           app_id: 'itubyguk',
           user_id: user.id,
           name: profile.full_name || user.email?.split('@')[0] || 'User',
           email: user.email,
           created_at: Math.floor(new Date(user.created_at).getTime() / 1000),
+          user_hash: userHash, // Identity verification
           ...customAttributes
         });
 
