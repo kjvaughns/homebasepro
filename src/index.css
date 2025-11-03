@@ -173,13 +173,13 @@ All colors MUST be HSL.
     padding-top: env(safe-area-inset-top);
   }
 
-  /* PWA Standalone Mode - Safe Area Classes */
-  .standalone .safe-area-header {
+  /* Safe Area Classes - Apply universally on iOS with viewport-fit=cover */
+  .safe-area-header {
     padding-top: env(safe-area-inset-top);
     padding-top: constant(safe-area-inset-top); /* Safari fallback */
   }
 
-  .standalone .safe-area-bottom {
+  .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
     padding-bottom: constant(safe-area-inset-bottom); /* Safari fallback */
   }

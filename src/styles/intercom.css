@@ -1,7 +1,7 @@
 /* Intercom Widget Mobile Optimizations */
 
-/* Base mobile adjustments - only apply in standalone PWA mode */
-.standalone @media (max-width: 768px) {
+/* Base mobile adjustments */
+@media (max-width: 768px) {
   /* Reposition Intercom launcher above bottom nav */
   #intercom-container .intercom-launcher {
     bottom: calc(80px + env(safe-area-inset-bottom) + 30px) !important;
@@ -32,21 +32,21 @@
 }
 
 /* iOS-specific adjustments for native app and PWA */
-.standalone.capacitor.ios #intercom-container .intercom-launcher,
-.standalone.ios #intercom-container .intercom-launcher {
+.capacitor.ios #intercom-container .intercom-launcher,
+.ios #intercom-container .intercom-launcher {
   bottom: calc(80px + env(safe-area-inset-bottom) + 35px) !important;
   right: 16px !important;
   left: auto !important;
 }
 
-.standalone.capacitor.ios #intercom-container .intercom-messenger-frame,
-.standalone.ios #intercom-container .intercom-messenger-frame {
+.capacitor.ios #intercom-container .intercom-messenger-frame,
+.ios #intercom-container .intercom-messenger-frame {
   padding-bottom: env(safe-area-inset-bottom) !important;
 }
 
 /* Android-specific adjustments */
-.standalone.capacitor.android #intercom-container .intercom-launcher,
-.standalone.android #intercom-container .intercom-launcher {
+.capacitor.android #intercom-container .intercom-launcher,
+.android #intercom-container .intercom-launcher {
   bottom: calc(80px + 30px) !important;
   right: 16px !important;
   left: auto !important;
