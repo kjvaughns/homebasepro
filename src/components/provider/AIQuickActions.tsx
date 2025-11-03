@@ -1,6 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, FileText, Calendar, UserPlus, DollarSign, Camera } from "lucide-react";
+import { MessageSquare, FileText, Calendar, UserPlus, DollarSign } from "lucide-react";
 
 interface AIQuickActionsProps {
   open: boolean;
@@ -53,16 +53,7 @@ export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsP
       description: "Create and send invoice",
       icon: DollarSign, 
       action: () => {
-        navigate('/provider/accounting');
-        onOpenChange(false);
-      }
-    },
-    { 
-      title: "Scan Receipt", 
-      description: "Track expenses",
-      icon: Camera, 
-      action: () => {
-        // TODO: Implement receipt scanning
+        navigate('/provider/payments');
         onOpenChange(false);
       }
     },

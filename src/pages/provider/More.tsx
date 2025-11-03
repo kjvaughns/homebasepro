@@ -132,7 +132,11 @@ export default function More() {
     {
       title: "Contact Support",
       icon: MessageSquare,
-      action: () => {}, // TODO: Support chat
+      action: () => {
+        if (typeof window !== 'undefined' && (window as any).Intercom) {
+          (window as any).Intercom('show');
+        }
+      },
     },
     {
       title: "Product Updates",

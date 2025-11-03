@@ -52,7 +52,7 @@ export function SmartToDos() {
           title: `Follow up on ${unpaidCount} unpaid ${unpaidCount === 1 ? 'invoice' : 'invoices'}`,
           description: `${unpaidCount} ${unpaidCount === 1 ? 'invoice needs' : 'invoices need'} attention`,
           priority: 'high',
-          action: `/provider/accounting`,
+          action: `/provider/payments`,
           icon: DollarSign
         });
       }

@@ -92,7 +92,7 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
           alignment: 'right',
           vertical_padding: 20,
           horizontal_padding: isMobile ? 16 : 20,
-          hide_default_launcher: false,
+          hide_default_launcher: true,
           ...customAttributes
         });
 
