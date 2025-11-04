@@ -9,8 +9,9 @@ export const FeeCalculator = () => {
 
   const freePlanFee = jobAmount * 0.08;
   const proPlanFee = jobAmount * 0.03;
-  const freeNetAmount = jobAmount - freePlanFee;
-  const proNetAmount = jobAmount - proPlanFee;
+  const stripeFee = jobAmount * 0.029 + 0.30; // Stripe's 2.9% + $0.30
+  const freeNetAmount = jobAmount - freePlanFee - stripeFee;
+  const proNetAmount = jobAmount - proPlanFee - stripeFee;
   const savings = freePlanFee - proPlanFee;
   const monthlySubscription = 15;
 
@@ -55,11 +56,15 @@ export const FeeCalculator = () => {
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Platform Fee (8%):</p>
-              <p className="text-lg font-semibold text-destructive">-${freePlanFee.toLocaleString()}</p>
+              <p className="text-lg font-semibold text-destructive">-${freePlanFee.toFixed(2)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Stripe Fee (2.9% + $0.30):</p>
+              <p className="text-sm font-semibold text-muted-foreground">-${stripeFee.toFixed(2)}</p>
             </div>
             <div className="pt-3 border-t">
               <p className="text-sm text-muted-foreground">You Receive:</p>
-              <p className="text-2xl font-bold">${freeNetAmount.toLocaleString()}</p>
+              <p className="text-2xl font-bold">${freeNetAmount.toFixed(2)}</p>
             </div>
           </div>
 
@@ -75,11 +80,15 @@ export const FeeCalculator = () => {
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Platform Fee (3%):</p>
-              <p className="text-lg font-semibold text-primary">-${proPlanFee.toLocaleString()}</p>
+              <p className="text-lg font-semibold text-primary">-${proPlanFee.toFixed(2)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Stripe Fee (2.9% + $0.30):</p>
+              <p className="text-sm font-semibold text-muted-foreground">-${stripeFee.toFixed(2)}</p>
             </div>
             <div className="pt-3 border-t">
               <p className="text-sm text-muted-foreground">You Receive:</p>
-              <p className="text-2xl font-bold text-primary">${proNetAmount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-primary">${proNetAmount.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -124,6 +133,7 @@ export const FeeCalculator = () => {
         <div className="text-center text-xs text-muted-foreground pt-2 border-t">
           <p>💡 Break-even point: Jobs totaling ${breakEvenAmount.toFixed(0)}/month</p>
           <p className="mt-1">Above that, Pro plan saves you money!</p>
+          <p className="mt-2 text-xs opacity-75">Note: Stripe fees (2.9% + $0.30) apply to all transactions</p>
         </div>
       </CardContent>
     </Card>

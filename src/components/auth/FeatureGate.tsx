@@ -59,8 +59,12 @@ export const FeatureGate = ({ feature, children }: FeatureGateProps) => {
         .eq('owner_id', user.id)
         .single();
 
+      // Beta plan (14-day trial) has access to all features
       const allowedPlans = featureAccess[feature];
-      setHasAccess(allowedPlans.includes(org?.plan || 'free'));
+      const currentPlan = org?.plan || 'free';
+      const hasPlanAccess = allowedPlans.includes(currentPlan) || currentPlan === 'beta';
+      
+      setHasAccess(hasPlanAccess);
     } catch (error) {
       console.error('Error checking feature access:', error);
       setHasAccess(false);

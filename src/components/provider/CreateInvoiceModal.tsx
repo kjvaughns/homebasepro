@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { generateInvoicePDF } from "@/utils/generateInvoice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -496,68 +496,41 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInv
             ))}
           </div>
 
-          <div className="flex justify-end">
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold">${calculateTotal().toFixed(2)}</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Notes (Optional)</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any additional notes or payment terms"
-              rows={3}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2 pt-2">
-            <input
-              type="checkbox"
-              id="sendEmail"
-              checked={sendEmail}
-              onChange={(e) => setSendEmail(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
-            />
-            <Label htmlFor="sendEmail" className="text-sm font-normal cursor-pointer">
-              Send invoice via email to client
-            </Label>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button variant="outline" onClick={handleClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={() => handleCreate(false)}
-              disabled={
-                loading || 
-                (clientMode === 'existing' && !selectedClient) || 
-                (clientMode === 'new' && (!newClientData.name || !newClientData.email))
-              }
-              className="flex-1"
-              variant="outline"
-            >
-              {loading ? "Creating..." : "Save Draft"}
-            </Button>
-            <Button
-              onClick={() => handleCreate(true)}
-              disabled={
-                loading || 
-                (clientMode === 'existing' && !selectedClient) || 
-                (clientMode === 'new' && (!newClientData.name || !newClientData.email))
-              }
-              className="flex-1"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {loading ? "Sending..." : "Create & Send"}
-            </Button>
+          <div className="text-center text-sm text-muted-foreground">
+            <p>Total: ${calculateTotal().toFixed(2)}</p>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <DialogFooter className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => handleCreate(false)}
+            disabled={loading || !selectedClient && clientMode === 'existing'}
+            className="flex-1"
+          >
+            {loading ? "Creating..." : "Create Link Only"}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleCreate(true)}
+            disabled={loading || !selectedClient && clientMode === 'existing'}
+            className="flex-1 bg-green-600 hover:bg-green-700"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {loading ? "Sending..." : "Send Invoice via Email"}
+          </Button>
+        </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

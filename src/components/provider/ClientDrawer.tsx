@@ -15,6 +15,8 @@ import {
   Tag,
   Sparkles,
   Building,
+  Receipt,
+  Edit,
 } from "lucide-react";
 import { useClientDetail, useClientActivity, useClientStats } from "@/pages/provider/hooks/useClientsData";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +27,8 @@ import ClientAITab from "./ClientAITab";
 import { useState } from "react";
 import AddClientNoteModal from "./AddClientNoteModal";
 import CreateJobModal from "./CreateJobModal";
+import { EditClientDialog } from "./EditClientDialog";
+import { CreateInvoiceModal } from "./CreateInvoiceModal";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -42,6 +46,8 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
   const { stats, loading: statsLoading } = useClientStats(clientId);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [showJobModal, setShowJobModal] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   if (loading) {
     return (
@@ -142,6 +148,13 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
               <Badge variant={client.status === "active" ? "default" : "secondary"}>
                 {client.status}
               </Badge>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
             </div>
             
             <div className="space-y-1 text-sm text-muted-foreground">
@@ -220,6 +233,14 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
           >
             <Calendar className="h-4 w-4 mr-2" />
             New Job
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowInvoiceModal(true)}
+          >
+            <Receipt className="h-4 w-4 mr-2" />
+            Send Invoice
           </Button>
           <Button
             size="sm"
@@ -486,14 +507,20 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
           id: client.id,
           name: client.name,
           email: client.email,
-          homeowner_profile_id: client.homeowner_profile_id,
-          address: client.address,
+          phone: client.phone || '',
+          address: client.property_address || ''
         }}
         onSuccess={() => {
           setShowJobModal(false);
           refetch();
           onUpdate();
         }}
+      />
+
+      <CreateInvoiceModal
+        open={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        clientId={client.id}
       />
     </div>
   );

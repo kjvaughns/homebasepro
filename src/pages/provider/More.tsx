@@ -62,9 +62,9 @@ export default function More() {
 
   const quickActions = [
     {
-      title: "Financial",
+      title: "Payments",
       icon: DollarSign,
-      action: () => navigate('/provider/accounting'),
+      action: () => navigate('/provider/payments'),
     },
     {
       title: "Analytics",
@@ -72,14 +72,14 @@ export default function More() {
       action: () => navigate('/provider/analytics'),
     },
     {
-      title: "Services",
+      title: "Jobs",
       icon: Wrench,
-      action: () => navigate('/provider/services'),
+      action: () => navigate('/provider/jobs'),
     },
     {
-      title: "Materials",
-      icon: Package,
-      action: () => navigate('/provider/parts-materials'),
+      title: "Clients",
+      icon: Users,
+      action: () => navigate('/provider/clients'),
     },
   ];
 
@@ -160,12 +160,12 @@ export default function More() {
     {
       title: "Product Updates",
       icon: Sparkles,
-      action: () => {}, // TODO: Product updates
+      action: () => navigate('/announcements'),
     },
     {
       title: "Refer a Friend",
       icon: Gift,
-      action: () => {}, // TODO: Referral program
+      action: () => navigate('/club'),
     },
   ];
 

@@ -186,8 +186,17 @@ export default function ClubPortal() {
               Welcome back, {profile.waitlist.full_name?.split(' ')[0]}!
             </h2>
             <p className="text-muted-foreground">
-              Track your referrals and claim your rewards
+              Track your referrals and unlock exclusive rewards
             </p>
+            <div className="text-sm text-muted-foreground max-w-md mx-auto mt-4 p-4 bg-muted/50 rounded-lg">
+              <p className="font-semibold mb-2">🎉 New Trial System</p>
+              <p>All providers get a 14-day Pro trial (no card required). After your trial:</p>
+              <ul className="text-left mt-2 space-y-1">
+                <li>• <span className="font-medium">Pro:</span> $15/mo + 3% transaction fees</li>
+                <li>• <span className="font-medium">Free:</span> 8% transaction fees</li>
+              </ul>
+              <p className="mt-2 font-semibold">Refer 5 friends → unlock 25% lifetime discount on Pro!</p>
+            </div>
           </div>
 
           {/* Role Banner */}

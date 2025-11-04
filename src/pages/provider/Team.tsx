@@ -52,6 +52,14 @@ export default function Team() {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
 
+      // Check if user is admin - admins get full access
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.user.id)
+        .eq('role', 'admin')
+        .single();
+
       const { data: organization } = await supabase
         .from("organizations")
         .select("id")
@@ -61,7 +69,7 @@ export default function Team() {
       if (!organization) return;
       setOrganizationId(organization.id);
 
-      // BUG-004 FIX: Load organization team limits
+      // Load organization team limits and trial status
       const { data: orgData } = await supabase
         .from("organizations")
         .select("plan, team_limit")
@@ -69,8 +77,9 @@ export default function Team() {
         .single();
 
       if (orgData) {
-        setPlanTier(orgData.plan || '');
-        setTeamLimit(orgData.team_limit || 0);
+        // Admins get scale plan features
+        setPlanTier(adminRole ? 'scale' : (orgData.plan || ''));
+        setTeamLimit(adminRole ? 25 : (orgData.team_limit || 0));
       }
 
       // Load team members
@@ -110,7 +119,8 @@ export default function Team() {
     }
   };
 
-  const isTeamFeatureAvailable = ["growth", "pro", "scale"].includes(planTier);
+  // Team features available for growth+ plans OR admins OR users in trial
+  const isTeamFeatureAvailable = ["growth", "pro", "scale", "beta"].includes(planTier);
 
   return (
     <div className="p-4 sm:p-8 space-y-6">
