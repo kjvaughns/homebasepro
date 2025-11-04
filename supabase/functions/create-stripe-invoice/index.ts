@@ -161,7 +161,9 @@ serve(async (req) => {
       .eq('id', orgId)
       .single();
 
-    const platformFeePercent = org?.transaction_fee_pct || 0.05; // Default 5%
+    // Use centralized fee calculation
+    const { getPlanFeePercent } = await import('../_shared/fees.ts');
+    const platformFeePercent = org?.transaction_fee_pct ?? getPlanFeePercent(org?.plan);
     const platformFeeAmount = Math.round(total * 100 * platformFeePercent); // Convert to cents
 
     console.log('💰 Platform fee calculation:', {

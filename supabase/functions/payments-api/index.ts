@@ -187,10 +187,12 @@ Deno.serve(async (req) => {
 
     // CREATE PAYMENT CHECKOUT (one-off payment with fee)
     if (action === 'create-payment-checkout') {
-      const { amount_cents, providerStripeAccountId, description, fee_percent } = body || {};
+      const { amount_cents, providerStripeAccountId, description, fee_percent, provider_plan } = body || {};
       if (!amount_cents || !providerStripeAccountId) return err('MISSING_FIELDS', 'amount_cents and providerStripeAccountId required');
-      const pct = Number(fee_percent ?? 8);
-      const application_fee_amount = Math.floor(Number(amount_cents) * (pct / 100));
+      
+      // Use centralized fee calculation
+      const { calculatePlatformFee } = await import('../_shared/fees.ts');
+      const application_fee_amount = calculatePlatformFee(Number(amount_cents), provider_plan || fee_percent);
       const session = await stripePOST('checkout/sessions', {
         mode: 'payment',
         line_items: [{
@@ -357,11 +359,12 @@ Deno.serve(async (req) => {
     // CREATE/UPGRADE SUBSCRIPTION
     if (action === 'create-subscription' || action === 'upgrade-plan') {
       const { plan, paymentMethodId } = body;
+      const { getPlanConfig } = await import('../_shared/fees.ts');
       const planConfig: any = {
         beta: { priceId: PRICE_BETA, feePercent: 0.03, teamLimit: 3, trialDays: 14 },
         growth: { priceId: 'price_growth_monthly', feePercent: 0.025, teamLimit: 3 },
         pro: { priceId: 'price_pro_monthly', feePercent: 0.02, teamLimit: 10 },
-        scale: { priceId: 'price_scale_monthly', feePercent: 0.02, teamLimit: 25 },
+        scale: { priceId: 'price_scale_monthly', feePercent: 0.015, teamLimit: 25 }, // FIXED: was 0.02, should be 0.015
       };
 
       if (!plan || !planConfig[plan]) return err('INVALID_PLAN', 'Invalid plan selected');
@@ -542,7 +545,10 @@ Deno.serve(async (req) => {
         totalAmount = lineItems.reduce((sum: number, item: any) => 
           sum + (item.amount * (item.quantity || 1)), 0
         );
-        platformFee = Math.round(totalAmount * 0.08); // 8% platform fee
+        // Fetch org plan for accurate fee
+        const { data: orgData } = await supabase.from('organizations').select('plan').eq('stripe_account_id', stripeAccountId).single();
+        const { calculatePlatformFee } = await import('../_shared/fees.ts');
+        platformFee = calculatePlatformFee(totalAmount, orgData?.plan);
       } else {
         // Simple payment mode: Single amount
         const amountInCents = Math.round(amount * 100);
@@ -555,7 +561,10 @@ Deno.serve(async (req) => {
           quantity: 1
         }];
         totalAmount = amountInCents;
-        platformFee = Math.round(totalAmount * 0.05); // 5% for simple payments
+        // Fetch org plan for accurate fee
+        const { data: orgData } = await supabase.from('organizations').select('plan').eq('stripe_account_id', stripeAccountId).single();
+        const { calculatePlatformFee } = await import('../_shared/fees.ts');
+        platformFee = calculatePlatformFee(totalAmount, orgData?.plan);
       }
 
       const session = await stripePOST('checkout/sessions', {

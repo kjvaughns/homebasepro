@@ -177,47 +177,23 @@ serve(async (req) => {
     }
 
     // Helper function to get dynamic platform fee based on subscription plan
+    // Import centralized fee logic
+    const { getPlanFeePercent, getPlanConfig } = await import('../_shared/fees.ts');
+
     const getDynamicPlatformFee = async (providerId: string): Promise<number> => {
       const { data: org } = await supabase
         .from('organizations')
-        .select('transaction_fee_pct')
+        .select('transaction_fee_pct, plan')
         .eq('id', providerId)
         .single();
       
+      // Use explicit transaction_fee_pct if set
       if (org?.transaction_fee_pct !== null && org?.transaction_fee_pct !== undefined) {
         return org.transaction_fee_pct;
       }
       
-      const { data: subscription } = await supabase
-        .from('provider_subscriptions')
-        .select('plan')
-        .eq('organization_id', providerId)
-        .eq('status', 'active')
-        .maybeSingle();
-      
-      const planFees: Record<string, number> = {
-        'free': 0.08,
-        'beta': 0.03,
-        'growth': 0.025,
-        'pro': 0.02,
-        'scale': 0.015,
-      };
-      
-      return subscription?.plan 
-        ? (planFees[subscription.plan] || getPlatformFeePercent())
-        : getPlatformFeePercent();
-    };
-
-    const getPlanConfig = (plan: string) => {
-      const configs: Record<string, { teamLimit: number; feePercent: number }> = {
-        'free': { teamLimit: 0, feePercent: 0.08 },
-        'beta': { teamLimit: 3, feePercent: 0.03 },
-        'growth': { teamLimit: 3, feePercent: 0.025 },
-        'pro': { teamLimit: 10, feePercent: 0.02 },
-        'scale': { teamLimit: 25, feePercent: 0.015 },
-      };
-      
-      return configs[plan] || { teamLimit: 0, feePercent: 0.08 };
+      // Otherwise use plan-based fee
+      return getPlanFeePercent(org?.plan);
     };
 
     const insertLedgerEntry = async (entry: any) => {

@@ -7,16 +7,24 @@ import { TrendingUp, DollarSign } from "lucide-react";
 export const FeeCalculator = () => {
   const [jobAmount, setJobAmount] = useState(1000);
 
-  const freePlanFee = jobAmount * 0.08;
-  const proPlanFee = jobAmount * 0.03;
-  const stripeFee = jobAmount * 0.029 + 0.30; // Stripe's 2.9% + $0.30
-  const freeNetAmount = jobAmount - freePlanFee - stripeFee;
-  const proNetAmount = jobAmount - proPlanFee - stripeFee;
+  // Plan fee percentages (Stripe's cut is separate)
+  const freePlanFee = jobAmount * 0.08;   // 8% platform fee
+  const proPlanFee = jobAmount * 0.03;    // 3% platform fee (trial)
+  const growthPlanFee = jobAmount * 0.025; // 2.5% platform fee
+  const proFullPlanFee = jobAmount * 0.02; // 2% platform fee
+  const scalePlanFee = jobAmount * 0.015;  // 1.5% platform fee
+  
+  const freeNetAmount = jobAmount - freePlanFee;
+  const proNetAmount = jobAmount - proPlanFee;
+  const growthNetAmount = jobAmount - growthPlanFee;
+  const proFullNetAmount = jobAmount - proFullPlanFee;
+  const scaleNetAmount = jobAmount - scalePlanFee;
+  
   const savings = freePlanFee - proPlanFee;
-  const monthlySubscription = 15;
+  const monthlySubscription = 0; // Free trial
 
-  // Calculate break-even point
-  const breakEvenAmount = monthlySubscription / 0.05; // $15 / 5% difference
+  // Calculate break-even for Growth plan ($49/mo)
+  const growthBreakEven = 49 / (0.08 - 0.025); // Subscription cost / fee difference
 
   return (
     <Card>
@@ -26,7 +34,7 @@ export const FeeCalculator = () => {
           Fee Calculator
         </CardTitle>
         <CardDescription>
-          See how much you save with Pro vs Free plan
+          Compare platform fees across plans (Stripe processing fees apply separately)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -59,8 +67,7 @@ export const FeeCalculator = () => {
               <p className="text-lg font-semibold text-destructive">-${freePlanFee.toFixed(2)}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Stripe Fee (2.9% + $0.30):</p>
-              <p className="text-sm font-semibold text-muted-foreground">-${stripeFee.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground italic">+ Stripe's processing fees</p>
             </div>
             <div className="pt-3 border-t">
               <p className="text-sm text-muted-foreground">You Receive:</p>
@@ -83,8 +90,7 @@ export const FeeCalculator = () => {
               <p className="text-lg font-semibold text-primary">-${proPlanFee.toFixed(2)}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Stripe Fee (2.9% + $0.30):</p>
-              <p className="text-sm font-semibold text-muted-foreground">-${stripeFee.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground italic">+ Stripe's processing fees</p>
             </div>
             <div className="pt-3 border-t">
               <p className="text-sm text-muted-foreground">You Receive:</p>
@@ -105,35 +111,51 @@ export const FeeCalculator = () => {
           </p>
         </div>
 
-        {/* Monthly Analysis */}
+        {/* All Plans Comparison */}
         <div className="space-y-3 text-sm bg-muted/50 p-4 rounded-lg">
-          <h4 className="font-semibold">Monthly Breakdown</h4>
+          <h4 className="font-semibold">All Plans - Monthly Revenue: ${(jobAmount * 5).toLocaleString()}</h4>
           <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">If you do 5 jobs/month at ${jobAmount}:</span>
-              <span className="font-semibold">Total: ${(jobAmount * 5).toLocaleString()}</span>
+            <div className="flex justify-between items-center py-2 border-b">
+              <div>
+                <span className="font-medium">Free</span>
+                <span className="text-xs text-muted-foreground ml-2">$0/mo</span>
+              </div>
+              <span className="font-semibold">Keep ${freeNetAmount.toFixed(2)}/job</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Free plan fees:</span>
-              <span className="text-destructive font-semibold">-${(freePlanFee * 5).toFixed(2)}</span>
+            <div className="flex justify-between items-center py-2 border-b bg-primary/5">
+              <div>
+                <span className="font-medium text-primary">Pro Trial</span>
+                <span className="text-xs text-muted-foreground ml-2">14 days free</span>
+              </div>
+              <span className="font-semibold text-primary">Keep ${proNetAmount.toFixed(2)}/job</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Pro plan fees + subscription:</span>
-              <span className="text-primary font-semibold">-${(proPlanFee * 5 + monthlySubscription).toFixed(2)}</span>
+            <div className="flex justify-between items-center py-2 border-b">
+              <div>
+                <span className="font-medium">Growth</span>
+                <span className="text-xs text-muted-foreground ml-2">$49/mo</span>
+              </div>
+              <span className="font-semibold">Keep ${growthNetAmount.toFixed(2)}/job</span>
             </div>
-            <div className="pt-2 border-t flex justify-between items-center">
-              <span className="font-semibold">Monthly savings with Pro:</span>
-              <span className="text-xl font-bold text-primary">
-                ${((freePlanFee * 5) - (proPlanFee * 5 + monthlySubscription)).toFixed(2)}
-              </span>
+            <div className="flex justify-between items-center py-2 border-b">
+              <div>
+                <span className="font-medium">Pro</span>
+                <span className="text-xs text-muted-foreground ml-2">$129/mo</span>
+              </div>
+              <span className="font-semibold">Keep ${proFullNetAmount.toFixed(2)}/job</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <span className="font-medium">Scale</span>
+                <span className="text-xs text-muted-foreground ml-2">$299/mo</span>
+              </div>
+              <span className="font-semibold">Keep ${scaleNetAmount.toFixed(2)}/job</span>
             </div>
           </div>
         </div>
 
-        <div className="text-center text-xs text-muted-foreground pt-2 border-t">
-          <p>💡 Break-even point: Jobs totaling ${breakEvenAmount.toFixed(0)}/month</p>
-          <p className="mt-1">Above that, Pro plan saves you money!</p>
-          <p className="mt-2 text-xs opacity-75">Note: Stripe fees (2.9% + $0.30) apply to all transactions</p>
+        <div className="text-center text-xs text-muted-foreground pt-2 border-t space-y-1">
+          <p>💡 Growth plan break-even: ${growthBreakEven.toFixed(0)}/month in revenue</p>
+          <p className="opacity-75">All plans include Stripe's standard processing fees</p>
         </div>
       </CardContent>
     </Card>
