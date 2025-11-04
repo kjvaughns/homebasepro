@@ -2312,6 +2312,9 @@ export type Database = {
           payment_email: boolean | null
           payment_inapp: boolean | null
           payment_push: boolean | null
+          payout_email: boolean | null
+          payout_inapp: boolean | null
+          payout_push: boolean | null
           quiet_hours_end: string | null
           quiet_hours_start: string | null
           quote_email: boolean | null
@@ -2325,6 +2328,7 @@ export type Database = {
           updated_at: string | null
           user_id: string
           weekly_digest_email: boolean | null
+          weekly_digest_enabled: boolean | null
         }
         Insert: {
           announce_email?: boolean | null
@@ -2344,6 +2348,9 @@ export type Database = {
           payment_email?: boolean | null
           payment_inapp?: boolean | null
           payment_push?: boolean | null
+          payout_email?: boolean | null
+          payout_inapp?: boolean | null
+          payout_push?: boolean | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           quote_email?: boolean | null
@@ -2357,6 +2364,7 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           weekly_digest_email?: boolean | null
+          weekly_digest_enabled?: boolean | null
         }
         Update: {
           announce_email?: boolean | null
@@ -2376,6 +2384,9 @@ export type Database = {
           payment_email?: boolean | null
           payment_inapp?: boolean | null
           payment_push?: boolean | null
+          payout_email?: boolean | null
+          payout_inapp?: boolean | null
+          payout_push?: boolean | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           quote_email?: boolean | null
@@ -2389,6 +2400,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           weekly_digest_email?: boolean | null
+          weekly_digest_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -5547,6 +5559,39 @@ export type Database = {
           referral_source?: string | null
           service_type?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      weekly_digest_logs: {
+        Row: {
+          email_status: string | null
+          id: string
+          sent_at: string | null
+          total_amount_cents: number | null
+          total_payouts: number | null
+          user_id: string | null
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          email_status?: string | null
+          id?: string
+          sent_at?: string | null
+          total_amount_cents?: number | null
+          total_payouts?: number | null
+          user_id?: string | null
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          email_status?: string | null
+          id?: string
+          sent_at?: string | null
+          total_amount_cents?: number | null
+          total_payouts?: number | null
+          user_id?: string | null
+          week_end?: string
+          week_start?: string
         }
         Relationships: []
       }

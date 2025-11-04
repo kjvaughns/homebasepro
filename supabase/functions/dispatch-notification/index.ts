@@ -52,22 +52,26 @@ Deno.serve(async (req) => {
     }
 
     // Determine channels based on event type and preferences
-    const eventTypeMap: Record<string, string> = {
-      'announcement': 'announce',
-      'message.received': 'message',
-      'payment.succeeded': 'payment',
-      'payment.failed': 'payment',
-      'invoice.generated': 'payment',
-      'invoice.paid': 'payment',
-      'job.requested': 'job',
-      'job.status.updated': 'job',
-      'quote.ready': 'quote',
-      'quote.approved': 'quote',
-      'review.received': 'review',
-      'booking.confirmed': 'booking',
-      'booking.rescheduled': 'booking',
-      'booking.canceled': 'booking',
-    };
+const eventTypeMap: Record<string, string> = {
+  'announcement': 'announce',
+  'message.received': 'message',
+  'payment.succeeded': 'payment',
+  'payment.failed': 'payment',
+  'invoice.generated': 'payment',
+  'invoice.paid': 'payment',
+  'payout.initiated': 'payout',
+  'payout.paid': 'payout',
+  'payout.failed': 'payout',
+  'payout.updated': 'payout',
+  'job.requested': 'job',
+  'job.status.updated': 'job',
+  'quote.ready': 'quote',
+  'quote.approved': 'quote',
+  'review.received': 'review',
+  'booking.confirmed': 'booking',
+  'booking.rescheduled': 'booking',
+  'booking.canceled': 'booking',
+};
 
     const prefixKey = eventTypeMap[event.type] || 'announce';
     

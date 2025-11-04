@@ -190,11 +190,103 @@ async function sendEmailNotification(supabase: any, notification: any) {
   const APP_URL = Deno.env.get('APP_URL') || 'https://homebaseproapp.com';
   const actionUrl = notification.action_url ? `${APP_URL}${notification.action_url}` : `${APP_URL}/notifications`;
   
+  const isPayout = notification.notification_type?.includes('payout');
+  
   console.log(`📧 Sending to: ${userEmail}`);
   console.log(`📧 Subject: ${notification.title}`);
   console.log(`📧 Action URL: ${actionUrl}`);
 
-  const htmlContent = `
+  // Celebratory payout email template
+  const htmlContent = isPayout && notification.metadata ? `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${notification.title}</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #f8f9fa;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f9fa;">
+          <tr>
+            <td style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 650px; margin: 0 auto; border-collapse: collapse; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+                <tr>
+                  <td style="padding: 50px 30px; text-align: center;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 800; line-height: 1.3;">
+                      ${notification.title}
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+              
+              <table role="presentation" style="max-width: 650px; margin: 0 auto; border-collapse: collapse; background-color: #ffffff; border-radius: 0 0 16px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="margin: 0 0 30px 0; color: #1f2937; font-size: 18px; line-height: 1.8;">
+                      ${notification.body}
+                    </p>
+                    
+                    <table role="presentation" style="width: 100%; margin: 30px 0;">
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 30px; border-radius: 12px; border-left: 4px solid #10b981;">
+                          <p style="margin: 0; color: #065f46; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Payout Amount</p>
+                          <p style="margin: 10px 0 0 0; color: #047857; font-size: 36px; font-weight: 800;">
+                            $${(notification.metadata.amount / 100).toFixed(2)}
+                          </p>
+                          ${notification.metadata.arrival_date ? `
+                            <p style="margin: 15px 0 0 0; color: #059669; font-size: 16px; font-weight: 500;">
+                              ${notification.metadata.type === 'instant' ? '⚡ Arriving within 30 minutes' : `💰 Expected: ${new Date(notification.metadata.arrival_date * 1000).toLocaleDateString('en-US', { 
+                                month: 'long', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              })}`}
+                            </p>
+                          ` : ''}
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <table role="presentation" style="margin: 30px auto 0;">
+                      <tr>
+                        <td style="border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+                          <a href="${actionUrl}" 
+                             style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 16px;">
+                            View Your Balance →
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <table role="presentation" style="width: 100%; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f3f4f6;">
+                      <tr>
+                        <td>
+                          <p style="color: #1f2937; font-size: 14px; line-height: 1.6; margin: 0;">
+                            <strong>You're doing amazing!</strong> 🌟<br>
+                            Your hard work is paying off. Keep up the great work, and we're here to support you every step of the way.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td style="padding: 20px 32px 32px; background-color: #f9fafb; border-radius: 0 0 16px 16px;">
+                    <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.6; text-align: center;">
+                      Payout notifications keep you updated on your earnings in real-time.<br>
+                      <a href="https://homebaseproapp.com/provider/notification-settings" style="color: #667eea; text-decoration: underline;">
+                        Manage preferences
+                      </a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  ` : `
     <!DOCTYPE html>
     <html>
       <head>
@@ -238,22 +330,21 @@ async function sendEmailNotification(supabase: any, notification: any) {
                 </tr>
                 
                 <tr>
-                  <td style="padding: 24px 32px; border-top: 1px solid #e5e7eb; background-color: #f9fafb;">
-                    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; text-align: center; line-height: 1.5;">
-                      Powered by <strong style="color: #667eea;">HomeBase</strong>
-                    </p>
-                    <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center; line-height: 1.5;">
-                      You're receiving this because you're a HomeBase user.
+                  <td style="padding: 20px 32px 32px; background-color: #f9fafb; border-radius: 0 0 16px 16px;">
+                    <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.6; text-align: center;">
+                      <a href="https://homebaseproapp.com/provider/notification-settings" style="color: #667eea; text-decoration: underline;">
+                        Manage notification preferences
+                      </a>
                     </p>
                   </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-    </html>
-  `;
+                 </tr>
+               </table>
+             </td>
+           </tr>
+         </table>
+       </body>
+     </html>
+   `;
 
   const emailPayload = {
     from: 'HomeBase <notifications@homebaseproapp.com>',

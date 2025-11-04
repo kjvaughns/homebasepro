@@ -660,23 +660,157 @@ serve(async (req) => {
 
       const { data: org } = await supabase
         .from('organizations')
-        .select('id')
+        .select('id, owner_id, profiles!organizations_owner_id_fkey(user_id, id)')
         .eq('stripe_account_id', stripeAccount)
         .single();
 
       if (org) {
         await supabase
-          .from('payouts')
+          .from('stripe_payouts')
           .upsert({
-            org_id: org.id,
+            organization_id: org.id,
             stripe_payout_id: payout.id,
-            amount: payout.amount / 100,
+            amount_cents: payout.amount,
             currency: payout.currency,
+            status: 'paid',
             arrival_date: new Date(payout.arrival_date * 1000).toISOString(),
-            status: payout.status,
+            payout_type: payout.type || 'standard',
+            fee_cents: payout.fee || 0,
+            updated_at: new Date().toISOString(),
           }, {
             onConflict: 'stripe_payout_id'
           });
+
+        // Send celebratory notification
+        const profile = Array.isArray(org.profiles) ? org.profiles[0] : org.profiles;
+        if (profile) {
+          const amountDollars = (payout.amount / 100).toFixed(2);
+          const arrivalDate = new Date(payout.arrival_date * 1000).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          });
+          
+          await supabase.functions.invoke('dispatch-notification', {
+            headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+            body: {
+              type: 'payout.paid',
+              userId: profile.user_id,
+              role: 'provider',
+              title: '🎉 Money Incoming!',
+              body: `Great news! Your $${amountDollars} payout is on its way to your bank account. Expected arrival: ${arrivalDate}`,
+              actionUrl: '/provider/balance',
+              metadata: { 
+                payout_id: payout.id,
+                amount: payout.amount,
+                arrival_date: payout.arrival_date,
+                type: payout.type
+              },
+              forceChannels: { email: true, push: true }
+            }
+          });
+        }
+      }
+    }
+
+    if (event.type === 'payout.created') {
+      const payout = event.data.object;
+      const stripeAccount = event.account;
+
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id, owner_id, profiles!organizations_owner_id_fkey(user_id, id)')
+        .eq('stripe_account_id', stripeAccount)
+        .single();
+
+      if (org) {
+        await supabase
+          .from('stripe_payouts')
+          .insert({
+            organization_id: org.id,
+            stripe_payout_id: payout.id,
+            amount_cents: payout.amount,
+            currency: payout.currency,
+            status: 'pending',
+            arrival_date: new Date(payout.arrival_date * 1000).toISOString(),
+            payout_type: payout.type || 'standard',
+            fee_cents: payout.fee || 0,
+          });
+
+        const profile = Array.isArray(org.profiles) ? org.profiles[0] : org.profiles;
+        if (profile) {
+          const amountDollars = (payout.amount / 100).toFixed(2);
+          const arrivalDate = new Date(payout.arrival_date * 1000).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+          });
+          const payoutType = payout.type === 'instant' ? 'Instant' : 'Standard';
+          
+          await supabase.functions.invoke('dispatch-notification', {
+            headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+            body: {
+              type: 'payout.initiated',
+              userId: profile.user_id,
+              role: 'provider',
+              title: `🚀 ${payoutType} Payout Processing!`,
+              body: `Your $${amountDollars} is being processed! ${payout.type === 'instant' ? 'Arriving within 30 minutes ⚡' : `Landing ${arrivalDate} 💰`}`,
+              actionUrl: '/provider/balance',
+              metadata: { 
+                payout_id: payout.id,
+                amount: payout.amount,
+                arrival_date: payout.arrival_date,
+                type: payout.type
+              },
+              forceChannels: { email: true, push: true }
+            }
+          });
+        }
+      }
+    }
+
+    if (event.type === 'payout.failed') {
+      const payout = event.data.object;
+      const stripeAccount = event.account;
+
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id, owner_id, profiles!organizations_owner_id_fkey(user_id, id)')
+        .eq('stripe_account_id', stripeAccount)
+        .single();
+
+      if (org) {
+        await supabase
+          .from('stripe_payouts')
+          .update({
+            status: 'failed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_payout_id', payout.id);
+
+        const profile = Array.isArray(org.profiles) ? org.profiles[0] : org.profiles;
+        if (profile) {
+          const amountDollars = (payout.amount / 100).toFixed(2);
+          const failureMessage = payout.failure_message || 'Please check your bank account details';
+          
+          await supabase.functions.invoke('dispatch-notification', {
+            headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+            body: {
+              type: 'payout.failed',
+              userId: profile.user_id,
+              role: 'provider',
+              title: '⚠️ Payout Needs Attention',
+              body: `We hit a snag with your $${amountDollars} payout. ${failureMessage}. Let's get this fixed together!`,
+              actionUrl: '/provider/balance',
+              metadata: { 
+                payout_id: payout.id,
+                amount: payout.amount,
+                failure_code: payout.failure_code,
+                failure_message: failureMessage
+              },
+              forceChannels: { email: true, push: true }
+            }
+          });
+        }
       }
     }
 

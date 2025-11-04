@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Mail, Smartphone, Moon } from 'lucide-react';
+import { Bell, Mail, Smartphone, Moon, MessageSquare, DollarSign, Briefcase, FileText, Star, Calendar, TrendingUp } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface NotificationPrefs {
@@ -18,6 +18,9 @@ interface NotificationPrefs {
   payment_inapp: boolean;
   payment_push: boolean;
   payment_email: boolean;
+  payout_inapp: boolean;
+  payout_push: boolean;
+  payout_email: boolean;
   job_inapp: boolean;
   job_push: boolean;
   job_email: boolean;
@@ -31,6 +34,7 @@ interface NotificationPrefs {
   booking_push: boolean;
   booking_email: boolean;
   weekly_digest_email: boolean;
+  weekly_digest_enabled: boolean;
   quiet_hours_start: string;
   quiet_hours_end: string;
 }
