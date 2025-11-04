@@ -3059,6 +3059,8 @@ export type Database = {
           has_completed_service_assessment: boolean | null
           id: string
           is_beta: boolean | null
+          last_activity_at: string | null
+          milestone_celebrations: Json | null
           onboarded_at: string | null
           phone: string | null
           plan: string | null
@@ -3068,6 +3070,8 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           trial_ends_at: string | null
+          trial_extended: boolean | null
+          trial_started_at: string | null
           updated_at: string
           user_id: string
           user_type: string
@@ -3087,6 +3091,8 @@ export type Database = {
           has_completed_service_assessment?: boolean | null
           id?: string
           is_beta?: boolean | null
+          last_activity_at?: string | null
+          milestone_celebrations?: Json | null
           onboarded_at?: string | null
           phone?: string | null
           plan?: string | null
@@ -3096,6 +3102,8 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
+          trial_extended?: boolean | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id: string
           user_type: string
@@ -3115,6 +3123,8 @@ export type Database = {
           has_completed_service_assessment?: boolean | null
           id?: string
           is_beta?: boolean | null
+          last_activity_at?: string | null
+          milestone_celebrations?: Json | null
           onboarded_at?: string | null
           phone?: string | null
           plan?: string | null
@@ -3124,6 +3134,8 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
+          trial_extended?: boolean | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id?: string
           user_type?: string
@@ -5232,6 +5244,27 @@ export type Database = {
           },
         ]
       }
+      trial_reminders_sent: {
+        Row: {
+          id: string
+          reminder_type: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          reminder_type: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          reminder_type?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tutorial_progress: {
         Row: {
           completed_at: string | null
@@ -5646,6 +5679,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      is_in_trial: { Args: { user_profile_id: string }; Returns: boolean }
       is_org_member: {
         Args: { org_id: string; user_id: string }
         Returns: boolean

@@ -385,6 +385,7 @@ function TodayJobRow({ job, onOpen }: { job: any; onOpen: () => void }) {
         </Button>
       </div>
     </div>
+    </>
   );
 }
 
