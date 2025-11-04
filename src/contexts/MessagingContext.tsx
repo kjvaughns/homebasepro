@@ -83,17 +83,24 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const getProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
-          setUserProfileId(profile?.id || null);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          setUserProfileId(null);
+          setLoading(false);
+          return;
         }
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .single();
+        setUserProfileId(profile?.id || null);
       } catch (error) {
         console.error('Error getting user profile:', error);
+        setUserProfileId(null);
+      } finally {
+        setLoading(false);
       }
     };
     getProfile();
@@ -101,7 +108,17 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
   
   // Load conversations
   const loadConversations = useCallback(async () => {
-    if (!userProfileId) return;
+    if (!userProfileId) {
+      setLoading(false);
+      return;
+    }
+    
+    // Guard: only fetch if authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -147,6 +164,10 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
         
         // Fetch other members' profiles for each conversation
         for (const convo of convos) {
+          // Guard: skip if no session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.user) continue;
+          
           // First, get the other member's profile_id (removed status filter to include NULL)
           const { data: member, error: memberError } = await supabase
             .from('conversation_members')
@@ -154,7 +175,7 @@ export const MessagingProvider = ({ children }: { children: ReactNode }) => {
             .eq('conversation_id', convo.id)
             .neq('profile_id', userProfileId)
             .limit(1)
-            .single();
+            .maybeSingle();
           
           if (memberError && memberError.code !== 'PGRST116') {
             console.error('Error fetching member:', memberError);

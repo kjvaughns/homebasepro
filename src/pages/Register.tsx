@@ -20,6 +20,50 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [userType, setUserType] = useState<"homeowner" | "provider">("homeowner");
 
+  const runAdminSignupFallback = async () => {
+    console.log('[Registration] Fallback: Starting admin-signup');
+    
+    toast({
+      title: "Using secure fallback...",
+      description: "Creating your account safely.",
+    });
+
+    const { data: adminData, error: adminError } = await supabase.functions.invoke('admin-signup', {
+      body: {
+        email: email.trim(),
+        password,
+        full_name: fullName,
+        phone: phone || null,
+        user_type: userType,
+      },
+    });
+
+    if (adminError) {
+      console.error('[Registration] Fallback: admin-signup error:', adminError);
+      throw adminError;
+    }
+    
+    if (!adminData?.success) {
+      console.error('[Registration] Fallback: admin-signup failed:', adminData?.error);
+      throw new Error(adminData?.error || 'Failed to create account');
+    }
+
+    console.log('[Registration] Fallback: admin-signup succeeded, signing in');
+
+    // Sign in the user immediately after admin creation
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (signInError) {
+      console.error('[Registration] Fallback: sign-in error:', signInError);
+      throw signInError;
+    }
+
+    console.log('[Registration] Fallback: signed in successfully');
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -30,49 +74,41 @@ const Register = () => {
         throw new Error("Please fill in all required fields");
       }
 
+      console.log('[Registration] Primary: Starting signUp');
+
       // Try primary signup path
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: fullName,
-            phone: phone || null,
-            user_type: userType,
-          },
-        },
-      });
-
-      // If primary path fails, use admin fallback
-      if (error || !data.user) {
-        console.log('Primary signup failed, using admin fallback');
-        
-        toast({
-          title: "Using secure fallback...",
-          description: "Creating your account safely.",
-        });
-
-        const { data: adminData, error: adminError } = await supabase.functions.invoke('admin-signup', {
-          body: {
-            email: email.trim(),
-            password,
-            full_name: fullName,
-            phone: phone || null,
-            user_type: userType,
-          },
-        });
-
-        if (adminError) throw adminError;
-        if (!adminData?.success) throw new Error(adminData?.error || 'Failed to create account');
-
-        // Sign in the user immediately after admin creation
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+      let shouldRunFallback = false;
+      try {
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: fullName,
+              phone: phone || null,
+              user_type: userType,
+            },
+          },
         });
 
-        if (signInError) throw signInError;
+        if (error) {
+          console.warn('[Registration] Primary: signUp error:', error);
+          shouldRunFallback = true;
+        } else if (!data.user) {
+          console.warn('[Registration] Primary: signUp returned no user');
+          shouldRunFallback = true;
+        } else {
+          console.log('[Registration] Primary: signUp succeeded');
+        }
+      } catch (primaryError) {
+        console.error('[Registration] Primary: signUp threw exception:', primaryError);
+        shouldRunFallback = true;
+      }
+
+      // Run fallback if primary failed
+      if (shouldRunFallback) {
+        await runAdminSignupFallback();
       }
 
       // Mark beta invite as accepted if it exists
@@ -94,7 +130,7 @@ const Register = () => {
         navigate("/onboarding/homeowner");
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('[Registration] Final error:', error);
       
       // Provide specific error messages
       if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
