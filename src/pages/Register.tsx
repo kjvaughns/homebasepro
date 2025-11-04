@@ -74,42 +74,10 @@ const Register = () => {
         throw new Error("Please fill in all required fields");
       }
 
-      console.log('[Registration] Primary: Starting signUp');
+      console.log('[Registration] Using admin-signup as primary path');
 
-      // Try primary signup path
-      let shouldRunFallback = false;
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: fullName,
-              phone: phone || null,
-              user_type: userType,
-            },
-          },
-        });
-
-        if (error) {
-          console.warn('[Registration] Primary: signUp error:', error);
-          shouldRunFallback = true;
-        } else if (!data.user) {
-          console.warn('[Registration] Primary: signUp returned no user');
-          shouldRunFallback = true;
-        } else {
-          console.log('[Registration] Primary: signUp succeeded');
-        }
-      } catch (primaryError) {
-        console.error('[Registration] Primary: signUp threw exception:', primaryError);
-        shouldRunFallback = true;
-      }
-
-      // Run fallback if primary failed
-      if (shouldRunFallback) {
-        await runAdminSignupFallback();
-      }
+      // Always use backend admin-signup to create accounts reliably
+      await runAdminSignupFallback();
 
       // Mark beta invite as accepted if it exists
       await supabase
