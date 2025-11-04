@@ -41,48 +41,37 @@ serve(async (req) => {
     const senderName = sender?.full_name || 'Someone';
     const messagePreview = message.content || '📎 Sent an attachment';
     
-    // Send push notifications to all members
-    const userIds = members.map((m: any) => m.profiles.user_id);
+    console.log('Dispatching notifications to users:', members.length);
     
-    console.log('Sending push to users:', userIds);
-    
-    // Create notification records
-    const notifications = members.map((m: any) => ({
-      user_id: m.profiles.user_id,
-      profile_id: m.profile_id,
-      type: 'message',
-      title: senderName,
-      body: messagePreview,
-      action_url: `/messages?conversation=${message.conversation_id}`,
-      metadata: { conversation_id: message.conversation_id, message_id: message.id }
-    }));
-    
-    await supabase.from('notifications').insert(notifications);
-    
-    const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
-      headers: {
-        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-      },
-      body: {
-        userIds,
-        title: senderName,
-        body: messagePreview,
-        url: `/messages?conversation=${message.conversation_id}`,
-        icon: sender?.avatar_url || '/homebase-logo.png',
-        badge: '/homebase-logo.png',
-        tag: `conversation-${message.conversation_id}`,
-        data: {
-          conversationId: message.conversation_id,
-          messageId: message.id
-        }
+    let successCount = 0;
+    // Dispatch notifications via centralized system for each member
+    for (const member of members) {
+      try {
+        const memberProfile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+        await supabase.functions.invoke('dispatch-notification', {
+          headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+          body: {
+            type: 'message',
+            userId: memberProfile.user_id,
+            role: 'homeowner',
+            title: senderName,
+            body: messagePreview,
+            actionUrl: `/messages?conversation=${message.conversation_id}`,
+            metadata: { 
+              conversation_id: message.conversation_id, 
+              message_id: message.id,
+              sender_avatar: sender?.avatar_url
+            }
+          }
+        });
+        console.log(`✅ Notification dispatched for user ${memberProfile.user_id}`);
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to dispatch notification for member:`, error);
       }
-    });
-    
-    if (pushError) {
-      console.error('Error sending push notifications:', pushError);
     }
     
-    return new Response(JSON.stringify({ sent: userIds.length }), { status: 200 });
+    return new Response(JSON.stringify({ sent: successCount }), { status: 200 });
   } catch (error) {
     console.error('Error in push-on-message:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

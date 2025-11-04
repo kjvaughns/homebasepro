@@ -496,7 +496,7 @@ serve(async (req) => {
             }
           }
           
-          // Send notification to provider
+          // Send notification to provider via centralized system
           const { data: orgData } = await supabase
             .from('organizations')
             .select('owner_id, profiles!organizations_owner_id_fkey(user_id, id)')
@@ -504,29 +504,22 @@ serve(async (req) => {
             .single();
 
           if (orgData?.profiles) {
-            await supabase.from('notifications').insert({
-              user_id: orgData.profiles.user_id,
-              profile_id: orgData.profiles.id,
-              type: 'payment',
-              title: '💰 Payment Received',
-              body: `You received a payment of $${(invoiceRecord.amount / 100).toFixed(2)}`,
-              action_url: '/provider/payments',
-              metadata: { invoice_id: invoiceId, amount: invoiceRecord.amount }
-            });
-
-            // Send push notification
             try {
-              await supabase.functions.invoke('send-push-notification', {
+              await supabase.functions.invoke('dispatch-notification', {
                 headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
                 body: {
-                  userIds: [orgData.profiles.user_id],
+                  type: 'payment',
+                  userId: orgData.profiles.user_id,
+                  role: 'provider',
                   title: '💰 Payment Received',
                   body: `You received a payment of $${(invoiceRecord.amount / 100).toFixed(2)}`,
-                  url: '/provider/payments'
+                  actionUrl: '/provider/payments',
+                  metadata: { invoice_id: invoiceId, amount: invoiceRecord.amount }
                 }
               });
+              console.log('✅ Payment notification dispatched');
             } catch (err) {
-              console.error('Failed to send push notification:', err);
+              console.error('Failed to dispatch payment notification:', err);
             }
           }
           

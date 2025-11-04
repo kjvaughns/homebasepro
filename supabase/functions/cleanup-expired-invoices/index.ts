@@ -54,7 +54,7 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // Send notification to providers about expired invoices
+    // Send notification to providers about expired invoices via centralized system
     for (const invoice of expiredInvoices) {
       const { data: org } = await supabase
         .from('organizations')
@@ -63,13 +63,23 @@ serve(async (req) => {
         .single();
 
       if (org?.owner_id) {
-        await supabase.from('notifications').insert({
-          user_id: org.owner_id,
-          title: 'Invoice Expired',
-          message: `Invoice ${invoice.invoice_number} has expired. You can resend it from your invoices page.`,
-          type: 'info',
-          link: '/provider/payments'
-        });
+        try {
+          await supabase.functions.invoke('dispatch-notification', {
+            headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+            body: {
+              type: 'payment',
+              userId: org.owner_id,
+              role: 'provider',
+              title: 'Invoice Expired',
+              body: `Invoice ${invoice.invoice_number} has expired. You can resend it from your invoices page.`,
+              actionUrl: '/provider/payments',
+              metadata: { invoice_id: invoice.id, invoice_number: invoice.invoice_number }
+            }
+          });
+          console.log(`✅ Expiry notification dispatched for invoice ${invoice.invoice_number}`);
+        } catch (error) {
+          console.error(`Failed to dispatch notification for invoice ${invoice.id}:`, error);
+        }
       }
     }
 

@@ -58,18 +58,27 @@ serve(async (req) => {
       if (admins && admins.length > 0) {
         const adminUserIds = admins.map(a => a.user_id);
         
-        // Create notification for each admin
+        // Dispatch notification to each admin via centralized system
         for (const userId of adminUserIds) {
-          await supabase.from('notifications').insert({
-            user_id: userId,
-            title: '🚨 Payment Error Spike Detected',
-            message: `${errorCount} payment errors in the last hour. ${uniqueOrgs.size} organizations affected.`,
-            type: 'alert',
-            link: '/admin/payment-errors'
-          });
+          try {
+            await supabase.functions.invoke('dispatch-notification', {
+              headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+              body: {
+                type: 'announcement',
+                userId: userId,
+                role: 'admin',
+                title: '🚨 Payment Error Spike Detected',
+                body: `${errorCount} payment errors in the last hour. ${uniqueOrgs.size} organizations affected.`,
+                actionUrl: '/admin/payment-errors',
+                metadata: { error_count: errorCount, affected_orgs: uniqueOrgs.size }
+              }
+            });
+          } catch (error) {
+            console.error(`Failed to dispatch alert to admin ${userId}:`, error);
+          }
         }
 
-        console.log(`✅ Alert sent to ${adminUserIds.length} admins`);
+        console.log(`✅ Alert dispatched to ${adminUserIds.length} admins`);
       }
 
       return new Response(
