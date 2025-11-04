@@ -141,7 +141,7 @@ const Pricing = () => {
             </CardDescription>
             <CardDescription className="mt-2">
               <Badge variant="outline" className="text-xs">
-                14-day free trial (card required)
+                14-day free trial (no card required)
               </Badge>
             </CardDescription>
           </CardHeader>
@@ -155,7 +155,7 @@ const Pricing = () => {
                 "Up to 3 team members",
                 "All features unlocked",
                 "Priority support",
-                "14-day free trial (card required)",
+                "14-day free trial (no card required)",
               ].map((feature) => (
                 <li key={feature} className="flex items-start gap-2">
                   <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
@@ -186,7 +186,7 @@ const Pricing = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Cancel anytime during your trial. No charge until day 15.
+          After your 14-day trial, choose Pro ($15/mo + 3% fees) or Free (8% fees). No card required to start.
         </p>
       </div>
 
@@ -196,27 +196,21 @@ const Pricing = () => {
           <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
           <div className="space-y-6">
             <Card className="p-6">
-              <h3 className="font-semibold mb-2">Why do I need to add a card for the free trial?</h3>
+              <h3 className="font-semibold mb-2">What happens when my 14-day trial ends?</h3>
               <p className="text-muted-foreground text-sm">
-                We require a card to prevent abuse and ensure serious business owners join the platform. You won't be charged during your 14-day trial.
+                You'll choose between upgrading to Pro ($15/month + 3% transaction fees) or continuing with our Free plan (8% transaction fees). We'll send you reminder emails at day 7 and day 12 so you can decide what works best for your business.
               </p>
             </Card>
             <Card className="p-6">
-              <h3 className="font-semibold mb-2">Can I cancel before the trial ends?</h3>
+              <h3 className="font-semibold mb-2">Do I need a credit card to start?</h3>
               <p className="text-muted-foreground text-sm">
-                Yes! Cancel anytime before day 15 and you won't be charged. Your account will remain active until the trial period ends.
+                No card required! Start your 14-day Pro trial immediately upon signup. After the trial, you can upgrade to Pro or downgrade to our Free plan—your choice.
               </p>
             </Card>
             <Card className="p-6">
-              <h3 className="font-semibold mb-2">What happens after the trial?</h3>
+              <h3 className="font-semibold mb-2">How do the transaction fees work?</h3>
               <p className="text-muted-foreground text-sm">
-                Your card will be charged $15 on day 15 and monthly thereafter. You'll keep full access to all features.
-              </p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="font-semibold mb-2">What are the 3% transaction fees?</h3>
-              <p className="text-muted-foreground text-sm">
-                When you receive payments through HomeBase, we charge 3% per transaction. This covers payment processing and platform costs.
+                Free plan: 8% per transaction. Pro plan: 3% per transaction + $15/month. On a $1,000 job, you'd save $50 with Pro vs Free. If you process ~$300/month, Pro pays for itself.
               </p>
             </Card>
             <Card className="p-6">
