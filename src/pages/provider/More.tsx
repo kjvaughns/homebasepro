@@ -22,6 +22,7 @@ import {
   LogOut,
   MessageSquare,
   BookOpen,
+  ExternalLink,
 } from "lucide-react";
 
 export default function More() {
@@ -80,6 +81,29 @@ export default function More() {
       title: "Clients",
       icon: Users,
       action: () => navigate('/provider/clients'),
+    },
+  ];
+
+  const financialItems = [
+    {
+      title: "Balance & Payouts",
+      icon: DollarSign,
+      action: () => navigate('/provider/balance'),
+    },
+    {
+      title: "Stripe Dashboard",
+      icon: ExternalLink,
+      action: async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('stripe-connect', {
+            body: { action: 'express-dashboard' }
+          });
+          if (error) throw error;
+          if (data?.url) window.open(data.url, '_blank');
+        } catch (error) {
+          console.error('Failed to open Stripe dashboard:', error);
+        }
+      },
     },
   ];
 
@@ -217,6 +241,25 @@ export default function More() {
           ))}
         </div>
       </Card>
+
+      {/* Financial Section */}
+      <div>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
+          Financial
+        </h2>
+        <Card className="divide-y">
+          {financialItems.map((item) => (
+            <button
+              key={item.title}
+              onClick={item.action}
+              className="flex items-center gap-3 p-4 hover:bg-accent/50 active:bg-accent transition-colors w-full text-left"
+            >
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm font-medium">{item.title}</span>
+            </button>
+          ))}
+        </Card>
+      </div>
 
       {/* Account Section */}
       <div>

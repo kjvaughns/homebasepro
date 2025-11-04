@@ -183,8 +183,18 @@ export function BalanceWidget() {
                 ${pendingAmount.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground">
-                Expected in 2-5 business days
+                Arrives in 2-5 business days after payment
               </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p className="font-medium">Payment Timeline:</p>
+              <p>• Customer pays → Funds pending</p>
+              <p>• 2 business days → Funds available</p>
+              <p>• Standard payout → Bank in 2-3 days (free)</p>
+              <p>• Instant payout → Bank in 30 min (1.5% fee)</p>
             </div>
           </div>
 

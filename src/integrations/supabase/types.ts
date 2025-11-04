@@ -357,6 +357,41 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_snapshots: {
+        Row: {
+          available_cents: number
+          captured_at: string | null
+          currency: string | null
+          id: string
+          organization_id: string | null
+          pending_cents: number
+        }
+        Insert: {
+          available_cents?: number
+          captured_at?: string | null
+          currency?: string | null
+          id?: string
+          organization_id?: string | null
+          pending_cents?: number
+        }
+        Update: {
+          available_cents?: number
+          captured_at?: string | null
+          currency?: string | null
+          id?: string
+          organization_id?: string | null
+          pending_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beta_access: {
         Row: {
           accepted_at: string | null
@@ -4918,6 +4953,59 @@ export type Database = {
           webhook_source?: string | null
         }
         Relationships: []
+      }
+      stripe_payouts: {
+        Row: {
+          amount_cents: number
+          arrival_date: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          fee_cents: number | null
+          id: string
+          organization_id: string | null
+          payout_type: string | null
+          status: string
+          stripe_payout_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount_cents: number
+          arrival_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          fee_cents?: number | null
+          id?: string
+          organization_id?: string | null
+          payout_type?: string | null
+          status: string
+          stripe_payout_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          arrival_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          fee_cents?: number | null
+          id?: string
+          organization_id?: string | null
+          payout_type?: string | null
+          status?: string
+          stripe_payout_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_payouts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_plans: {
         Row: {

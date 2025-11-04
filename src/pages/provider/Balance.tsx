@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle } from "lucide-react";
-import EmbeddedAccountDashboard from "@/components/provider/EmbeddedAccountDashboard";
+import { Loader2, AlertCircle, ExternalLink } from "lucide-react";
+import { FinancialOverview } from "@/components/provider/FinancialOverview";
 
 export default function Balance() {
   const navigate = useNavigate();
@@ -47,13 +47,40 @@ export default function Balance() {
     );
   }
 
+  const openStripeDashboard = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'express-dashboard' }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to open Stripe dashboard',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
-    <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Balance & Payouts</h1>
-        <p className="text-muted-foreground">
-          Manage your funds and payouts
-        </p>
+    <div className="p-8 space-y-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Balance & Payouts</h1>
+          <p className="text-muted-foreground">
+            Manage your funds and payouts
+          </p>
+        </div>
+        {stripeOnboarded && (
+          <Button variant="outline" onClick={openStripeDashboard}>
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Stripe Dashboard
+          </Button>
+        )}
       </div>
 
       {!stripeOnboarded ? (
@@ -74,7 +101,7 @@ export default function Balance() {
           </CardContent>
         </Card>
       ) : (
-        <EmbeddedAccountDashboard />
+        <FinancialOverview />
       )}
     </div>
   );
