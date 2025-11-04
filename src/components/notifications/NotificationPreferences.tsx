@@ -196,12 +196,13 @@ export function NotificationPreferences() {
 
   const eventGroups = [
     { key: 'announce', label: 'Announcements', icon: Bell },
-    { key: 'message', label: 'Messages', icon: Mail },
-    { key: 'payment', label: 'Payments', icon: Bell },
-    { key: 'job', label: 'Jobs', icon: Bell },
-    { key: 'quote', label: 'Quotes', icon: Bell },
-    { key: 'booking', label: 'Bookings', icon: Bell },
-    { key: 'review', label: 'Reviews', icon: Bell },
+    { key: 'message', label: 'Messages', icon: MessageSquare },
+    { key: 'payment', label: 'Payments', icon: DollarSign },
+    { key: 'payout', label: 'Payouts 🎉', icon: TrendingUp },
+    { key: 'job', label: 'Jobs', icon: Briefcase },
+    { key: 'quote', label: 'Quotes', icon: FileText },
+    { key: 'review', label: 'Reviews', icon: Star },
+    { key: 'booking', label: 'Bookings', icon: Calendar },
   ];
 
   return (
@@ -301,19 +302,23 @@ export function NotificationPreferences() {
           <Separator />
 
           {/* Weekly Digest */}
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
             <div>
-              <Label>Weekly Digest Email</Label>
-              <p className="text-sm text-muted-foreground">
-                Receive a weekly summary of your activity
+              <Label className="text-base font-semibold">Weekly Digest 🌟</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Get a friendly, celebratory recap of your week's payouts and earnings every Monday morning
               </p>
             </div>
-            <Switch
-              checked={prefs.weekly_digest_email}
-              onCheckedChange={(checked) =>
-                setPrefs({ ...prefs, weekly_digest_email: checked })
-              }
-            />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="weekly_digest_enabled">Enable Weekly Summary</Label>
+              <Switch
+                id="weekly_digest_enabled"
+                checked={prefs.weekly_digest_enabled}
+                onCheckedChange={(checked) =>
+                  setPrefs({ ...prefs, weekly_digest_enabled: checked, weekly_digest_email: checked })
+                }
+              />
+            </div>
           </div>
 
           {/* Actions */}
