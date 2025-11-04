@@ -181,7 +181,7 @@ serve(async (req) => {
         after_completion: {
           type: 'redirect',
           redirect: {
-            url: `${appUrl}/invoice-payment-success?session_id={CHECKOUT_SESSION_ID}&invoice_id=${invoiceId}`
+            url: `${appUrl}/invoice-payment-success?session_id={CHECKOUT_SESSION_ID}&invoice_id=${invoiceId}&client_email=${encodeURIComponent(clientEmail)}`
           }
         },
         invoice_creation: {

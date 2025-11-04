@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SubscriptionManager } from "@/components/provider/SubscriptionManager";
+import { FeeCalculator } from "@/components/provider/FeeCalculator";
 
 export default function BillingSettings() {
   const [currentPlan, setCurrentPlan] = useState<string>('free');
@@ -58,11 +59,15 @@ export default function BillingSettings() {
         <p className="text-muted-foreground">Manage your subscription and billing</p>
       </div>
 
-      <SubscriptionManager 
-        currentPlan={currentPlan}
-        isAdmin={isAdmin}
-        onPlanChanged={loadOrganization}
-      />
+      <div className="grid gap-6">
+        <SubscriptionManager 
+          currentPlan={currentPlan}
+          isAdmin={isAdmin}
+          onPlanChanged={loadOrganization}
+        />
+        
+        <FeeCalculator />
+      </div>
     </div>
   );
 }

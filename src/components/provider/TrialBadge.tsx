@@ -58,20 +58,31 @@ export const TrialBadge = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-      <Badge variant={getVariant()} className="px-3 py-2 text-sm font-medium">
-        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-        Pro Trial: {getMessage()}
-      </Badge>
-      {daysLeft <= 7 && (
-        <Button 
-          size="sm" 
+    <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
+      <div className="flex items-center gap-2">
+        <Badge 
+          variant={getVariant()} 
+          className="px-3 py-2 text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate('/provider/settings?tab=billing')}
-          className="shadow-lg"
         >
-          <Clock className="mr-1.5 h-3.5 w-3.5" />
-          Upgrade Now
-        </Button>
+          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+          Pro Trial: {getMessage()}
+        </Badge>
+        {daysLeft <= 7 && (
+          <Button 
+            size="sm" 
+            onClick={() => navigate('/provider/settings?tab=billing')}
+            className="shadow-lg"
+          >
+            <Clock className="mr-1.5 h-3.5 w-3.5" />
+            Upgrade Now
+          </Button>
+        )}
+      </div>
+      {daysLeft <= 7 && (
+        <p className="text-xs text-muted-foreground bg-background/95 px-2 py-1 rounded shadow-sm">
+          After trial: $15/mo (3% fees) or Free (8% fees)
+        </p>
       )}
     </div>
   );

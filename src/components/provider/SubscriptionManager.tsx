@@ -39,7 +39,7 @@ const PLANS: Plan[] = [
     feePercent: 3.0,
     teamLimit: 3,
     features: [
-      '14-day free trial (card required)',
+      '14-day free trial (no card required)',
       'Unlimited clients',
       '3% transaction fee',
       '3 team members',
