@@ -30,6 +30,7 @@ const Register = () => {
         throw new Error("Please fill in all required fields");
       }
 
+      // Try primary signup path
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -43,30 +44,68 @@ const Register = () => {
         },
       });
 
-      if (error) throw error;
-
-      if (data.user) {
-        // Mark beta invite as accepted if it exists
-        await supabase
-          .from('beta_access')
-          .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-          .eq('email', email.trim().toLowerCase())
-          .eq('status', 'pending');
-
+      // If primary path fails, use admin fallback
+      if (error || !data.user) {
+        console.log('Primary signup failed, using admin fallback');
+        
         toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
+          title: "Using secure fallback...",
+          description: "Creating your account safely.",
         });
 
-        // Redirect to appropriate onboarding
-        if (userType === "provider") {
-          navigate("/onboarding/provider");
-        } else {
-          navigate("/onboarding/homeowner");
-        }
+        const { data: adminData, error: adminError } = await supabase.functions.invoke('admin-signup', {
+          body: {
+            email: email.trim(),
+            password,
+            full_name: fullName,
+            phone: phone || null,
+            user_type: userType,
+          },
+        });
+
+        if (adminError) throw adminError;
+        if (!adminData?.success) throw new Error(adminData?.error || 'Failed to create account');
+
+        // Sign in the user immediately after admin creation
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (signInError) throw signInError;
+      }
+
+      // Mark beta invite as accepted if it exists
+      await supabase
+        .from('beta_access')
+        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+        .eq('email', email.trim().toLowerCase())
+        .eq('status', 'pending');
+
+      toast({
+        title: "Account created!",
+        description: "Welcome to HomeBase.",
+      });
+
+      // Redirect to appropriate onboarding
+      if (userType === "provider") {
+        navigate("/onboarding/provider");
+      } else {
+        navigate("/onboarding/homeowner");
       }
     } catch (error: any) {
-      toast(createSafeErrorToast('Registration', error));
+      console.error('Registration error:', error);
+      
+      // Provide specific error messages
+      if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+        toast({
+          title: "Email already registered",
+          description: "An account with this email already exists. Try signing in.",
+          variant: "destructive",
+        });
+      } else {
+        toast(createSafeErrorToast('Registration', error));
+      }
     } finally {
       setLoading(false);
     }

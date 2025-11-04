@@ -127,3 +127,6 @@ verify_jwt = false
 
 [functions.generate-intercom-hash]
 verify_jwt = true
+
+[functions.admin-signup]
+verify_jwt = false
