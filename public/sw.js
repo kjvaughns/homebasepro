@@ -77,7 +77,7 @@ self.addEventListener('push', (event) => {
   const data = event.data?.json() || {
     title: 'HomeBase',
     body: 'You have a new update',
-    url: '/messages',
+    url: '/provider/notifications',
     icon: '/homebase-logo.png'
   };
 
@@ -85,7 +85,9 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: data.icon || '/homebase-logo.png',
     badge: data.badge || '/homebase-logo.png',
-    data: data.data || { url: data.url || '/messages' },
+    data: { 
+      url: data.url || data.link || data.action_url || '/provider/notifications'
+    },
     actions: [
       { action: 'open', title: 'Open' },
       { action: 'dismiss', title: 'Dismiss' }
@@ -108,18 +110,18 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/messages';
+  const urlToOpen = event.notification.data?.url || '/provider/notifications';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Focus existing window if available
+        // Check if any HomeBase window is open
         for (const client of clientList) {
-          if (client.url.includes('/messages') && 'focus' in client) {
-            return client.focus();
+          if ('focus' in client) {
+            return client.navigate(urlToOpen).then(() => client.focus());
           }
         }
-        // Open new window
+        // Open new window to the specific URL
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }

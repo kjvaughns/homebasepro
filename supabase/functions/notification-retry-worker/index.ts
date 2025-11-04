@@ -209,9 +209,12 @@ async function sendEmailNotification(supabase: any, notification: any) {
         <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f9fa;">
           <tr>
             <td style="padding: 40px 20px;">
-              <table role="presentation" style="max-width: 650px; margin: 0 auto; border-collapse: collapse; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+              <table role="presentation" style="max-width: 650px; margin: 0 auto; border-collapse: collapse; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
                 <tr>
                   <td style="padding: 50px 30px; text-align: center;">
+                    <img src="https://mqaplaplgfcbaaafylpf.supabase.co/storage/v1/object/public/avatars/homebase-email-logo.png" 
+                         alt="HomeBase" 
+                         style="height: 48px; width: auto; margin-bottom: 16px;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 800; line-height: 1.3;">
                       ${notification.title}
                     </h1>
@@ -228,7 +231,7 @@ async function sendEmailNotification(supabase: any, notification: any) {
                     
                     <table role="presentation" style="width: 100%; margin: 30px 0;">
                       <tr>
-                        <td style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 30px; border-radius: 12px; border-left: 4px solid #10b981;">
+                        <td style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 30px; border-radius: 12px; border-left: 4px solid #16a34a;">
                           <p style="margin: 0; color: #065f46; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Payout Amount</p>
                           <p style="margin: 10px 0 0 0; color: #047857; font-size: 36px; font-weight: 800;">
                             $${(notification.metadata.amount / 100).toFixed(2)}
@@ -248,7 +251,7 @@ async function sendEmailNotification(supabase: any, notification: any) {
                     
                     <table role="presentation" style="margin: 30px auto 0;">
                       <tr>
-                        <td style="border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+                        <td style="border-radius: 8px; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);">
                           <a href="${actionUrl}" 
                              style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 16px;">
                             View Your Balance →
@@ -262,7 +265,7 @@ async function sendEmailNotification(supabase: any, notification: any) {
                         <td>
                           <p style="color: #1f2937; font-size: 14px; line-height: 1.6; margin: 0;">
                             <strong>You're doing amazing!</strong> 🌟<br>
-                            Your hard work is paying off. Keep up the great work, and we're here to support you every step of the way.
+                            Your HomeBase partner team is here to support you every step of the way.
                           </p>
                         </td>
                       </tr>
@@ -274,7 +277,7 @@ async function sendEmailNotification(supabase: any, notification: any) {
                   <td style="padding: 20px 32px 32px; background-color: #f9fafb; border-radius: 0 0 16px 16px;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.6; text-align: center;">
                       Payout notifications keep you updated on your earnings in real-time.<br>
-                      <a href="https://homebaseproapp.com/provider/notification-settings" style="color: #667eea; text-decoration: underline;">
+                      <a href="https://homebaseproapp.com/provider/notification-settings" style="color: #16a34a; text-decoration: underline;">
                         Manage preferences
                       </a>
                     </p>
@@ -298,10 +301,12 @@ async function sendEmailNotification(supabase: any, notification: any) {
         <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f3f4f6;">
           <tr>
             <td style="padding: 40px 20px;">
-              <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+              <table role="presentation" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
                 <tr>
                   <td style="padding: 40px 32px; text-align: center;">
-                    <div style="font-size: 32px; margin-bottom: 12px;">🏠</div>
+                    <img src="https://mqaplaplgfcbaaafylpf.supabase.co/storage/v1/object/public/avatars/homebase-email-logo.png" 
+                         alt="HomeBase" 
+                         style="height: 48px; width: auto; margin-bottom: 12px;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; line-height: 1.3;">
                       ${notification.title}
                     </h1>
@@ -318,7 +323,7 @@ async function sendEmailNotification(supabase: any, notification: any) {
                     
                     <table role="presentation" style="margin: 0 auto;">
                       <tr>
-                        <td style="border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <td style="border-radius: 8px; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);">
                           <a href="${actionUrl}" 
                              style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
                             View Details
@@ -332,7 +337,7 @@ async function sendEmailNotification(supabase: any, notification: any) {
                 <tr>
                   <td style="padding: 20px 32px 32px; background-color: #f9fafb; border-radius: 0 0 16px 16px;">
                     <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 1.6; text-align: center;">
-                      <a href="https://homebaseproapp.com/provider/notification-settings" style="color: #667eea; text-decoration: underline;">
+                      <a href="https://homebaseproapp.com/provider/notification-settings" style="color: #16a34a; text-decoration: underline;">
                         Manage notification preferences
                       </a>
                     </p>
@@ -347,7 +352,8 @@ async function sendEmailNotification(supabase: any, notification: any) {
    `;
 
   const emailPayload = {
-    from: 'HomeBase <notifications@homebaseproapp.com>',
+    from: 'HomeBase Team <notifications@homebaseproapp.com>',
+    reply_to: 'support@homebaseproapp.com',
     to: [userEmail],
     subject: notification.title,
     html: htmlContent,

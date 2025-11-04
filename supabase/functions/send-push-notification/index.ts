@@ -578,7 +578,7 @@ serve(async (req) => {
         user_id: notificationUserId,
         title,
         message: body,
-        link: url || '/',
+        link: url || '/provider/notifications',
         type: 'announcement'
       })
       .select()
