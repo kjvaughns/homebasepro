@@ -18,6 +18,7 @@ import { DailySnapshotCard } from "@/components/provider/DailySnapshotCard";
 import { SmartToDos } from "@/components/provider/SmartToDos";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { TrialBadge } from "@/components/provider/TrialBadge";
 import {
   Tooltip,
   TooltipContent,
@@ -128,7 +129,9 @@ export default function ProviderDashboard() {
   const firstName = userProfile?.full_name?.split(' ')[0] || 'there';
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
+    <>
+      <TrialBadge />
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
       <header className="py-4 md:py-6 pt-safe">
         <h1 className="font-bold tracking-tight" style={{ fontSize: "clamp(20px, 2.6vw, 32px)" }}>
           {getGreeting()}, {firstName} ☀️
@@ -330,6 +333,7 @@ export default function ProviderDashboard() {
         />
       )}
     </div>
+    </>
   );
 }
 
@@ -385,7 +389,6 @@ function TodayJobRow({ job, onOpen }: { job: any; onOpen: () => void }) {
         </Button>
       </div>
     </div>
-    </>
   );
 }
 
