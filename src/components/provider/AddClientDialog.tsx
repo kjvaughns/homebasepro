@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { SeatLimitModal } from "./SeatLimitModal";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 interface AddClientDialogProps {
   open: boolean;
@@ -164,11 +165,13 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              <AddressAutocomplete
+                label="Address"
+                placeholder="Start typing the address..."
+                defaultValue={formData.address}
+                onAddressSelect={(address) => {
+                  setFormData({ ...formData, address: address.fullAddress });
+                }}
               />
             </div>
             <div className="grid gap-2">

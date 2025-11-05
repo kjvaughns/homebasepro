@@ -41,7 +41,7 @@ serve(async (req) => {
 
     // Send email
     const { data, error } = await resend.emails.send({
-      from: 'HomeBase <noreply@homebase.app>',
+      from: 'HomeBase <notifications@homebaseproapp.com>',
       to: email,
       subject: emailContent.subject,
       html: emailContent.html,

@@ -11,6 +11,7 @@ import { propertySchema, type PropertyFormData } from "@/schemas/propertySchema"
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 interface PropertyFormDialogProps {
   open: boolean;
@@ -168,19 +169,20 @@ export function PropertyFormDialog({ open, onOpenChange, property, profileId, on
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Street Address *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="123 Main St" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="md:col-span-2">
+                  <AddressAutocomplete
+                    label="Street Address *"
+                    placeholder="Start typing your address..."
+                    defaultValue={form.watch("address")}
+                    onAddressSelect={(address) => {
+                      form.setValue("address", address.street);
+                      form.setValue("city", address.city);
+                      form.setValue("state", address.state);
+                      form.setValue("zip_code", address.zip);
+                    }}
+                    required
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         await Promise.allSettled(
           adminEmails.filter(Boolean).map((adminEmail) =>
             resend.emails.send({
-              from: 'HomeBase <onboarding@resend.dev>',
+              from: 'HomeBase <notifications@homebaseproapp.com>',
               to: adminEmail as string,
               subject: `🎉 New ${user_type === 'provider' ? 'Provider' : 'Homeowner'} Signup - ${full_name}`,
               html: getSignupNotificationEmail(full_name, email.trim(), user_type, phone)

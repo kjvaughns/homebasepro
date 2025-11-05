@@ -160,7 +160,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${invoice.organizations?.name || 'HomeBase'} <invoices@resend.dev>`,
+        from: `${invoice.organizations?.name || 'HomeBase'} <notifications@homebaseproapp.com>`,
         to: [invoice.clients.email],
         subject: `Invoice from ${invoice.organizations?.name || 'HomeBase'} - $${(invoice.amount / 100).toFixed(2)}`,
         html: emailHTML,

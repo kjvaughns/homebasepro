@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'HomeBase Team <team@homebaseproapp.com>',
+          from: 'HomeBase Team <notifications@homebaseproapp.com>',
           to: [userData.user.email],
           subject: `🎉 Your Week in Review: $${(totalPayoutAmount / 100).toFixed(2)} in Payouts!`,
           html: emailHtml,

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 export default function AddHome() {
   const navigate = useNavigate();
@@ -112,12 +113,19 @@ export default function AddHome() {
               </div>
 
               <div>
-                <Label htmlFor="address">Street Address *</Label>
-                <Input
-                  id="address"
-                  placeholder="123 Main St"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                <AddressAutocomplete
+                  label="Street Address *"
+                  placeholder="Start typing your address..."
+                  defaultValue={formData.address}
+                  onAddressSelect={(address) => {
+                    setFormData({
+                      ...formData,
+                      address: address.street,
+                      city: address.city,
+                      state: address.state,
+                      zip_code: address.zip,
+                    });
+                  }}
                   required
                 />
               </div>
