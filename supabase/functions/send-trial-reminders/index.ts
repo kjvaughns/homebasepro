@@ -75,89 +75,137 @@ serve(async (req) => {
 });
 
 function getEmailContent(type: string, name: string): { subject: string; html: string } {
-  const appUrl = Deno.env.get('APP_URL') || 'https://homebase.app';
-
+  const APP_URL = Deno.env.get('APP_URL') || 'https://homebaseproapp.com';
+  const logoUrl = 'https://mqaplaplgfcbaaafylpf.supabase.co/storage/v1/object/public/avatars/caa5bc0f-c2bd-47fb-b875-1a76712f3b7d/avatar.png';
+  
+  const getStyledEmail = (title: string, content: string, ctaUrl?: string, ctaText?: string) => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb; }
+          .container { max-width: 600px; margin: 0 auto; background: white; }
+          .header { background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color: white; padding: 32px 24px; text-align: center; }
+          .logo { max-height: 48px; width: auto; margin-bottom: 16px; }
+          .content { padding: 32px 24px; }
+          .button { display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 24px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+          .footer { text-align: center; padding: 24px; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; }
+          h2 { margin-top: 0; font-size: 20px; font-weight: 700; color: #1f2937; }
+          ul, ol { margin: 16px 0; padding-left: 24px; }
+          li { margin: 8px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <img src="${logoUrl}" alt="HomeBase" class="logo" />
+            <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">${title}</h1>
+          </div>
+          <div class="content">
+            ${content}
+            ${ctaUrl && ctaText ? `<center><a href="${ctaUrl}" class="button">${ctaText}</a></center>` : ''}
+          </div>
+          <div class="footer">
+            <p>HomeBase - The #1 platform for home service professionals</p>
+            <p style="font-size: 11px; color: #9ca3af;">© ${new Date().getFullYear()} HomeBase. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+  
   const templates: Record<string, { subject: string; html: string }> = {
     day_1: {
-      subject: "Welcome to HomeBase Pro! 🎉",
-      html: `
-        <h2>Hey ${name}! 👋</h2>
-        <p>Welcome to HomeBase Pro — your new business command center!</p>
-        <p>You've got <strong>14 days</strong> to explore everything: AI assistants, unlimited clients, smart scheduling, and more.</p>
-        <h3>Get started in 3 steps:</h3>
-        <ol>
-          <li>✅ Add your first client</li>
-          <li>📅 Schedule a job</li>
-          <li>💰 Send an invoice</li>
-        </ol>
-        <p>That's it! You'll be managing your business like a pro in minutes.</p>
-        <p><a href="${appUrl}/provider/dashboard" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Go to Dashboard</a></p>
-        <p style="color: #666; margin-top: 24px;">Questions? Just reply to this email.</p>
-      `,
+      subject: 'Welcome to your HomeBase trial! 🎉',
+      html: getStyledEmail(
+        'Welcome to HomeBase!',
+        `
+          <h2>Hi ${name}! 👋</h2>
+          <p>You've just started your <strong>14-day free trial</strong>. We're excited to have you on board!</p>
+          <p>Here's what you can do right now:</p>
+          <ul>
+            <li>✅ Add your first client</li>
+            <li>✅ Create a quote or invoice</li>
+            <li>✅ Set up your payment processing with Stripe</li>
+            <li>✅ Customize your business profile</li>
+          </ul>
+          <p>Let's make this trial count! 💪</p>
+        `,
+        `${APP_URL}/provider/dashboard`,
+        'Get Started'
+      )
     },
     day_7: {
-      subject: "You're halfway through your trial! 💪",
-      html: `
-        <h2>Hey ${name}!</h2>
-        <p>You're <strong>7 days into your Pro trial</strong> — nice work!</p>
-        <p>Here's what you've accomplished so far with HomeBase:</p>
-        <ul>
-          <li>⚡ Saved hours managing clients & jobs</li>
-          <li>💼 Stayed organized with your calendar</li>
-          <li>📊 Got insights into your business</li>
-        </ul>
-        <p><strong>7 days left</strong> to keep exploring. Make sure you check out:</p>
-        <ul>
-          <li>🤖 AI Assistant (it'll save you hours)</li>
-          <li>💰 Payment automation</li>
-          <li>📈 Business analytics</li>
-        </ul>
-        <p><a href="${appUrl}/provider/dashboard" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Continue Building</a></p>
-      `,
+      subject: '7 days left in your trial ⏰',
+      html: getStyledEmail(
+        'Halfway Through Your Trial',
+        `
+          <h2>Hi ${name},</h2>
+          <p>You're <strong>halfway through your trial</strong>! How's it going?</p>
+          <p>Make the most of your remaining 7 days:</p>
+          <ul>
+            <li>📝 Send out a few quotes</li>
+            <li>💳 Get paid through Stripe</li>
+            <li>📅 Try our scheduling features</li>
+          </ul>
+          <p>You've got this! 💪</p>
+        `,
+        `${APP_URL}/provider/dashboard`,
+        'Continue Building'
+      )
     },
     day_12: {
-      subject: "Your trial ends in 2 days ⏰",
-      html: `
-        <h2>Hey ${name},</h2>
-        <p>Just a heads up — your HomeBase Pro trial ends in <strong>2 days</strong>.</p>
-        <p>We hope you've loved using HomeBase to manage your business! Here's what happens next:</p>
-        <ul>
-          <li>✅ Your data is safe (we'll keep it for you)</li>
-          <li>🔒 Free plan = read-only access</li>
-          <li>🚀 Upgrade anytime to keep growing</li>
-        </ul>
-        <p>Want to keep the momentum going?</p>
-        <p><a href="${appUrl}/provider/settings?tab=billing" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Upgrade Now</a></p>
-        <p style="color: #666; margin-top: 24px;">Not ready yet? No pressure — take your time.</p>
-      `,
+      subject: '2 days left - Don\'t lose access! ⚠️',
+      html: getStyledEmail(
+        'Your Trial Ends Soon',
+        `
+          <h2>Hi ${name},</h2>
+          <p>Your trial ends in <strong>2 days</strong>. To keep using HomeBase:</p>
+          <ol>
+            <li>✅ Choose your plan</li>
+            <li>✅ Update your billing info</li>
+            <li>✅ Keep growing your business</li>
+          </ol>
+          <p>Don't lose access to all your data and clients!</p>
+        `,
+        `${APP_URL}/provider/settings`,
+        'Upgrade Now'
+      )
     },
     trial_ended: {
-      subject: "Your trial has ended — but we saved your data 💾",
-      html: `
-        <h2>Hey ${name},</h2>
-        <p>Your 14-day HomeBase Pro trial has ended, but don't worry — <strong>all your data is safe</strong>.</p>
-        <p>Your account is now in <strong>read-only mode</strong>, which means you can:</p>
-        <ul>
-          <li>📁 View all your clients, jobs, and payments</li>
-          <li>📊 Export your data anytime</li>
-          <li>🔓 Upgrade with 1 click to keep working</li>
-        </ul>
-        <p>Ready to get back to business?</p>
-        <p><a href="${appUrl}/provider/settings?tab=billing" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Reactivate Your Account</a></p>
-        <p style="color: #666; margin-top: 24px;">Questions? We're here to help — just reply to this email.</p>
-      `,
+      subject: 'Your trial has ended',
+      html: getStyledEmail(
+        'Trial Ended',
+        `
+          <h2>Hi ${name},</h2>
+          <p>Your <strong>14-day trial has ended</strong>. We hope you enjoyed using HomeBase!</p>
+          <p>To continue managing your business with us, please choose a plan that fits your needs.</p>
+          <p>All your data is safe and waiting for you. 🔒</p>
+        `,
+        `${APP_URL}/provider/settings`,
+        'View Plans'
+      )
     },
     reactivation_day_7: {
-      subject: "We miss you! Come back to HomeBase 💙",
-      html: `
-        <h2>Hey ${name},</h2>
-        <p>It's been a week since your trial ended, and we'd love to have you back!</p>
-        <p>Your business data is still safe with HomeBase — all your clients, jobs, and payment history are waiting for you.</p>
-        <p><strong>Reactivate in seconds</strong> and pick up right where you left off.</p>
-        <p><a href="${appUrl}/provider/settings?tab=billing" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Reactivate Now</a></p>
-        <p style="color: #666; margin-top: 24px;">If HomeBase isn't the right fit, no hard feelings — we're here if you need us.</p>
-      `,
-    },
+      subject: 'We miss you at HomeBase 💚',
+      html: getStyledEmail(
+        'Come Back to HomeBase',
+        `
+          <h2>Hi ${name},</h2>
+          <p>It's been a week since your trial ended. <strong>We'd love to have you back!</strong></p>
+          <p>Reactivate now and get:</p>
+          <ul>
+            <li>✅ Unlimited clients</li>
+            <li>✅ Advanced scheduling</li>
+            <li>✅ Fast payments via Stripe</li>
+            <li>✅ All your data restored</li>
+          </ul>
+          <p>Let's get you back to building your business! 🚀</p>
+        `,
+        `${APP_URL}/provider/settings`,
+        'Reactivate Account'
+      )
+    }
   };
 
   return templates[type] || templates.trial_ended;

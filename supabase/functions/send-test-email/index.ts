@@ -26,6 +26,8 @@ Deno.serve(async (req) => {
 
     console.log('Sending test email to:', to);
 
+    const logoUrl = 'https://mqaplaplgfcbaaafylpf.supabase.co/storage/v1/object/public/avatars/caa5bc0f-c2bd-47fb-b875-1a76712f3b7d/avatar.png';
+    
     try {
       // Try with primary domain first
       const result = await resend.emails.send({
@@ -39,16 +41,17 @@ Deno.serve(async (req) => {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
-          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-              <h1 style="color: white; margin: 0;">✉️ Test Email</h1>
-            </div>
-            
-            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-              <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
+            <div style="max-width: 600px; margin: 0 auto; background: white;">
+              <div style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); padding: 32px 24px; text-align: center;">
+                <img src="${logoUrl}" alt="HomeBase" style="max-height: 48px; width: auto; margin-bottom: 12px;" />
+                <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">✉️ Test Email</h1>
+              </div>
+              
+              <div style="padding: 32px 24px;">
                 <p style="margin: 0 0 20px 0;">${message || 'This is a test email from HomeBase to verify email delivery is working correctly.'}</p>
                 
-                <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+                <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
                   <p style="margin: 0; font-size: 14px;">
                     <strong>✅ Success!</strong> If you're reading this, your email configuration is working properly.
                   </p>
@@ -57,6 +60,11 @@ Deno.serve(async (req) => {
                 <p style="color: #6b7280; font-size: 14px; margin: 20px 0 0 0;">
                   Sent at: ${new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'long' })}
                 </p>
+              </div>
+              
+              <div style="text-align: center; padding: 24px; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0;">HomeBase - The #1 platform for home service professionals</p>
+                <p style="font-size: 11px; color: #9ca3af; margin: 4px 0 0 0;">© ${new Date().getFullYear()} HomeBase. All rights reserved.</p>
               </div>
             </div>
           </body>
@@ -94,14 +102,15 @@ Deno.serve(async (req) => {
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
             </head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0;">⚠️ Test Email (Fallback)</h1>
-              </div>
-              
-              <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-                <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                  <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 0 0 20px 0;">
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
+              <div style="max-width: 600px; margin: 0 auto; background: white;">
+                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 32px 24px; text-align: center;">
+                  <img src="${logoUrl}" alt="HomeBase" style="max-height: 48px; width: auto; margin-bottom: 12px;" />
+                  <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">⚠️ Test Email (Fallback)</h1>
+                </div>
+                
+                <div style="padding: 32px 24px;">
+                  <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 0 0 20px 0; border-radius: 4px;">
                     <p style="margin: 0; font-size: 14px;">
                       <strong>⚠️ Domain Not Verified</strong><br/>
                       Your custom domain (notifications@homebaseproapp.com) is not yet verified in Resend. This email was sent using the fallback sender.
@@ -110,7 +119,7 @@ Deno.serve(async (req) => {
                   
                   <p style="margin: 0 0 20px 0;">${message || 'This is a test email from HomeBase using the fallback sender.'}</p>
                   
-                  <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+                  <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
                     <p style="margin: 0 0 10px 0; font-size: 14px;">
                       <strong>Next Steps:</strong>
                     </p>
@@ -124,6 +133,11 @@ Deno.serve(async (req) => {
                   <p style="color: #6b7280; font-size: 14px; margin: 20px 0 0 0;">
                     Sent at: ${new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'long' })}
                   </p>
+                </div>
+                
+                <div style="text-align: center; padding: 24px; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0;">HomeBase - The #1 platform for home service professionals</p>
+                  <p style="font-size: 11px; color: #9ca3af; margin: 4px 0 0 0;">© ${new Date().getFullYear()} HomeBase. All rights reserved.</p>
                 </div>
               </div>
             </body>

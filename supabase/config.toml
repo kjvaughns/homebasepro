@@ -86,6 +86,15 @@ verify_jwt = true
 [functions.get-stripe-config]
 verify_jwt = false
 
+[functions.check-trial-status]
+verify_jwt = false
+
+[functions.send-welcome-email-provider]
+verify_jwt = false
+
+[functions.send-welcome-email-homeowner]
+verify_jwt = false
+
 [functions.stripe-health]
 verify_jwt = false
 

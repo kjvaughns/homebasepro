@@ -189,6 +189,8 @@ Deno.serve(async (req) => {
 });
 
 function getSignupNotificationEmail(name: string, email: string, type: string, phone?: string | null) {
+  const logoUrl = 'https://mqaplaplgfcbaaafylpf.supabase.co/storage/v1/object/public/avatars/caa5bc0f-c2bd-47fb-b875-1a76712f3b7d/avatar.png';
+  
   return `
     <!DOCTYPE html>
     <html>
@@ -196,54 +198,58 @@ function getSignupNotificationEmail(name: string, email: string, type: string, p
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0;">🎉 New User Signup!</h1>
-      </div>
-      
-      <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
-        <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h2 style="color: #667eea; margin-top: 0;">New ${type === 'provider' ? 'Provider' : 'Homeowner'} Account</h2>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 12px 0; font-weight: bold; color: #6b7280;">Name:</td>
-              <td style="padding: 12px 0;">${name}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 12px 0; font-weight: bold; color: #6b7280;">Email:</td>
-              <td style="padding: 12px 0;">${email}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 12px 0; font-weight: bold; color: #6b7280;">Account Type:</td>
-              <td style="padding: 12px 0;">
-                <span style="background: ${type === 'provider' ? '#10b981' : '#3b82f6'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px;">
-                  ${type === 'provider' ? 'Provider' : 'Homeowner'}
-                </span>
-              </td>
-            </tr>
-            ${phone ? `
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 12px 0; font-weight: bold; color: #6b7280;">Phone:</td>
-              <td style="padding: 12px 0;">${phone}</td>
-            </tr>
-            ` : ''}
-            <tr>
-              <td style="padding: 12px 0; font-weight: bold; color: #6b7280;">Signed Up:</td>
-              <td style="padding: 12px 0;">${new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}</td>
-            </tr>
-          </table>
-          
-          <div style="text-align: center; margin-top: 30px;">
-            <a href="https://homebaseproapp.com/admin/users" style="background: #667eea; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-              View in Admin Dashboard →
-            </a>
-          </div>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
+      <div style="max-width: 600px; margin: 0 auto; background: white;">
+        <div style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); padding: 32px 24px; text-align: center;">
+          <img src="${logoUrl}" alt="HomeBase" style="max-height: 48px; width: auto; margin-bottom: 12px;" />
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">New User Signup 🎉</h1>
         </div>
         
-        <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 20px;">
-          You're receiving this because you're an admin on the HomeBase platform.
-        </p>
+        <div style="padding: 32px 24px;">
+          <p>A new ${type === 'provider' ? 'provider' : 'homeowner'} has signed up for HomeBase:</p>
+          
+          <div style="background: #f9fafb; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #16a34a;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Name:</td>
+                <td style="padding: 8px 0;">${name}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Email:</td>
+                <td style="padding: 8px 0;">${email}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Type:</td>
+                <td style="padding: 8px 0;">
+                  <span style="background: ${type === 'provider' ? '#16a34a' : '#3b82f6'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                    ${type === 'provider' ? 'Provider' : 'Homeowner'}
+                  </span>
+                </td>
+              </tr>
+              ${phone ? `
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Phone:</td>
+                <td style="padding: 8px 0;">${phone}</td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Signed Up:</td>
+                <td style="padding: 8px 0;">${new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <center style="margin-top: 30px;">
+            <a href="https://homebaseproapp.com/admin/users" style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color: white; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              View in Admin Dashboard
+            </a>
+          </center>
+        </div>
+        
+        <div style="text-align: center; padding: 24px; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb;">
+          <p style="margin: 0;">HomeBase - The #1 platform for home service professionals</p>
+          <p style="font-size: 11px; color: #9ca3af; margin: 4px 0 0 0;">© ${new Date().getFullYear()} HomeBase. All rights reserved.</p>
+        </div>
       </div>
     </body>
     </html>

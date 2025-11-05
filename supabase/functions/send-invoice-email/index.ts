@@ -97,7 +97,8 @@ serve(async (req) => {
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; background-color: #f9fafb;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px 24px; text-align: center;">
+            <div style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); padding: 32px 24px; text-align: center;">
+              <img src="https://mqaplaplgfcbaaafylpf.supabase.co/storage/v1/object/public/avatars/caa5bc0f-c2bd-47fb-b875-1a76712f3b7d/avatar.png" alt="HomeBase" style="max-height: 48px; width: auto; margin-bottom: 12px;" />
               <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Invoice from ${invoice.organizations?.name || 'HomeBase'}</h1>
               <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 16px;">Invoice #${invoice.invoice_number || invoiceId.slice(0, 8)}</p>
             </div>
@@ -135,7 +136,7 @@ serve(async (req) => {
               ` : ''}
 
               <div style="margin-top: 32px; text-align: center;">
-                <a href="${paymentUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <a href="${paymentUrl}" style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color: white; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                   Pay Invoice Now
                 </a>
                 <p style="color: #6b7280; margin: 16px 0 0 0; font-size: 14px;">This payment link expires in 24 hours</p>
