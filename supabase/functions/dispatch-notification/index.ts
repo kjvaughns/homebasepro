@@ -79,15 +79,7 @@ const eventTypeMap: Record<string, string> = {
     const channelPush = event.forceChannels?.push ?? prefs?.[`${prefixKey}_push`] ?? false;
     const channelEmail = event.forceChannels?.email ?? prefs?.[`${prefixKey}_email`] ?? false;
 
-    // Check quiet hours for push/email
-    const now = new Date();
-    const quietStart = prefs?.quiet_hours_start || '22:00';
-    const quietEnd = prefs?.quiet_hours_end || '08:00';
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
-    const isQuietHours = (currentTime >= quietStart || currentTime <= quietEnd);
-    const shouldSuppressPush = isQuietHours && channelPush;
-    const shouldSuppressEmail = isQuietHours && channelEmail;
+    console.log('📬 Channel settings:', { channelInapp, channelPush, channelEmail });
 
     // Insert notification record
     const { data: notification, error: notifError } = await supabase
@@ -102,8 +94,8 @@ const eventTypeMap: Record<string, string> = {
         action_url: event.actionUrl,
         metadata: event.metadata || {},
         channel_inapp: channelInapp,
-        channel_push: channelPush && !shouldSuppressPush,
-        channel_email: channelEmail && !shouldSuppressEmail,
+        channel_push: channelPush,
+        channel_email: channelEmail,
         delivered_inapp: false,
         delivered_push: false,
         delivered_email: false,
@@ -118,7 +110,7 @@ const eventTypeMap: Record<string, string> = {
     // Queue outbox entries for push/email
     const outboxEntries = [];
     
-    if (channelPush && !shouldSuppressPush) {
+    if (channelPush) {
       outboxEntries.push({
         notification_id: notification.id,
         channel: 'push',
@@ -126,7 +118,7 @@ const eventTypeMap: Record<string, string> = {
       });
     }
 
-    if (channelEmail && !shouldSuppressEmail) {
+    if (channelEmail) {
       outboxEntries.push({
         notification_id: notification.id,
         channel: 'email',
@@ -164,12 +156,8 @@ const eventTypeMap: Record<string, string> = {
         notification_id: notification.id,
         channels: {
           inapp: channelInapp,
-          push: channelPush && !shouldSuppressPush,
-          email: channelEmail && !shouldSuppressEmail,
-        },
-        quiet_hours_suppressed: {
-          push: shouldSuppressPush,
-          email: shouldSuppressEmail,
+          push: channelPush,
+          email: channelEmail,
         },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
