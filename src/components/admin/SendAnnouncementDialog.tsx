@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,7 +32,17 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bell, Mail } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
@@ -54,6 +64,8 @@ export function SendAnnouncementDialog({
   onOpenChange,
 }: SendAnnouncementDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -69,18 +81,37 @@ export function SendAnnouncementDialog({
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log('📝 Form submitted with values:', {
+      ...values,
+      send_push: values.send_push,
+      send_email: values.send_email,
+    });
+    setPendingValues(values);
+    setShowConfirmation(true);
+  };
+
+  const confirmSend = useCallback(async () => {
+    if (!pendingValues) return;
+    
     setIsSubmitting(true);
+    setShowConfirmation(false);
+    
+    console.log('🚀 Sending announcement with final values:', {
+      send_push: pendingValues.send_push,
+      send_email: pendingValues.send_email,
+    });
+    
     try {
       const { data, error } = await supabase.functions.invoke('send-announcement', {
         body: {
-          title: values.title,
-          body: values.body,
-          target_audience: values.target_audience,
-          priority: values.priority,
-          expires_at: values.expires_at || null,
-          send_push: values.send_push,
-          send_email: values.send_email,
+          title: pendingValues.title,
+          body: pendingValues.body,
+          target_audience: pendingValues.target_audience,
+          priority: pendingValues.priority,
+          expires_at: pendingValues.expires_at || null,
+          send_push: pendingValues.send_push,
+          send_email: pendingValues.send_email,
         },
       });
 
@@ -96,6 +127,7 @@ export function SendAnnouncementDialog({
       });
 
       form.reset();
+      setPendingValues(null);
       onOpenChange(false);
     } catch (error: any) {
       console.error('Failed to send announcement:', error);
@@ -107,7 +139,7 @@ export function SendAnnouncementDialog({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [pendingValues, form, onOpenChange, toast]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,7 +152,7 @@ export function SendAnnouncementDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -206,9 +238,19 @@ export function SendAnnouncementDialog({
               control={form.control}
               name="send_push"
               render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Send Push Notification</FormLabel>
+                <FormItem className="flex items-center justify-between rounded-lg border p-4 min-h-[80px] cursor-pointer active:bg-accent/50 transition-colors"
+                  onClick={() => {
+                    const newValue = !field.value;
+                    field.onChange(newValue);
+                    console.log('🔔 Push toggle clicked:', newValue);
+                  }}
+                >
+                  <div className="space-y-0.5 flex-1 pointer-events-none">
+                    <FormLabel className="text-base flex items-center gap-2">
+                      <Bell className={`h-4 w-4 ${field.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                      Send Push Notification
+                      {field.value && <span className="text-xs text-primary">(enabled)</span>}
+                    </FormLabel>
                     <FormDescription>
                       Also send as push notification to users' devices
                     </FormDescription>
@@ -216,7 +258,12 @@ export function SendAnnouncementDialog({
                   <FormControl>
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        console.log('🔔 Push switch changed:', checked);
+                      }}
+                      className="pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </FormControl>
                 </FormItem>
@@ -227,9 +274,19 @@ export function SendAnnouncementDialog({
               control={form.control}
               name="send_email"
               render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Send via Email</FormLabel>
+                <FormItem className="flex items-center justify-between rounded-lg border p-4 min-h-[80px] cursor-pointer active:bg-accent/50 transition-colors"
+                  onClick={() => {
+                    const newValue = !field.value;
+                    field.onChange(newValue);
+                    console.log('📧 Email toggle clicked:', newValue);
+                  }}
+                >
+                  <div className="space-y-0.5 flex-1 pointer-events-none">
+                    <FormLabel className="text-base flex items-center gap-2">
+                      <Mail className={`h-4 w-4 ${field.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                      Send via Email
+                      {field.value && <span className="text-xs text-primary">(enabled)</span>}
+                    </FormLabel>
                     <FormDescription>
                       Send branded announcement emails to users' inboxes
                     </FormDescription>
@@ -237,7 +294,12 @@ export function SendAnnouncementDialog({
                   <FormControl>
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        console.log('📧 Email switch changed:', checked);
+                      }}
+                      className="pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </FormControl>
                 </FormItem>
@@ -261,6 +323,49 @@ export function SendAnnouncementDialog({
           </form>
         </Form>
       </DialogContent>
+
+      <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Announcement</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <div>You're about to send this announcement:</div>
+              <div className="rounded-lg bg-muted p-3 space-y-2">
+                <div><strong>Title:</strong> {pendingValues?.title}</div>
+                <div><strong>Audience:</strong> {pendingValues?.target_audience}</div>
+                <div className="pt-2 border-t">
+                  <strong>Channels:</strong>
+                  <div className="flex flex-col gap-1 mt-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-3 w-3" />
+                      In-App: <span className="text-primary font-medium">Always enabled</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-3 w-3" />
+                      Push: <span className={pendingValues?.send_push ? "text-primary font-medium" : "text-muted-foreground"}>
+                        {pendingValues?.send_push ? "Enabled" : "Disabled"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3 w-3" />
+                      Email: <span className={pendingValues?.send_email ? "text-primary font-medium" : "text-muted-foreground"}>
+                        {pendingValues?.send_email ? "Enabled" : "Disabled"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSend} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

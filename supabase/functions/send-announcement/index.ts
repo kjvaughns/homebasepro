@@ -43,6 +43,16 @@ Deno.serve(async (req) => {
     }
 
     const { title, body, target_audience, priority, expires_at, send_push, send_email } = await req.json();
+    
+    console.log('📨 Received announcement request:', {
+      title,
+      target_audience,
+      priority,
+      send_push,
+      send_email,
+      send_push_type: typeof send_push,
+      send_email_type: typeof send_email,
+    });
 
     // Create announcement
     const { data: announcement, error: annError } = await supabase
@@ -78,7 +88,11 @@ Deno.serve(async (req) => {
     if (profilesError) throw profilesError;
 
     // Dispatch notifications through centralized system
+    const pushEnabled = send_push === true;
+    const emailEnabled = send_email === true;
+    
     console.log(`📬 Dispatching notifications to ${profiles.length} users via dispatch-notification...`);
+    console.log(`📊 Channel settings: push=${pushEnabled}, email=${emailEnabled}`);
     
     let dispatched = 0;
     let failed = 0;
@@ -97,8 +111,8 @@ Deno.serve(async (req) => {
             metadata: { announcement_id: announcement.id, priority },
             forceChannels: {
               inapp: true,  // Always show in-app
-              push: send_push || false,  // Based on admin toggle
-              email: send_email || false,  // Based on admin toggle
+              push: pushEnabled,  // Based on admin toggle
+              email: emailEnabled,  // Based on admin toggle
             },
           },
         });
