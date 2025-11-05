@@ -3996,6 +3996,33 @@ export type Database = {
           },
         ]
       }
+      referral_achievements: {
+        Row: {
+          achievement_type: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          unlocked_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          achievement_type: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          unlocked_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          achievement_type?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          unlocked_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       referral_events: {
         Row: {
           created_at: string | null
@@ -4259,6 +4286,9 @@ export type Database = {
           meta: Json | null
           notes: string | null
           profile_id: string
+          qualified_at: string | null
+          redeemed_at: string | null
+          reward_tier: string | null
           reward_type: string
           role: string
           status: string | null
@@ -4272,6 +4302,9 @@ export type Database = {
           meta?: Json | null
           notes?: string | null
           profile_id: string
+          qualified_at?: string | null
+          redeemed_at?: string | null
+          reward_tier?: string | null
           reward_type: string
           role: string
           status?: string | null
@@ -4285,6 +4318,9 @@ export type Database = {
           meta?: Json | null
           notes?: string | null
           profile_id?: string
+          qualified_at?: string | null
+          redeemed_at?: string | null
+          reward_tier?: string | null
           reward_type?: string
           role?: string
           status?: string | null

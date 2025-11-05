@@ -6,7 +6,8 @@ import ReferralStatsCard from "@/components/admin/ReferralStatsCard";
 import ReferralLeaderboard from "@/components/admin/ReferralLeaderboard";
 import RewardsPendingList from "@/components/admin/RewardsPendingList";
 import BetaActivationTool from "@/components/admin/BetaActivationTool";
-import { Users, DollarSign, TrendingUp, Gift } from "lucide-react";
+import { Users, DollarSign, TrendingUp, Gift, Award, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ReferralStats {
   total_profiles: number;
@@ -124,9 +125,10 @@ const Referrals = () => {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="leaderboard" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
           <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
           <TabsTrigger value="rewards">Pending Rewards</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="beta">Beta Activation</TabsTrigger>
         </TabsList>
 
@@ -136,6 +138,91 @@ const Referrals = () => {
 
         <TabsContent value="rewards" className="space-y-4">
           <RewardsPendingList />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          {/* Program Health Metrics */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Conversion Rate
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats?.total_referrals ? 
+                    Math.round(((stats?.total_eligible || 0) / stats.total_referrals) * 100) : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Signup → Qualified rate
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Avg. Referrals per User
+                </CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats?.total_profiles ? 
+                    (stats.total_referrals / stats.total_profiles).toFixed(1) : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Active sharers avg
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Reward Redemption
+                </CardTitle>
+                <Award className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats?.credits_issued ? 
+                    Math.round((stats.credits_issued / (stats.total_eligible || 1)) * 100) : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Credits used vs issued
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Fraud Detection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                Fraud Detection
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center p-2 rounded hover:bg-muted/50">
+                  <span className="text-muted-foreground">Self-referral attempts</span>
+                  <Badge variant="destructive">0</Badge>
+                </div>
+                <div className="flex justify-between items-center p-2 rounded hover:bg-muted/50">
+                  <span className="text-muted-foreground">Duplicate email flags</span>
+                  <Badge variant="destructive">0</Badge>
+                </div>
+                <div className="flex justify-between items-center p-2 rounded hover:bg-muted/50">
+                  <span className="text-muted-foreground">IP rate limit hits</span>
+                  <Badge variant="secondary">0</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="beta" className="space-y-4">

@@ -177,6 +177,20 @@ serve(async (req) => {
         // Increment counter if exists
         await supabase.rpc('increment_referral_count', { ref_code: referrerCode });
 
+        // Auto-issue signup reward
+        try {
+          await supabase.functions.invoke('auto-issue-referral-rewards', {
+            body: {
+              referrer_code: referrerCode,
+              referred_user_id: payload.user_id,
+              event_type: 'signup'
+            }
+          });
+        } catch (rewardError) {
+          console.error('Error auto-issuing reward:', rewardError);
+          // Don't fail the signup if reward issuance fails
+        }
+
         // Evaluate provider rewards
         await evaluateProviderRewards(supabase, referrerCode);
         
