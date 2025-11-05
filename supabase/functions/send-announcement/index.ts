@@ -99,6 +99,13 @@ Deno.serve(async (req) => {
     
     for (const profile of profiles) {
       try {
+        console.log('📤 Invoking dispatch for:', { 
+          userId: profile.user_id, 
+          role: profile.user_type, 
+          pushEnabled, 
+          emailEnabled 
+        });
+        
         const { error: dispatchError } = await serviceSupabase.functions.invoke('dispatch-notification', {
           body: {
             type: 'announcement',

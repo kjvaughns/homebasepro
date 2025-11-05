@@ -75,11 +75,32 @@ const eventTypeMap: Record<string, string> = {
 
     const prefixKey = eventTypeMap[event.type] || 'announce';
     
+    // Safe boolean coercer to handle true/"true"
+    const toBool = (v: any) => v === true || v === 'true';
+    
+    console.log('📬 forceChannels received:', event.forceChannels);
+    
+    // For announcements, explicitly honor forceChannels overrides
+    const isAnnouncement = event.type === 'announcement';
+    const overridePush = toBool(event.forceChannels?.push);
+    const overrideEmail = toBool(event.forceChannels?.email);
+    
     const channelInapp = event.forceChannels?.inapp ?? prefs?.[`${prefixKey}_inapp`] ?? true;
-    const channelPush = event.forceChannels?.push ?? prefs?.[`${prefixKey}_push`] ?? false;
-    const channelEmail = event.forceChannels?.email ?? prefs?.[`${prefixKey}_email`] ?? false;
+    const channelPush = isAnnouncement
+      ? (overridePush === true ? true : (prefs?.announce_push === true))
+      : (toBool(event.forceChannels?.push) ? true : (prefs?.[`${prefixKey}_push`] ?? false));
+    const channelEmail = isAnnouncement
+      ? (overrideEmail === true ? true : (prefs?.announce_email === true))
+      : (toBool(event.forceChannels?.email) ? true : (prefs?.[`${prefixKey}_email`] ?? false));
 
-    console.log('📬 Channel settings:', { channelInapp, channelPush, channelEmail });
+    console.log('📬 Computed channels:', { 
+      isAnnouncement, 
+      overridePush, 
+      overrideEmail, 
+      channelInapp, 
+      channelPush, 
+      channelEmail 
+    });
 
     // Insert notification record
     const { data: notification, error: notifError } = await supabase
