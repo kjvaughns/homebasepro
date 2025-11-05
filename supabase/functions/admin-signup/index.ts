@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, password, full_name, phone, user_type } = await req.json();
+    const { email, password, full_name, phone, user_type, referred_by } = await req.json();
 
     if (!email || !password || !full_name || !user_type) {
       return new Response(
@@ -93,6 +93,46 @@ Deno.serve(async (req) => {
     }
 
     console.log('Profile created successfully for:', userData.user.id);
+
+    // Auto-generate referral code for new user
+    const referralCode = await generateReferralCode(full_name, supabaseAdmin);
+    
+    const { error: referralError } = await supabaseAdmin
+      .from('referral_profiles')
+      .insert({
+        user_id: userData.user.id,
+        referral_code: referralCode,
+        role: user_type,
+        email: email.trim(),
+        name: full_name
+      });
+
+    if (referralError) {
+      console.error('Referral profile creation error:', referralError);
+      // Don't fail signup if referral profile fails, just log it
+    } else {
+      console.log('Referral profile created with code:', referralCode);
+    }
+
+    // Process incoming referral if provided
+    if (referred_by) {
+      try {
+        console.log('Processing referral from code:', referred_by);
+        await supabaseAdmin.functions.invoke('register-referral-signup', {
+          body: {
+            user_id: userData.user.id,
+            email: email.trim(),
+            name: full_name,
+            phone: phone || null,
+            role: user_type,
+            referrer_code: referred_by
+          }
+        });
+      } catch (refError) {
+        console.error('Referral processing error:', refError);
+        // Don't fail signup if referral processing fails
+      }
+    }
 
     // Send notification emails to all admins (non-blocking)
     try {
@@ -187,6 +227,40 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Helper function to generate unique referral code
+async function generateReferralCode(name: string, supabase: any): Promise<string> {
+  // Clean name: remove special chars, take first 2 words, uppercase
+  const cleanName = name
+    .replace(/[^a-zA-Z\s]/g, '')
+    .split(/\s+/)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+    .substring(0, 6);
+  
+  // Try up to 10 times to find a unique code
+  for (let i = 0; i < 10; i++) {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const code = `${cleanName}${randomSuffix}`;
+    
+    // Check if code exists
+    const { data, error } = await supabase
+      .from('referral_profiles')
+      .select('referral_code')
+      .eq('referral_code', code)
+      .single();
+    
+    if (error || !data) {
+      // Code is unique
+      return code;
+    }
+  }
+  
+  // Fallback: use database function
+  const { data: fallbackData } = await supabase.rpc('generate_referral_code');
+  return fallbackData || `USER${Math.floor(100000 + Math.random() * 900000)}`;
+}
 
 function getSignupNotificationEmail(name: string, email: string, type: string, phone?: string | null) {
   const logoUrl = 'https://mqaplaplgfcbaaafylpf.supabase.co/storage/v1/object/public/avatars/caa5bc0f-c2bd-47fb-b875-1a76712f3b7d/avatar.png';

@@ -21,22 +21,46 @@ export default function ClubPortal() {
   const [manualCode, setManualCode] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
 
-  // Load referral code from URL, localStorage, or prompt for manual entry
+  // Load referral code from database if user is logged in, or from URL/storage
   useEffect(() => {
-    // Priority: URL params > localStorage > sessionStorage
-    const urlCode = searchParams.get('code') || searchParams.get('ref');
-    const storedCode = localStorage.getItem('homebase_referral_code');
-    const sessionCode = sessionStorage.getItem('homebase_referral_code');
+    const loadReferralCode = async () => {
+      // First check if user is logged in and has a referral code
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        console.log('[Club] User logged in, fetching their referral code');
+        const { data: profile } = await supabase
+          .from('referral_profiles')
+          .select('referral_code')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (profile?.referral_code) {
+          console.log('[Club] Found user referral code:', profile.referral_code);
+          setReferralCode(profile.referral_code);
+          localStorage.setItem('homebase_referral_code', profile.referral_code);
+          setShowManualInput(false);
+          return;
+        }
+      }
+      
+      // Fallback: Try URL params > localStorage > sessionStorage
+      const urlCode = searchParams.get('code') || searchParams.get('ref');
+      const storedCode = localStorage.getItem('homebase_referral_code');
+      const sessionCode = sessionStorage.getItem('homebase_referral_code');
+      
+      const finalCode = urlCode || storedCode || sessionCode;
+      
+      if (finalCode) {
+        setReferralCode(finalCode);
+        localStorage.setItem('homebase_referral_code', finalCode);
+        setShowManualInput(false);
+      } else {
+        setShowManualInput(true);
+      }
+    };
     
-    const finalCode = urlCode || storedCode || sessionCode;
-    
-    if (finalCode) {
-      setReferralCode(finalCode);
-      // Normalize: save to localStorage for future visits
-      localStorage.setItem('homebase_referral_code', finalCode);
-    } else {
-      setShowManualInput(true);
-    }
+    loadReferralCode();
   }, [searchParams]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -149,7 +173,7 @@ export default function ClubPortal() {
     );
   }
 
-  const referralLink = `${window.location.origin}/waitlist?ref=${referralCode}`;
+  const referralLink = `${window.location.origin}/register?ref=${referralCode}`;
   const isProvider = profile.role === 'provider';
   const totalReferred = stats?.total_referred || 0;
   const eligibleReferred = stats?.eligible_referred || 0;

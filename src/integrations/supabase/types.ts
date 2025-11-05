@@ -4003,6 +4003,7 @@ export type Database = {
           id: string
           ip: unknown
           referred_profile_id: string
+          referred_user_id: string | null
           referrer_code: string
         }
         Insert: {
@@ -4011,6 +4012,7 @@ export type Database = {
           id?: string
           ip?: unknown
           referred_profile_id: string
+          referred_user_id?: string | null
           referrer_code: string
         }
         Update: {
@@ -4019,6 +4021,7 @@ export type Database = {
           id?: string
           ip?: unknown
           referred_profile_id?: string
+          referred_user_id?: string | null
           referrer_code?: string
         }
         Relationships: [
@@ -4042,6 +4045,7 @@ export type Database = {
           rewards_meta: Json | null
           role: string
           updated_at: string | null
+          user_id: string | null
           waitlist_id: string | null
         }
         Insert: {
@@ -4054,6 +4058,7 @@ export type Database = {
           rewards_meta?: Json | null
           role: string
           updated_at?: string | null
+          user_id?: string | null
           waitlist_id?: string | null
         }
         Update: {
@@ -4066,6 +4071,7 @@ export type Database = {
           rewards_meta?: Json | null
           role?: string
           updated_at?: string | null
+          user_id?: string | null
           waitlist_id?: string | null
         }
         Relationships: [

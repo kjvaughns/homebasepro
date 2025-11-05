@@ -1,24 +1,42 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, Mail, Lock, User2, Phone } from "lucide-react";
+import { Loader2, Mail, Lock, User2, Phone, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createSafeErrorToast } from "@/utils/errorHandler";
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [userType, setUserType] = useState<"homeowner" | "provider">("homeowner");
+  const [referrerCode, setReferrerCode] = useState<string | null>(null);
+
+  // Capture referral code from URL
+  useEffect(() => {
+    const refParam = searchParams.get('ref');
+    if (refParam) {
+      setReferrerCode(refParam);
+      sessionStorage.setItem('homebase_referrer', refParam);
+      console.log('Captured referral code:', refParam);
+    } else {
+      // Check if we have a stored code from previous page
+      const stored = sessionStorage.getItem('homebase_referrer');
+      if (stored) {
+        setReferrerCode(stored);
+      }
+    }
+  }, [searchParams]);
 
   const runAdminSignupFallback = async () => {
     console.log('[Registration] Fallback: Starting admin-signup');
@@ -28,6 +46,8 @@ const Register = () => {
       description: "Creating your account safely.",
     });
 
+    const referredBy = sessionStorage.getItem('homebase_referrer');
+    
     const { data: adminData, error: adminError } = await supabase.functions.invoke('admin-signup', {
       body: {
         email: email.trim(),
@@ -35,6 +55,7 @@ const Register = () => {
         full_name: fullName,
         phone: phone || null,
         user_type: userType,
+        referred_by: referredBy || undefined
       },
     });
 
@@ -121,6 +142,14 @@ const Register = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>Get started with HomeBase</CardDescription>
+          {referrerCode && (
+            <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20 mt-2">
+              <Gift className="h-4 w-4 text-primary" />
+              <p className="text-sm text-primary font-medium">
+                You were referred! Code: {referrerCode}
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">

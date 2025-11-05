@@ -63,6 +63,11 @@ export default function More() {
 
   const quickActions = [
     {
+      title: "Refer & Earn",
+      icon: Gift,
+      action: () => navigate('/club'),
+    },
+    {
       title: "Payments",
       icon: DollarSign,
       action: () => navigate('/provider/payments'),
@@ -76,11 +81,6 @@ export default function More() {
       title: "Jobs",
       icon: Wrench,
       action: () => navigate('/provider/jobs'),
-    },
-    {
-      title: "Clients",
-      icon: Users,
-      action: () => navigate('/provider/clients'),
     },
   ];
 
@@ -185,11 +185,6 @@ export default function More() {
       title: "Product Updates",
       icon: Sparkles,
       action: () => navigate('/announcements'),
-    },
-    {
-      title: "Refer a Friend",
-      icon: Gift,
-      action: () => navigate('/club'),
     },
   ];
 

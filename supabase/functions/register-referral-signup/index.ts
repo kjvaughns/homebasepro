@@ -7,10 +7,13 @@ const corsHeaders = {
 };
 
 interface SignupPayload {
+  user_id?: string;
   email: string;
   phone?: string;
-  full_name: string;
-  role: 'provider' | 'homeowner';
+  full_name?: string;
+  name?: string;
+  role?: 'provider' | 'homeowner';
+  referrer_code?: string;
   ref?: string;
   device_fingerprint?: string;
   waitlist_id?: string;
@@ -31,7 +34,15 @@ serve(async (req) => {
                      req.headers.get('x-real-ip') || 
                      'unknown';
 
-    console.log('Processing referral signup:', { email: payload.email, ref: payload.ref, role: payload.role });
+    const referrerCode = payload.referrer_code || payload.ref;
+    const fullName = payload.full_name || payload.name || 'User';
+
+    console.log('Processing referral signup:', { 
+      email: payload.email, 
+      user_id: payload.user_id,
+      referrer_code: referrerCode, 
+      role: payload.role 
+    });
 
     // Resolve waitlist_id by email if not provided
     if (!payload.waitlist_id && payload.email) {
@@ -63,8 +74,16 @@ serve(async (req) => {
       await logFraudCheck(supabase, payload, clientIp, 'flag', fraudChecks.reason);
     }
 
+    // Check if referral profile already exists (by user_id or email)
     let existingProfile = null as any;
-    if (payload.waitlist_id) {
+    if (payload.user_id) {
+      const { data: prof } = await supabase
+        .from('referral_profiles')
+        .select('*')
+        .eq('user_id', payload.user_id)
+        .maybeSingle();
+      existingProfile = prof;
+    } else if (payload.waitlist_id) {
       const { data: prof } = await supabase
         .from('referral_profiles')
         .select('*')
@@ -95,18 +114,21 @@ serve(async (req) => {
     }
 
     // Generate unique human-readable referral code
-    const referralCode = await generateReferralCode(supabase, payload.full_name);
+    const referralCode = await generateReferralCode(supabase, fullName);
 
-    // Create referral profile
+    // Create referral profile with user_id if available
     const { data: referralProfile, error: profileError } = await supabase
       .from('referral_profiles')
       .insert({
+        user_id: payload.user_id || null,
         waitlist_id: payload.waitlist_id || null,
         referral_code: referralCode,
-        referred_by_code: payload.ref || null,
+        referred_by_code: referrerCode || null,
         ip_created: clientIp,
         device_fingerprint: payload.device_fingerprint || null,
-        role: payload.role,
+        role: payload.role || 'homeowner',
+        email: payload.email,
+        name: fullName,
         rewards_meta: {}
       })
       .select()
@@ -120,12 +142,13 @@ serve(async (req) => {
     console.log('Created referral profile:', referralProfile.id);
 
     // If referred by someone, create referral event and update stats
-    if (payload.ref && !fraudChecks.flagged) {
+    if (referrerCode && !fraudChecks.flagged) {
       const { error: eventError } = await supabase
         .from('referral_events')
         .insert({
-          referrer_code: payload.ref,
+          referrer_code: referrerCode,
           referred_profile_id: referralProfile.id,
+          referred_user_id: payload.user_id || null,
           ip: clientIp,
           device_fingerprint: payload.device_fingerprint || null
         });
@@ -133,13 +156,13 @@ serve(async (req) => {
       if (eventError && eventError.code !== '23505') { // Ignore unique constraint violations
         console.error('Error creating referral event:', eventError);
       } else {
-        console.log('Created referral event for referrer:', payload.ref);
+        console.log('Created referral event for referrer:', referrerCode);
 
         // Upsert referral stats
         const { error: statsError } = await supabase
           .from('referral_stats')
           .upsert({
-            referrer_code: payload.ref,
+            referrer_code: referrerCode,
             total_referred: 1,
             last_updated: new Date().toISOString()
           }, {
@@ -152,13 +175,13 @@ serve(async (req) => {
         }
 
         // Increment counter if exists
-        await supabase.rpc('increment_referral_count', { ref_code: payload.ref });
+        await supabase.rpc('increment_referral_count', { ref_code: referrerCode });
 
         // Evaluate provider rewards
-        await evaluateProviderRewards(supabase, payload.ref);
+        await evaluateProviderRewards(supabase, referrerCode);
         
         // Evaluate homeowner rewards
-        await evaluateHomeownerRewards(supabase, payload.ref);
+        await evaluateHomeownerRewards(supabase, referrerCode);
       }
     }
 
