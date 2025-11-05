@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, CreditCard } from 'lucide-react';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
 const PaymentCheckout = lazy(() => import('./PaymentCheckout').then(m => ({ default: m.PaymentCheckout })));
 
@@ -156,12 +157,12 @@ export function BookingDialog({ open, onOpenChange, provider, service }: Booking
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Service Address *</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="123 Main St, City, State ZIP"
+                <AddressAutocomplete
+                  label="Service Address"
+                  placeholder="Start typing your address..."
+                  defaultValue={formData.address}
+                  onAddressSelect={(address) => setFormData({ ...formData, address: address.fullAddress })}
+                  onManualChange={(street) => setFormData({ ...formData, address: street })}
                   required
                 />
               </div>

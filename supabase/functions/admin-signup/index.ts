@@ -104,28 +104,63 @@ Deno.serve(async (req) => {
         .select('user_id')
         .in('role', ['admin', 'moderator']);
       
+      console.log(`Found ${admins?.length || 0} admins/moderators to notify`);
+
       if (admins && admins.length > 0) {
         // Fetch admin emails from auth.users
-        const adminEmails = await Promise.all(
-          admins.map(async (admin) => {
+        const adminEmailPromises = admins.map(async (admin) => {
+          try {
             const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
             return user?.email;
+          } catch (err) {
+            console.error(`Failed to fetch email for admin ${admin.user_id}:`, err);
+            return null;
+          }
+        });
+        
+        const adminEmails = (await Promise.all(adminEmailPromises)).filter(Boolean) as string[];
+        console.log(`Resolved ${adminEmails.length} admin email addresses:`, adminEmails);
+        
+        // Send emails in parallel to all admins with detailed logging
+        const emailResults = await Promise.allSettled(
+          adminEmails.map(async (adminEmail) => {
+            try {
+              const result = await resend.emails.send({
+                from: 'HomeBase <notifications@homebaseproapp.com>',
+                to: adminEmail,
+                subject: `🎉 New ${user_type === 'provider' ? 'Provider' : 'Homeowner'} Signup - ${full_name}`,
+                html: getSignupNotificationEmail(full_name, email.trim(), user_type, phone)
+              });
+              console.log(`✅ Email sent to ${adminEmail}:`, result);
+              return result;
+            } catch (emailError: any) {
+              console.error(`❌ Failed to send email to ${adminEmail}:`, emailError);
+              
+              // Try fallback to verified sender if domain issue
+              if (emailError.statusCode === 403 || emailError.statusCode === 422) {
+                console.log(`🔄 Retrying with fallback sender for ${adminEmail}`);
+                try {
+                  const fallbackResult = await resend.emails.send({
+                    from: 'HomeBase <onboarding@resend.dev>',
+                    to: adminEmail,
+                    subject: `🎉 New ${user_type === 'provider' ? 'Provider' : 'Homeowner'} Signup - ${full_name}`,
+                    html: getSignupNotificationEmail(full_name, email.trim(), user_type, phone)
+                  });
+                  console.log(`✅ Fallback email sent to ${adminEmail}:`, fallbackResult);
+                  return fallbackResult;
+                } catch (fallbackError) {
+                  console.error(`❌ Fallback also failed for ${adminEmail}:`, fallbackError);
+                  throw fallbackError;
+                }
+              }
+              throw emailError;
+            }
           })
         );
         
-        // Send emails in parallel to all admins
-        await Promise.allSettled(
-          adminEmails.filter(Boolean).map((adminEmail) =>
-            resend.emails.send({
-              from: 'HomeBase <notifications@homebaseproapp.com>',
-              to: adminEmail as string,
-              subject: `🎉 New ${user_type === 'provider' ? 'Provider' : 'Homeowner'} Signup - ${full_name}`,
-              html: getSignupNotificationEmail(full_name, email.trim(), user_type, phone)
-            })
-          )
-        );
-        
-        console.log(`Sent signup notification to ${adminEmails.filter(Boolean).length} admins`);
+        const successCount = emailResults.filter(r => r.status === 'fulfilled').length;
+        const failCount = emailResults.filter(r => r.status === 'rejected').length;
+        console.log(`📧 Email summary: ${successCount} sent, ${failCount} failed out of ${adminEmails.length} total`);
       }
     } catch (emailError) {
       console.error('Failed to send admin notification (non-blocking):', emailError);

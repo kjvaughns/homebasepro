@@ -11,6 +11,7 @@ import { Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
 interface BookingDialogProps {
   open: boolean;
@@ -49,6 +50,8 @@ export const BookingDialog = ({
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>();
   const [notes, setNotes] = useState("");
   const [isBooking, setIsBooking] = useState(false);
+  const [address, setAddress] = useState(defaultProperty?.address || "");
+  const [zip, setZip] = useState(defaultProperty?.zip || "");
 
   const timeSlots = [
     { value: "morning", label: "Morning (8am-12pm)" },
@@ -57,8 +60,13 @@ export const BookingDialog = ({
   ];
 
   const handleConfirmBooking = async () => {
-    if (!selectedDate || !selectedTimeSlot || !defaultProperty) {
+    if (!selectedDate || !selectedTimeSlot) {
       toast.error("Please select a date and time slot");
+      return;
+    }
+
+    if (!address.trim()) {
+      toast.error("Please enter a service address");
       return;
     }
 
@@ -108,9 +116,9 @@ export const BookingDialog = ({
       const { error } = await supabase.from('bookings').insert({
         homeowner_profile_id: profile.id,
         provider_org_id: provider.provider_id,
-        home_id: defaultProperty.id,
+        home_id: defaultProperty?.id || null,
         service_name: serviceType,
-        address: defaultProperty.address,
+        address: address,
         date_time_start: startDateTime.toISOString(),
         date_time_end: endDateTime.toISOString(),
         estimated_price_low: estimatedPrice?.low,
@@ -173,12 +181,19 @@ export const BookingDialog = ({
             <p className="font-medium">{serviceType}</p>
           </div>
           
-          {defaultProperty && (
-            <div>
-              <Label className="text-xs text-muted-foreground">Property</Label>
-              <p className="font-medium text-sm">{defaultProperty.address}</p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <AddressAutocomplete
+              label="Service Address"
+              placeholder="Enter service address..."
+              defaultValue={address}
+              onAddressSelect={(addressData) => {
+                setAddress(addressData.fullAddress);
+                setZip(addressData.zip);
+              }}
+              onManualChange={(street) => setAddress(street)}
+              required
+            />
+          </div>
 
           {estimatedPrice && (
             <div>
