@@ -3,8 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Bot, Calendar, Shield, CreditCard, CheckCircle, Users, Star, TrendingUp, Sparkles, Brain, Zap, Award, Lock, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import homebaseLogo from "@/assets/homebase-logo.png";
-import homeownerMockup from "@/assets/homeowner-mobile-mockup.png";
-import providerMockup from "@/assets/provider-dashboard-mockup.png";
+import homeownerMockup from "@/assets/homeowner-dashboard-mobile.png";
+import providerMockup from "@/assets/provider-dashboard-mobile.png";
 import heroProviderImage from "@/assets/hero-provider-image.png";
 import {
   Accordion,
