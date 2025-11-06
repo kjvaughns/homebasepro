@@ -58,9 +58,9 @@ const Index = () => {
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 border border-[hsl(var(--ai-blue))]/20">
-                <Sparkles className="h-3.5 w-3.5 text-[hsl(var(--ai-blue))]" />
-                <span className="text-xs font-semibold text-[hsl(var(--ai-blue))]">AI-Powered Platform</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold text-primary">AI-Powered Platform</span>
               </div>
               <ResourcesDropdown />
               <Button 
@@ -104,16 +104,16 @@ const Index = () => {
       </header>
 
       {/* Beta Pricing Banner */}
-      <div className="bg-gradient-to-r from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 border-b border-[hsl(var(--ai-blue))]/20">
+      <div className="bg-primary/10 border-b border-primary/20">
         <div className="container mx-auto px-4 py-3">
           <p className="text-center text-sm md:text-base">
-            <span className="font-semibold text-[hsl(var(--ai-blue))]">✨ BETA LAUNCH</span>
+            <span className="font-semibold text-primary">✨ BETA LAUNCH</span>
             {" · "}
             Free AI tools for homeowners · Provider plans with AI automation
             {" · "}
             <button 
               onClick={() => navigate("/pricing")} 
-              className="underline font-medium hover:text-[hsl(var(--ai-blue))] transition-colors"
+              className="underline font-medium hover:text-primary transition-colors"
             >
               View Pricing
             </button>
@@ -122,25 +122,25 @@ const Index = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-4 bg-gradient-to-br from-[hsl(var(--ai-blue))]/5 via-background to-[hsl(var(--ai-purple))]/5 overflow-hidden">
+      <section className="relative py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
         
         {/* Animated AI Particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-2 h-2 bg-[hsl(var(--ai-blue))] rounded-full opacity-60 animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-1.5 h-1.5 bg-[hsl(var(--ai-purple))] rounded-full opacity-40 animate-pulse delay-300"></div>
-          <div className="absolute bottom-20 left-1/4 w-1 h-1 bg-[hsl(var(--ai-glow))] rounded-full opacity-50 animate-pulse delay-700"></div>
+          <div className="absolute top-20 left-10 w-2 h-2 bg-primary rounded-full opacity-60 animate-pulse"></div>
+          <div className="absolute top-40 right-20 w-1.5 h-1.5 bg-accent rounded-full opacity-40 animate-pulse delay-300"></div>
+          <div className="absolute bottom-20 left-1/4 w-1 h-1 bg-primary rounded-full opacity-50 animate-pulse delay-700"></div>
         </div>
 
         <div className="container mx-auto relative z-10">
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
             <div className="text-center md:text-left">
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 text-[hsl(var(--ai-blue))] px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in border border-[hsl(var(--ai-blue))]/20">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in border border-primary/20">
                 <Sparkles className="h-4 w-4" />
                 <span className="text-xs sm:text-sm font-medium">The AI Powered Home Management Platform</span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
-                Your home. <span className="bg-gradient-to-r from-[hsl(var(--ai-blue))] to-[hsl(var(--ai-purple))] bg-clip-text text-transparent">Smarter.</span> Managed by AI. Trusted by pros.
+                Your home. <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Smarter.</span> Managed by AI. Trusted by pros.
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 animate-fade-in">
                 AI matches you with verified providers, predicts maintenance before issues arise, and automates your entire home management experience.
@@ -150,7 +150,7 @@ const Index = () => {
                   <Button 
                     size="lg" 
                     onClick={() => navigate("/demo/homeowner")}
-                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-gradient-to-r from-[hsl(var(--ai-blue))] to-[hsl(var(--ai-purple))] hover:opacity-90"
+                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90"
                   >
                     <Bot className="h-5 w-5 mr-2" />
                     See AI in Action
@@ -172,7 +172,7 @@ const Index = () => {
               </div>
             </div>
             <div className="relative animate-fade-in">
-              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--ai-blue))]/20 to-[hsl(var(--ai-purple))]/20 blur-3xl rounded-full"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 blur-3xl rounded-full"></div>
               <img 
                 src={heroProviderImage} 
                 alt="Professional HomeBase service provider with equipment ready to provide quality home maintenance services" 
@@ -189,20 +189,20 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="grid grid-cols-3 md:grid-cols-3 gap-6 max-w-3xl mx-auto text-center">
             <div className="flex flex-col items-center gap-2">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center">
-                <Lock className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Lock className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">Bank-Level Security</p>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center">
-                <Zap className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Zap className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">10x Faster Booking</p>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Shield className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">AI-Verified Providers</p>
             </div>
@@ -214,7 +214,7 @@ const Index = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 text-[hsl(var(--ai-blue))] px-4 py-2 rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-4">
               <Brain className="h-4 w-4" />
               <span className="text-sm font-medium">Powered by Intelligence</span>
             </div>
@@ -250,7 +250,7 @@ const Index = () => {
 
             {/* With HomeBase AI */}
             <Card className="p-6 border-2 border-primary bg-gradient-to-br from-primary/5 to-accent/5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[hsl(var(--ai-blue))]/20 to-[hsl(var(--ai-purple))]/20 blur-3xl"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/20 to-accent/20 blur-3xl"></div>
               <h3 className="text-xl font-semibold mb-4 text-primary relative z-10">With HomeBase AI</h3>
               <ul className="space-y-3 relative z-10">
                 <li className="flex items-start gap-2">
@@ -275,192 +275,171 @@ const Index = () => {
         </div>
       </section>
 
-      {/* How It Works - Homeowners */}
+      {/* How It Works - Unified */}
       <section className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">How It Works for Homeowners</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Let AI handle everything while you relax
+            AI-powered simplicity for homeowners and service providers
           </p>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card className="p-6 text-center border-2 hover:border-[hsl(var(--ai-blue))] transition-all hover:shadow-lg">
-              <div className="bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Brain className="h-8 w-8 text-[hsl(var(--ai-blue))]" />
-              </div>
-              <div className="bg-gradient-to-r from-[hsl(var(--ai-blue))] to-[hsl(var(--ai-purple))] text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                1
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Tell AI About Your Home</h3>
-              <p className="text-muted-foreground">
-                Share your home details and AI instantly understands your maintenance needs
-              </p>
-            </Card>
-            <Card className="p-6 text-center border-2 hover:border-[hsl(var(--ai-blue))] transition-all hover:shadow-lg">
-              <div className="bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="h-8 w-8 text-[hsl(var(--ai-blue))]" />
-              </div>
-              <div className="bg-gradient-to-r from-[hsl(var(--ai-blue))] to-[hsl(var(--ai-purple))] text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                2
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI Matches You With Pros</h3>
-              <p className="text-muted-foreground">
-                Our AI analyzes thousands of providers to find your perfect match instantly
-              </p>
-            </Card>
-            <Card className="p-6 text-center border-2 hover:border-[hsl(var(--ai-blue))] transition-all hover:shadow-lg">
-              <div className="bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="h-8 w-8 text-[hsl(var(--ai-blue))]" />
-              </div>
-              <div className="bg-gradient-to-r from-[hsl(var(--ai-blue))] to-[hsl(var(--ai-purple))] text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                3
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Relax. AI Handles Everything</h3>
-              <p className="text-muted-foreground">
-                AI schedules, reminds, and manages all your home services automatically
-              </p>
-            </Card>
+          <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
+            {/* Homeowners Column */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-center mb-6">For Homeowners</h3>
+              <Card className="p-6 border-2 hover:border-primary transition-all">
+                <div className="flex gap-4">
+                  <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Brain className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-1">Tell AI About Your Home</h4>
+                    <p className="text-muted-foreground text-sm">AI instantly understands your maintenance needs</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-6 border-2 hover:border-primary transition-all">
+                <div className="flex gap-4">
+                  <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-1">AI Matches You With Pros</h4>
+                    <p className="text-muted-foreground text-sm">Perfect provider match in seconds</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-6 border-2 hover:border-primary transition-all">
+                <div className="flex gap-4">
+                  <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Zap className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-1">Relax. AI Handles Everything</h4>
+                    <p className="text-muted-foreground text-sm">Automated scheduling and management</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Providers Column */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-center mb-6">For Service Providers</h3>
+              <Card className="p-6 border-2 hover:border-primary transition-all">
+                <div className="flex gap-4">
+                  <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Award className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-1">AI Builds Your Brand</h4>
+                    <p className="text-muted-foreground text-sm">Optimized profile to attract the right clients</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-6 border-2 hover:border-primary transition-all">
+                <div className="flex gap-4">
+                  <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-1">AI Finds Perfect Clients</h4>
+                    <p className="text-muted-foreground text-sm">Smart matching fills your calendar</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-6 border-2 hover:border-primary transition-all">
+                <div className="flex gap-4">
+                  <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-1">AI Manages Operations</h4>
+                    <p className="text-muted-foreground text-sm">Automated scheduling, billing, and communication</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* AI Superpowers for Homeowners */}
+      {/* AI Features - Unified */}
       <section className="py-20 px-4">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">AI Superpowers for Homeowners</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">AI-Powered Features</h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Your personal AI assistant for everything home-related
+            Intelligent automation for everyone
           </p>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Clock className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Clock className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-[hsl(var(--ai-blue))] uppercase tracking-wide">AI Powered</span>
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">AI Maintenance Predictor</h3>
+              <h3 className="text-xl font-semibold mb-2">Predictive Maintenance</h3>
               <p className="text-muted-foreground">
-                Know when maintenance is needed before problems arise. AI learns your home's patterns.
-              </p>
-            </Card>
-            <Card className="p-6 border-2 hover:border-primary transition-colors group">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Bot className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
-                </div>
-                <span className="text-xs font-semibold text-[hsl(var(--ai-blue))] uppercase tracking-wide">AI Powered</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI Chatbot Assistant</h3>
-              <p className="text-muted-foreground">
-                Ask questions, schedule services, and get instant answers 24/7 from your AI assistant.
+                AI predicts needs before problems arise, saving time and money
               </p>
             </Card>
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <CreditCard className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Bot className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-[hsl(var(--ai-blue))] uppercase tracking-wide">AI Powered</span>
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">AI Cost Forecasting</h3>
+              <h3 className="text-xl font-semibold mb-2">24/7 AI Assistant</h3>
               <p className="text-muted-foreground">
-                Get accurate cost predictions and budget recommendations based on your home's needs.
+                Get instant answers, schedule services, and manage everything via chat
               </p>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works - Providers */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">How It Works for Providers</h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Let AI grow your business while you focus on quality service
-          </p>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card className="p-6 text-center border-2 hover:border-accent transition-all hover:shadow-lg">
-              <div className="bg-accent/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="h-8 w-8 text-accent" />
-              </div>
-              <div className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                1
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI Builds Your Brand</h3>
-              <p className="text-muted-foreground">
-                AI creates your profile and optimizes it to attract the right clients
-              </p>
-            </Card>
-            <Card className="p-6 text-center border-2 hover:border-accent transition-all hover:shadow-lg">
-              <div className="bg-accent/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-accent" />
-              </div>
-              <div className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                2
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI Finds You Perfect Clients</h3>
-              <p className="text-muted-foreground">
-                Our matching algorithm connects you with homeowners who need your exact services
-              </p>
-            </Card>
-            <Card className="p-6 text-center border-2 hover:border-accent transition-all hover:shadow-lg">
-              <div className="bg-accent/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-accent" />
-              </div>
-              <div className="bg-accent text-accent-foreground w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                3
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI Manages Operations</h3>
-              <p className="text-muted-foreground">
-                Automated scheduling, billing, and customer communication. Focus on the work you love.
-              </p>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* AI Superpowers for Providers */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">AI Superpowers for Service Providers</h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Grow faster with AI handling your business operations
-          </p>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card className="p-6 bg-card border-2 hover:border-primary transition-colors group">
+            <Card className="p-6 border-2 hover:border-primary transition-colors group">
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Users className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Calendar className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-[hsl(var(--ai-blue))] uppercase tracking-wide">AI Powered</span>
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">AI Lead Generation</h3>
+              <h3 className="text-xl font-semibold mb-2">Smart Scheduling</h3>
               <p className="text-muted-foreground">
-                AI finds and qualifies leads automatically, filling your calendar with perfect-fit clients.
+                Optimized routes and timing maximize efficiency for providers
               </p>
             </Card>
-            <Card className="p-6 bg-card border-2 hover:border-primary transition-colors group">
+            <Card className="p-6 border-2 hover:border-primary transition-colors group">
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Calendar className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Users className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-[hsl(var(--ai-blue))] uppercase tracking-wide">AI Powered</span>
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">AI Smart Scheduling</h3>
+              <h3 className="text-xl font-semibold mb-2">Perfect Matching</h3>
               <p className="text-muted-foreground">
-                Optimize your routes and maximize daily efficiency with intelligent scheduling.
+                AI connects homeowners with ideal providers based on needs and history
               </p>
             </Card>
-            <Card className="p-6 bg-card border-2 hover:border-primary transition-colors group">
+            <Card className="p-6 border-2 hover:border-primary transition-colors group">
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <TrendingUp className="h-6 w-6 text-[hsl(var(--ai-blue))]" />
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CreditCard className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-[hsl(var(--ai-blue))] uppercase tracking-wide">AI Powered</span>
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">AI Revenue Optimizer</h3>
+              <h3 className="text-xl font-semibold mb-2">Cost Forecasting</h3>
               <p className="text-muted-foreground">
-                Dynamic pricing and upsell recommendations to maximize your earnings.
+                Accurate budget predictions and dynamic pricing optimization
+              </p>
+            </Card>
+            <Card className="p-6 border-2 hover:border-primary transition-colors group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Revenue Optimization</h3>
+              <p className="text-muted-foreground">
+                AI-driven insights and recommendations to maximize earnings
               </p>
             </Card>
           </div>
@@ -579,9 +558,9 @@ const Index = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-4 bg-gradient-to-br from-[hsl(var(--ai-blue))]/10 via-background to-[hsl(var(--ai-purple))]/10 border-t border-border">
+      <section className="py-20 px-4 bg-gradient-to-br from-primary/10 via-background to-accent/10 border-t border-border">
         <div className="container mx-auto text-center max-w-4xl">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--ai-blue))]/10 to-[hsl(var(--ai-purple))]/10 text-[hsl(var(--ai-blue))] px-4 py-2 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
             <Sparkles className="h-4 w-4" />
             <span className="text-sm font-medium">Ready to Experience AI-Powered Home Management?</span>
           </div>
@@ -595,7 +574,7 @@ const Index = () => {
             <Button 
               size="lg" 
               onClick={() => navigate("/register")}
-              className="text-lg px-8 py-6 bg-gradient-to-r from-[hsl(var(--ai-blue))] to-[hsl(var(--ai-purple))] hover:opacity-90"
+              className="text-lg px-8 py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90"
             >
               Get Started Free
             </Button>
