@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { searchKnowledge, getQuickReply, buildKnowledgeContext } from '../_shared/knowledge.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -220,8 +221,21 @@ serve(async (req) => {
       content: message 
     });
 
+    // Check for quick reply first
+    const quickReply = await getQuickReply(message);
+    if (quickReply) {
+      const reply = quickReply.response_text;
+      await supabase.from('ai_chat_messages').insert({ session_id: activeSessionId, role: 'assistant', content: reply });
+      return new Response(JSON.stringify({ reply, session_id: activeSessionId, tool_results: [] }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Search knowledge base
+    const knowledgeArticles = await searchKnowledge(message, 3);
+    const knowledgeContext = buildKnowledgeContext(knowledgeArticles);
+
     // Build conversation from history
-    const messages: any[] = [{ role: 'system', content: SYSTEM_PROMPT }];
+    const messages: any[] = [{ role: 'system', content: SYSTEM_PROMPT + knowledgeContext }];
     if (history?.length) {
       messages.push(...history);
     }

@@ -1,5 +1,8 @@
 project_id = "mqaplaplgfcbaaafylpf"
 
+[functions.homebase-ai]
+verify_jwt = true
+
 [functions.notification-cron-worker]
 verify_jwt = false
 schedule = "*/5 * * * *"

@@ -5,13 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Bot, User, Home, DollarSign, Loader2, CheckCircle2, AlertCircle, Star } from 'lucide-react';
+import { Bot, Home, DollarSign, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ProviderCard } from '@/components/marketplace/ProviderCard';
 import { BookingDialog } from '@/components/marketplace/BookingDialog';
 import { AIComposer } from './AIComposer';
 import { AIEscalateButton } from './AIEscalateButton';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { IntercomStyleMessage } from './IntercomStyleMessage';
+import { SmartTypingIndicator } from './SmartTypingIndicator';
+import { ActionCard } from './ActionCard';
 
 interface ChatMessage {
   id: string;
@@ -323,29 +326,16 @@ export default function HomeBaseAI({
         )}
 
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex gap-2 max-w-[90%] sm:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              <div className={`p-2 rounded-full flex-shrink-0 ${
-                msg.role === 'user' ? 'bg-primary' : 'bg-muted'
-              }`}>
-                {msg.role === 'user' ? (
-                  <User className="w-4 h-4 text-primary-foreground" />
-                ) : (
-                  <Bot className="w-4 h-4" />
-                )}
-              </div>
-              <div className="space-y-3">
-                <div className={`rounded-2xl p-3 sm:p-4 ${
-                  msg.role === 'user' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted'
-                }`}>
-                  <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                </div>
-                
-                {msg.toolResults?.map((result, idx) => (
-                  <div key={idx}>
-                    {result.type === 'property' && (
+          <div key={msg.id}>
+            <IntercomStyleMessage
+              role={msg.role}
+              content={msg.content}
+              timestamp={new Date()}
+            />
+            <div className="mt-3 space-y-3">
+              {msg.toolResults?.map((result, idx) => (
+                <div key={idx}>
+                  {result.type === 'property' && (
                       <Card className="border-primary/20">
                         <CardHeader className="pb-3">
                           <CardTitle className="text-sm flex items-center gap-2">
@@ -468,20 +458,10 @@ export default function HomeBaseAI({
                 ))}
               </div>
             </div>
-          </div>
         ))}
 
         {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex gap-2">
-              <div className="p-2 rounded-full bg-muted">
-                <Bot className="w-4 h-4" />
-              </div>
-              <div className="rounded-2xl p-4 bg-muted">
-                <Loader2 className="w-4 h-4 animate-spin" />
-              </div>
-            </div>
-          </div>
+          <SmartTypingIndicator message="Thinking..." />
         )}
 
         <div ref={messagesEndRef} />

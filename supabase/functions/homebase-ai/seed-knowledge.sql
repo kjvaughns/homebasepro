@@ -1,4 +1,5 @@
 -- Seed Knowledge Articles for HomeBase AI
+-- Run this SQL in your Supabase SQL editor after the migration completes
 
 -- Getting Started
 INSERT INTO knowledge_articles (title, content, category, tags, priority) VALUES
