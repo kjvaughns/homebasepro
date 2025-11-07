@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Camera, FileText, Plus, X, Sparkles } from "lucide-react";
+import { NativeCameraButton } from "@/components/native/NativeCameraButton";
+import { SaveToGalleryButton } from "@/components/native/SaveToGalleryButton";
+import { useDespia } from "@/hooks/useDespia";
 
 interface DiagnosisFormProps {
   serviceCallId: string;
@@ -23,6 +26,7 @@ export function DiagnosisForm({ serviceCallId, onSuccess }: DiagnosisFormProps) 
   const [photos, setPhotos] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  const { showSpinner, hideSpinner, triggerHaptic } = useDespia();
 
   const handleAddAction = () => {
     setRecommendedActions([...recommendedActions, ""]);
@@ -81,6 +85,7 @@ export function DiagnosisForm({ serviceCallId, onSuccess }: DiagnosisFormProps) 
     }
 
     setIsSubmitting(true);
+    showSpinner();
 
     try {
       const validActions = recommendedActions.filter(a => a.trim() !== "");
@@ -100,6 +105,7 @@ export function DiagnosisForm({ serviceCallId, onSuccess }: DiagnosisFormProps) 
 
       if (error) throw error;
 
+      triggerHaptic('success');
       toast.success("Diagnosis completed successfully!");
       
       if (onSuccess) {
@@ -107,8 +113,10 @@ export function DiagnosisForm({ serviceCallId, onSuccess }: DiagnosisFormProps) 
       }
     } catch (error) {
       console.error("Error completing diagnosis:", error);
+      triggerHaptic('error');
       toast.error("Failed to complete diagnosis");
     } finally {
+      hideSpinner();
       setIsSubmitting(false);
     }
   };
@@ -228,18 +236,34 @@ export function DiagnosisForm({ serviceCallId, onSuccess }: DiagnosisFormProps) 
                   alt={`Diagnostic ${index + 1}`}
                   className="rounded-lg border aspect-video object-cover"
                 />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => handleRemovePhoto(index)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <SaveToGalleryButton
+                    imageUrl={photo}
+                    variant="secondary"
+                    size="icon"
+                    showIcon={true}
+                  />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => handleRemovePhoto(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
-          <div>
+          <div className="flex gap-2">
+            <NativeCameraButton
+              onPhotoCapture={(url) => setPhotos([...photos, url])}
+              storageBucket="service-call-photos"
+              storagePath={serviceCallId}
+              variant="outline"
+              size="default"
+              label="Take Photo"
+            />
             <Input
               type="file"
               accept="image/*"
@@ -250,11 +274,11 @@ export function DiagnosisForm({ serviceCallId, onSuccess }: DiagnosisFormProps) 
             />
             <Label
               htmlFor="photo-upload"
-              className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
             >
               <Camera className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                Upload photos
+                Or upload photos
               </span>
             </Label>
           </div>

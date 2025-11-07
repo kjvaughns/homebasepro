@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SaveToGalleryButton } from "@/components/native/SaveToGalleryButton";
 
 interface PortfolioImage {
   id: string;
@@ -75,13 +76,19 @@ export function PortfolioGallery({ images }: PortfolioGalleryProps) {
               {(selectedImage.title || selectedImage.description) && (
                 <div className="p-4 border-t bg-background">
                   {selectedImage.title && (
-                    <h3 className="font-semibold mb-1">{selectedImage.title}</h3>
+                    <h3 className="font-semibold mb-2">{selectedImage.title}</h3>
                   )}
                   {selectedImage.description && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-3">
                       {selectedImage.description}
                     </p>
                   )}
+                  <SaveToGalleryButton
+                    imageUrl={selectedImage.image_url}
+                    variant="outline"
+                    size="default"
+                    label="Save to Gallery"
+                  />
                 </div>
               )}
             </div>

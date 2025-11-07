@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { NativeCameraButton } from "@/components/native/NativeCameraButton";
 
 interface PortfolioUploadProps {
   organizationId: string;
@@ -154,12 +155,36 @@ export function PortfolioUpload({ organizationId, onUploadComplete }: PortfolioU
     }
   };
 
+  const handleCameraCapture = async (url: string) => {
+    // Convert URL to File object for consistent handling
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+    
+    setSelectedFiles(prev => [...prev, file]);
+    
+    // Generate preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviews(prev => [...prev, reader.result as string]);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-4">
       {/* File input */}
       <div>
-        <Label htmlFor="portfolio-files">Select Images (Max 20, 5MB each)</Label>
-        <div className="mt-2">
+        <Label htmlFor="portfolio-files">Add Portfolio Images (Max 20, 5MB each)</Label>
+        <div className="mt-2 flex gap-2">
+          <NativeCameraButton
+            onPhotoCapture={handleCameraCapture}
+            storageBucket="provider-images"
+            storagePath={organizationId}
+            variant="outline"
+            size="default"
+            label="Take Photo"
+          />
           <Input
             id="portfolio-files"
             type="file"
@@ -167,6 +192,7 @@ export function PortfolioUpload({ organizationId, onUploadComplete }: PortfolioU
             multiple
             onChange={handleFileSelect}
             disabled={uploading}
+            className="flex-1"
           />
         </div>
       </div>

@@ -126,6 +126,35 @@ export function useDespia() {
     }
   }, []);
 
+  const getCurrentLocation = useCallback(async (): Promise<{ latitude: number; longitude: number; accuracy?: number } | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        console.warn('Geolocation not supported');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          });
+        },
+        (error) => {
+          console.warn('Failed to get location:', error);
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    });
+  }, []);
+
   return {
     triggerHaptic,
     showSpinner,
@@ -141,5 +170,6 @@ export function useDespia() {
     enableBackgroundLocation,
     setStatusBarColor,
     enableFullScreen,
+    getCurrentLocation,
   };
 }

@@ -14,6 +14,7 @@ import { DisputeDrawer } from "@/components/provider/DisputeDrawer";
 import { BulkPaymentActions } from "@/components/provider/BulkPaymentActions";
 import { useMobileLayout } from "@/hooks/useMobileLayout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDespia } from "@/hooks/useDespia";
 
 interface Payment {
   id: string;
@@ -61,6 +62,7 @@ export default function PaymentsPage() {
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const { showSpinner, hideSpinner, triggerHaptic } = useDespia();
 
   useEffect(() => {
     loadData();
@@ -234,6 +236,7 @@ export default function PaymentsPage() {
 
   const syncPayments = async () => {
     setSyncing(true);
+    showSpinner();
     try {
       const { data, error } = await supabase.functions.invoke('backfill-payments', {
         body: { daysBack: 90 }
@@ -241,6 +244,7 @@ export default function PaymentsPage() {
 
       if (error) throw error;
 
+      triggerHaptic('success');
       toast({
         title: "Sync Complete",
         description: `Synced ${data.totalSynced || 0} payments from Stripe`,
@@ -249,12 +253,14 @@ export default function PaymentsPage() {
       await loadData();
     } catch (error: any) {
       console.error('Sync error:', error);
+      triggerHaptic('error');
       toast({
         title: "Sync Failed",
         description: error.message || "Failed to sync payments",
         variant: "destructive",
       });
     } finally {
+      hideSpinner();
       setSyncing(false);
     }
   };

@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Bot, User, Home, DollarSign, Loader2 } from 'lucide-react';
 import { AIComposer } from './AIComposer';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { useDespia } from '@/hooks/useDespia';
 
 interface ChatMessage {
   id: string;
@@ -41,6 +42,7 @@ export default function AIAssistant({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const keyboardHeight = useKeyboardHeight();
+  const { showSpinner, hideSpinner } = useDespia();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,6 +63,7 @@ export default function AIAssistant({
 
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
+    showSpinner();
 
     try {
       const { data: authData } = await supabase.auth.getSession();

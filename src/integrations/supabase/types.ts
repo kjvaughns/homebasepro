@@ -4335,6 +4335,44 @@ export type Database = {
           },
         ]
       }
+      service_call_location_history: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          service_call_id: string
+          timestamp: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          service_call_id: string
+          timestamp?: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          service_call_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_call_location_history_service_call_id_fkey"
+            columns: ["service_call_id"]
+            isOneToOne: false
+            referencedRelation: "service_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_calls: {
         Row: {
           assigned_team_member_id: string | null
