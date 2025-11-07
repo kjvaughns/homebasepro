@@ -23,10 +23,8 @@ export function useRevenueCat() {
 
   const initialize = async (userId: string) => {
     try {
-      await despia('revenuecat://configure', {
-        apiKey: import.meta.env.VITE_REVENUECAT_PUBLIC_KEY,
-        userId
-      });
+      const apiKey = import.meta.env.VITE_REVENUECAT_PUBLIC_KEY || '';
+      await despia(`revenuecat://configure?apiKey=${encodeURIComponent(apiKey)}&userId=${encodeURIComponent(userId)}`);
       setIsInitialized(true);
       return true;
     } catch (error) {
@@ -37,8 +35,8 @@ export function useRevenueCat() {
 
   const getOfferings = async (): Promise<Offering[]> => {
     try {
-      const offerings = await despia('revenuecat://offerings', ['packages']);
-      return offerings || [];
+      const result = await despia('revenuecat://offerings', ['packages']);
+      return (result?.packages as Offering[]) || [];
     } catch (error) {
       console.warn('Get offerings not available:', error);
       return [];
@@ -47,13 +45,11 @@ export function useRevenueCat() {
 
   const purchasePackage = async (packageId: string) => {
     try {
-      const result = await despia('revenuecat://purchase', {
-        packageId
-      });
+      const result = await despia(`revenuecat://purchase?packageId=${encodeURIComponent(packageId)}`, ['purchaseData']);
 
       // Sync to backend
       const { error } = await supabase.functions.invoke('sync-revenuecat-purchase', {
-        body: { purchaseData: result }
+        body: { purchaseData: result?.purchaseData }
       });
 
       if (error) throw error;
@@ -76,10 +72,8 @@ export function useRevenueCat() {
 
   const checkEntitlement = async (identifier: string): Promise<boolean> => {
     try {
-      const result = await despia('revenuecat://entitlements', {
-        identifier
-      });
-      return result?.isActive || false;
+      const result = await despia(`revenuecat://entitlements?identifier=${encodeURIComponent(identifier)}`, ['isActive']);
+      return result?.isActive === true;
     } catch (error) {
       console.warn('Check entitlement not available:', error);
       return false;
@@ -88,7 +82,7 @@ export function useRevenueCat() {
 
   const restorePurchases = async () => {
     try {
-      const result = await despia('revenuecat://restore');
+      const result = await despia('revenuecat://restore', ['restored']);
       
       if (result?.restored) {
         try {
@@ -112,8 +106,8 @@ export function useRevenueCat() {
 
   const getCustomerInfo = async () => {
     try {
-      const info = await despia('revenuecat://customerInfo');
-      return info;
+      const info = await despia('revenuecat://customerInfo', ['customerInfo']);
+      return info?.customerInfo;
     } catch (error) {
       console.warn('Get customer info not available:', error);
       return null;

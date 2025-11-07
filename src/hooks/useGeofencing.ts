@@ -32,13 +32,14 @@ export function useGeofencing() {
 
       // Register with native geofencing
       try {
-        await despia('geofence://create', {
+        const params = new URLSearchParams({
           id: jobId,
-          latitude: lat,
-          longitude: lng,
-          radius: radiusMeters,
-          events: ['enter', 'exit', 'dwell']
+          latitude: lat.toString(),
+          longitude: lng.toString(),
+          radius: radiusMeters.toString(),
+          events: 'enter,exit,dwell'
         });
+        await despia(`geofence://create?${params}`);
       } catch (error) {
         console.warn('Native geofencing not available:', error);
       }
@@ -62,7 +63,7 @@ export function useGeofencing() {
 
       // Remove from native geofencing
       try {
-        await despia('geofence://remove', { id: jobId });
+        await despia(`geofence://remove?id=${jobId}`);
       } catch (error) {
         console.warn('Native geofencing not available:', error);
       }

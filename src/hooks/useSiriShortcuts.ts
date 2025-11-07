@@ -13,11 +13,8 @@ export function useSiriShortcuts() {
     params?: Record<string, any>
   ) => {
     try {
-      await despia('siri://register', {
-        phrase,
-        action,
-        params
-      });
+      const paramsString = params ? `&params=${encodeURIComponent(JSON.stringify(params))}` : '';
+      await despia(`siri://register?phrase=${encodeURIComponent(phrase)}&action=${encodeURIComponent(action)}${paramsString}`);
       return true;
     } catch (error) {
       console.warn('Register shortcut not available:', error);
@@ -36,7 +33,7 @@ export function useSiriShortcuts() {
 
   const respond = async (message: string) => {
     try {
-      await despia('siri://respond', { message });
+      await despia(`siri://respond?message=${encodeURIComponent(message)}`);
     } catch (error) {
       console.warn('Siri respond not available:', error);
     }
@@ -45,10 +42,7 @@ export function useSiriShortcuts() {
   const donateInteraction = async (action: string, title: string) => {
     try {
       // Donate interaction for Siri Suggestions
-      await despia('siri://donate', {
-        action,
-        title
-      });
+      await despia(`siri://donate?action=${encodeURIComponent(action)}&title=${encodeURIComponent(title)}`);
     } catch (error) {
       console.warn('Donate interaction not available:', error);
     }

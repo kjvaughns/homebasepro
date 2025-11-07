@@ -50,8 +50,8 @@ export function useBiometricGate() {
   const isBiometricAvailable = async (): Promise<boolean> => {
     try {
       // Check if biometric is available on device
-      const result = await despia('biometric://available');
-      return result === true;
+      await despia('bioauth://available');
+      return true;
     } catch {
       return false;
     }

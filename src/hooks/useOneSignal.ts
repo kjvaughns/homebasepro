@@ -13,10 +13,8 @@ export function useOneSignal() {
   const initialize = async (userId: string) => {
     try {
       // Initialize OneSignal via Despia
-      await despia('onesignal://init', {
-        appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
-        userId
-      });
+      const appId = import.meta.env.VITE_ONESIGNAL_APP_ID || '';
+      await despia(`onesignal://init?appId=${encodeURIComponent(appId)}&userId=${encodeURIComponent(userId)}`);
     } catch (error) {
       console.warn('OneSignal initialization not available:', error);
     }
@@ -24,10 +22,8 @@ export function useOneSignal() {
 
   const subscribe = async (userId: string, topics: string[]) => {
     try {
-      await despia('onesignal://subscribe', {
-        userId,
-        topics // ['new-requests', 'invoice-overdue', 'review-needed']
-      });
+      const topicsString = topics.join(',');
+      await despia(`onesignal://subscribe?userId=${encodeURIComponent(userId)}&topics=${encodeURIComponent(topicsString)}`);
     } catch (error) {
       console.warn('OneSignal subscribe not available:', error);
     }
@@ -35,9 +31,8 @@ export function useOneSignal() {
 
   const unsubscribe = async (topics: string[]) => {
     try {
-      await despia('onesignal://unsubscribe', {
-        topics
-      });
+      const topicsString = topics.join(',');
+      await despia(`onesignal://unsubscribe?topics=${encodeURIComponent(topicsString)}`);
     } catch (error) {
       console.warn('OneSignal unsubscribe not available:', error);
     }
@@ -59,7 +54,7 @@ export function useOneSignal() {
 
   const setUserId = async (userId: string) => {
     try {
-      await despia('onesignal://setUserId', { userId });
+      await despia(`onesignal://setUserId?userId=${encodeURIComponent(userId)}`);
     } catch (error) {
       console.warn('Set user ID not available:', error);
     }
@@ -67,7 +62,7 @@ export function useOneSignal() {
 
   const showInAppMessage = async (messageId: string) => {
     try {
-      await despia('onesignal://showInAppMessage', { messageId });
+      await despia(`onesignal://showInAppMessage?messageId=${encodeURIComponent(messageId)}`);
     } catch (error) {
       console.warn('Show in-app message not available:', error);
     }

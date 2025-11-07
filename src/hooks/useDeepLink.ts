@@ -13,7 +13,7 @@ export function useDeepLink() {
   const registerDeepLink = (path: string, handler: (params: DeepLinkParams) => void) => {
     // Register deep link with Despia
     try {
-      despia(`registerdeeplink://homebase://${path}`, ['params']);
+      despia(`registerdeeplink://homebase/${path}`);
     } catch (error) {
       console.warn('Deep link registration not available:', error);
     }
@@ -33,7 +33,7 @@ export function useDeepLink() {
   const openDeepLink = (path: string, params?: Record<string, string>) => {
     const queryString = params ? `?${new URLSearchParams(params)}` : '';
     try {
-      despia(`opendeeplink://homebase://${path}${queryString}`);
+      despia(`opendeeplink://homebase/${path}${queryString}`);
     } catch (error) {
       console.warn('Deep link opening not available:', error);
     }
