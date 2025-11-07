@@ -3,6 +3,10 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  padding-top: calc(2rem + var(--safe-area-top));
+  padding-bottom: calc(2rem + var(--safe-area-bottom));
+  padding-left: calc(2rem + var(--safe-area-left));
+  padding-right: calc(2rem + var(--safe-area-right));
 }
 
 .logo {

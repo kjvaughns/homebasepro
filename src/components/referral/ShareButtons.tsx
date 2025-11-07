@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Mail, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { ShareButton } from '@/components/native/ShareButton';
 
 interface ShareButtonsProps {
   referralLink: string;
@@ -45,6 +46,13 @@ export function ShareButtons({ referralLink, shareText = 'Join me on HomeBase!' 
       <p className="text-sm font-medium text-muted-foreground">Share via</p>
       
       <div className="grid grid-cols-2 gap-2">
+        <ShareButton 
+          message={shareText}
+          url={referralLink}
+          variant="default"
+          size="default"
+        />
+
         <Button
           variant="outline"
           className="w-full"

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, Download, CheckCircle2, AlertCircle } from "lucide-react";
 import CSVFieldMapper from "@/components/provider/CSVFieldMapper";
 import CSVPreview from "@/components/provider/CSVPreview";
+import { ContactImporter } from "@/components/native/ContactImporter";
 
 interface CSVRow {
   [key: string]: string;
@@ -238,9 +239,20 @@ const ImportClients = () => {
         Back to Clients
       </Button>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Import Clients</h1>
-        <p className="text-muted-foreground">Upload a CSV file to bulk import clients</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Import Clients</h1>
+          <p className="text-muted-foreground">Upload a CSV file or import from device contacts</p>
+        </div>
+        <ContactImporter
+          onContactsSelected={(contacts) => {
+            console.log('Imported contacts:', contacts);
+            toast({
+              title: "Contacts Imported",
+              description: `${contacts.length} contacts ready to import`,
+            });
+          }}
+        />
       </div>
 
       {/* Step Indicator */}

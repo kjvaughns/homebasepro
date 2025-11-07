@@ -9,6 +9,7 @@ import { Loader2, Mail, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { loginRateLimiter } from "@/utils/rateLimiter";
 import { createSafeErrorToast } from "@/utils/errorHandler";
+import { BiometricAuthButton } from "@/components/native/BiometricAuthButton";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -206,6 +207,33 @@ const Login = () => {
               )}
             </Button>
           </form>
+
+          <div className="my-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <BiometricAuthButton
+            onSuccess={async () => {
+              if (email && password) {
+                await handleLogin({ preventDefault: () => {} } as any);
+              } else {
+                toast({
+                  title: "Enter credentials first",
+                  description: "Please enter your email and password before using biometric authentication",
+                  variant: "destructive"
+                });
+              }
+            }}
+          />
 
           <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-muted-foreground">
