@@ -1247,6 +1247,36 @@ export type Database = {
           },
         ]
       }
+      deep_link_events: {
+        Row: {
+          campaign: string | null
+          converted: boolean | null
+          id: string
+          link_path: string
+          source: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          campaign?: string | null
+          converted?: boolean | null
+          id?: string
+          link_path: string
+          source?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          campaign?: string | null
+          converted?: boolean | null
+          id?: string
+          link_path?: string
+          source?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       disputes: {
         Row: {
           amount: number
@@ -1646,12 +1676,15 @@ export type Database = {
           auto_renew: boolean
           billing_amount: number
           created_at: string
+          entitlements: Json | null
           home_id: string
           homeowner_id: string
           id: string
           next_service_date: string | null
           payment_method_active: boolean | null
+          platform: string | null
           provider_org_id: string
+          revenuecat_customer_id: string | null
           service_plan_id: string
           start_date: string
           status: string
@@ -1661,12 +1694,15 @@ export type Database = {
           auto_renew?: boolean
           billing_amount: number
           created_at?: string
+          entitlements?: Json | null
           home_id: string
           homeowner_id: string
           id?: string
           next_service_date?: string | null
           payment_method_active?: boolean | null
+          platform?: string | null
           provider_org_id: string
+          revenuecat_customer_id?: string | null
           service_plan_id: string
           start_date?: string
           status?: string
@@ -1676,12 +1712,15 @@ export type Database = {
           auto_renew?: boolean
           billing_amount?: number
           created_at?: string
+          entitlements?: Json | null
           home_id?: string
           homeowner_id?: string
           id?: string
           next_service_date?: string | null
           payment_method_active?: boolean | null
+          platform?: string | null
           provider_org_id?: string
+          revenuecat_customer_id?: string | null
           service_plan_id?: string
           start_date?: string
           status?: string
@@ -4335,10 +4374,82 @@ export type Database = {
           },
         ]
       }
+      security_audit_log: {
+        Row: {
+          action: string
+          id: string
+          ip_address: string | null
+          method: string | null
+          success: boolean | null
+          timestamp: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          id?: string
+          ip_address?: string | null
+          method?: string | null
+          success?: boolean | null
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          id?: string
+          ip_address?: string | null
+          method?: string | null
+          success?: boolean | null
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      service_call_geofences: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          latitude: number
+          longitude: number
+          radius_meters: number | null
+          service_call_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          latitude: number
+          longitude: number
+          radius_meters?: number | null
+          service_call_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number
+          longitude?: number
+          radius_meters?: number | null
+          service_call_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_call_geofences_service_call_id_fkey"
+            columns: ["service_call_id"]
+            isOneToOne: false
+            referencedRelation: "service_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_call_location_history: {
         Row: {
           accuracy: number | null
           created_at: string
+          geofence_event: string | null
           id: string
           latitude: number
           longitude: number
@@ -4348,6 +4459,7 @@ export type Database = {
         Insert: {
           accuracy?: number | null
           created_at?: string
+          geofence_event?: string | null
           id?: string
           latitude: number
           longitude: number
@@ -4357,6 +4469,7 @@ export type Database = {
         Update: {
           accuracy?: number | null
           created_at?: string
+          geofence_event?: string | null
           id?: string
           latitude?: number
           longitude?: number
