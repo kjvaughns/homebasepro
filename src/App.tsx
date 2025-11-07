@@ -72,6 +72,7 @@ import PartsMaterials from "@/pages/provider/PartsMaterials";
 import ProfileSettings from "@/pages/provider/settings/ProfileSettings";
 import BillingSettings from "@/pages/provider/settings/BillingSettings";
 import ProviderPaymentSettings from "@/pages/provider/settings/PaymentSettings";
+import SubscriptionManagement from "@/pages/provider/settings/SubscriptionManagement";
 import IntegrationSettings from "@/pages/provider/settings/IntegrationSettings";
 import AppSettings from "@/pages/provider/settings/AppSettings";
 import RefundRequests from "@/pages/provider/RefundRequests";
@@ -460,6 +461,7 @@ const App = () => {
               {/* Settings Routes */}
               <Route path="settings" element={<Settings />} />
               <Route path="settings/billing" element={<BillingSettings />} />
+              <Route path="settings/subscription" element={<SubscriptionManagement />} />
               <Route path="settings/payments" element={<ProviderPaymentSettings />} />
               <Route path="settings/integrations" element={<IntegrationSettings />} />
               <Route path="settings/app" element={<AppSettings />} />

@@ -425,6 +425,62 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_invoices: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          invoice_pdf: string | null
+          metadata: Json | null
+          organization_id: string | null
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          stripe_invoice_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_pdf?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status: string
+          stripe_invoice_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_pdf?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           address: string
@@ -3154,6 +3210,7 @@ export type Database = {
           setup_completed: boolean | null
           setup_completed_at: string | null
           stripe_customer_id: string | null
+          stripe_default_payment_method: string | null
           stripe_subscription_id: string | null
           trial_ends_at: string | null
           trial_extended: boolean | null
@@ -3186,6 +3243,7 @@ export type Database = {
           setup_completed?: boolean | null
           setup_completed_at?: string | null
           stripe_customer_id?: string | null
+          stripe_default_payment_method?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
           trial_extended?: boolean | null
@@ -3218,6 +3276,7 @@ export type Database = {
           setup_completed?: boolean | null
           setup_completed_at?: string | null
           stripe_customer_id?: string | null
+          stripe_default_payment_method?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
           trial_extended?: boolean | null
@@ -5752,6 +5811,36 @@ export type Database = {
           referral_source?: string | null
           service_type?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          processed: boolean | null
+          processed_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          processed?: boolean | null
+          processed_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          processed?: boolean | null
+          processed_at?: string | null
         }
         Relationships: []
       }

@@ -442,16 +442,131 @@ Deno.serve(async (req) => {
 
     // CANCEL SUBSCRIPTION
     if (action === 'cancel-subscription') {
+      const { reason, feedback } = body;
       const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
       if (!org) return err('NO_ORGANIZATION', 'Organization not found', 404);
 
       const { data: subscription } = await supabase.from('provider_subscriptions').select('*').eq('provider_id', org.id).single();
       if (!subscription?.stripe_subscription_id) return err('NO_SUBSCRIPTION', 'No active subscription found');
 
-      await stripePOST(`subscriptions/${subscription.stripe_subscription_id}`, { cancel_at_period_end: true });
+      await stripePOST(`subscriptions/${subscription.stripe_subscription_id}`, { 
+        cancel_at_period_end: true,
+        cancellation_details: { comment: feedback || '', feedback: reason || 'other' }
+      });
       await supabase.from('provider_subscriptions').update({ status: 'canceling' }).eq('provider_id', org.id);
 
       return ok({ ok: true, success: true, message: 'Subscription will cancel at period end' });
+    }
+
+    // GET BILLING HISTORY
+    if (action === 'get-billing-history') {
+      const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
+      if (!org) return err('NO_ORGANIZATION', 'Organization not found', 404);
+
+      const { data: invoices } = await supabase
+        .from('billing_invoices')
+        .select('*')
+        .eq('organization_id', org.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      return ok({ ok: true, invoices: invoices || [] });
+    }
+
+    // GET UPCOMING INVOICE
+    if (action === 'get-upcoming-invoice') {
+      const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
+      if (!org) return err('NO_ORGANIZATION', 'Organization not found', 404);
+
+      const { data: subscription } = await supabase.from('provider_subscriptions').select('*').eq('provider_id', org.id).single();
+      if (!subscription?.stripe_customer_id) return ok({ ok: true, invoice: null });
+
+      try {
+        const upcomingInvoice = await stripeGET(`invoices/upcoming?customer=${subscription.stripe_customer_id}`);
+        return ok({ ok: true, invoice: upcomingInvoice });
+      } catch (e: any) {
+        // No upcoming invoice is not an error
+        if (e?.stripeError?.code === 'invoice_upcoming_none') {
+          return ok({ ok: true, invoice: null });
+        }
+        throw e;
+      }
+    }
+
+    // UPDATE SUBSCRIPTION PAYMENT METHOD
+    if (action === 'update-subscription-payment-method') {
+      const { paymentMethodId } = body;
+      if (!paymentMethodId) return err('MISSING_PAYMENT_METHOD', 'paymentMethodId required');
+
+      const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
+      if (!org) return err('NO_ORGANIZATION', 'Organization not found', 404);
+
+      const { data: subscription } = await supabase.from('provider_subscriptions').select('*').eq('provider_id', org.id).single();
+      if (!subscription?.stripe_customer_id) return err('NO_CUSTOMER', 'No customer found');
+
+      // Attach payment method to customer
+      await stripePOST(`payment_methods/${paymentMethodId}/attach`, { customer: subscription.stripe_customer_id });
+      
+      // Set as default
+      await stripePOST(`customers/${subscription.stripe_customer_id}`, {
+        invoice_settings: { default_payment_method: paymentMethodId }
+      });
+
+      // Update subscription to use new payment method
+      if (subscription.stripe_subscription_id) {
+        await stripePOST(`subscriptions/${subscription.stripe_subscription_id}`, {
+          default_payment_method: paymentMethodId
+        });
+      }
+
+      // Save to profile for homeowner checkouts
+      await supabase.from('profiles').update({ 
+        stripe_default_payment_method: paymentMethodId 
+      }).eq('user_id', user.id);
+
+      return ok({ ok: true, success: true });
+    }
+
+    // GET INVOICE PDF
+    if (action === 'get-invoice-pdf') {
+      const { invoiceId } = body;
+      if (!invoiceId) return err('MISSING_INVOICE_ID', 'invoiceId required');
+
+      const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
+      if (!org) return err('NO_ORGANIZATION', 'Organization not found', 404);
+
+      const { data: invoice } = await supabase
+        .from('billing_invoices')
+        .select('stripe_invoice_id, invoice_pdf')
+        .eq('stripe_invoice_id', invoiceId)
+        .eq('organization_id', org.id)
+        .single();
+
+      if (!invoice) return err('INVOICE_NOT_FOUND', 'Invoice not found', 404);
+
+      // If we have cached PDF URL, return it
+      if (invoice.invoice_pdf) {
+        return ok({ ok: true, pdfUrl: invoice.invoice_pdf });
+      }
+
+      // Otherwise fetch from Stripe
+      const stripeInvoice = await stripeGET(`invoices/${invoiceId}`);
+      return ok({ ok: true, pdfUrl: stripeInvoice.invoice_pdf });
+    }
+
+    // REACTIVATE SUBSCRIPTION
+    if (action === 'reactivate-subscription') {
+      const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
+      if (!org) return err('NO_ORGANIZATION', 'Organization not found', 404);
+
+      const { data: subscription } = await supabase.from('provider_subscriptions').select('*').eq('provider_id', org.id).single();
+      if (!subscription?.stripe_subscription_id) return err('NO_SUBSCRIPTION', 'No subscription found');
+
+      // Reactivate by removing cancel_at_period_end
+      await stripePOST(`subscriptions/${subscription.stripe_subscription_id}`, { cancel_at_period_end: false });
+      await supabase.from('provider_subscriptions').update({ status: 'active' }).eq('provider_id', org.id);
+
+      return ok({ ok: true, success: true, message: 'Subscription reactivated' });
     }
 
     // MOVED: create-subscription-checkout, create-payment-checkout, create-portal-link now handled before auth check (lines 175-225)

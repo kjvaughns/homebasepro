@@ -259,6 +259,21 @@ serve(async (req) => {
       const orgId = invoice.metadata.org_id;
       const invoiceId = invoice.metadata.invoice_id;
 
+      // Store invoice in billing_invoices table
+      if (invoice.subscription) {
+        await supabase.from('billing_invoices').upsert({
+          organization_id: invoice.metadata.org_id || orgId,
+          stripe_invoice_id: invoice.id,
+          amount: invoice.amount_paid,
+          status: 'paid',
+          invoice_pdf: invoice.invoice_pdf,
+          period_start: new Date(invoice.period_start * 1000).toISOString(),
+          period_end: new Date(invoice.period_end * 1000).toISOString(),
+          paid_at: new Date().toISOString(),
+          description: invoice.lines?.data?.[0]?.description || 'Subscription payment',
+        });
+      }
+
       // Handle subscription invoices
       if (invoice.subscription) {
         const { data: subscription } = await supabase
