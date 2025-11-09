@@ -52,8 +52,8 @@ const TABBAR_H = 80;
 
 const mobileNavigation = [
   { name: "Home", href: "/provider/dashboard", icon: Home },
-  { name: "Jobs", href: "/provider/jobs", icon: Briefcase, hasSubmenu: true },
-  { name: "Clients", href: "/provider/clients", icon: Users },
+  { name: "Schedule", href: "/provider/schedule", icon: Briefcase },
+  { name: "Money", href: "/provider/money", icon: DollarSign },
   { name: "Messages", href: "/provider/messages", icon: MessageSquare },
   { name: "More", href: "/provider/more", icon: MoreHorizontal },
 ];
@@ -268,8 +268,7 @@ const ProviderLayout = () => {
         >
           <div className="flex items-center justify-around" style={{ height: `${TABBAR_H}px` }}>
             {mobileNavigation.map((item) => {
-              const isActive = location.pathname === item.href || 
-                (item.hasSubmenu && location.pathname.startsWith(item.href.split('/').slice(0, 3).join('/')));
+              const isActive = location.pathname === item.href;
               
               // Messages link with unread badge
               if (item.name === "Messages") {
@@ -298,13 +297,7 @@ const ProviderLayout = () => {
               return (
                 <button
                   key={item.name}
-                  onClick={() => {
-                    if (item.hasSubmenu) {
-                      if (item.name === 'Jobs') setJobsSheetOpen(true);
-                    } else {
-                      navigate(item.href);
-                    }
-                  }}
+                  onClick={() => navigate(item.href)}
                   className={cn(
                     "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1",
                     isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
