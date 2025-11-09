@@ -55,15 +55,8 @@ export default function OnboardingProvider() {
 
   const handleNext = async () => {
     if (step === 1) {
-      if (!formData.companyName || !formData.description || !formData.phone || !formData.businessAddress || !formData.businessZip) {
-        toast.error("Please fill in all required fields including business address");
-        return;
-      }
-    }
-
-    if (step === 2) {
-      if (!formData.serviceTypes || !formData.serviceArea) {
-        toast.error("Please fill in service types and service area");
+      if (!formData.companyName || !formData.serviceTypes || !formData.businessZip) {
+        toast.error("Please fill in all required fields");
         return;
       }
 
@@ -80,16 +73,9 @@ export default function OnboardingProvider() {
         const orgData = {
           name: formData.companyName,
           slug: formData.companyName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-          description: formData.description,
-          phone: formData.phone,
           service_type: formData.serviceTypes.split(',').map(s => s.trim()),
-          service_area: formData.serviceArea,
-          business_address: formData.businessAddress,
-          business_city: formData.businessCity,
-          business_state: formData.businessState,
+          service_area: formData.serviceArea || formData.businessZip,
           business_zip: formData.businessZip,
-          business_lat: formData.businessLat || null,
-          business_lng: formData.businessLng || null,
           owner_id: user.id,
           plan: 'free', // Start with free plan + 14-day trial
         };
@@ -124,7 +110,7 @@ export default function OnboardingProvider() {
     navigate("/provider/dashboard");
   };
 
-  const progress = (step / 3) * 100;
+  const progress = (step / 2) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
@@ -138,149 +124,60 @@ export default function OnboardingProvider() {
           <form onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
             {step === 1 && (
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="companyName">Business Name *</Label>
-                  <Input
-                    id="companyName"
-                    name="companyName"
-                    value={formData.companyName}
-                    onChange={handleInputChange}
-                    required
-                    style={{ fontSize: '16px' }}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Business Description *</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    required
-                    style={{ fontSize: '16px' }}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Business Phone *</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    style={{ fontSize: '16px' }}
-                  />
-                </div>
-
-                <div className="pt-4 border-t">
-                  <h3 className="text-lg font-semibold mb-4">Business Location *</h3>
-                  <div className="space-y-4">
-                    <AddressAutocomplete
-                      label="Business Address"
-                      placeholder="Start typing your business address..."
-                      defaultValue={formData.businessAddress}
-                      onManualChange={(street) => setFormData(prev => ({ ...prev, businessAddress: street }))}
-                      onAddressSelect={(address) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          businessAddress: address.street || address.fullAddress,
-                          businessCity: address.city || prev.businessCity,
-                          businessState: address.state || prev.businessState,
-                          businessZip: address.zip || prev.businessZip,
-                          businessLat: address.lat || 0,
-                          businessLng: address.lng || 0,
-                        }));
-                      }}
-                      required
-                    />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="businessCity">City *</Label>
-                        <Input
-                          id="businessCity"
-                          name="businessCity"
-                          value={formData.businessCity}
-                          onChange={handleInputChange}
-                          inputMode="text"
-                          required
-                          style={{ fontSize: '16px' }}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="businessState">State *</Label>
-                        <Input
-                          id="businessState"
-                          name="businessState"
-                          value={formData.businessState}
-                          onChange={handleInputChange}
-                          inputMode="text"
-                          maxLength={2}
-                          required
-                          style={{ fontSize: '16px', textTransform: 'uppercase' }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="businessZip">ZIP Code *</Label>
-                      <Input
-                        id="businessZip"
-                        name="businessZip"
-                        value={formData.businessZip}
-                        onChange={handleInputChange}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        required
-                        style={{ fontSize: '16px' }}
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Required for service jurisdiction and provider matching
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* Step 1: Tell Us About Your Business */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="companyName">Business Name *</Label>
+                <Input
+                  id="companyName"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                  required
+                  style={{ fontSize: '16px' }}
+                  placeholder="e.g., Smith HVAC Services"
+                />
+              </div>
+              <div>
+                <Label htmlFor="serviceTypes">What services do you provide? *</Label>
+                <Input
+                  id="serviceTypes"
+                  name="serviceTypes"
+                  placeholder="e.g., HVAC, Plumbing, Electrical"
+                  value={formData.serviceTypes}
+                  onChange={handleInputChange}
+                  required
+                  style={{ fontSize: '16px' }}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Separate multiple services with commas
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="businessZip">Service Area (ZIP Code) *</Label>
+                <Input
+                  id="businessZip"
+                  name="businessZip"
+                  value={formData.businessZip}
+                  onChange={(e) => {
+                    handleInputChange(e);
+                    setFormData(prev => ({ ...prev, serviceArea: e.target.value }));
+                  }}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  required
+                  style={{ fontSize: '16px' }}
+                  placeholder="e.g., 10001"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  We'll use this to connect you with nearby clients
+                </p>
+              </div>
+            </div>
               </div>
             )}
 
             {step === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="serviceTypes">Service Types *</Label>
-                  <Input
-                    id="serviceTypes"
-                    name="serviceTypes"
-                    placeholder="e.g., HVAC, Plumbing, Electrical"
-                    value={formData.serviceTypes}
-                    onChange={handleInputChange}
-                    required
-                    style={{ fontSize: '16px' }}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Separate multiple services with commas
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="serviceArea">Service Area (ZIP Codes) *</Label>
-                  <Textarea
-                    id="serviceArea"
-                    name="serviceArea"
-                    placeholder="e.g., 10001, 10002, 10003"
-                    value={formData.serviceArea}
-                    onChange={handleInputChange}
-                    rows={3}
-                    required
-                    style={{ fontSize: '16px' }}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Enter ZIP codes you serve, separated by commas
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
               <div className="space-y-6 text-center py-8">
                 <div className="flex justify-center">
                   <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
@@ -321,7 +218,7 @@ export default function OnboardingProvider() {
             )}
 
             <div className="flex justify-between mt-6">
-              {step > 1 && step < 3 && (
+              {step > 1 && step < 2 && (
                 <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
                   Back
                 </Button>
@@ -329,17 +226,11 @@ export default function OnboardingProvider() {
               
               {step === 1 && (
                 <Button type="submit" disabled={loading} className="ml-auto">
-                  Next
-                </Button>
-              )}
-
-              {step === 2 && (
-                <Button type="submit" disabled={loading} className="ml-auto">
                   {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Start My Free Trial"}
                 </Button>
               )}
 
-              {step === 3 && (
+              {step === 2 && (
                 <Button onClick={handleComplete} className="ml-auto">
                   Go to Dashboard
                 </Button>

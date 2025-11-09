@@ -123,7 +123,8 @@ import Messages from "./pages/Messages";
 import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 import ServiceProgress from "./pages/homeowner/ServiceProgress";
 import PricingIntelligence from "./pages/provider/PricingIntelligence";
-import QuotesManagement from "./pages/provider/QuotesManagement";
+import Schedule from "@/pages/provider/Schedule";
+import Money from "@/pages/provider/Money";
 import { lazy } from "react";
 
 const queryClient = new QueryClient();
@@ -380,64 +381,32 @@ const App = () => {
             <Route path="/provider" element={<OnboardingGuard requiredFor="provider"><ProviderLayout /></OnboardingGuard>}>
               <Route path="dashboard" element={<ProviderDashboard />} />
               
+              {/* Core simplified routes */}
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="money" element={<Money />} />
+              
               {/* Guarded routes - require active subscription or trial */}
               <Route path="clients" element={
                 <SubscriptionGuard requiredFeature="Client Management">
                   <Clients />
                 </SubscriptionGuard>
               } />
-              <Route path="clients/import" element={
-                <SubscriptionGuard requiredFeature="Client Import">
-                  <ImportClients />
-                </SubscriptionGuard>
-              } />
-              <Route path="clients/:id" element={
-                <SubscriptionGuard requiredFeature="Client Details">
-                  <ClientDetail />
-                </SubscriptionGuard>
-              } />
-              <Route path="payments" element={
-                <SubscriptionGuard requiredFeature="Payments & Invoicing">
-                  <Payments />
-                </SubscriptionGuard>
-              } />
-              <Route path="jobs" element={
-                <SubscriptionGuard requiredFeature="Job Management">
-                  <Jobs />
-                </SubscriptionGuard>
-              } />
-              <Route path="pricing-intelligence" element={
-                <SubscriptionGuard requiredFeature="AI Pricing Intelligence">
-                  <PricingIntelligence />
-                </SubscriptionGuard>
-              } />
-              <Route path="quotes" element={
-                <SubscriptionGuard requiredFeature="Quote Management">
-                  <QuotesManagement />
-                </SubscriptionGuard>
-              } />
-              <Route path="analytics" element={
-                <SubscriptionGuard requiredFeature="Analytics">
-                  <Analytics />
-                </SubscriptionGuard>
-              } />
-              <Route path="accounting" element={
-                <SubscriptionGuard requiredFeature="Accounting">
-                  <Accounting />
-                </SubscriptionGuard>
-              } />
-              <Route path="profit-loss" element={
-                <SubscriptionGuard requiredFeature="Profit & Loss">
-                  <ProfitLoss />
-                </SubscriptionGuard>
-              } />
+              
+              {/* Redirects from old routes to new simplified routes */}
+              <Route path="jobs" element={<Navigate to="/provider/schedule" replace />} />
+              <Route path="my-jobs" element={<Navigate to="/provider/schedule" replace />} />
+              <Route path="quotes" element={<Navigate to="/provider/schedule" replace />} />
+              <Route path="payments" element={<Navigate to="/provider/money" replace />} />
+              <Route path="accounting" element={<Navigate to="/provider/money" replace />} />
+              <Route path="balance" element={<Navigate to="/provider/money" replace />} />
+              <Route path="profit-loss" element={<Navigate to="/provider/money" replace />} />
 
               {/* Free access routes */}
+              <Route path="clients/import" element={<ImportClients />} />
+              <Route path="clients/:id" element={<ClientDetail />} />
               <Route path="services" element={<Services />} />
               <Route path="parts-materials" element={<PartsMaterials />} />
-              <Route path="my-jobs" element={<MyJobs />} />
-              <Route path="refund-requests" element={<Navigate to="/provider/payments?tab=disputes" replace />} />
-              <Route path="balance" element={<Balance />} />
+              <Route path="refund-requests" element={<Navigate to="/provider/money?tab=disputes" replace />} />
               <Route path="tutorials" element={<Tutorials />} />
               <Route path="team" element={<Team />} />
               <Route path="payroll" element={<Navigate to="/provider/earnings" replace />} />
@@ -448,15 +417,17 @@ const App = () => {
               <Route path="approve-time" element={<ApproveTime />} />
               <Route path="technician-home" element={<TechnicianHome />} />
               <Route path="my-earnings" element={<MyEarnings />} />
+              <Route path="pricing-intelligence" element={<PricingIntelligence />} />
+              <Route path="analytics" element={<Analytics />} />
               
-              {/* Account Routes */}
-              <Route path="account" element={<AccountIndex />} />
-              <Route path="account/profile" element={<AccountProfile />} />
+              {/* Account Routes - keep for legacy but hide from main nav */}
+              <Route path="account" element={<Navigate to="/provider/settings" replace />} />
+              <Route path="account/profile" element={<Navigate to="/provider/settings" replace />} />
               <Route path="account/portfolio" element={<Portfolio />} />
               <Route path="account/reviews" element={<Reviews />} />
               <Route path="account/share-links" element={<ShareLinks />} />
               <Route path="account/share-links/:id/analytics" element={<ShareLinkAnalytics />} />
-              <Route path="account/social" element={<AccountSocial />} />
+              <Route path="account/social" element={<Navigate to="/provider/settings" replace />} />
               
               {/* Settings Routes */}
               <Route path="settings" element={<Settings />} />
