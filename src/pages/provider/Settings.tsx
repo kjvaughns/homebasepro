@@ -34,6 +34,7 @@ interface Organization {
   service_area: string | null;
   service_type: string[] | null;
   logo_url?: string | null;
+  socials?: any;
   plan?: string;
 }
 
@@ -252,13 +253,152 @@ export default function Settings() {
         <RoleSwitcher />
       </div>
 
-      <Tabs defaultValue="billing" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-full">
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 max-w-full">
+          <TabsTrigger value="profile" className="text-xs sm:text-sm">Profile</TabsTrigger>
           <TabsTrigger value="billing" className="text-xs sm:text-sm">Billing</TabsTrigger>
           <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>
           <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
+          <TabsTrigger value="notifications" className="text-xs sm:text-sm">Notifications</TabsTrigger>
           <TabsTrigger value="pwa" className="text-xs sm:text-sm">App</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="profile" className="space-y-6">
+          {profile && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Picture</CardTitle>
+                <CardDescription>Upload your professional headshot</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AvatarUpload
+                  avatarUrl={profile.avatar_url}
+                  fullName={profile.full_name || "User"}
+                  userId={profile.user_id}
+                  onAvatarUpdate={loadOrganization}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Business Information</CardTitle>
+              <CardDescription>Your public business profile details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Business Name</Label>
+                <Input
+                  id="name"
+                  value={organization.name}
+                  onChange={(e) => setOrganization({ ...organization, name: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="description">Business Description</Label>
+                <Textarea
+                  id="description"
+                  value={organization.description || ""}
+                  onChange={(e) => setOrganization({ ...organization, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="email">Contact Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={organization.email || ""}
+                  onChange={(e) => setOrganization({ ...organization, email: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Contact Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={organization.phone || ""}
+                  onChange={(e) => setOrganization({ ...organization, phone: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="service-area">Service Area</Label>
+                <Input
+                  id="service-area"
+                  value={organization.service_area || ""}
+                  onChange={(e) => setOrganization({ ...organization, service_area: e.target.value })}
+                  placeholder="e.g., Austin, TX"
+                />
+              </div>
+
+              <Button onClick={handleSave} disabled={saving} className="w-full">
+                {saving ? "Saving..." : "Save Business Info"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Brand Images</CardTitle>
+              <CardDescription>Logo and hero image for your profile</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <Label className="mb-2 block">Logo</Label>
+                <AvatarUpload
+                  avatarUrl={organization.logo_url || ""}
+                  fullName={organization.name}
+                  userId={organization.id}
+                  onAvatarUpdate={loadOrganization}
+                  size="md"
+                />
+              </div>
+              
+              <div>
+                <Label className="mb-2 block">Hero Image</Label>
+                <HeroImageUpload 
+                  organizationId={organization.id}
+                  onUploadComplete={loadOrganization}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Social Links</CardTitle>
+              <CardDescription>Connect your social media profiles</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SocialLinksEditor
+                organizationId={organization.id}
+                currentSocials={organization.socials || {}}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Booking Links</CardTitle>
+              <CardDescription>Create your custom booking link</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BookingLinkManager organizationId={organization.id} />
+            </CardContent>
+          </Card>
+
+          <PublicProfileCard 
+            organizationId={organization.id}
+            organizationSlug={organization.slug}
+            organizationName={organization.name}
+            organizationLogo={organization.logo_url || undefined}
+          />
+        </TabsContent>
 
         <TabsContent value="billing">
           <SubscriptionManager 
@@ -376,6 +516,64 @@ export default function Settings() {
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
                 <p>Coming soon: QuickBooks, Zapier, and more</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Preferences</CardTitle>
+              <CardDescription>Manage how you receive notifications</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-3 border-b">
+                <div>
+                  <Label className="text-base font-medium">Job Reminders</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified 1 hour before scheduled jobs
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" disabled>
+                  Coming Soon
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between py-3 border-b">
+                <div>
+                  <Label className="text-base font-medium">Payment Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive alerts when payments are received
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" disabled>
+                  Coming Soon
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between py-3 border-b">
+                <div>
+                  <Label className="text-base font-medium">Message Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified of new client messages
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" disabled>
+                  Coming Soon
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between py-3">
+                <div>
+                  <Label className="text-base font-medium">Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive daily summary emails
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" disabled>
+                  Coming Soon
+                </Button>
               </div>
             </CardContent>
           </Card>

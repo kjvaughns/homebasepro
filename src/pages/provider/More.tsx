@@ -1,32 +1,22 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDespia } from "@/hooks/useDespia";
 import {
+  Settings,
+  HelpCircle,
+  MessageSquare,
+  Megaphone,
   DollarSign,
   Briefcase,
   Users,
-  BarChart3,
-  User,
-  Image,
-  Star,
-  Link as LinkIcon,
-  Globe,
-  Gift,
-  Settings,
-  Bell,
-  HelpCircle,
-  Video,
-  MessageSquare,
-  Sparkles,
+  TrendingUp,
   LogOut,
   Plus,
-  ChevronRight,
-  ExternalLink,
+  ArrowRight
 } from "lucide-react";
 import { QuickActionsSheet } from "@/components/provider/QuickActionsSheet";
 
@@ -71,275 +61,225 @@ export default function More() {
 
   const businessHubItems = [
     {
-      title: "Payments & Balance",
-      description: "View earnings, manage payouts, and transaction history",
       icon: DollarSign,
-      action: () => {
-        triggerHaptic('light');
-        navigate('/provider/money');
-      },
+      title: "Payments & Balance",
+      description: "View earnings and manage payouts",
+      href: "/provider/money",
+      color: "text-emerald-600"
     },
     {
-      title: "Jobs & Work Orders",
-      description: "Schedule, track, and complete service jobs",
       icon: Briefcase,
-      action: () => {
-        triggerHaptic('light');
-        navigate('/provider/schedule');
-      },
+      title: "Jobs & Work Orders",
+      description: "Manage your service schedule",
+      href: "/provider/schedule",
+      color: "text-blue-600"
     },
     {
-      title: "Team Management",
-      description: "Manage staff, time tracking, and commissions",
       icon: Users,
-      action: () => {
-        triggerHaptic('light');
-        navigate('/provider/team');
-      },
+      title: "Team Management",
+      description: "Manage your team members",
+      href: "/provider/team",
+      color: "text-purple-600"
     },
     {
+      icon: TrendingUp,
       title: "Analytics",
-      description: "Track revenue, client growth, and performance metrics",
-      icon: BarChart3,
-      action: () => {
-        triggerHaptic('light');
-        navigate('/provider/analytics');
-      },
-    },
-  ];
-
-  const marketplaceItems = [
-    {
-      title: "Your Profile",
-      description: "Logo, bio, service area, and business hours",
-      icon: User,
-      action: () => navigate('/provider/account/profile'),
-    },
-    {
-      title: "Portfolio",
-      description: "Showcase your best work with photos",
-      icon: Image,
-      action: () => navigate('/provider/portfolio'),
-    },
-    {
-      title: "Reviews & Ratings",
-      description: "View feedback and respond to clients",
-      icon: Star,
-      action: () => navigate('/provider/reviews'),
-    },
-    {
-      title: "Share Links",
-      description: "QR codes and branded booking links",
-      icon: LinkIcon,
-      action: () => navigate('/provider/share-links'),
-    },
-    {
-      title: "Social Media",
-      description: "Connect Instagram, Facebook, and website",
-      icon: Globe,
-      action: () => navigate('/provider/account/social'),
-    },
-    {
-      title: "Refer & Earn",
-      description: "Invite other pros and earn rewards",
-      icon: Gift,
-      action: () => navigate('/club'),
-      badge: "Earn $50",
-    },
+      description: "View business insights",
+      href: "/provider/analytics",
+      color: "text-orange-600"
+    }
   ];
 
   const supportItems = [
     {
-      title: "App Settings",
-      description: "Subscription, integrations, and preferences",
       icon: Settings,
-      action: () => navigate('/provider/settings'),
+      title: "Settings",
+      description: "Manage profile, billing & integrations",
+      href: "/provider/settings",
+      color: "text-gray-600"
     },
     {
-      title: "Notifications",
-      description: "Manage alerts and email preferences",
-      icon: Bell,
-      action: () => navigate('/provider/notification-settings'),
-    },
-    {
-      title: "Help Center",
-      description: "FAQs, guides, and troubleshooting",
       icon: HelpCircle,
-      action: () => window.open('https://homebasepro.com/help', '_blank'),
+      title: "Help Center",
+      description: "Get help and support",
+      href: "https://docs.homebase.pro",
       external: true,
+      color: "text-green-600"
     },
     {
-      title: "Video Tutorials",
-      description: "Learn HomeBase with step-by-step videos",
-      icon: Video,
-      action: () => window.open('https://homebasepro.com/tutorials', '_blank'),
-      external: true,
-    },
-    {
-      title: "Contact Support",
-      description: "Chat with our team for help",
       icon: MessageSquare,
-      action: () => {
-        if (typeof window !== 'undefined' && (window as any).Intercom) {
-          (window as any).Intercom('show');
-        }
+      title: "Contact Support",
+      description: "Chat with our team",
+      onClick: () => {
+        triggerHaptic('light');
+        window.Intercom && window.Intercom('show');
       },
+      color: "text-orange-600"
     },
     {
+      icon: Megaphone,
       title: "Product Updates",
-      description: "See what's new in HomeBase",
-      icon: Sparkles,
-      action: () => navigate('/announcements'),
-    },
+      description: "See what's new",
+      href: "/announcements",
+      color: "text-pink-600"
+    }
   ];
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 pb-24">
-        <div className="h-6 bg-muted animate-pulse rounded" />
+      <div className="p-8 space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid gap-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="p-6 space-y-8 pb-32 md:pb-6 max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">More</h1>
-            {organization && (
-              <p className="text-sm text-muted-foreground mt-1">{organization.name}</p>
-            )}
-          </div>
+    <div className="min-h-screen bg-background">
+      <div className="p-4 md:p-6 space-y-6 pb-20">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">More</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
+            {organization?.name || "Your business"}
+          </p>
         </div>
 
-        {/* Business Hub */}
-        <div>
-          <div className="mb-4">
-            <h2 className="text-base font-semibold mb-1">💼 Business Hub</h2>
-            <p className="text-xs text-muted-foreground">Run your day-to-day operations</p>
-          </div>
-          <Card className="p-5">
-            <div className="grid grid-cols-2 gap-3">
-              {businessHubItems.map((item) => (
-                <button
-                  key={item.title}
-                  onClick={item.action}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-accent/50 active:bg-accent transition-all duration-200 hover:scale-[1.02]"
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Business Hub</CardTitle>
+              <CardDescription>Core business operations</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {businessHubItems.map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.href}
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px]"
+                  onClick={() => triggerHaptic('light')}
                 >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <item.icon className="h-6 w-6 text-primary" />
+                  <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
+                    <item.icon className="h-5 w-5" />
                   </div>
-                  <div className="text-center">
-                    <div className="text-sm font-medium">{item.title}</div>
-                    <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
                       {item.description}
-                    </div>
+                    </p>
                   </div>
-                </button>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                </Link>
               ))}
-            </div>
+            </CardContent>
           </Card>
-        </div>
 
-        {/* Marketplace Profile */}
-        <div>
-          <div className="mb-4">
-            <h2 className="text-base font-semibold mb-1">✨ Marketplace Profile</h2>
-            <p className="text-xs text-muted-foreground">Your public brand presence</p>
-          </div>
-          <Card className="divide-y">
-            {marketplaceItems.map((item) => (
-              <button
-                key={item.title}
-                onClick={item.action}
-                className="flex items-center gap-4 p-4 hover:bg-accent/50 active:bg-accent transition-colors w-full text-left"
-              >
-                <item.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium flex items-center gap-2">
-                    {item.title}
-                    {item.badge && (
-                      <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {item.description}
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              </button>
-            ))}
-          </Card>
-        </div>
-
-        {/* Support & Settings */}
-        <div>
-          <div className="mb-4">
-            <h2 className="text-base font-semibold mb-1">🛠️ Support & Settings</h2>
-            <p className="text-xs text-muted-foreground">Help, preferences, and AI tools</p>
-          </div>
-          <Card className="divide-y">
-            {supportItems.map((item) => (
-              <button
-                key={item.title}
-                onClick={item.action}
-                className="flex items-center gap-4 p-4 hover:bg-accent/50 active:bg-accent transition-colors w-full text-left"
-              >
-                <item.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">{item.title}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {item.description}
-                  </div>
-                </div>
-                {item.external ? (
-                  <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <Card>
+            <CardHeader>
+              <CardTitle>Support</CardTitle>
+              <CardDescription>Help and configuration</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {supportItems.map((item, index) => (
+                item.external ? (
+                  <a
+                    key={index}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px]"
+                    onClick={() => triggerHaptic('light')}
+                  >
+                    <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.description}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                  </a>
+                ) : item.onClick ? (
+                  <button
+                    key={index}
+                    onClick={item.onClick}
+                    className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px] text-left w-full"
+                  >
+                    <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.description}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                  </button>
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                )}
-              </button>
-            ))}
+                  <Link
+                    key={index}
+                    to={item.href!}
+                    className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px]"
+                    onClick={() => triggerHaptic('light')}
+                  >
+                    <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.description}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                  </Link>
+                )
+              ))}
+            </CardContent>
           </Card>
+
+          <Button 
+            variant="outline" 
+            className="w-full h-12"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
         </div>
+      </div>
 
-        <Separator />
-
-        {/* Logout Button */}
+      {/* Floating Action Button */}
+      <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50">
         <Button
-          onClick={handleSignOut}
-          variant="ghost"
-          className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+          size="icon"
+          className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => {
+            triggerHaptic('light');
+            setQuickActionsOpen(true);
+          }}
         >
-          <LogOut className="h-5 w-5 mr-2" />
-          Logout
+          <Plus className="h-6 w-6" />
         </Button>
       </div>
 
-      {/* Floating Quick Actions Button */}
-      <Button
-        onClick={() => {
-          triggerHaptic('light');
-          setQuickActionsOpen(true);
-        }}
-        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-40 transition-transform hover:scale-105"
-        style={{
-          background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%)',
-          boxShadow: '0 4px 20px hsla(var(--primary) / 0.4)',
-        }}
-        aria-label="Quick actions"
-      >
-        <Plus className="h-6 w-6 text-primary-foreground" />
-      </Button>
-
-      {/* Quick Actions Sheet */}
       <QuickActionsSheet 
-        open={quickActionsOpen} 
+        open={quickActionsOpen}
         onOpenChange={setQuickActionsOpen}
       />
-    </>
+    </div>
   );
 }
