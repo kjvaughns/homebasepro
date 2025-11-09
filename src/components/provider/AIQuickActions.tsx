@@ -1,6 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare, FileText, Calendar, UserPlus, DollarSign } from "lucide-react";
+import { useDespia } from "@/hooks/useDespia";
 
 interface AIQuickActionsProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface AIQuickActionsProps {
 
 export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsProps) {
   const navigate = useNavigate();
+  const { triggerHaptic } = useDespia();
 
   const quickActions = [
     { 
@@ -17,6 +19,7 @@ export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsP
       description: "Chat with HomeBase AI",
       icon: MessageSquare, 
       action: () => {
+        triggerHaptic('light');
         onOpenChange(false);
         if (onAIChat) onAIChat();
       }
@@ -26,7 +29,8 @@ export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsP
       description: "Generate a new quote",
       icon: FileText, 
       action: () => {
-        navigate('/provider/quotes');
+        triggerHaptic('light');
+        navigate('/provider/schedule?tab=quotes');
         onOpenChange(false);
       }
     },
@@ -35,7 +39,8 @@ export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsP
       description: "Schedule a new job",
       icon: Calendar, 
       action: () => {
-        navigate('/provider/jobs');
+        triggerHaptic('light');
+        navigate('/provider/schedule');
         onOpenChange(false);
       }
     },
@@ -44,6 +49,7 @@ export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsP
       description: "Create new client",
       icon: UserPlus, 
       action: () => {
+        triggerHaptic('light');
         navigate('/provider/clients');
         onOpenChange(false);
       }
@@ -53,7 +59,8 @@ export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsP
       description: "Create and send invoice",
       icon: DollarSign, 
       action: () => {
-        navigate('/provider/payments');
+        triggerHaptic('light');
+        navigate('/provider/money');
         onOpenChange(false);
       }
     },

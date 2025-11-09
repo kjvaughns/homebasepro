@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { useDespia } from "@/hooks/useDespia";
 import {
   DollarSign,
   Briefcase,
@@ -34,6 +35,7 @@ export default function More() {
   const [organization, setOrganization] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const { triggerHaptic } = useDespia();
 
   useEffect(() => {
     loadOrganization();
@@ -62,6 +64,7 @@ export default function More() {
   };
 
   const handleSignOut = async () => {
+    triggerHaptic('light');
     await supabase.auth.signOut();
     navigate('/');
   };
@@ -71,25 +74,37 @@ export default function More() {
       title: "Payments & Balance",
       description: "View earnings, manage payouts, and transaction history",
       icon: DollarSign,
-      action: () => navigate('/provider/balance'),
+      action: () => {
+        triggerHaptic('light');
+        navigate('/provider/money');
+      },
     },
     {
       title: "Jobs & Work Orders",
       description: "Schedule, track, and complete service jobs",
       icon: Briefcase,
-      action: () => navigate('/provider/jobs'),
+      action: () => {
+        triggerHaptic('light');
+        navigate('/provider/schedule');
+      },
     },
     {
       title: "Team Management",
       description: "Manage staff, time tracking, and commissions",
       icon: Users,
-      action: () => navigate('/provider/team'),
+      action: () => {
+        triggerHaptic('light');
+        navigate('/provider/team');
+      },
     },
     {
       title: "Analytics",
       description: "Track revenue, client growth, and performance metrics",
       icon: BarChart3,
-      action: () => navigate('/provider/analytics'),
+      action: () => {
+        triggerHaptic('light');
+        navigate('/provider/analytics');
+      },
     },
   ];
 
@@ -306,7 +321,10 @@ export default function More() {
 
       {/* Floating Quick Actions Button */}
       <Button
-        onClick={() => setQuickActionsOpen(true)}
+        onClick={() => {
+          triggerHaptic('light');
+          setQuickActionsOpen(true);
+        }}
         className="fixed bottom-24 right-4 md:bottom-6 md:right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-40 transition-transform hover:scale-105"
         style={{
           background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%)',

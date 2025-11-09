@@ -11,13 +11,14 @@ import { AIInsightCard } from "@/components/provider/AIInsightCard";
 import { BalanceWidget } from "@/components/provider/BalanceWidget";
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist";
 import { SetupChecklist } from "@/components/provider/SetupChecklist";
-import { BusinessFlowWidget } from "@/components/provider/BusinessFlowWidget";
 import { RemindersWidget } from "@/components/provider/RemindersWidget";
 import { AIChatModal } from "@/components/ai/AIChatModal";
 import { DailySnapshotCard } from "@/components/provider/DailySnapshotCard";
 import { SmartToDos } from "@/components/provider/SmartToDos";
+import { PullToRefresh } from "@/components/mobile/PullToRefresh";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDespia } from "@/hooks/useDespia";
 import { TrialBadge } from "@/components/provider/TrialBadge";
 import { TrialEndingModal } from "@/components/provider/TrialEndingModal";
 import {
@@ -40,6 +41,7 @@ export default function ProviderDashboard() {
   const [showAIChat, setShowAIChat] = useState(false);
   const [userPlan, setUserPlan] = useState<string>('free');
   const isMobile = useIsMobile();
+  const { triggerHaptic } = useDespia();
 
   const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
 
@@ -129,11 +131,22 @@ export default function ProviderDashboard() {
 
   const firstName = userProfile?.full_name?.split(' ')[0] || 'there';
 
+  const handleRefresh = async () => {
+    triggerHaptic('light');
+    await Promise.all([
+      loadUserProfile(),
+      checkStripeStatus(),
+      checkOrganization(),
+    ]);
+    triggerHaptic('success');
+  };
+
   return (
     <>
       <TrialBadge />
       <TrialEndingModal />
-      <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="max-w-[1200px] mx-auto px-4 md:px-6 pb-safe">
       <header className="py-4 md:py-6 pt-safe">
         <h1 className="font-bold tracking-tight" style={{ fontSize: "clamp(20px, 2.6vw, 32px)" }}>
           {getGreeting()}, {firstName} ☀️
@@ -162,7 +175,10 @@ export default function ProviderDashboard() {
       <DailySnapshotCard 
         todayJobs={jobs.length}
         unpaidInvoices={invoices.length}
-        onOptimizeRoute={() => navigate('/provider/jobs')}
+        onOptimizeRoute={() => {
+          triggerHaptic('light');
+          navigate('/provider/schedule');
+        }}
       />
 
       <div className="h-4 md:h-6" />
@@ -174,16 +190,11 @@ export default function ProviderDashboard() {
 
       {/* KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <KpiCard title="Active Subscribers" value={stats.activeSubscribers} loading={kpiLoading} helpText="Homeowners with active subscriptions to your services" />
-        <KpiCard title="Total Clients" value={stats.totalClients} loading={kpiLoading} helpText="All clients in your database (subscribers + non-subscribers)" />
-        <KpiCard title="Monthly Revenue" value={`$${stats.mrr.toLocaleString()}`} loading={kpiLoading} helpText="Total revenue expected this month from subscriptions and jobs" />
-        <KpiCard title="Upcoming (7d)" value={stats.upcoming7d} loading={kpiLoading} helpText="Number of jobs scheduled in the next 7 days" />
+        <KpiCard title="Active Subscribers" value={stats.activeSubscribers} loading={kpiLoading} helpText="Homeowners with active subscriptions to your services" triggerHaptic={triggerHaptic} />
+        <KpiCard title="Total Clients" value={stats.totalClients} loading={kpiLoading} helpText="All clients in your database (subscribers + non-subscribers)" triggerHaptic={triggerHaptic} />
+        <KpiCard title="Monthly Revenue" value={`$${stats.mrr.toLocaleString()}`} loading={kpiLoading} helpText="Total revenue expected this month from subscriptions and jobs" triggerHaptic={triggerHaptic} />
+        <KpiCard title="Upcoming (7d)" value={stats.upcoming7d} loading={kpiLoading} helpText="Number of jobs scheduled in the next 7 days" triggerHaptic={triggerHaptic} />
       </section>
-
-      <div className="h-4 md:h-6" />
-
-      {/* Business Flow */}
-      <BusinessFlowWidget />
 
       <div className="h-4 md:h-6" />
 
@@ -205,12 +216,18 @@ export default function ProviderDashboard() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate("/provider/jobs")}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    navigate("/provider/schedule");
+                  }}
                 >
                   <MapPin className="h-4 w-4 md:mr-1" />
                   <span className="hidden md:inline">View Map</span>
                 </Button>
-                <Button size="sm" onClick={() => navigate("/provider/jobs")}>
+                <Button size="sm" onClick={() => {
+                  triggerHaptic('light');
+                  navigate("/provider/schedule");
+                }}>
                   <Bot className="h-4 w-4 md:mr-1" />
                   <span className="hidden md:inline">Optimize route</span>
                 </Button>
@@ -218,7 +235,10 @@ export default function ProviderDashboard() {
             </div>
             <div className="mt-4 space-y-2">
               {jobs.slice(0, 6).map((j) => (
-                <TodayJobRow key={j.id} job={j} onOpen={() => navigate(`/provider/jobs`)} />
+                <TodayJobRow key={j.id} job={j} onOpen={() => {
+                  triggerHaptic('light');
+                  navigate(`/provider/schedule`);
+                }} />
               ))}
               {jobs.length === 0 && <EmptyRow text="No jobs scheduled today." />}
             </div>
@@ -255,7 +275,10 @@ export default function ProviderDashboard() {
                   className="w-full" 
                   size="sm" 
                   variant="outline"
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    navigate('/pricing');
+                  }}
                 >
                   Unlock AI (Upgrade to Pro)
                 </Button>
@@ -263,7 +286,10 @@ export default function ProviderDashboard() {
                 <Button 
                   className="w-full" 
                   size="sm"
-                  onClick={() => setShowAIChat(true)}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setShowAIChat(true);
+                  }}
                 >
                   Ask HomeBase AI
                 </Button>
@@ -334,26 +360,34 @@ export default function ProviderDashboard() {
           userRole="provider"
         />
       )}
-    </div>
+        </div>
+      </PullToRefresh>
     </>
   );
 }
 
-function KpiCard({ title, value, loading, helpText }: { 
+function KpiCard({ title, value, loading, helpText, triggerHaptic }: { 
   title: string; 
   value: React.ReactNode; 
   loading?: boolean;
   helpText?: string;
+  triggerHaptic: (type: 'light' | 'success' | 'error') => void;
 }) {
   return (
-    <Card className="rounded-2xl">
+    <Card 
+      className="rounded-2xl cursor-pointer active:scale-95 transition-transform"
+      onClick={() => triggerHaptic('light')}
+    >
       <CardContent className="p-4 md:p-5">
         <div className="flex items-center gap-2">
           <p className="text-xs text-muted-foreground">{title}</p>
           {helpText && (
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('light');
+                }}>
                   <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>

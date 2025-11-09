@@ -5,13 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Bot, Home, DollarSign, CheckCircle2, AlertCircle, Star } from 'lucide-react';
+import { Bot, Home, DollarSign, CheckCircle2, AlertCircle, Star, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ProviderCard } from '@/components/marketplace/ProviderCard';
 import { BookingDialog } from '@/components/marketplace/BookingDialog';
 import { AIComposer } from './AIComposer';
 import { AIEscalateButton } from './AIEscalateButton';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { useDespia } from '@/hooks/useDespia';
 import { IntercomStyleMessage } from './IntercomStyleMessage';
 import { SmartTypingIndicator } from './SmartTypingIndicator';
 import { ActionCard } from './ActionCard';
@@ -58,6 +59,7 @@ export default function HomeBaseAI({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const keyboardHeight = useKeyboardHeight();
+  const { triggerHaptic, showSpinner, hideSpinner, shareContent } = useDespia();
 
   const isProvider = userRole === 'provider';
 
@@ -114,6 +116,8 @@ export default function HomeBaseAI({
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
+    triggerHaptic('light');
+
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -122,6 +126,7 @@ export default function HomeBaseAI({
 
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
+    showSpinner();
 
     try {
       const { data: authData } = await supabase.auth.getSession();
@@ -171,6 +176,7 @@ export default function HomeBaseAI({
       };
 
       setMessages(prev => [...prev, assistantMsg]);
+      triggerHaptic('success');
 
       if (data.session_id) {
         const newSessionId = data.session_id;
@@ -193,6 +199,7 @@ export default function HomeBaseAI({
 
     } catch (error) {
       console.error('HomeBase AI error:', error);
+      triggerHaptic('error');
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to get response',
@@ -200,6 +207,7 @@ export default function HomeBaseAI({
       });
     } finally {
       setIsLoading(false);
+      hideSpinner();
     }
   };
 
@@ -220,17 +228,27 @@ export default function HomeBaseAI({
   };
 
   const handleBookProvider = (provider: any) => {
+    triggerHaptic('light');
     setSelectedProvider(provider);
     setCurrentServiceType(context?.serviceType || 'Service');
     setBookingDialogOpen(true);
   };
 
   const handleBookingSuccess = () => {
+    triggerHaptic('success');
     toast({
       title: "Booking Requested",
       description: "The provider will confirm your appointment shortly.",
     });
     navigate('/homeowner/appointments');
+  };
+
+  const handleShareConversation = () => {
+    triggerHaptic('light');
+    const conversationText = messages
+      .map(m => `${m.role === 'user' ? 'You' : 'HomeBase AI'}: ${m.content}`)
+      .join('\n\n');
+    shareContent(conversationText);
   };
 
   const renderToolResult = (tr: any) => {
@@ -486,6 +504,20 @@ export default function HomeBaseAI({
           estimatedPrice={currentEstimate}
           onSuccess={handleBookingSuccess}
         />
+      )}
+
+      {messages.length > 0 && (
+        <div className="px-3 pb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShareConversation}
+            className="w-full"
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share Conversation
+          </Button>
+        </div>
       )}
 
       <AIComposer

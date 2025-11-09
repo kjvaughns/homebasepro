@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, FileText, Users, DollarSign, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useDespia } from "@/hooks/useDespia";
 
 interface ToDo {
   id: string;
@@ -19,6 +20,7 @@ export function SmartToDos() {
   const [todos, setTodos] = useState<ToDo[]>([]);
   const [completedTodos, setCompletedTodos] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const { triggerHaptic } = useDespia();
 
   useEffect(() => {
     generateSmartToDos();
@@ -52,7 +54,7 @@ export function SmartToDos() {
           title: `Follow up on ${unpaidCount} unpaid ${unpaidCount === 1 ? 'invoice' : 'invoices'}`,
           description: `${unpaidCount} ${unpaidCount === 1 ? 'invoice needs' : 'invoices need'} attention`,
           priority: 'high',
-          action: `/provider/payments`,
+          action: `/provider/money`,
           icon: DollarSign
         });
       }
@@ -70,7 +72,7 @@ export function SmartToDos() {
           title: "Follow up on quotes",
           description: `You have ${quotesCount} pending ${quotesCount === 1 ? 'quote' : 'quotes'}`,
           priority: 'medium',
-          action: `/provider/quotes`,
+          action: `/provider/schedule?tab=quotes`,
           icon: FileText
         });
       }
@@ -88,8 +90,10 @@ export function SmartToDos() {
     setCompletedTodos(prev => {
       const newSet = new Set(prev);
       if (newSet.has(todoId)) {
+        triggerHaptic('light');
         newSet.delete(todoId);
       } else {
+        triggerHaptic('success');
         newSet.add(todoId);
         if (action) {
           // Navigate after a brief delay so user sees the check
