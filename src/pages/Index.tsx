@@ -128,25 +128,25 @@ const Index = () => {
           <div className="absolute bottom-20 left-1/4 w-1 h-1 bg-primary rounded-full opacity-50 animate-pulse delay-700"></div>
         </div>
 
-        <div className="container mx-auto relative z-10">
+        <div className="container mx-auto px-4 relative z-10">
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
             <div className="text-center md:text-left">
-              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in border border-primary/20">
-                <Home className="h-4 w-4" />
-                <span className="text-xs sm:text-sm font-medium">The Smarter Way to Manage Your Home</span>
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in border border-primary/20 max-w-full">
+                <Home className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Smarter Home Management</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-6 text-foreground animate-fade-in leading-tight">
                 Stop stressing about home management. <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">HomeBase keeps everything handled.</span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 animate-fade-in">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-8 animate-fade-in">
                 Whether you own a home or run a home service business, HomeBase keeps jobs, payments, and maintenance running on autopilot—so you can focus on what matters.
               </p>
               <div className="flex flex-col gap-4 items-center md:items-start animate-fade-in">
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <Button 
                     size="lg" 
                     onClick={() => navigate("/demo/homeowner")}
-                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    className="text-sm sm:text-base md:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 w-full sm:w-auto"
                   >
                     For Homeowners
                   </Button>
@@ -154,7 +154,7 @@ const Index = () => {
                     size="lg" 
                     variant="outline"
                     onClick={() => navigate("/demo/provider")}
-                    className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
+                    className="text-sm sm:text-base md:text-lg px-6 sm:px-8 py-5 sm:py-6 w-full sm:w-auto"
                   >
                     For Service Providers
                   </Button>
