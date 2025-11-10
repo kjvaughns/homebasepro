@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Bot, Calendar, Shield, CreditCard, CheckCircle, Users, Star, TrendingUp, Sparkles, Brain, Zap, Award, Lock, Clock } from "lucide-react";
+import { Bot, Calendar, Shield, CreditCard, CheckCircle, Users, Star, TrendingUp, Sparkles, Brain, Zap, Award, Lock, Clock, Home, MessageCircle, Handshake, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import homeownerMockup from "@/assets/homeowner-dashboard-mobile.png";
@@ -20,28 +20,28 @@ const Index = () => {
 
   const faqs = [
     {
-      question: "How does HomeBase AI work?",
-      answer: "HomeBase uses advanced AI to analyze your home's needs, match you with the perfect service providers, predict maintenance schedules, and automate your entire home management experience. Our AI learns from millions of data points to give you smarter recommendations every day.",
+      question: "How does HomeBase work?",
+      answer: "HomeBase connects homeowners with verified service providers and handles everything from scheduling to payments. For homeowners, it's simple: tell us what you need, we match you with pros, and you track everything in one app. For providers, HomeBase automates quotes, invoices, scheduling, and client communication—so you can focus on your work.",
     },
     {
-      question: "Is my data safe with AI?",
-      answer: "Absolutely. We use bank-level encryption and never share your personal data. Our AI processes information locally and securely, ensuring your privacy is always protected. We're compliant with all major security standards.",
+      question: "Is my data safe?",
+      answer: "Absolutely. We use bank-level encryption and never share your personal information. Your data is protected with the same security standards used by major financial institutions.",
     },
     {
       question: "What types of services are available?",
-      answer: "Our AI connects you with verified providers for HVAC, plumbing, electrical, landscaping, pool care, pest control, and more. The AI matches you based on your home's specific needs, location, and preferences.",
+      answer: "HomeBase connects you with verified providers for HVAC, plumbing, electrical, landscaping, pool care, pest control, and more. We match you based on your specific needs, location, and provider reviews.",
     },
     {
       question: "Can I cancel my subscription anytime?",
-      answer: "Yes! Most plans are month-to-month with no long-term contracts. Cancel anytime through your account settings. Our AI will help you transition smoothly.",
+      answer: "Yes! Most plans are month-to-month with no long-term contracts. Cancel anytime through your account settings.",
     },
     {
-      question: "How does AI improve my experience?",
-      answer: "AI predicts when maintenance is needed before issues arise, automatically schedules appointments at optimal times, finds the best providers for your specific needs, and learns your preferences to make every interaction smarter.",
+      question: "How does HomeBase save me time and money?",
+      answer: "HomeBase prevents expensive problems by reminding you about maintenance before breakdowns happen. It also finds you the best providers quickly, eliminating hours of research and back-and-forth communication. For providers, automated scheduling and billing means less admin work and more billable hours.",
     },
     {
       question: "What makes HomeBase different from other platforms?",
-      answer: "We're the only AI-powered home management platform that combines predictive maintenance, smart scheduling, automated operations, and verified provider matching all in one place. Our AI does the thinking so you don't have to.",
+      answer: "HomeBase is the only platform that combines predictive maintenance, smart scheduling, automated operations, and verified provider matching all in one place. We handle the complexity so you don't have to.",
     },
   ];
 
@@ -81,8 +81,8 @@ const Index = () => {
                 size="sm" 
                 className="h-9 text-sm px-4 whitespace-nowrap"
               >
-                <Bot className="h-4 w-4 mr-2" />
-                Try AI Demo
+                <Play className="h-4 w-4 mr-2" />
+                Watch Demo
               </Button>
               <Button 
                 onClick={() => navigate("/register")} 
@@ -105,7 +105,7 @@ const Index = () => {
           <p className="text-center text-sm md:text-base">
             <span className="font-semibold text-primary">✨ BETA LAUNCH</span>
             {" · "}
-            Free AI tools for homeowners · Provider plans with AI automation
+            Free for homeowners · Provider plans starting at $29/month
             {" · "}
             <button 
               onClick={() => navigate("/pricing")} 
@@ -132,14 +132,14 @@ const Index = () => {
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-full mb-6 animate-fade-in border border-primary/20">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-xs sm:text-sm font-medium">The AI Powered Home Management Platform</span>
+                <Home className="h-4 w-4" />
+                <span className="text-xs sm:text-sm font-medium">The Smarter Way to Manage Your Home</span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground animate-fade-in">
-                Your home. <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Smarter.</span> Managed by AI. Trusted by pros.
+                Stop stressing about home management. <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">HomeBase keeps everything handled.</span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 animate-fade-in">
-                AI matches you with verified providers, predicts maintenance before issues arise, and automates your entire home management experience.
+                Whether you own a home or run a home service business, HomeBase keeps jobs, payments, and maintenance running on autopilot—so you can focus on what matters.
               </p>
               <div className="flex flex-col gap-4 items-center md:items-start animate-fade-in">
                 <div className="flex gap-3">
@@ -148,16 +148,15 @@ const Index = () => {
                     onClick={() => navigate("/demo/homeowner")}
                     className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90"
                   >
-                    <Bot className="h-5 w-5 mr-2" />
-                    See AI in Action
+                    For Homeowners
                   </Button>
                   <Button 
                     size="lg" 
                     variant="outline"
-                    onClick={() => navigate("/register")}
+                    onClick={() => navigate("/demo/provider")}
                     className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
                   >
-                    Start Free Trial
+                    For Service Providers
                   </Button>
                 </div>
                 
@@ -200,7 +199,7 @@ const Index = () => {
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Shield className="h-6 w-6 text-primary" />
               </div>
-              <p className="text-sm font-medium text-foreground">AI-Verified Providers</p>
+              <p className="text-sm font-medium text-foreground">Verified Professionals</p>
             </div>
           </div>
         </div>
@@ -211,19 +210,19 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-4">
-              <Brain className="h-4 w-4" />
-              <span className="text-sm font-medium">Powered by Intelligence</span>
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm font-medium">The HomeBase Difference</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Why AI Changes Everything</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Without HomeBase vs. With HomeBase</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Stop managing your home manually. Let AI handle the complexity.
+              See how HomeBase eliminates the stress and busywork of home management.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Without AI */}
+            {/* Without HomeBase */}
             <Card className="p-6 border-2 border-destructive/20 bg-destructive/5">
-              <h3 className="text-xl font-semibold mb-4 text-destructive">Without AI</h3>
+              <h3 className="text-xl font-semibold mb-4 text-destructive">Without HomeBase</h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2">
                   <span className="text-destructive mt-1">✗</span>
@@ -235,7 +234,7 @@ const Index = () => {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-destructive mt-1">✗</span>
-                  <span className="text-muted-foreground">Manual scheduling and follow-ups</span>
+                  <span className="text-muted-foreground">Endless texts and missed calls</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-destructive mt-1">✗</span>
@@ -244,14 +243,14 @@ const Index = () => {
               </ul>
             </Card>
 
-            {/* With HomeBase AI */}
+            {/* With HomeBase */}
             <Card className="p-6 border-2 border-primary bg-gradient-to-br from-primary/5 to-accent/5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/20 to-accent/20 blur-3xl"></div>
-              <h3 className="text-xl font-semibold mb-4 text-primary relative z-10">With HomeBase AI</h3>
+              <h3 className="text-xl font-semibold mb-4 text-primary relative z-10">With HomeBase</h3>
               <ul className="space-y-3 relative z-10">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground font-medium">AI predicts & auto-schedules maintenance</span>
+                  <span className="text-foreground font-medium">Everything scheduled and handled for you</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -259,11 +258,11 @@ const Index = () => {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground font-medium">Fully automated operations</span>
+                  <span className="text-foreground font-medium">All jobs and payments in one place</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="text-foreground font-medium">Prevent issues before they happen</span>
+                  <span className="text-foreground font-medium">Maintenance before problems happen</span>
                 </li>
               </ul>
             </Card>
@@ -276,7 +275,7 @@ const Index = () => {
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            AI-powered simplicity for homeowners and service providers
+            Simple solutions for homeowners and service providers
           </p>
           <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
             {/* Homeowners Column */}
@@ -285,33 +284,33 @@ const Index = () => {
               <Card className="p-6 border-2 hover:border-primary transition-all">
                 <div className="flex gap-4">
                   <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Brain className="h-6 w-6 text-primary" />
+                    <Home className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold mb-1">Tell AI About Your Home</h4>
-                    <p className="text-muted-foreground text-sm">AI instantly understands your maintenance needs</p>
+                    <h4 className="text-lg font-semibold mb-1">Tell Us About Your Home</h4>
+                    <p className="text-muted-foreground text-sm">HomeBase understands your maintenance needs instantly</p>
                   </div>
                 </div>
               </Card>
               <Card className="p-6 border-2 hover:border-primary transition-all">
                 <div className="flex gap-4">
                   <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="h-6 w-6 text-primary" />
+                    <Handshake className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold mb-1">AI Matches You With Pros</h4>
-                    <p className="text-muted-foreground text-sm">Perfect provider match in seconds</p>
+                    <h4 className="text-lg font-semibold mb-1">Get Matched With Trusted Pros</h4>
+                    <p className="text-muted-foreground text-sm">We connect you with the perfect provider in seconds</p>
                   </div>
                 </div>
               </Card>
               <Card className="p-6 border-2 hover:border-primary transition-all">
                 <div className="flex gap-4">
                   <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Zap className="h-6 w-6 text-primary" />
+                    <Calendar className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold mb-1">Relax. AI Handles Everything</h4>
-                    <p className="text-muted-foreground text-sm">Automated scheduling and management</p>
+                    <h4 className="text-lg font-semibold mb-1">Relax. We Handle Everything</h4>
+                    <p className="text-muted-foreground text-sm">Scheduling, reminders, and communication—all automated</p>
                   </div>
                 </div>
               </Card>
@@ -326,8 +325,8 @@ const Index = () => {
                     <Award className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold mb-1">AI Builds Your Brand</h4>
-                    <p className="text-muted-foreground text-sm">Optimized profile to attract the right clients</p>
+                    <h4 className="text-lg font-semibold mb-1">Create Your Professional Profile</h4>
+                    <p className="text-muted-foreground text-sm">Stand out with a profile designed to win clients</p>
                   </div>
                 </div>
               </Card>
@@ -337,8 +336,8 @@ const Index = () => {
                     <Users className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold mb-1">AI Finds Perfect Clients</h4>
-                    <p className="text-muted-foreground text-sm">Smart matching fills your calendar</p>
+                    <h4 className="text-lg font-semibold mb-1">Get Connected With Perfect Clients</h4>
+                    <p className="text-muted-foreground text-sm">Smart matching fills your calendar with ideal jobs</p>
                   </div>
                 </div>
               </Card>
@@ -348,8 +347,8 @@ const Index = () => {
                     <TrendingUp className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold mb-1">AI Manages Operations</h4>
-                    <p className="text-muted-foreground text-sm">Automated scheduling, billing, and communication</p>
+                    <h4 className="text-lg font-semibold mb-1">Run Your Business Effortlessly</h4>
+                    <p className="text-muted-foreground text-sm">Automated scheduling, billing, and client communication</p>
                   </div>
                 </div>
               </Card>
@@ -361,9 +360,9 @@ const Index = () => {
       {/* AI Features - Unified */}
       <section className="py-20 px-4">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">AI-Powered Features</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">Everything You Need in One Place</h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Intelligent automation for everyone
+            Powerful features that save you time and money
           </p>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
@@ -371,23 +370,21 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Clock className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Predictive Maintenance</h3>
+              <h3 className="text-xl font-semibold mb-2">Never Miss Maintenance</h3>
               <p className="text-muted-foreground">
-                AI predicts needs before problems arise, saving time and money
+                Get reminders before issues become expensive problems
               </p>
             </Card>
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Bot className="h-6 w-6 text-primary" />
+                  <MessageCircle className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">24/7 AI Assistant</h3>
+              <h3 className="text-xl font-semibold mb-2">Instant Help 24/7</h3>
               <p className="text-muted-foreground">
-                Get instant answers, schedule services, and manage everything via chat
+                Chat with HomeBase anytime—schedule services, ask questions, get quotes
               </p>
             </Card>
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
@@ -395,11 +392,10 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Calendar className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Smart Scheduling</h3>
+              <h3 className="text-xl font-semibold mb-2">Smarter Scheduling</h3>
               <p className="text-muted-foreground">
-                Optimized routes and timing maximize efficiency for providers
+                Optimized timing and routing saves time and maximizes efficiency
               </p>
             </Card>
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
@@ -407,11 +403,10 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Perfect Matching</h3>
+              <h3 className="text-xl font-semibold mb-2">Perfect Provider Matching</h3>
               <p className="text-muted-foreground">
-                AI connects homeowners with ideal providers based on needs and history
+                Matched with verified pros based on your needs, location, and reviews
               </p>
             </Card>
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
@@ -419,11 +414,10 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <CreditCard className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Cost Forecasting</h3>
+              <h3 className="text-xl font-semibold mb-2">Transparent Pricing</h3>
               <p className="text-muted-foreground">
-                Accurate budget predictions and dynamic pricing optimization
+                See accurate estimates upfront—no surprises, no guesswork
               </p>
             </Card>
             <Card className="p-6 border-2 hover:border-primary transition-colors group">
@@ -431,11 +425,10 @@ const Index = () => {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-xs font-semibold text-primary uppercase tracking-wide">AI Powered</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Revenue Optimization</h3>
+              <h3 className="text-xl font-semibold mb-2">Grow Your Revenue</h3>
               <p className="text-muted-foreground">
-                AI-driven insights and recommendations to maximize earnings
+                Built-in tools help providers win more jobs and get paid faster
               </p>
             </Card>
           </div>
@@ -445,20 +438,20 @@ const Index = () => {
       {/* App Preview Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Experience the Platform</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">See It in Action</h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Beautiful, intuitive apps designed for both homeowners and service providers
+            Simple, beautiful apps designed for real people—not tech experts
           </p>
           <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto items-center">
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold mb-2">For Homeowners</h3>
                 <p className="text-muted-foreground mb-4">
-                  Manage your entire home from your phone. Subscribe to services, track appointments, and communicate with providers effortlessly.
+                  Manage your entire home from your phone. Track appointments, pay securely, and communicate with pros—all in one place.
                 </p>
                 <Button onClick={() => navigate("/demo/homeowner")} variant="outline">
-                  <Bot className="h-4 w-4 mr-2" />
-                  Try Homeowner Demo
+                  <Play className="h-4 w-4 mr-2" />
+                  See Homeowner Demo
                 </Button>
               </div>
               <img 
@@ -472,11 +465,11 @@ const Index = () => {
               <div>
                 <h3 className="text-2xl font-bold mb-2">For Service Providers</h3>
                 <p className="text-muted-foreground mb-4">
-                  Powerful tools to manage clients, subscriptions, scheduling, and payments. Everything you need to scale your business.
+                  Everything you need to run your business. Manage clients, send quotes, track payments, and schedule jobs—all from your phone.
                 </p>
                 <Button onClick={() => navigate("/demo/provider")} variant="outline">
-                  <Bot className="h-4 w-4 mr-2" />
-                  Try Provider Demo
+                  <Play className="h-4 w-4 mr-2" />
+                  See Provider Demo
                 </Button>
               </div>
               <img 
@@ -494,18 +487,18 @@ const Index = () => {
       <section className="py-20 px-4 bg-primary text-primary-foreground">
         <div className="container mx-auto">
           <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-4">Built on Trust. Powered by Intelligence.</h2>
+            <h2 className="text-3xl font-bold mb-4">Built on Trust. Designed for Real People.</h2>
             <p className="text-lg text-primary-foreground/90 mb-12">
-              HomeBase combines cutting-edge AI technology with the security and reliability you expect
+              HomeBase combines security, simplicity, and reliability—so you can manage your home or business with confidence
             </p>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="flex flex-col items-center gap-3">
                 <div className="h-16 w-16 rounded-full bg-primary-foreground/10 flex items-center justify-center">
                   <Shield className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-semibold">AI-Verified Providers</h3>
+                <h3 className="text-xl font-semibold">Verified Professionals</h3>
                 <p className="text-primary-foreground/80 text-sm">
-                  Every provider is screened and verified by our AI system before joining
+                  Every provider is screened and verified before joining the platform
                 </p>
               </div>
               <div className="flex flex-col items-center gap-3">
@@ -536,7 +529,7 @@ const Index = () => {
         <div className="container mx-auto max-w-3xl">
           <h2 className="text-3xl font-bold text-center mb-4">Frequently Asked Questions</h2>
           <p className="text-center text-muted-foreground mb-12">
-            Everything you need to know about HomeBase AI
+            Everything you need to know about HomeBase
           </p>
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
@@ -557,14 +550,14 @@ const Index = () => {
       <section className="py-20 px-4 bg-gradient-to-br from-primary/10 via-background to-accent/10 border-t border-border">
         <div className="container mx-auto text-center max-w-4xl">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-sm font-medium">Ready to Experience AI-Powered Home Management?</span>
+            <Home className="h-4 w-4" />
+            <span className="text-sm font-medium">Ready to Simplify Your Life?</span>
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
-            Stop managing your home manually.<br />Let AI do it for you.
+            Work smarter. Live easier.<br />Stress less.
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of homeowners and hundreds of service providers who trust HomeBase AI
+            Join thousands of homeowners and service providers who trust HomeBase to handle the busywork—so they can focus on what matters
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Button 
@@ -572,7 +565,7 @@ const Index = () => {
               onClick={() => navigate("/register")}
               className="text-lg px-8 py-6 bg-gradient-to-r from-primary to-accent hover:opacity-90"
             >
-              Get Started Free
+              Start Free
             </Button>
             <Button 
               size="lg" 
@@ -580,8 +573,8 @@ const Index = () => {
               onClick={() => navigate("/demo/homeowner")}
               className="text-lg px-8 py-6"
             >
-              <Bot className="h-5 w-5 mr-2" />
-              Watch AI Demo
+              <Play className="h-5 w-5 mr-2" />
+              See How It Works
             </Button>
           </div>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
