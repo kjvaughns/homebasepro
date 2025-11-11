@@ -622,6 +622,51 @@ export type Database = {
           },
         ]
       }
+      brand_assets: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          is_public: boolean
+          sort_order: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          is_public?: boolean
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          is_public?: boolean
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calendar_connections: {
         Row: {
           calendar_id: string | null
@@ -2650,6 +2695,9 @@ export type Database = {
           name: string
           next_payout_date: string | null
           owner_id: string
+          partner_attributed_at: string | null
+          partner_code: string | null
+          partner_id: string | null
           payments_ready: boolean
           phone: string | null
           plan: string | null
@@ -2696,6 +2744,9 @@ export type Database = {
           name: string
           next_payout_date?: string | null
           owner_id: string
+          partner_attributed_at?: string | null
+          partner_code?: string | null
+          partner_id?: string | null
           payments_ready?: boolean
           phone?: string | null
           plan?: string | null
@@ -2742,6 +2793,9 @@ export type Database = {
           name?: string
           next_payout_date?: string | null
           owner_id?: string
+          partner_attributed_at?: string | null
+          partner_code?: string | null
+          partner_id?: string | null
           payments_ready?: boolean
           phone?: string | null
           plan?: string | null
@@ -2762,6 +2816,304 @@ export type Database = {
           verification_status?: string | null
           verified?: boolean | null
           verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          partner_id: string
+          referer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          partner_id: string
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          partner_id?: string
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_clicks_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_commissions: {
+        Row: {
+          base_amount_cents: number
+          commission_amount_cents: number
+          commission_rate_bp: number
+          created_at: string
+          currency: string
+          id: string
+          invoice_period_end: string | null
+          invoice_period_start: string | null
+          notes: string | null
+          partner_id: string
+          payout_id: string | null
+          referral_id: string | null
+          status: Database["public"]["Enums"]["commission_status"]
+          stripe_charge_id: string | null
+          stripe_invoice_id: string
+          updated_at: string
+        }
+        Insert: {
+          base_amount_cents: number
+          commission_amount_cents: number
+          commission_rate_bp: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_period_end?: string | null
+          invoice_period_start?: string | null
+          notes?: string | null
+          partner_id: string
+          payout_id?: string | null
+          referral_id?: string | null
+          status?: Database["public"]["Enums"]["commission_status"]
+          stripe_charge_id?: string | null
+          stripe_invoice_id: string
+          updated_at?: string
+        }
+        Update: {
+          base_amount_cents?: number
+          commission_amount_cents?: number
+          commission_rate_bp?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_period_end?: string | null
+          invoice_period_start?: string | null
+          notes?: string | null
+          partner_id?: string
+          payout_id?: string | null
+          referral_id?: string | null
+          status?: Database["public"]["Enums"]["commission_status"]
+          stripe_charge_id?: string | null
+          stripe_invoice_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_commission_payout"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "partner_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_commissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "partner_referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_payouts: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          initiated_by: string | null
+          notes: string | null
+          partner_id: string
+          period_end: string
+          period_start: string
+          status: Database["public"]["Enums"]["payout_status"]
+          stripe_account_id: string
+          stripe_transfer_id: string | null
+          total_amount_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          initiated_by?: string | null
+          notes?: string | null
+          partner_id: string
+          period_end: string
+          period_start: string
+          status?: Database["public"]["Enums"]["payout_status"]
+          stripe_account_id: string
+          stripe_transfer_id?: string | null
+          total_amount_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          initiated_by?: string | null
+          notes?: string | null
+          partner_id?: string
+          period_end?: string
+          period_start?: string
+          status?: Database["public"]["Enums"]["payout_status"]
+          stripe_account_id?: string
+          stripe_transfer_id?: string | null
+          total_amount_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_referrals: {
+        Row: {
+          activated: boolean
+          activated_at: string | null
+          attributed_via: string | null
+          created_at: string
+          id: string
+          organization_id: string | null
+          partner_id: string
+          promo_code_used: string | null
+          stripe_customer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          activated?: boolean
+          activated_at?: string | null
+          attributed_via?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          partner_id: string
+          promo_code_used?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activated?: boolean
+          activated_at?: string | null
+          attributed_via?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          partner_id?: string
+          promo_code_used?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_referrals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          application_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          audience_size: string | null
+          business_name: string | null
+          commission_rate_bp: number
+          created_at: string
+          discount_rate_bp: number
+          id: string
+          referral_code: string
+          referral_slug: string
+          status: Database["public"]["Enums"]["partner_status"]
+          stripe_account_id: string | null
+          stripe_coupon_id: string | null
+          stripe_promo_id: string | null
+          type: Database["public"]["Enums"]["partner_type"]
+          updated_at: string
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          application_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audience_size?: string | null
+          business_name?: string | null
+          commission_rate_bp?: number
+          created_at?: string
+          discount_rate_bp?: number
+          id?: string
+          referral_code: string
+          referral_slug: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          stripe_account_id?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promo_id?: string | null
+          type?: Database["public"]["Enums"]["partner_type"]
+          updated_at?: string
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          application_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audience_size?: string | null
+          business_name?: string | null
+          commission_rate_bp?: number
+          created_at?: string
+          discount_rate_bp?: number
+          id?: string
+          referral_code?: string
+          referral_slug?: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          stripe_account_id?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promo_id?: string | null
+          type?: Database["public"]["Enums"]["partner_type"]
+          updated_at?: string
+          user_id?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -6128,6 +6480,10 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       chat_role: "user" | "assistant" | "tool"
+      commission_status: "PENDING" | "PAID" | "VOID"
+      partner_status: "PENDING" | "ACTIVE" | "PAUSED" | "BANNED"
+      partner_type: "PRO" | "CREATOR"
+      payout_status: "PENDING" | "PAID" | "FAILED"
       subscription_tier: "free" | "growth" | "pro" | "scale"
       team_role: "owner" | "manager" | "technician" | "admin"
     }
@@ -6259,6 +6615,10 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       chat_role: ["user", "assistant", "tool"],
+      commission_status: ["PENDING", "PAID", "VOID"],
+      partner_status: ["PENDING", "ACTIVE", "PAUSED", "BANNED"],
+      partner_type: ["PRO", "CREATOR"],
+      payout_status: ["PENDING", "PAID", "FAILED"],
       subscription_tier: ["free", "growth", "pro", "scale"],
       team_role: ["owner", "manager", "technician", "admin"],
     },
