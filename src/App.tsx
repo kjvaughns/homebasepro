@@ -467,6 +467,13 @@ const App = () => {
               } />
             </Route>
 
+            {/* Referral landing page */}
+            <Route path="/join" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                {React.createElement(lazy(() => import('./pages/JoinWithRef')))}
+              </Suspense>
+            } />
+
             {/* Demo routes */}
             <Route path="/demo/homeowner" element={<DemoHomeowner />} />
             <Route path="/demo/provider" element={<DemoProvider />} />
@@ -487,7 +494,22 @@ const App = () => {
               <Route path="referrals" element={<AdminReferrals />} />
               <Route path="announcements" element={<Announcements />} />
               <Route path="commerce" element={<AdminCommerce />} />
-              <Route path="access" element={<AdminUsersAccess />} />
+              <Route path="users-access" element={<AdminUsersAccess />} />
+              <Route path="partners" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(lazy(() => import('./pages/admin/Partners')))}
+                </Suspense>
+              } />
+              <Route path="partner-commissions" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(lazy(() => import('./pages/admin/PartnerCommissions')))}
+                </Suspense>
+              } />
+              <Route path="partner-payouts" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(lazy(() => import('./pages/admin/PartnerPayouts')))}
+                </Suspense>
+              } />
             </Route>
 
             {/* Waitlist routes removed - redirect to register */}

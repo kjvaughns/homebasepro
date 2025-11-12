@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, Mail, Lock, User2, Phone, Gift } from "lucide-react";
+import { Loader2, Mail, Lock, User2, Phone, Gift, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createSafeErrorToast } from "@/utils/errorHandler";
+import { getReferralCookie, getReferralFromSession } from "@/utils/referralTracking";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -21,22 +22,58 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [userType, setUserType] = useState<"homeowner" | "provider">("homeowner");
   const [referrerCode, setReferrerCode] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [partnerInfo, setPartnerInfo] = useState<any>(null);
 
-  // Capture referral code from URL
+  // Detect referral from cookie, session, or URL
   useEffect(() => {
-    const refParam = searchParams.get('ref');
-    if (refParam) {
-      setReferrerCode(refParam);
-      sessionStorage.setItem('homebase_referrer', refParam);
-      console.log('Captured referral code:', refParam);
-    } else {
-      // Check if we have a stored code from previous page
-      const stored = sessionStorage.getItem('homebase_referrer');
-      if (stored) {
-        setReferrerCode(stored);
+    const loadReferral = async () => {
+      // Priority 1: URL parameter
+      const refParam = searchParams.get('ref');
+      if (refParam) {
+        setReferrerCode(refParam);
+        sessionStorage.setItem('homebase_referrer', refParam);
+        await fetchPartnerInfo(refParam);
+        return;
       }
-    }
+
+      // Priority 2: Cookie
+      const cookieRef = getReferralCookie();
+      if (cookieRef) {
+        setReferrerCode(cookieRef);
+        await fetchPartnerInfo(cookieRef);
+        return;
+      }
+
+      // Priority 3: Session storage
+      const sessionRef = getReferralFromSession();
+      if (sessionRef) {
+        setReferrerCode(sessionRef);
+        await fetchPartnerInfo(sessionRef);
+        return;
+      }
+    };
+
+    loadReferral();
   }, [searchParams]);
+
+  const fetchPartnerInfo = async (slug: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('partners')
+        .select('referral_code, business_name')
+        .eq('referral_slug', slug)
+        .eq('status', 'ACTIVE')
+        .single();
+
+      if (!error && data) {
+        setPartnerInfo(data);
+        setPromoCode(data.referral_code);
+      }
+    } catch (err) {
+      console.error('Error fetching partner info:', err);
+    }
+  };
 
   const runAdminSignupFallback = async () => {
     console.log('[Registration] Fallback: Starting admin-signup');
@@ -142,12 +179,17 @@ const Register = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>Get started with HomeBase</CardDescription>
-          {referrerCode && (
+          {partnerInfo && (
             <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20 mt-2">
               <Gift className="h-4 w-4 text-primary" />
-              <p className="text-sm text-primary font-medium">
-                You were referred! Code: {referrerCode}
-              </p>
+              <div className="text-sm">
+                <p className="text-primary font-semibold">
+                  You've been referred! Get exclusive savings
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Code: {partnerInfo.referral_code}
+                </p>
+              </div>
             </div>
           )}
         </CardHeader>

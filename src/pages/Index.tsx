@@ -68,12 +68,12 @@ const Index = () => {
                 Pricing
               </Button>
               <Button 
-                onClick={() => navigate("/club")} 
+                onClick={() => navigate("/partners")} 
                 variant="ghost" 
                 size="sm" 
                 className="h-9 text-sm px-4"
               >
-                Referrals
+                Affiliates
               </Button>
               <Button 
                 onClick={() => navigate("/demo/homeowner")} 
