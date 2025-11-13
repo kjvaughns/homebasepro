@@ -351,6 +351,15 @@ const App = () => {
 
             <Route path="/become-provider" element={<BecomeProvider />} />
             
+            {/* Partner/Affiliate Routes */}
+            <Route path="/partners" element={<PartnersIndex />} />
+            <Route path="/partners/apply" element={<PartnersApply />} />
+            <Route path="/partners/login" element={<PartnersLogin />} />
+            <Route path="/partners/dashboard" element={<PartnersDashboard />} />
+            <Route path="/partners/payouts" element={<PartnersPayouts />} />
+            <Route path="/partners/resources" element={<PartnersResources />} />
+            <Route path="/partners/settings" element={<PartnersSettings />} />
+            
             {/* Debug Routes (dev only) */}
             <Route path="/debug/pwa" element={<PushDebug />} />
 
@@ -512,8 +521,8 @@ const App = () => {
               } />
             </Route>
 
-            {/* Waitlist routes removed - redirect to register */}
-            <Route path="/club" element={<Club />} />
+            {/* Waitlist routes - redirect to partners program */}
+            <Route path="/club" element={<Navigate to="/partners" replace />} />
             <Route path="/pwa-launch" element={<PWALaunch />} />
 
             {/* Catch-all route */}
