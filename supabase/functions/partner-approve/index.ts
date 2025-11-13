@@ -59,9 +59,10 @@ serve(async (req) => {
       return errorResponse('INVALID_STATUS', 'Partner is not pending approval', 400);
     }
 
-    // Create Stripe Coupon
+    // Create Stripe Coupon with referral code as coupon ID
     const couponPercentOff = Math.max(0, Math.floor(((partner as any).discount_rate_bp ?? 1000) / 100));
     const coupon = await stripePost('coupons', {
+      id: partner.referral_code, // Use referral code as coupon ID so customers can apply it directly
       percent_off: couponPercentOff,
       duration: 'forever',
       name: `Partner ${partner.referral_code} - ${couponPercentOff}% off`,
@@ -72,17 +73,6 @@ serve(async (req) => {
     });
 
     console.log('Created Stripe coupon:', coupon.id);
-
-    // Create Stripe Promotion Code
-    const promoCode = await stripePost('promotion_codes', {
-      coupon: coupon.id,
-      code: partner.referral_code,
-      metadata: {
-        partner_id: partner.id,
-      },
-    });
-
-    console.log('Created Stripe promotion code:', promoCode.id);
 
     // Create Stripe Connect Express Account
     const account = await stripePost('accounts', {
@@ -116,7 +106,7 @@ serve(async (req) => {
       .update({
         status: 'ACTIVE',
         stripe_coupon_id: coupon.id,
-        stripe_promo_id: promoCode.id,
+        stripe_promo_id: coupon.id, // Using coupon ID since we're not creating separate promo codes
         stripe_account_id: account.id,
         approved_by: user.id,
         approved_at: new Date().toISOString(),
