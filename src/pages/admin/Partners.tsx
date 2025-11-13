@@ -75,7 +75,7 @@ export default function AdminPartners() {
   const approvePartner = async (partnerId: string) => {
     try {
       const { error } = await supabase.functions.invoke('partner-approve', {
-        body: { partnerId }
+        body: { partner_id: partnerId }
       });
 
       if (error) throw error;
