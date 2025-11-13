@@ -148,3 +148,9 @@ verify_jwt = false
 
 [functions.get-payout-info]
 verify_jwt = true
+
+[functions.partner-apply]
+verify_jwt = false
+
+[functions.partner-track-click]
+verify_jwt = false

@@ -1,18 +1,74 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-import { renderAsync } from "npm:@react-email/components@0.0.22";
-import React from "npm:react@18.3.1";
-import { PartnerApplicationReceived } from "../_shared/email-templates/PartnerApplicationReceived.tsx";
-import { PartnerApplicationNotifyAdmin } from "../_shared/email-templates/PartnerApplicationNotifyAdmin.tsx";
-import { PartnerApproved } from "../_shared/email-templates/PartnerApproved.tsx";
-import { PartnerPayoutSent } from "../_shared/email-templates/PartnerPayoutSent.tsx";
-
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+function buildEmail(type: string, data: any): { subject: string; html: string } {
+  switch (type) {
+    case 'partner-application-received':
+      return {
+        subject: 'Thank you for applying to HomeBase Partners',
+        html: `
+          <div style="font-family: Arial, sans-serif; color:#0f172a;">
+            <h2>Thanks for your application!</h2>
+            <p>Hi ${data?.full_name || 'there'},</p>
+            <p>We received your partner application and will review it shortly.</p>
+            <p>Track: <strong>${data?.type || 'N/A'}</strong></p>
+            <p>We'll be in touch within 2-3 business days.</p>
+          </div>
+        `,
+      };
+    case 'partner-application-admin':
+      return {
+        subject: `New Partner Application: ${data?.applicantName || data?.full_name || 'Unknown'}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color:#0f172a;">
+            <h2>New Partner Application</h2>
+            <p><strong>Name:</strong> ${data?.applicantName || data?.full_name || 'N/A'}</p>
+            <p><strong>Email:</strong> ${data?.email || 'N/A'}</p>
+            <p><strong>Track:</strong> ${data?.type || 'N/A'}</p>
+            <p><strong>Business:</strong> ${data?.business_name || 'N/A'}</p>
+            <p><strong>Website:</strong> ${data?.website || 'N/A'}</p>
+            <p><strong>Audience:</strong> ${data?.audience_size || 'N/A'}</p>
+            <p><strong>Notes:</strong> ${data?.application_notes || '—'}</p>
+          </div>
+        `,
+      };
+    case 'partner-approved':
+      return {
+        subject: 'Welcome to the HomeBase Partner Program! 🎉',
+        html: `
+          <div style="font-family: Arial, sans-serif; color:#0f172a;">
+            <h2>You're approved! 🎉</h2>
+            <p>Hi ${data?.full_name || 'there'},</p>
+            <p>Welcome aboard. Here are your details:</p>
+            <ul>
+              <li>Referral code: <strong>${data?.referral_code || ''}</strong></li>
+              <li>Referral link: <a href="${data?.referral_link || '#'}">${data?.referral_link || ''}</a></li>
+              <li>Commission: <strong>${data?.commission_rate_bp ? data.commission_rate_bp / 100 : ''}%</strong></li>
+              <li>Discount: <strong>${data?.discount_rate_bp ? data.discount_rate_bp / 100 : ''}%</strong></li>
+            </ul>
+          </div>
+        `,
+      };
+    case 'partner-payout':
+      return {
+        subject: `Your $${(data?.amount || 0).toFixed ? data.amount.toFixed(2) : Number(data?.amount || 0).toFixed(2)} payout has been sent`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color:#0f172a;">
+            <h2>Payout Sent</h2>
+            <p>We've sent your payout of <strong>$${Number(data?.amount || 0).toFixed(2)}</strong>.</p>
+            <p>Transfer ID: ${data?.transfer_id || 'N/A'}</p>
+            <p>Thanks for partnering with HomeBase!</p>
+          </div>
+        `,
+      };
+    default:
+      return { subject: 'HomeBase Partners', html: '<p>No template found.</p>' };
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -22,53 +78,17 @@ serve(async (req) => {
   try {
     const { type, to, data } = await req.json();
 
-    let html: string;
-    let subject: string;
+    const { subject, html } = buildEmail(type, data);
 
-    switch (type) {
-      case 'partner-application-received':
-        html = await renderAsync(React.createElement(PartnerApplicationReceived, data));
-        subject = 'Thank you for applying to HomeBase Partners';
-        break;
-
-      case 'partner-application-admin':
-        html = await renderAsync(React.createElement(PartnerApplicationNotifyAdmin, data));
-        subject = `New Partner Application: ${data.applicantName}`;
-        break;
-
-      case 'partner-approved':
-        html = await renderAsync(React.createElement(PartnerApproved, data));
-        subject = 'Welcome to the HomeBase Partner Program! 🎉';
-        break;
-
-      case 'partner-payout':
-        html = await renderAsync(React.createElement(PartnerPayoutSent, data));
-        subject = `Your $${data.amount.toFixed(2)} payout has been sent`;
-        break;
-
-      default:
-        throw new Error(`Unknown email type: ${type}`);
-    }
-
-    const { error } = await resend.emails.send({
-      from: 'HomeBase Partners <partners@homebaseproapp.com>',
-      to: [to],
-      subject,
-      html,
-    });
-
-    if (error) {
-      throw error;
-    }
-
+    // Email sending disabled in this environment. Return a success response with a preview payload.
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, to, subject, preview: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
     console.error('Error sending partner email:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

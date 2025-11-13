@@ -23,7 +23,11 @@ Deno.serve(async (req) => {
 
     console.log(`📊 Found ${partners?.length || 0} active partners`);
 
-    const results = {
+    const results: {
+      successful: { partner: string; amount: number; transferId: string }[];
+      failed: { partner: string; error: string }[];
+      skipped: { partner: string; reason: string }[];
+    } = {
       successful: [],
       failed: [],
       skipped: [],

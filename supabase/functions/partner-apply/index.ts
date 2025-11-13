@@ -58,9 +58,7 @@ serve(async (req) => {
     const referralCode = generateReferralCode(payload.full_name, payload.type);
     const referralSlug = generateReferralSlug();
 
-    // Set default commission and discount rates based on type
-    const commissionRateBp = payload.type === 'PRO' ? 2500 : 1500; // 25% for PRO, 15% for CREATOR
-    const discountRateBp = payload.type === 'PRO' ? 1500 : 1000; // 15% for PRO, 10% for CREATOR
+    // Set default codes (rates handled by backend defaults or admin)
 
     // Create user account if doesn't exist
     let userId = userExists?.id;
@@ -92,8 +90,6 @@ serve(async (req) => {
         user_id: userId,
         type: payload.type,
         status: 'PENDING',
-        commission_rate_bp: commissionRateBp,
-        discount_rate_bp: discountRateBp,
         referral_code: referralCode,
         referral_slug: referralSlug,
         business_name: payload.business_name,
