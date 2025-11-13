@@ -47,9 +47,9 @@ serve(async (req) => {
     // Get partner record
     const { data: partner, error: partnerError } = await supabase
       .from('partners')
-      .select('*, user:user_id(email, raw_user_meta_data)')
+      .select('*')
       .eq('id', partner_id)
-      .single();
+      .maybeSingle();
 
     if (partnerError || !partner) {
       return errorResponse('NOT_FOUND', 'Partner not found', 404);
@@ -60,7 +60,7 @@ serve(async (req) => {
     }
 
     // Create Stripe Coupon
-    const couponPercentOff = Math.floor(partner.discount_rate_bp / 100);
+    const couponPercentOff = Math.max(0, Math.floor(((partner as any).discount_rate_bp ?? 1000) / 100));
     const coupon = await stripePost('coupons', {
       percent_off: couponPercentOff,
       duration: 'forever',
@@ -88,7 +88,7 @@ serve(async (req) => {
     const account = await stripePost('accounts', {
       type: 'express',
       country: 'US',
-      email: partner.user.email,
+      email: (partner as any).email,
       capabilities: {
         transfers: { requested: true },
       },
