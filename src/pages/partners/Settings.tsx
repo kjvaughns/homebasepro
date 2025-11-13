@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, LogOut } from "lucide-react";
+import ChangePassword from "@/components/partners/ChangePassword";
 
 export default function PartnersSettings() {
   const navigate = useNavigate();
@@ -133,6 +134,8 @@ export default function PartnersSettings() {
             </div>
           </div>
         </Card>
+
+        <ChangePassword />
 
         <Card className="p-6">
           <h2 className="text-xl font-bold mb-4">Stripe Connect</h2>

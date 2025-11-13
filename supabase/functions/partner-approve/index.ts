@@ -74,6 +74,22 @@ serve(async (req) => {
 
     console.log('Created Stripe coupon:', coupon.id);
 
+    // Generate temporary password for the user
+    const tempPassword = generateTempPassword();
+    
+    // Update user's password
+    const { error: passwordError } = await supabase.auth.admin.updateUserById(
+      partner.user_id,
+      { password: tempPassword }
+    );
+
+    if (passwordError) {
+      console.error('Failed to set temp password:', passwordError);
+      return errorResponse('PASSWORD_UPDATE_FAILED', 'Failed to set temporary password', 500);
+    }
+
+    console.log('Set temporary password for user');
+
     // Create Stripe Connect Express Account
     const account = await stripePost('accounts', {
       type: 'express',
@@ -118,7 +134,36 @@ serve(async (req) => {
       return errorResponse('UPDATE_FAILED', 'Failed to update partner record', 500);
     }
 
-    // TODO: Send approval email with onboarding link to partner
+    // Get user email for approval email
+    const { data: userData } = await supabase.auth.admin.getUserById(partner.user_id);
+    const userEmail = userData?.user?.email;
+
+    // Send approval email with login credentials
+    if (userEmail) {
+      try {
+        const appUrl = Deno.env.get('APP_URL') || 'https://homebaseproapp.com';
+        await supabase.functions.invoke('send-partner-email', {
+          body: {
+            type: 'partner-approved',
+            to: userEmail,
+            data: {
+              full_name: (partner as any).business_name || 'Partner',
+              email: userEmail,
+              temp_password: tempPassword,
+              referral_code: partner.referral_code,
+              referral_link: `${appUrl}/join?ref=${partner.referral_slug}`,
+              commission_rate_bp: (partner as any).commission_rate_bp ?? 2500,
+              discount_rate_bp: (partner as any).discount_rate_bp ?? 1000,
+              app_url: appUrl,
+            },
+          },
+        });
+        console.log('Sent approval email to:', userEmail);
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+        // Don't fail approval if email fails
+      }
+    }
 
     return successResponse({
       message: 'Partner approved successfully',
@@ -137,3 +182,13 @@ serve(async (req) => {
     );
   }
 });
+
+function generateTempPassword(): string {
+  // Generate a memorable but secure temporary password
+  // Format: Word-Word-Number (e.g., Cloud-River-2847)
+  const words = ['Cloud', 'River', 'Storm', 'Light', 'Swift', 'Bright', 'Green', 'Blue'];
+  const word1 = words[Math.floor(Math.random() * words.length)];
+  const word2 = words[Math.floor(Math.random() * words.length)];
+  const number = Math.floor(1000 + Math.random() * 9000);
+  return `${word1}-${word2}-${number}`;
+}

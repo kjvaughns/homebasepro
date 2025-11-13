@@ -105,8 +105,45 @@ serve(async (req) => {
       return errorResponse('PARTNER_CREATE_FAILED', 'Failed to create partner application', 500);
     }
 
-    // TODO: Send notification to admins about new application
-    // TODO: Send confirmation email to applicant
+    // Send confirmation email to applicant
+    try {
+      await supabase.functions.invoke('send-partner-email', {
+        body: {
+          type: 'partner-application-received',
+          to: payload.email,
+          data: {
+            full_name: payload.full_name,
+            type: payload.type,
+          },
+        },
+      });
+    } catch (emailError) {
+      console.error('Failed to send applicant email:', emailError);
+      // Don't fail the application if email fails
+    }
+
+    // Send notification to admin
+    try {
+      const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@homebaseproapp.com';
+      await supabase.functions.invoke('send-partner-email', {
+        body: {
+          type: 'partner-application-admin',
+          to: adminEmail,
+          data: {
+            applicantName: payload.full_name,
+            email: payload.email,
+            type: payload.type,
+            business_name: payload.business_name,
+            website: payload.website,
+            audience_size: payload.audience_size,
+            application_notes: payload.application_notes,
+          },
+        },
+      });
+    } catch (emailError) {
+      console.error('Failed to send admin notification:', emailError);
+      // Don't fail the application if email fails
+    }
 
     return successResponse({
       message: 'Application submitted successfully',

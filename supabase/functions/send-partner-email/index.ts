@@ -1,11 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function buildEmail(type: string, data: any): { subject: string; html: string } {
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+function buildEmail(type: string, data: any): { subject: string; html: string; from?: string } {
   switch (type) {
     case 'partner-application-received':
       return {
@@ -38,18 +41,38 @@ function buildEmail(type: string, data: any): { subject: string; html: string } 
       };
     case 'partner-approved':
       return {
-        subject: 'Welcome to the HomeBase Partner Program! 🎉',
+        subject: 'Welcome to HomeBase Partners - Your Login Credentials 🎉',
         html: `
-          <div style="font-family: Arial, sans-serif; color:#0f172a;">
-            <h2>You're approved! 🎉</h2>
+          <div style="font-family: Arial, sans-serif; color:#0f172a; max-width:600px;">
+            <h2 style="color:#10b981;">You're Approved! 🎉</h2>
             <p>Hi ${data?.full_name || 'there'},</p>
-            <p>Welcome aboard. Here are your details:</p>
-            <ul>
-              <li>Referral code: <strong>${data?.referral_code || ''}</strong></li>
-              <li>Referral link: <a href="${data?.referral_link || '#'}">${data?.referral_link || ''}</a></li>
-              <li>Commission: <strong>${data?.commission_rate_bp ? data.commission_rate_bp / 100 : ''}%</strong></li>
-              <li>Discount: <strong>${data?.discount_rate_bp ? data.discount_rate_bp / 100 : ''}%</strong></li>
+            <p>Welcome to the HomeBase Partner Program! Your application has been approved.</p>
+            
+            <div style="background:#f8fafc; border-left:4px solid #10b981; padding:16px; margin:20px 0;">
+              <h3 style="margin-top:0;">Your Login Credentials:</h3>
+              <p style="margin:8px 0;"><strong>Email:</strong> ${data?.email || ''}</p>
+              <p style="margin:8px 0;"><strong>Temporary Password:</strong> <code style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:16px;">${data?.temp_password || ''}</code></p>
+              <p style="margin:12px 0 0 0;">
+                <a href="${data?.app_url}/partners/login" style="display:inline-block; background:#10b981; color:white; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">
+                  Login to Dashboard →
+                </a>
+              </p>
+            </div>
+
+            <div style="background:#fff7ed; border-left:4px solid #f59e0b; padding:16px; margin:20px 0;">
+              <p style="margin:0;"><strong>⚠️ Important:</strong> Please change your password after logging in for the first time.</p>
+            </div>
+            
+            <h3>Your Partner Details:</h3>
+            <ul style="line-height:1.8;">
+              <li><strong>Referral Code:</strong> <code style="background:#e2e8f0; padding:2px 6px; border-radius:3px; font-size:14px;">${data?.referral_code || ''}</code></li>
+              <li><strong>Referral Link:</strong> <a href="${data?.referral_link || '#'}">${data?.referral_link || ''}</a></li>
+              <li><strong>Commission Rate:</strong> ${data?.commission_rate_bp ? data.commission_rate_bp / 100 : ''}%</li>
+              <li><strong>Discount for Referrals:</strong> ${data?.discount_rate_bp ? data.discount_rate_bp / 100 : ''}% off</li>
             </ul>
+
+            <p style="margin-top:24px;">Questions? Reply to this email or visit your dashboard.</p>
+            <p style="color:#64748b; font-size:14px; margin-top:24px;">Best regards,<br/>The HomeBase Team</p>
           </div>
         `,
       };
@@ -78,11 +101,20 @@ serve(async (req) => {
   try {
     const { type, to, data } = await req.json();
 
-    const { subject, html } = buildEmail(type, data);
+    const { subject, html, from } = buildEmail(type, data);
 
-    // Email sending disabled in this environment. Return a success response with a preview payload.
+    // Send email using Resend
+    const emailResponse = await resend.emails.send({
+      from: from || "HomeBase Partners <partners@homebaseproapp.com>",
+      to: [to],
+      subject,
+      html,
+    });
+
+    console.log('Email sent successfully:', emailResponse);
+
     return new Response(
-      JSON.stringify({ success: true, to, subject, preview: true }),
+      JSON.stringify({ success: true, to, subject, email_sent: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {

@@ -1,13 +1,54 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
-import { TrendingUp, Users, DollarSign, Zap, Check } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { TrendingUp, Users, DollarSign, Zap, Check, CheckCircle } from "lucide-react";
+import { useEffect } from "react";
 
 export default function PartnersIndex() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  const applied = searchParams.get('applied') === 'true';
+  const pending = searchParams.get('status') === 'pending';
+
+  useEffect(() => {
+    if (applied) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [applied]);
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Application Success Banner */}
+      {(applied || pending) && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-b border-green-200 dark:border-green-800">
+          <div className="container mx-auto px-4 py-8 max-w-4xl">
+            <div className="flex items-start gap-4">
+              <CheckCircle className="h-8 w-8 text-green-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-foreground mb-2">
+                  Application Received! ✓
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  Thank you for applying to the HomeBase Partner Program. We'll review your application within 2-3 business days.
+                </p>
+                <p className="text-muted-foreground mb-4">
+                  <strong>What's next?</strong> Once approved, you'll receive an email with your login credentials and partner dashboard access.
+                </p>
+                <div className="flex gap-3">
+                  <Button onClick={() => navigate('/partners/login')} variant="default">
+                    Already Approved? Login Here
+                  </Button>
+                  <Button onClick={() => navigate('/partners')} variant="outline">
+                    Back to Partners Page
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background py-20 px-4">
         <div className="container mx-auto max-w-6xl">

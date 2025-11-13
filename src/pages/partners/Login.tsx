@@ -95,6 +95,13 @@ export default function PartnersLogin() {
             </p>
           </div>
 
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
+            <p className="text-sm text-muted-foreground">
+              <strong>First time logging in?</strong> Use the temporary password from your approval email. 
+              You'll be able to change it after logging in.
+            </p>
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -123,6 +130,19 @@ export default function PartnersLogin() {
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
+
+            <div className="text-center mt-4">
+              <Button 
+                variant="link" 
+                className="text-sm text-muted-foreground p-0 h-auto"
+                onClick={() => {
+                  // TODO: Implement forgot password
+                  alert('Please contact support at partners@homebaseproapp.com to reset your password.');
+                }}
+              >
+                Forgot password?
+              </Button>
+            </div>
           </form>
 
           <div className="mt-6 text-center text-sm">
