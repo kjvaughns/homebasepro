@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,7 @@ export default function AdminPartnerCommissions() {
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'ALL') {
-        query = query.eq('status', statusFilter);
+        query = query.eq('status', statusFilter as Database['public']['Enums']['commission_status']);
       }
 
       const { data, error } = await query;
@@ -53,12 +54,12 @@ export default function AdminPartnerCommissions() {
     try {
       const { data: allCommissions } = await supabase
         .from('partner_commissions')
-        .select('amount, status');
+        .select('commission_amount_cents, status');
 
-      const total = allCommissions?.reduce((sum, c) => sum + c.amount, 0) || 0;
-      const pending = allCommissions?.filter(c => c.status === 'PENDING').reduce((sum, c) => sum + c.amount, 0) || 0;
-      const paid = allCommissions?.filter(c => c.status === 'PAID').reduce((sum, c) => sum + c.amount, 0) || 0;
-      const voided = allCommissions?.filter(c => c.status === 'VOIDED').reduce((sum, c) => sum + c.amount, 0) || 0;
+      const total = allCommissions?.reduce((sum, c) => sum + c.commission_amount_cents / 100, 0) || 0;
+      const pending = allCommissions?.filter(c => c.status === 'PENDING').reduce((sum, c) => sum + c.commission_amount_cents / 100, 0) || 0;
+      const paid = allCommissions?.filter(c => c.status === 'PAID').reduce((sum, c) => sum + c.commission_amount_cents / 100, 0) || 0;
+      const voided = allCommissions?.filter(c => c.status === 'VOID').reduce((sum, c) => sum + c.commission_amount_cents / 100, 0) || 0;
 
       setStats({ total, pending, paid, voided });
     } catch (error) {
@@ -164,10 +165,10 @@ export default function AdminPartnerCommissions() {
                       {commission.partners?.referral_code}
                     </code>
                   </TableCell>
-                  <TableCell>${(commission.amount || 0).toFixed(2)}</TableCell>
-                  <TableCell>{commission.rate || 0}%</TableCell>
+                  <TableCell>${((commission.base_amount_cents || 0) / 100).toFixed(2)}</TableCell>
+                  <TableCell>{((commission.commission_rate_bp || 0) / 100).toFixed(1)}%</TableCell>
                   <TableCell className="font-semibold">
-                    ${(commission.amount || 0).toFixed(2)}
+                    ${((commission.commission_amount_cents || 0) / 100).toFixed(2)}
                   </TableCell>
                   <TableCell>{getStatusBadge(commission.status)}</TableCell>
                 </TableRow>

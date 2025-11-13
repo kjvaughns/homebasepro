@@ -71,11 +71,11 @@ export default function AdminPartnerPayouts() {
       for (const partner of partners || []) {
         const { data: commissions } = await supabase
           .from('partner_commissions')
-          .select('amount')
+          .select('commission_amount_cents')
           .eq('partner_id', partner.id)
           .eq('status', 'PENDING');
 
-        const pendingAmount = commissions?.reduce((sum, c) => sum + c.amount, 0) || 0;
+        const pendingAmount = commissions?.reduce((sum, c) => sum + c.commission_amount_cents / 100, 0) || 0;
 
         if (pendingAmount > 0) {
           totalPending += pendingAmount;
@@ -249,7 +249,7 @@ export default function AdminPartnerPayouts() {
                     {payout.partners?.business_name || 'Unknown'}
                   </TableCell>
                   <TableCell className="font-semibold">
-                    ${payout.amount.toFixed(2)}
+                    ${((payout.amount_cents || 0) / 100).toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <code className="text-xs">{payout.stripe_transfer_id || 'N/A'}</code>

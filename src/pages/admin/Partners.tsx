@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ export default function AdminPartners() {
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'ALL') {
-        query = query.eq('status', statusFilter);
+        query = query.eq('status', statusFilter as Database['public']['Enums']['partner_status']);
       }
 
       const { data, error } = await query;
@@ -58,12 +59,12 @@ export default function AdminPartners() {
 
       const { data: commissions } = await supabase
         .from('partner_commissions')
-        .select('amount');
+        .select('commission_amount_cents');
 
       const total = allPartners?.length || 0;
       const active = allPartners?.filter(p => p.status === 'ACTIVE').length || 0;
       const pending = allPartners?.filter(p => p.status === 'PENDING').length || 0;
-      const totalCommissions = commissions?.reduce((sum, c) => sum + c.amount, 0) || 0;
+      const totalCommissions = commissions?.reduce((sum, c) => sum + c.commission_amount_cents / 100, 0) || 0;
 
       setStats({ total, active, pending, totalCommissions });
     } catch (error) {
@@ -91,7 +92,7 @@ export default function AdminPartners() {
     }
   };
 
-  const updateStatus = async (partnerId: string, newStatus: string) => {
+  const updateStatus = async (partnerId: string, newStatus: Database['public']['Enums']['partner_status']) => {
     try {
       const { error } = await supabase
         .from('partners')
@@ -227,7 +228,7 @@ export default function AdminPartners() {
                   <TableCell>
                     <code className="text-xs bg-muted px-2 py-1 rounded">{partner.referral_code}</code>
                   </TableCell>
-                  <TableCell>{partner.commission_rate || 0}%</TableCell>
+                  <TableCell>{(partner.commission_rate_bp / 100).toFixed(1)}%</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       {partner.status === 'PENDING' && (
