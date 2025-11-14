@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import ChangePassword from "@/components/partners/ChangePassword";
+import { StripeAccountStatus } from "@/components/partners/StripeAccountStatus";
+import { OnboardingChecklist } from "@/components/partners/OnboardingChecklist";
 
 interface PartnerStats {
   clicks_24h: number;
