@@ -33,6 +33,10 @@ serve(async (req) => {
         await handleCheckoutCompleted(event.data.object, supabase);
         break;
 
+      case 'customer.subscription.created':
+        await handleSubscriptionCreated(event.data.object, supabase);
+        break;
+
       case 'invoice.payment_succeeded':
         await handleInvoicePaymentSucceeded(event.data.object, supabase);
         break;
@@ -51,6 +55,18 @@ serve(async (req) => {
 
       default:
         console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    // Log webhook event for tracking
+    const { error: logError } = await supabase.from('partner_webhook_logs').insert({
+      event_type: event.type,
+      event_id: event.id,
+      processed_successfully: true,
+      payload: event
+    });
+    
+    if (logError) {
+      console.log('Failed to log webhook:', logError);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -202,6 +218,73 @@ async function handleSubscriptionUpdated(subscription: any, supabase: any) {
 async function handleSubscriptionDeleted(subscription: any, supabase: any) {
   console.log('Subscription deleted:', subscription.id);
   // Mark referral as inactive if needed
+}
+
+async function handleSubscriptionCreated(subscription: any, supabase: any) {
+  console.log('Subscription created:', subscription.id);
+
+  const customerId = subscription.customer;
+  const metadata = subscription.metadata || {};
+  const partnerId = metadata.partner_id;
+  const partnerCode = metadata.partner_code;
+
+  if (!partnerId && !partnerCode) {
+    console.log('No partner attribution in subscription');
+    return;
+  }
+
+  // Find partner
+  let partner;
+  if (partnerId) {
+    const { data } = await supabase
+      .from('partners')
+      .select('*')
+      .eq('id', partnerId)
+      .single();
+    partner = data;
+  } else if (partnerCode) {
+    const { data } = await supabase
+      .from('partners')
+      .select('*')
+      .eq('referral_code', partnerCode)
+      .single();
+    partner = data;
+  }
+
+  if (!partner) {
+    console.error('Partner not found:', partnerId || partnerCode);
+    return;
+  }
+
+  // Create or update partner referral
+  const { data: existingReferral } = await supabase
+    .from('partner_referrals')
+    .select('*')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (existingReferral) {
+    await supabase
+      .from('partner_referrals')
+      .update({
+        activated: true,
+        activated_at: new Date().toISOString(),
+      })
+      .eq('id', existingReferral.id);
+  } else {
+    await supabase
+      .from('partner_referrals')
+      .insert({
+        partner_id: partner.id,
+        stripe_customer_id: customerId,
+        promo_code_used: partnerCode || null,
+        attributed_via: 'subscription',
+        activated: true,
+        activated_at: new Date().toISOString()
+      });
+  }
+
+  console.log('Partner referral created/updated for subscription:', subscription.id);
 }
 
 async function handleChargeRefunded(charge: any, supabase: any) {

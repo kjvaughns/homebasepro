@@ -3051,6 +3051,36 @@ export type Database = {
           },
         ]
       }
+      partner_webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_id: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          processed_successfully: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          processed_successfully?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          processed_successfully?: boolean | null
+        }
+        Relationships: []
+      }
       partners: {
         Row: {
           application_notes: string | null

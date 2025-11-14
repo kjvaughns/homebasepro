@@ -134,6 +134,29 @@ const Register = () => {
 
       console.log('[Registration] Using admin-signup as primary path');
 
+      // Check for partner referral before signup
+      const referredBy = sessionStorage.getItem('homebase_referrer');
+      let partnerInfo = null;
+
+      if (referredBy) {
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('*')
+          .eq('referral_slug', referredBy)
+          .eq('status', 'ACTIVE')
+          .single();
+        
+        if (partner) {
+          partnerInfo = {
+            partner_id: partner.id,
+            partner_code: partner.referral_code
+          };
+          // Store for later use during subscription
+          sessionStorage.setItem('homebase_partner_id', partner.id);
+          sessionStorage.setItem('homebase_partner_code', partner.referral_code);
+        }
+      }
+
       // Always use backend admin-signup to create accounts reliably
       await runAdminSignupFallback();
 
