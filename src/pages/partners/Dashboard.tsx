@@ -213,28 +213,11 @@ export default function PartnersDashboard() {
       </div>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Password Change Reminder */}
-        <Card className="p-4 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-medium text-amber-900 dark:text-amber-100">
-                Don't forget to change your password
-              </p>
-              <p className="text-sm text-amber-700 dark:text-amber-200 mt-1">
-                For security, we recommend changing your temporary password. You can do this in Settings.
-              </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-3"
-                onClick={() => navigate("/partners/settings")}
-              >
-                Change Password Now
-              </Button>
-            </div>
-          </div>
-        </Card>
+        {/* Stripe Account Status */}
+        <StripeAccountStatus stripeAccountId={partner?.stripe_account_id || null} />
+
+        {/* Onboarding Checklist */}
+        {partner && <OnboardingChecklist partnerId={partner.id} />}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

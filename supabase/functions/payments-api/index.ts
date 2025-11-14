@@ -302,15 +302,59 @@ Deno.serve(async (req) => {
       if (!org) return err('NO_ORGANIZATION', 'Organization not found', 404);
       if (!PRICE_BETA) return err('NO_PRICE_ID', 'Trial price not configured');
 
-      const subscription = await stripePOST('subscriptions', {
+      // Look up partner if promo code provided
+      let partnerData = null;
+      if (promoCode) {
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('*')
+          .eq('referral_code', promoCode)
+          .eq('status', 'ACTIVE')
+          .single();
+        
+        if (partner) {
+          partnerData = partner;
+        }
+      }
+
+      // Build subscription params with partner metadata
+      const subscriptionParams: any = {
         customer: profile.stripe_customer_id,
         items: [{ price: PRICE_BETA }],
         trial_period_days: 14,
         default_payment_method: paymentMethodId,
         payment_behavior: 'default_incomplete',
         expand: ['latest_invoice.payment_intent'],
-        metadata: { org_id: org.id, user_id: user.id, plan: 'beta' }
-      });
+        metadata: { 
+          org_id: org.id, 
+          user_id: user.id, 
+          plan: 'beta',
+          ...(partnerData && {
+            partner_id: partnerData.id,
+            partner_code: partnerData.referral_code
+          })
+        }
+      };
+
+      // Apply coupon if partner code is valid
+      if (partnerData && partnerData.stripe_coupon_id) {
+        subscriptionParams.coupon = partnerData.stripe_coupon_id;
+      }
+
+      const subscription = await stripePOST('subscriptions', subscriptionParams);
+
+      // Create partner referral record if partner attribution exists
+      if (partnerData) {
+        await supabase.from('partner_referrals').insert({
+          partner_id: partnerData.id,
+          organization_id: org.id,
+          stripe_customer_id: profile.stripe_customer_id,
+          promo_code_used: partnerData.referral_code,
+          attributed_via: 'promo_code',
+          activated: true,
+          activated_at: new Date().toISOString()
+        });
+      }
 
       const trialEnd = new Date(subscription.trial_end * 1000).toISOString();
       await supabase.from('profiles').update({
