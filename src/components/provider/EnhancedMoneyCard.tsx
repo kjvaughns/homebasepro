@@ -176,7 +176,7 @@ export function EnhancedMoneyCard() {
             variant="outline" 
             size="sm" 
             className="flex-1"
-            onClick={() => navigate('/provider/create-invoice')}
+            onClick={() => navigate('/provider/money?action=invoice')}
           >
             Send Invoice
           </Button>
@@ -184,7 +184,7 @@ export function EnhancedMoneyCard() {
             variant="outline" 
             size="sm" 
             className="flex-1"
-            onClick={() => navigate('/provider/payments')}
+            onClick={() => navigate('/provider/money?tab=payments')}
           >
             Record Payment
           </Button>

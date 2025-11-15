@@ -138,10 +138,10 @@ export function UnifiedFloatingWidget() {
 
       {/* Actions Sheet */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent 
-          side="bottom" 
-          className="h-auto max-h-[70vh] rounded-t-3xl border-0 pb-safe"
-        >
+      <SheetContent 
+        side="bottom" 
+        className="h-auto max-h-[70vh] rounded-t-3xl border-0 pb-safe overflow-y-auto"
+      >
           <div className="pt-2 pb-4">
             <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
             <h3 className="text-center text-base font-semibold mb-6">Quick Actions</h3>

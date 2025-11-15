@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast as sonnerToast } from "sonner";
 
 export default function Money() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { triggerHaptic, showSpinner, hideSpinner } = useDespia();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
@@ -25,12 +28,31 @@ export default function Money() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'invoices');
+  const [invoiceFilter, setInvoiceFilter] = useState(searchParams.get('filter') || 'all');
   const { toast } = useToast();
 
   useEffect(() => {
     loadData();
     setupPullToRefresh();
   }, []);
+
+  useEffect(() => {
+    // Handle deep links
+    const action = searchParams.get('action');
+    if (action === 'invoice') {
+      setShowInvoiceModal(true);
+      // Clear action param after opening modal
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('action');
+      setSearchParams(newParams);
+    } else if (action === 'payment') {
+      setActiveTab('payments');
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('action');
+      setSearchParams(newParams);
+    }
+  }, [searchParams]);
 
   const setupPullToRefresh = () => {
     let startY = 0;
@@ -89,9 +111,9 @@ export default function Money() {
 
       // Load invoices
       const { data: invoicesData } = await supabase
-        .from('invoices' as any)
+        .from('invoices')
         .select('*')
-        .eq('org_id', org.id)
+        .eq('organization_id', org.id)
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -222,7 +244,10 @@ export default function Money() {
         </Card>
       </div>
 
-      <Tabs defaultValue="invoices" onValueChange={() => triggerHaptic('light')}>
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        triggerHaptic('light');
+      }}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="invoices" className="text-xs md:text-sm">Invoices</TabsTrigger>
           <TabsTrigger value="payments" className="text-xs md:text-sm">Payments</TabsTrigger>
@@ -230,8 +255,31 @@ export default function Money() {
         </TabsList>
 
         <TabsContent value="invoices" className="mt-4 md:mt-6 space-y-3">
-          {invoices.length > 0 ? (
-            invoices.map((invoice) => (
+          <div className="flex justify-between items-center mb-3">
+            {invoiceFilter === 'unpaid' && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  setInvoiceFilter('all');
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.delete('filter');
+                  setSearchParams(newParams);
+                }}
+              >
+                Clear Filter
+              </Button>
+            )}
+          </div>
+          
+          {(invoiceFilter === 'unpaid' 
+            ? invoices.filter(inv => ['pending', 'overdue'].includes(inv.status || ''))
+            : invoices
+          ).length > 0 ? (
+            (invoiceFilter === 'unpaid' 
+              ? invoices.filter(inv => ['pending', 'overdue'].includes(inv.status || ''))
+              : invoices
+            ).map((invoice) => (
               <Card 
                 key={invoice.id} 
                 className="p-3 md:p-4 hover:bg-accent/50 cursor-pointer transition-all rounded-2xl active:scale-[0.98]"
@@ -255,7 +303,9 @@ export default function Money() {
             ))
           ) : (
             <Card className="p-8 md:p-12 text-center rounded-2xl">
-              <p className="text-muted-foreground">No invoices yet</p>
+              <p className="text-muted-foreground">
+                {invoiceFilter === 'unpaid' ? 'No unpaid invoices' : 'No invoices yet'}
+              </p>
               <Button onClick={() => {
                 triggerHaptic('light');
                 setShowInvoiceModal(true);
