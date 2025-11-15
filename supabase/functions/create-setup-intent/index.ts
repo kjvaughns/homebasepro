@@ -78,7 +78,7 @@ serve(async (req) => {
         body: new URLSearchParams({
           email: user.email!,
           name: profile?.full_name || user.email!,
-          metadata: JSON.stringify({ user_id: user.id })
+          'metadata[user_id]': user.id
         }).toString(),
       });
 
