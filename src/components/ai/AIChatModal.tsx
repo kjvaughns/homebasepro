@@ -1,4 +1,3 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import HomeBaseAI from "./HomeBaseAI";
@@ -41,9 +40,26 @@ export function AIChatModal({ open, onOpenChange, userRole = 'provider' }: AICha
     setSelectedPrompt(prompts[actionId] || null);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[85vh] p-0 gap-0 bg-background">
+    <div 
+      className="fixed inset-0 z-50 bg-gradient-to-b from-primary/5 via-background to-primary/10
+                 flex items-center justify-center p-0 md:p-8"
+    >
+      {/* Backdrop - click to close */}
+      <div 
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        onClick={() => onOpenChange(false)}
+      />
+      
+      {/* Main Content Container */}
+      <div 
+        className="relative w-full h-full md:h-[90vh] md:max-w-2xl md:rounded-[36px] 
+                   bg-background md:shadow-2xl md:border md:border-border/50
+                   flex flex-col overflow-hidden z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Custom Header */}
         <div className="flex items-center justify-between p-4 border-b border-border bg-card">
           <div className="flex items-center gap-3">
@@ -105,7 +121,7 @@ export function AIChatModal({ open, onOpenChange, userRole = 'provider' }: AICha
             onPromptTriggered={() => setSelectedPrompt(null)}
           />
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
