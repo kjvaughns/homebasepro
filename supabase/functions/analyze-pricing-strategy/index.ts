@@ -14,6 +14,8 @@ serve(async (req) => {
     const { trade_type, service_area, category, your_rate_cents, strategy } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    console.log('LOVABLE_API_KEY available:', !!LOVABLE_API_KEY);
+    
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
@@ -46,6 +48,7 @@ What is the typical local market median for this service? How do they compare? P
 
     console.log('Calling Lovable AI for pricing analysis...');
 
+    console.log('Calling Lovable AI...');
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {

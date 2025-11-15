@@ -161,5 +161,11 @@ verify_jwt = true
 [functions.get-market-pricing]
 verify_jwt = true
 
+[functions.suggest-typical-rates]
+verify_jwt = true
+
+[functions.generate-intake-questions]
+verify_jwt = true
+
 [functions.create-setup-intent]
 verify_jwt = true

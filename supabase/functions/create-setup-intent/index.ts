@@ -28,21 +28,34 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 
+                           Deno.env.get('STRIPE_SECRET') || 
+                           Deno.env.get('STRIPE_SECRET_KEY_LIVE');
+    
+    console.log('Stripe key available:', !!stripeSecretKey);
+    
     if (!stripeSecretKey) {
+      console.error('No Stripe secret key found in environment');
       throw new Error('Stripe secret key not configured');
     }
 
     // Create Stripe customer if doesn't exist
-    const { data: profile } = await supabaseClient
+    console.log('Fetching profile for user:', user.id);
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('stripe_customer_id, full_name')
       .eq('user_id', user.id)
       .single();
 
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+    }
+
     let customerId = profile?.stripe_customer_id;
+    console.log('Existing customer ID:', customerId);
 
     if (!customerId) {
+      console.log('Creating new Stripe customer');
       const customerResponse = await fetch('https://api.stripe.com/v1/customers', {
         method: 'POST',
         headers: {
@@ -57,7 +70,14 @@ serve(async (req) => {
       });
 
       const customer = await customerResponse.json();
+      
+      if (!customerResponse.ok) {
+        console.error('Stripe customer creation failed:', customer);
+        throw new Error(customer.error?.message || 'Failed to create Stripe customer');
+      }
+      
       customerId = customer.id;
+      console.log('Created Stripe customer:', customerId);
 
       await supabaseClient
         .from('profiles')
@@ -66,6 +86,7 @@ serve(async (req) => {
     }
 
     // Create SetupIntent
+    console.log('Creating setup intent for customer:', customerId);
     const setupIntentResponse = await fetch('https://api.stripe.com/v1/setup_intents', {
       method: 'POST',
       headers: {
@@ -82,8 +103,11 @@ serve(async (req) => {
     const setupIntent = await setupIntentResponse.json();
 
     if (!setupIntentResponse.ok) {
+      console.error('Setup intent creation failed:', setupIntent);
       throw new Error(setupIntent.error?.message || 'Failed to create setup intent');
     }
+
+    console.log('Setup intent created successfully');
 
     return new Response(
       JSON.stringify({ clientSecret: setupIntent.client_secret }),

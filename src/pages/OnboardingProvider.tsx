@@ -64,7 +64,17 @@ export default function OnboardingProvider() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    // Detect system preference on mount
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('onboarding-theme') as 'light' | 'dark' | null;
+      if (savedTheme) return savedTheme;
+      
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return prefersDark ? 'dark' : 'light';
+    }
+    return 'dark';
+  });
   
   const [formData, setFormData] = useState<OnboardingData>({
     tradeType: null,

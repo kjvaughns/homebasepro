@@ -61,7 +61,7 @@ All colors MUST be HSL.
     --success-glow: 0 8px 32px hsla(142, 76%, 36%, 0.3);
     --ai-glow: 0 8px 32px hsla(142, 76%, 36%, 0.3);
 
-    /* Onboarding Glassmorphism Theme */
+    /* Onboarding Glassmorphism Theme - Dark Mode */
     --onboarding-bg-start: 210 40% 3%;
     --onboarding-bg-end: 215 45% 6%;
     --onboarding-card: 0 0% 100% / 0.02;
@@ -71,6 +71,19 @@ All colors MUST be HSL.
     --onboarding-green-glow: 142 76% 45% / 0.18;
     --onboarding-text: 0 0% 97%;
     --onboarding-muted: 220 9% 65%;
+  }
+
+  .light {
+    /* Light mode overrides for onboarding */
+    --onboarding-bg-start: 210 40% 98%;
+    --onboarding-bg-end: 220 30% 95%;
+    --onboarding-card: 0 0% 100% / 0.7;
+    --onboarding-glass: 0 0% 0% / 0.03;
+    --onboarding-border: 0 0% 0% / 0.12;
+    --onboarding-green: 142 76% 40%;
+    --onboarding-green-glow: 142 76% 40% / 0.15;
+    --onboarding-text: 220 20% 15%;
+    --onboarding-muted: 220 10% 45%;
   }
 
   .dark {
