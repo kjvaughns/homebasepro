@@ -14,26 +14,33 @@ interface Question {
   required: boolean;
 }
 
+interface Service {
+  name: string;
+  description: string;
+  base_price_cents: number;
+  duration_minutes: number;
+}
+
 interface ClientQABuilderProps {
   tradeType: string;
+  services: Service[];
   questions: Question[];
   onChange: (questions: Question[]) => void;
 }
 
-export function ClientQABuilder({ tradeType, questions, onChange }: ClientQABuilderProps) {
-  const [problemDescription, setProblemDescription] = useState("");
+export function ClientQABuilder({ tradeType, services, questions, onChange }: ClientQABuilderProps) {
   const [generating, setGenerating] = useState(false);
 
   const handleGenerate = async () => {
-    if (!problemDescription.trim()) {
-      toast.error("Please describe typical client problems");
+    if (services.length === 0) {
+      toast.error("Please add services first");
       return;
     }
 
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-intake-questions', {
-        body: { tradeType, problemDescription }
+        body: { tradeType, services }
       });
 
       if (error) throw error;
@@ -49,7 +56,6 @@ export function ClientQABuilder({ tradeType, questions, onChange }: ClientQABuil
         
         onChange(formattedQuestions);
         toast.success(`Generated ${formattedQuestions.length} questions!`);
-        setProblemDescription("");
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate questions');
@@ -62,15 +68,13 @@ export function ClientQABuilder({ tradeType, questions, onChange }: ClientQABuil
     <div className="space-y-6">
       {questions.length === 0 ? (
         <div className="space-y-4">
-          <Textarea
-            value={problemDescription}
-            onChange={(e) => setProblemDescription(e.target.value)}
-            placeholder="e.g., Leaky faucets, clogged drains, water heater issues"
-            className="min-h-[100px]"
-            style={{ background: 'hsla(var(--onboarding-card))', border: '1px solid hsla(var(--onboarding-border))', color: 'hsl(var(--onboarding-text))' }}
-          />
-          <Button onClick={handleGenerate} disabled={generating} className="w-full" style={{ background: 'linear-gradient(90deg, hsl(var(--onboarding-green)), hsl(var(--accent)))', color: '#0b0d10' }}>
-            {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="w-4 h-4 mr-2" />Generate with AI</>}
+          <div className="p-4 rounded-lg" style={{ background: 'hsla(var(--onboarding-card))', border: '1px solid hsla(var(--onboarding-border))' }}>
+            <p className="text-sm text-muted-foreground mb-2">
+              AI will generate client intake questions based on your services: {services.map(s => s.name).join(', ')}
+            </p>
+          </div>
+          <Button onClick={handleGenerate} disabled={generating || services.length === 0} className="w-full" style={{ background: 'linear-gradient(90deg, hsl(var(--onboarding-green)), hsl(var(--accent)))', color: '#0b0d10' }}>
+            {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="w-4 h-4 mr-2" />Generate Questions with AI</>}
           </Button>
         </div>
       ) : (
@@ -89,8 +93,8 @@ export function ClientQABuilder({ tradeType, questions, onChange }: ClientQABuil
               </Button>
             </div>
           ))}
-          <Button variant="outline" onClick={() => { setProblemDescription(""); onChange([]); }} className="w-full">
-            <Sparkles className="w-4 h-4 mr-2" />Regenerate
+          <Button variant="outline" onClick={() => onChange([])} className="w-full">
+            <Sparkles className="w-4 h-4 mr-2" />Regenerate Questions
           </Button>
         </div>
       )}

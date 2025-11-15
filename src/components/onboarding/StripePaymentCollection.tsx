@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Loader2, CreditCard, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,12 +12,14 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 interface PaymentFormProps {
   onSuccess: (paymentMethodId: string) => void;
   onSkip: () => void;
+  clientSecret: string;
 }
 
-function PaymentForm({ onSuccess, onSkip }: PaymentFormProps) {
+function PaymentForm({ onSuccess, onSkip, clientSecret }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +59,18 @@ function PaymentForm({ onSuccess, onSkip }: PaymentFormProps) {
             <strong>Card required for 7-day trial.</strong> You won't be charged until day 8. Cancel anytime.
           </p>
         </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="promo-code" className="text-sm">Discount Code (Optional)</Label>
+        <input
+          id="promo-code"
+          type="text"
+          value={promoCode}
+          onChange={(e) => setPromoCode(e.target.value)}
+          placeholder="Enter discount code"
+          className="w-full px-3 py-2 rounded-md border bg-background"
+        />
       </div>
       
       <div className="bg-background/50 p-4 rounded-lg">
@@ -186,7 +201,7 @@ export function StripePaymentCollection({ onSuccess, onSkip }: StripePaymentColl
         }
       }}
     >
-      <PaymentForm onSuccess={onSuccess} onSkip={onSkip} />
+      <PaymentForm onSuccess={onSuccess} onSkip={onSkip} clientSecret={clientSecret!} />
     </Elements>
   );
 }

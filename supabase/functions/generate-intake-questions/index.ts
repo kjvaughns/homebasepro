@@ -11,26 +11,29 @@ serve(async (req) => {
   }
 
   try {
-    const { tradeType, problemDescription } = await req.json();
+    const { tradeType, services } = await req.json();
     
-    console.log('Generating questions for:', { tradeType, problemDescription });
+    console.log('Generating questions for:', { tradeType, services });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const systemPrompt = `You are an expert at creating client intake forms for home service businesses. Generate 5-7 essential questions that help the provider understand the client's needs and quote accurately.`;
+    const systemPrompt = `You are an expert at creating client intake forms for home service businesses. Generate 5-7 essential questions that help the provider understand the client's needs and quote accurately for their specific services.`;
 
-    const userPrompt = `Generate intake questions for a ${tradeType} business.
+    const servicesList = services.map((s: any) => `- ${s.name}: ${s.description}`).join('\n');
 
-Client problems typically include: ${problemDescription}
+    const userPrompt = `Generate intake questions for a ${tradeType} business offering these services:
+
+${servicesList}
 
 Create questions that:
-1. Help assess urgency and scope
-2. Gather key details for accurate quoting
-3. Identify potential complexity factors
-4. Are easy for homeowners to answer
+1. Help determine which service(s) the client needs
+2. Assess urgency and scope for these specific services
+3. Gather key details for accurate quoting
+4. Identify potential complexity factors
+5. Are easy for homeowners to answer
 
 Use appropriate question types:
 - yes_no: For simple binary questions
@@ -40,9 +43,9 @@ Use appropriate question types:
 - image: When photos would help (property damage, layout, etc.)
 
 Assign complexity weights (1-10):
-- 1-3: Basic info (contact preferences, timing)
-- 4-6: Scope details (size, type of work)
-- 7-10: Complex factors (age of system, accessibility, emergency status)`;
+- 1-3: Basic info (service selection, timing preferences)
+- 4-6: Scope details (size, type of work, property details)
+- 7-10: Complex factors (age of system, accessibility, emergency status, special requirements)`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
