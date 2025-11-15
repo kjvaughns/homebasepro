@@ -87,7 +87,7 @@ export function UnifiedFloatingWidget() {
 
       {/* Action Buttons (appear above FAB) */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-4">
+        <div className="fixed bottom-40 right-4 md:bottom-20 md:right-6 z-40 flex flex-col items-end gap-4">
           {actions.map((action, index) => {
             const Icon = action.icon;
             const bottomOffset = (actions.length - index) * 64;
