@@ -11,10 +11,11 @@ serve(async (req) => {
   }
 
   try {
-    const { trade_type, service_area, category, your_rate_cents, strategy } = await req.json();
+    const { trade_type, service_area, category, your_rate, pricing_strategy } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     console.log('LOVABLE_API_KEY available:', !!LOVABLE_API_KEY);
+    console.log('Request data:', { trade_type, service_area, category, your_rate, pricing_strategy });
     
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
@@ -23,8 +24,8 @@ serve(async (req) => {
     // Build detailed context for AI
     const categoryLabel = category === 'service_call' ? 'Service Call + Time & Materials' : 'Fixed-Scope Jobs';
     const rateDescription = category === 'service_call'
-      ? `Trip charge: $${(strategy.service_call?.trip_charge_cents / 100).toFixed(2)}, Hourly: $${(strategy.service_call?.hourly_rate_cents / 100).toFixed(2)}`
-      : `Base rate: $${(strategy.fixed_scope?.base_rate_cents / 100).toFixed(2)} (${strategy.fixed_scope?.base_rate_type})`;
+      ? `Trip charge: $${(pricing_strategy.service_call_pricing?.trip_charge || 0).toFixed(2)}, Hourly: $${(pricing_strategy.service_call_pricing?.hourly_labor_rate || 0).toFixed(2)}`
+      : `Base rate: $${(pricing_strategy.fixed_scope_pricing?.base_rate || 0).toFixed(2)} (${pricing_strategy.fixed_scope_pricing?.rate_type || 'flat_rate'})`;
 
     const systemPrompt = `You are an expert pricing analyst for home service businesses. Analyze the provider's pricing strategy and compare it to local market rates.
 
@@ -32,7 +33,7 @@ Trade: ${trade_type}
 Service Area: ${service_area}
 Pricing Model: ${categoryLabel}
 Current Rates: ${rateDescription}
-Overhead per job: $${(strategy.overhead_per_job_cents / 100).toFixed(2)}
+Overhead per job: $${(pricing_strategy.overhead_per_job || 0).toFixed(2)}
 
 Provide realistic market analysis based on:
 1. Typical rates for ${trade_type} in ${service_area}
@@ -42,7 +43,7 @@ Provide realistic market analysis based on:
 
 Be practical and actionable. Consider regional differences, trade complexity, and business sustainability.`;
 
-    const userPrompt = `Analyze this ${trade_type} provider's pricing strategy. They charge $${(your_rate_cents / 100).toFixed(2)} using a ${categoryLabel} model in ${service_area}. 
+    const userPrompt = `Analyze this ${trade_type} provider's pricing strategy. They charge $${your_rate.toFixed(2)} using a ${categoryLabel} model in ${service_area}. 
 
 What is the typical local market median for this service? How do they compare? Provide assessment and reasoning.`;
 
