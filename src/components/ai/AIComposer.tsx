@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, Loader2 } from 'lucide-react';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 
 interface AIComposerProps {
@@ -21,7 +21,7 @@ export function AIComposer({
 }: AIComposerProps) {
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const keyboardHeight = useKeyboardHeight();
 
@@ -75,22 +75,24 @@ export function AIComposer({
   return (
     <div
       ref={composerRef}
-      className="fixed bottom-0 left-0 right-0 bg-background border-t z-30 transition-all duration-200"
+      className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-30 transition-all duration-200"
       style={{
         bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : 0,
         paddingBottom: 'max(env(safe-area-inset-bottom), 0px)',
       }}
     >
-      <div className="p-3 sm:p-4 flex gap-2">
-        <Input
-          ref={inputRef}
+      <div className="p-4 flex gap-2 items-end">
+        <Textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled || isSending}
-          className="flex-1"
+          className="flex-1 min-h-[44px] max-h-[120px] resize-none
+                   bg-muted/30 border-border focus:border-primary/50
+                   focus-visible:ring-primary/20"
           autoComplete="off"
           autoCapitalize="sentences"
         />
@@ -98,9 +100,14 @@ export function AIComposer({
           onClick={handleSend}
           disabled={!input.trim() || disabled || isSending}
           size="icon"
-          className="flex-shrink-0"
+          className="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 
+                   shadow-lg hover:shadow-xl transition-all flex-shrink-0"
         >
-          <Send className="w-4 h-4" />
+          {isSending ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Send className="w-5 h-5" />
+          )}
         </Button>
       </div>
     </div>

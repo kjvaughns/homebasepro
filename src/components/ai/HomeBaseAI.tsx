@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Bot, Home, DollarSign, CheckCircle2, AlertCircle, Star, Share2 } from 'lucide-react';
+import { Bot, Home, DollarSign, CheckCircle2, AlertCircle, Star, Share2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ProviderCard } from '@/components/marketplace/ProviderCard';
 import { BookingDialog } from '@/components/marketplace/BookingDialog';
@@ -13,7 +13,6 @@ import { AIComposer } from './AIComposer';
 import { AIEscalateButton } from './AIEscalateButton';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { useDespia } from '@/hooks/useDespia';
-import { IntercomStyleMessage } from './IntercomStyleMessage';
 import { SmartTypingIndicator } from './SmartTypingIndicator';
 import { ActionCard } from './ActionCard';
 
@@ -34,6 +33,8 @@ interface HomeBaseAIProps {
   onSessionChange?: (sessionId: string) => void;
   userRole?: 'homeowner' | 'provider';
   autoFocus?: boolean;
+  triggerPrompt?: string | null;
+  onPromptTriggered?: () => void;
 }
 
 export default function HomeBaseAI({ 
@@ -42,7 +43,9 @@ export default function HomeBaseAI({
   onServiceRequestCreated,
   onSessionChange,
   userRole = 'homeowner',
-  autoFocus = false
+  autoFocus = false,
+  triggerPrompt,
+  onPromptTriggered
 }: HomeBaseAIProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -112,6 +115,14 @@ export default function HomeBaseAI({
   useEffect(() => {
     scrollToBottom();
   }, [messages, keyboardHeight, composerHeight]);
+
+  // Handle triggered prompts from quick actions
+  useEffect(() => {
+    if (triggerPrompt && !isLoading) {
+      sendMessage(triggerPrompt);
+      onPromptTriggered?.();
+    }
+  }, [triggerPrompt]);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -261,6 +272,12 @@ export default function HomeBaseAI({
     return null;
   };
 
+  const formatMessageTime = (index: number) => {
+    if (index === messages.length - 1) return 'Just now';
+    const minutesAgo = messages.length - index;
+    return minutesAgo < 60 ? `${minutesAgo}m ago` : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  };
+
   return (
     <div className="flex flex-col h-full relative">
       <div 
@@ -271,86 +288,82 @@ export default function HomeBaseAI({
           paddingBottom: `${composerHeight + keyboardHeight + 16}px`,
         }}
       >
-        {messages.length === 0 && (
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-primary rounded-xl shadow-lg">
-                  <Bot className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">HomeBase AI</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {isProvider ? 'Your business assistant' : 'Your smart home assistant'}
-                  </p>
-                </div>
+        {/* Welcome/Empty State */}
+        {messages.length === 0 && !isLoading && (
+          <div className="flex items-center justify-center min-h-full py-8">
+            <div className="max-w-md text-center space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br 
+                            from-primary to-primary/80 flex items-center justify-center
+                            shadow-2xl">
+                <Bot className="w-8 h-8 text-primary-foreground" />
               </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                I can help you with:
-              </p>
-              <div className="grid gap-3">
-                {isProvider ? (
-                  <>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                      <Home className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-sm">Job Prioritization</p>
-                        <p className="text-xs text-muted-foreground">Optimize your daily schedule</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                      <DollarSign className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-sm">Quote Assistance</p>
-                        <p className="text-xs text-muted-foreground">Get pricing recommendations</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                      <Star className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-sm">Business Insights</p>
-                        <p className="text-xs text-muted-foreground">Track performance metrics</p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                      <Home className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-sm">Describe any home problem</p>
-                        <p className="text-xs text-muted-foreground">AC issues, leaks, lawn care needs</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                      <DollarSign className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-sm">Get instant price estimates</p>
-                        <p className="text-xs text-muted-foreground">Fair, transparent pricing ranges</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
-                      <Star className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-sm">Match with trusted pros</p>
-                        <p className="text-xs text-muted-foreground">Top-rated local providers</p>
-                      </div>
-                    </div>
-                  </>
-                )}
+              
+              <div>
+                <h3 className="font-semibold text-lg mb-1">
+                  Hi! I'm your HomeBase AI assistant
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {isProvider 
+                    ? "I can help with invoices, scheduling, business insights, and more."
+                    : "I can help you find pros, get estimates, and manage your home services."}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+              
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Try asking:
+                </p>
+                {[
+                  isProvider ? "Show me unpaid invoices" : "Find me a plumber",
+                  isProvider ? "What's my revenue this week?" : "Get a price estimate",
+                  isProvider ? "Who should I follow up with?" : "Show my service requests"
+                ].map((prompt, idx) => (
+                  <Button
+                    key={idx}
+                    variant="outline"
+                    className="w-full justify-start text-left h-auto py-3 px-4
+                             hover:bg-primary/5 hover:border-primary/30"
+                    onClick={() => sendMessage(prompt)}
+                  >
+                    <Star className="w-4 h-4 mr-2 text-primary shrink-0" />
+                    <span className="text-sm">{prompt}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
-        {messages.map((msg) => (
-          <div key={msg.id}>
-            <IntercomStyleMessage
-              role={msg.role}
-              content={msg.content}
-              timestamp={new Date()}
-            />
-            <div className="mt-3 space-y-3">
+        {messages.map((msg, index) => (
+          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+            <div className={`max-w-[85%] md:max-w-[70%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+              {msg.role === 'assistant' && (
+                <div className="flex items-center gap-2 mb-1 px-1">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-primary/80 
+                                flex items-center justify-center shadow">
+                    <Bot className="w-3.5 h-3.5 text-primary-foreground" />
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">HomeBase AI</span>
+                </div>
+              )}
+              
+              <div className={`
+                ${msg.role === 'user' 
+                  ? 'bg-primary/10 border-primary/20 rounded-2xl rounded-br-md' 
+                  : 'bg-card border-border rounded-2xl rounded-bl-md'
+                } 
+                border p-3.5 shadow-sm
+              `}>
+                <div className={`text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'text-foreground' : 'text-card-foreground'}`}>
+                  {msg.content}
+                </div>
+              </div>
+              
+              <span className="text-xs text-muted-foreground px-1">
+                {formatMessageTime(index)}
+              </span>
+              {/* Tool Results */}
+              <div className="mt-2 space-y-2 w-full">
               {msg.toolResults?.map((result, idx) => (
                 <div key={idx}>
                   {result.type === 'property' && (
@@ -476,6 +489,7 @@ export default function HomeBaseAI({
                 ))}
               </div>
             </div>
+          </div>
         ))}
 
         {isLoading && (
