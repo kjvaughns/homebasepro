@@ -395,6 +395,7 @@ const App = () => {
 
             {/* Provider routes with shared layout */}
             <Route path="/provider" element={<OnboardingGuard requiredFor="provider"><ProviderLayout /></OnboardingGuard>}>
+              <Route index element={<Navigate to="/provider/dashboard" replace />} />
               <Route path="dashboard" element={<ProviderDashboard />} />
               
               {/* Core simplified routes */}

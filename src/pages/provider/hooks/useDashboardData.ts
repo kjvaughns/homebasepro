@@ -1,234 +1,175 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+// Helper to get organization ID
+const getOrganizationId = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: org, error } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!org) throw new Error("Organization not found");
+
+  return org.id;
+};
+
 export function useProviderStats() {
-  const [stats, setStats] = useState({
-    totalClients: 0,
-    activeSubscribers: 0,
-    mrr: 0,
-    upcoming7d: 0,
+  return useQuery({
+    queryKey: ['providerStats'],
+    queryFn: async () => {
+      const orgId = await getOrganizationId();
+
+      // Fetch all stats in parallel
+      const [clientsResult, subscribersResult, bookingsResult] = await Promise.all([
+        supabase
+          .from("clients")
+          .select("id", { count: "exact" })
+          .eq("organization_id", orgId)
+          .eq("status", "active"),
+        
+        supabase
+          .from("homeowner_subscriptions")
+          .select("billing_amount", { count: "exact" })
+          .eq("provider_org_id", orgId)
+          .eq("status", "active"),
+        
+        supabase
+          .from("bookings")
+          .select("id", { count: "exact" })
+          .eq("provider_org_id", orgId)
+          .gte("date_time_start", new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
+          .in("status", ["pending", "confirmed"])
+      ]);
+
+      // Calculate MRR
+      const { data: subscriptions } = subscribersResult;
+      const mrr = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) || 0;
+
+      return {
+        totalClients: clientsResult.count || 0,
+        activeSubscribers: subscribersResult.count || 0,
+        mrr,
+        upcoming7d: bookingsResult.count || 0
+      };
+    },
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: true,
   });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: org } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("owner_id", user.id)
-          .single();
-
-        if (!org) return;
-
-        const sevenDaysFromNow = new Date();
-        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-        // Parallelize all queries for better performance
-        const [
-          { count: totalClients },
-          { data: subscriptions, count: activeSubscribers },
-          { count: upcoming7d }
-        ] = await Promise.all([
-          supabase
-            .from("clients")
-            .select("*", { count: "exact", head: true })
-            .eq("organization_id", org.id)
-            .eq("status", "active"),
-          
-          supabase
-            .from("homeowner_subscriptions")
-            .select("billing_amount", { count: "exact" })
-            .eq("provider_org_id", org.id)
-            .eq("status", "active")
-            .eq("payment_method_active", true),
-          
-          supabase
-            .from("bookings")
-            .select("*", { count: "exact", head: true })
-            .eq("provider_org_id", org.id)
-            .gte("date_time_start", new Date().toISOString())
-            .lte("date_time_start", sevenDaysFromNow.toISOString())
-            .neq("status", "cancelled")
-        ]);
-
-        const mrr = subscriptions?.reduce((sum, sub) => sum + (sub.billing_amount || 0), 0) / 100 || 0;
-
-        setStats({
-          totalClients: totalClients || 0,
-          activeSubscribers: activeSubscribers || 0,
-          mrr,
-          upcoming7d: upcoming7d || 0,
-        });
-      } catch (error) {
-        console.error("Error loading provider stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStats();
-  }, []);
-
-  return { stats, loading };
 }
 
 export function useTodayJobs() {
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  return useQuery({
+    queryKey: ['todayJobs'],
+    queryFn: async () => {
+      const orgId = await getOrganizationId();
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-  useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(`
+          id,
+          service_name,
+          date_time_start,
+          date_time_end,
+          address,
+          status,
+          homeowner_profile_id,
+          profiles:homeowner_profile_id (
+            full_name,
+            phone
+          )
+        `)
+        .eq("provider_org_id", orgId)
+        .gte("date_time_start", today.toISOString())
+        .lt("date_time_start", tomorrow.toISOString())
+        .order("date_time_start", { ascending: true })
+        .limit(6);
 
-        const { data: org } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("owner_id", user.id)
-          .single();
-
-        if (!org) return;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const { data } = await supabase
-          .from("bookings")
-          .select("*")
-          .eq("provider_org_id", org.id)
-          .gte("date_time_start", today.toISOString())
-          .lt("date_time_start", tomorrow.toISOString())
-          .neq("status", "cancelled")
-          .order("date_time_start", { ascending: true })
-          .limit(6);
-
-        setJobs(data || []);
-      } catch (error) {
-        console.error("Error loading today's jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadJobs();
-  }, []);
-
-  return { jobs, loading };
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30000,
+    refetchOnWindowFocus: true,
+  });
 }
 
 export function useUnpaidInvoices() {
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  return useQuery({
+    queryKey: ['unpaidInvoices'],
+    queryFn: async () => {
+      const orgId = await getOrganizationId();
 
-  useEffect(() => {
-    const loadInvoices = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+      const { data, error } = await supabase
+        .from("invoices")
+        .select(`
+          id,
+          invoice_number,
+          amount,
+          due_date,
+          status,
+          client_id,
+          clients (
+            name,
+            email
+          )
+        `)
+        .eq("organization_id", orgId)
+        .in("status", ["pending", "overdue"])
+        .order("due_date", { ascending: true })
+        .limit(5);
 
-        const { data: org } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("owner_id", user.id)
-          .single();
+      if (error) throw error;
 
-        if (!org) return;
+      const total = data?.reduce((sum, inv) => sum + inv.amount, 0) || 0;
 
-        const { data } = await supabase
-          .from("payments")
-          .select(`
-            *,
-            client_subscriptions (
-              clients (
-                name,
-                organization_id
-              )
-            )
-          `)
-          .eq("org_id", org.id)
-          .in("status", ["unpaid", "overdue"]);
-
-        // Filter out records with missing client data
-        const validInvoices = data?.filter(inv => 
-          inv.client_subscriptions && 
-          inv.client_subscriptions.clients && 
-          inv.client_subscriptions.clients.name
-        ) || [];
-
-        const totalAmount = validInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-
-        setInvoices(validInvoices);
-        setTotal(totalAmount);
-      } catch (error) {
-        console.error("Error loading unpaid invoices:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInvoices();
-  }, []);
-
-  return { invoices, total, loading };
+      return {
+        invoices: data || [],
+        total
+      };
+    },
+    staleTime: 30000,
+    refetchOnWindowFocus: true,
+  });
 }
 
 export function useUnrepliedMessages() {
-  const [threads, setThreads] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  return useQuery({
+    queryKey: ['unrepliedMessages'],
+    queryFn: async () => {
+      const orgId = await getOrganizationId();
 
-  useEffect(() => {
-    const loadThreads = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+      const { data, error } = await supabase
+        .from("conversations")
+        .select(`
+          id,
+          title,
+          last_message_at,
+          last_message_preview,
+          unread_count_provider,
+          homeowner_profile_id,
+          profiles:homeowner_profile_id (
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq("provider_org_id", orgId)
+        .gt("unread_count_provider", 0)
+        .order("last_message_at", { ascending: false })
+        .limit(5);
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("user_id", user.id)
-          .single();
-
-        if (!profile) return;
-
-        const { data: org } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("owner_id", user.id)
-          .single();
-
-        if (!org) return;
-
-        const { data } = await supabase
-          .from("conversations")
-          .select(`
-            id,
-            last_message_preview,
-            last_message_at,
-            unread_count_provider
-          `)
-          .eq("provider_org_id", org.id)
-          .gt("unread_count_provider", 0)
-          .order("last_message_at", { ascending: false })
-          .limit(5);
-
-        setThreads(data || []);
-      } catch (error) {
-        console.error("Error loading unreplied messages:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadThreads();
-  }, []);
-
-  return { threads, loading };
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 15000, // 15 seconds for messages
+    refetchOnWindowFocus: true,
+  });
 }

@@ -25,10 +25,13 @@ import { toast } from "sonner";
 
 export default function ProviderDashboard() {
   const navigate = useNavigate();
-  const { stats, loading: statsLoading } = useProviderStats();
-  const { jobs, loading: jobsLoading } = useTodayJobs();
-  const { invoices, loading: invoicesLoading } = useUnpaidInvoices();
-  const { threads: unreadThreads, loading: messagesLoading } = useUnrepliedMessages();
+  const { data: stats, isLoading: statsLoading } = useProviderStats();
+  const { data: jobs, isLoading: jobsLoading } = useTodayJobs();
+  const { data: invoicesData, isLoading: invoicesLoading } = useUnpaidInvoices();
+  const { data: unreadThreads, isLoading: messagesLoading } = useUnrepliedMessages();
+  
+  const invoices = invoicesData?.invoices || [];
+  const invoiceTotal = invoicesData?.total || 0;
   const [userProfile, setUserProfile] = useState<any>(null);
   const [stripeConnected, setStripeConnected] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
@@ -37,7 +40,7 @@ export default function ProviderDashboard() {
   const { triggerHaptic } = useDespia();
 
   const loading = statsLoading || jobsLoading || invoicesLoading || messagesLoading;
-  const hasAnyData = stats.totalClients > 0 || jobs.length > 0 || invoices.length > 0;
+  const hasAnyData = (stats?.totalClients || 0) > 0 || (jobs?.length || 0) > 0 || (invoices?.length || 0) > 0;
 
   useEffect(() => {
     loadUserProfile();
@@ -335,7 +338,7 @@ export default function ProviderDashboard() {
             </div>
           </div>
 
-          <FloatingAIButton />
+          
         </>
       )}
 

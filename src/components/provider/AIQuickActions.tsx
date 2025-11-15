@@ -25,16 +25,6 @@ export function AIQuickActions({ open, onOpenChange, onAIChat }: AIQuickActionsP
       }
     },
     { 
-      title: "Create Quote", 
-      description: "Generate a new quote",
-      icon: FileText, 
-      action: () => {
-        triggerHaptic('light');
-        navigate('/provider/schedule?tab=quotes');
-        onOpenChange(false);
-      }
-    },
-    { 
       title: "New Job", 
       description: "Schedule a new job",
       icon: Calendar, 
