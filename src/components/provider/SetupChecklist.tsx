@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, ChevronRight } from "lucide-react";
+import { CheckCircle2, Circle, ChevronRight, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import confetti from "canvas-confetti";
 
 interface SetupChecklistProps {
   onOpenWizard?: () => void;
@@ -76,7 +77,30 @@ export function SetupChecklist({ onOpenWizard }: SetupChecklistProps) {
   const completedCount = Object.values(checks).filter(Boolean).length;
   const allComplete = completedCount === items.length;
 
-  if (loading || allComplete) return null;
+  // Trigger confetti when all items are complete
+  useEffect(() => {
+    if (allComplete && !loading) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [allComplete, loading]);
+
+  if (loading) return null;
+
+  if (allComplete) {
+    return (
+      <Card className="border-primary/50 bg-primary/5 animate-scale-in">
+        <CardContent className="text-center py-8">
+          <Trophy className="h-12 w-12 mx-auto mb-3 text-primary" />
+          <h3 className="text-lg font-semibold mb-2">🎉 Setup Complete!</h3>
+          <p className="text-sm text-muted-foreground">You're all set to start growing your business</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-primary/50 bg-primary/5">

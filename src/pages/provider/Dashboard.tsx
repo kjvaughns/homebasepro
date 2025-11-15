@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SmartToDos } from "@/components/provider/SmartToDos";
-import { BalanceWidget } from "@/components/provider/BalanceWidget";
+import { EnhancedMoneyCard } from "@/components/provider/EnhancedMoneyCard";
 import { AIInsightCard } from "@/components/provider/AIInsightCard";
-import { FloatingAIButton } from "@/components/provider/FloatingAIButton";
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist";
 import { SetupChecklist } from "@/components/provider/SetupChecklist";
 import { AIChatModal } from "@/components/ai/AIChatModal";
@@ -13,8 +12,8 @@ import {
   DollarSign, 
   Briefcase,
   AlertCircle,
-  ArrowRight,
-  MessageCircle
+  MessageCircle,
+  ArrowRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -249,7 +248,7 @@ export default function ProviderDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <BalanceWidget />
+                  <EnhancedMoneyCard />
                   
                   <div className="grid grid-cols-2 gap-3">
                     <Button 

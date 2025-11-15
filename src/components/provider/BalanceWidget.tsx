@@ -24,6 +24,7 @@ interface Balance {
 export function BalanceWidget() {
   const [balance, setBalance] = useState<Balance | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [processingPayout, setProcessingPayout] = useState(false);
@@ -36,6 +37,7 @@ export function BalanceWidget() {
   }, []);
 
   const loadBalance = async () => {
+    setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('payments-api', {
         body: { action: 'provider-balance' },
@@ -47,6 +49,7 @@ export function BalanceWidget() {
       console.error('Failed to load balance:', error);
     } finally {
       setLoading(false);
+      setSyncing(false);
     }
   };
 
@@ -149,6 +152,7 @@ export function BalanceWidget() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            {syncing && <div className="animate-pulse h-2 w-2 bg-primary rounded-full" />}
             <DollarSign className="h-5 w-5" />
             Balance
           </CardTitle>
