@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,18 @@ import { Loader2, CreditCard, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
+// Dynamically load Stripe with publishable key from backend
+const getStripePromise = async (): Promise<Stripe | null> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-stripe-config');
+    if (error) throw error;
+    if (!data?.publishableKey) throw new Error('Stripe publishable key not configured');
+    return loadStripe(data.publishableKey);
+  } catch (error) {
+    console.error('Failed to load Stripe:', error);
+    return null;
+  }
+};
 
 interface PaymentFormProps {
   onSuccess: (paymentMethodId: string) => void;
@@ -119,11 +130,21 @@ interface StripePaymentCollectionProps {
 
 export function StripePaymentCollection({ onSuccess, onSkip }: StripePaymentCollectionProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const createSetupIntent = async () => {
       try {
+        // Initialize Stripe first
+        const promise = getStripePromise();
+        setStripePromise(promise);
+        const stripe = await promise;
+        
+        if (!stripe) {
+          throw new Error('Failed to initialize Stripe. Please try again or skip to use the free plan.');
+        }
         // Check authentication first
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         console.log('Session check:', { 
@@ -159,11 +180,12 @@ export function StripePaymentCollection({ onSuccess, onSkip }: StripePaymentColl
         setClientSecret(data.clientSecret);
       } catch (error: any) {
         console.error('Payment form error:', error);
-        toast.error(
-          error.message === "Stripe secret key not configured" 
-            ? "Payment system not configured. Please contact support." 
-            : error.message || "Failed to load payment form. You can skip and use the free plan."
-        );
+        const errorMessage = error.message === "Stripe secret key not configured" 
+          ? "Payment system not configured. Please contact support." 
+          : error.message || "Failed to load payment form. You can skip and use the free plan.";
+        
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -181,13 +203,22 @@ export function StripePaymentCollection({ onSuccess, onSkip }: StripePaymentColl
     );
   }
 
-  if (!clientSecret) {
+  if (!clientSecret || !stripePromise) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground mb-4">Unable to load payment form</p>
-        <Button onClick={onSkip} variant="outline">
-          Continue with Free Plan
-        </Button>
+      <div className="text-center py-8 space-y-4">
+        <p className="text-muted-foreground mb-4">
+          {error || "Unable to load payment form"}
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button onClick={onSkip} variant="outline">
+            Continue with Free Plan
+          </Button>
+          {error && (
+            <Button onClick={() => window.location.reload()} variant="ghost" size="sm">
+              Try Again
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

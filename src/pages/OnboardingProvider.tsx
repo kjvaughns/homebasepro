@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, CheckCircle2, Calendar } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, Calendar, CreditCard } from "lucide-react";
 
 interface Service {
   name: string;
@@ -63,6 +63,7 @@ export default function OnboardingProvider() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [checkingCheckout, setCheckingCheckout] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     // Default to light mode
     if (typeof window !== 'undefined') {
@@ -117,24 +118,55 @@ export default function OnboardingProvider() {
 
   useEffect(() => {
     const loadProgress = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setFormData(prev => ({
-          ...prev,
-          businessName: user.user_metadata?.full_name || "",
-          phone: user.user_metadata?.phone || ""
-        }));
+      try {
+        // Check for Stripe Checkout return
+        const urlParams = new URLSearchParams(window.location.search);
+        const checkoutStatus = urlParams.get('checkout');
         
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('onboarding_progress')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (profile?.onboarding_progress) {
-          const progress = profile.onboarding_progress as any;
-          setFormData(prev => ({ ...prev, ...progress }));
+        if (checkoutStatus === 'success') {
+          console.log('✅ Returned from successful Stripe Checkout');
+          toast.success('🎉 Your 7-day Pro trial has started!');
+          
+          // Clear the query params
+          window.history.replaceState({}, '', window.location.pathname);
+          
+          // Complete onboarding
+          await handleComplete();
+          setCheckingCheckout(false);
+          return;
+        } else if (checkoutStatus === 'cancel') {
+          console.log('❌ User canceled Stripe Checkout');
+          toast.error('Payment was canceled. You can try again or continue with the free plan.');
+          
+          // Clear the query params and go back to plan selection
+          window.history.replaceState({}, '', window.location.pathname);
+          setCurrentStep(8);
+          setFormData(prev => ({ ...prev, selectedPlan: 'free' }));
+          setCheckingCheckout(false);
+          return;
         }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setFormData(prev => ({
+            ...prev,
+            businessName: user.user_metadata?.full_name || "",
+            phone: user.user_metadata?.phone || ""
+          }));
+          
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('onboarding_progress')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (profile?.onboarding_progress) {
+            const progress = profile.onboarding_progress as any;
+            setFormData(prev => ({ ...prev, ...progress }));
+          }
+        }
+      } finally {
+        setCheckingCheckout(false);
       }
     };
     loadProgress();
@@ -242,24 +274,46 @@ export default function OnboardingProvider() {
     if (currentStep === 4 && !formData.pricingStrategy.category) return toast.error("Please select a pricing category");
 
     if (currentStep === 8) {
-      if (formData.selectedPlan === 'trial') {
-        setCurrentStep(9);
-        await saveProgress();
-        return;
-      } else {
+      // User selected plan, proceed accordingly
+      if (formData.selectedPlan === 'free') {
         await handleComplete();
-        return;
-      }
-    }
+      } else if (formData.selectedPlan === 'trial') {
+        // Redirect to hosted Stripe Checkout with promo codes enabled
+        setLoading(true);
+        try {
+          console.log('🎯 Redirecting to Stripe Checkout for trial subscription...');
+          
+          const { data, error } = await supabase.functions.invoke('payments-api', {
+            body: { 
+              action: 'create-subscription',
+              plan: 'beta' // beta plan has 14-day trial configured
+            }
+          });
 
-    if (currentStep === 9) {
-      if (!formData.paymentMethodId) return toast.error("Please add a payment method or choose the free plan");
-      await handleComplete();
+          if (error) {
+            console.error('Stripe Checkout error:', error);
+            throw error;
+          }
+
+          if (!data?.checkoutUrl) {
+            throw new Error('No checkout URL returned from server');
+          }
+
+          console.log('✅ Redirecting to Stripe Checkout:', data.checkoutUrl);
+          
+          // Redirect to Stripe hosted Checkout
+          window.location.href = data.checkoutUrl;
+        } catch (error: any) {
+          console.error('Failed to create checkout session:', error);
+          toast.error(error.message || 'Failed to initialize payment. Please try again or continue with free plan.');
+          setLoading(false);
+        }
+      }
       return;
     }
 
     await saveProgress();
-    if (currentStep < 9) setCurrentStep(currentStep + 1);
+    if (currentStep < 8) setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => { if (currentStep > 0) setCurrentStep(currentStep - 1); };
@@ -273,6 +327,17 @@ export default function OnboardingProvider() {
     toast.info("Switched to Free Plan");
     await handleComplete();
   };
+
+  if (checkingCheckout) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Completing your setup...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <OnboardingFrame theme={theme}>
@@ -369,17 +434,21 @@ export default function OnboardingProvider() {
           </OnboardingCard>
         )}
 
-        {currentStep === 9 && (
-          <OnboardingCard title="Almost there! Start your 7-day trial" subtitle="Add your payment method to unlock all Pro features">
-            <StripePaymentCollection onSuccess={handlePaymentSuccess} onSkip={handlePaymentSkip} />
-          </OnboardingCard>
-        )}
-
         <div className="flex gap-3 pt-4">
-          {currentStep > 0 && currentStep !== 8 && currentStep !== 9 && <Button variant="outline" onClick={handleBack} disabled={loading}>Back</Button>}
-          {(currentStep < 8 || (currentStep === 8 && formData.selectedPlan === 'free')) && (
+          {currentStep > 0 && currentStep !== 8 && <Button variant="outline" onClick={handleBack} disabled={loading}>Back</Button>}
+          {currentStep < 8 && (
             <Button onClick={handleNext} disabled={loading} className="flex-1">
-              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : currentStep === 8 && formData.selectedPlan === 'free' ? <><CheckCircle2 className="h-4 w-4 mr-2" />Complete Setup</> : "Continue"}
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting to secure checkout...</> : "Continue"}
+            </Button>
+          )}
+          {currentStep === 8 && formData.selectedPlan === 'free' && (
+            <Button onClick={handleNext} disabled={loading} className="flex-1">
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : <><CheckCircle2 className="h-4 w-4 mr-2" />Complete Setup</>}
+            </Button>
+          )}
+          {currentStep === 8 && formData.selectedPlan === 'trial' && (
+            <Button onClick={handleNext} disabled={loading} className="flex-1">
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting to secure checkout...</> : <><CreditCard className="h-4 w-4 mr-2" />Start 7-Day Trial</>}
             </Button>
           )}
         </div>
