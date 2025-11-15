@@ -12,20 +12,31 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization');
+    console.log('Authorization header present:', !!authHeader);
+    
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      throw new Error('Unauthorized: No authorization header');
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     );
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     
+    console.log('Auth check - User:', user?.id, 'Error:', authError?.message);
+    
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      console.error('Authentication failed:', authError);
+      throw new Error(`Unauthorized: ${authError?.message || 'No user found'}`);
     }
 
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 

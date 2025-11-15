@@ -106,6 +106,18 @@ export function StripePaymentCollection({ onSuccess, onSkip }: StripePaymentColl
   useEffect(() => {
     const createSetupIntent = async () => {
       try {
+        // Check authentication first
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('Session check:', { 
+          hasSession: !!session, 
+          hasToken: !!session?.access_token,
+          error: sessionError 
+        });
+        
+        if (!session?.access_token) {
+          throw new Error("Please complete signup before adding payment method");
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
 
