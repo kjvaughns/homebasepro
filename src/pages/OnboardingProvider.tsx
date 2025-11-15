@@ -28,12 +28,11 @@ interface Service {
 }
 
 interface Question {
-  id: string;
-  question_text: string;
-  question_type: 'text' | 'multiple_choice' | 'yes_no' | 'number' | 'image';
+  text: string;
+  type: 'text' | 'yes_no' | 'multiple_choice' | 'number' | 'image';
   options?: string[];
-  complexity_weight: number;
-  is_required: boolean;
+  complexity: number;
+  required: boolean;
 }
 
 interface OnboardingData {
@@ -85,8 +84,8 @@ export default function OnboardingProvider() {
     businessDescription: "",
     services: [],
     pricingStrategy: {
-      category: '',
-      overhead_per_job_cents: 0,
+      category: 'service_call',
+      overhead_per_job: 0,
       urgency_surcharge_pct: 0,
       enable_urgency_surcharge: false
     },

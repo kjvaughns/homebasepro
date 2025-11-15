@@ -20,14 +20,14 @@ interface FixedScopePricing {
 }
 
 interface MarketAnalysis {
-  median_rate: number;
+  local_median_cents: number;
   your_vs_market_pct: number;
   assessment: string;
   confidence: string;
   reasoning: string;
 }
 
-interface PricingStrategy {
+export interface PricingStrategy {
   category: 'service_call' | 'fixed_scope';
   service_call_pricing?: ServiceCallPricing;
   fixed_scope_pricing?: FixedScopePricing;
