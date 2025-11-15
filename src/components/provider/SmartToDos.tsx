@@ -41,10 +41,10 @@ export function SmartToDos() {
 
       // Check for unpaid invoices
       const { count: unpaidCount } = await supabase
-        .from("invoices" as any)
+        .from("invoices")
         .select("*", { count: 'exact', head: true })
-        .eq("provider_id", org.id)
-        .eq("status", "pending");
+        .eq("organization_id", org.id)
+        .in("status", ["pending", "overdue"]);
 
       if (unpaidCount && unpaidCount > 0) {
         generatedTodos.push({
@@ -52,7 +52,7 @@ export function SmartToDos() {
           title: `${unpaidCount} unpaid ${unpaidCount === 1 ? 'invoice' : 'invoices'}`,
           description: `Follow up to collect ${unpaidCount === 1 ? 'payment' : 'payments'}`,
           priority: 'high',
-          action: `/provider/money`,
+          action: `/provider/money?tab=invoices&filter=unpaid`,
           icon: DollarSign
         });
       }

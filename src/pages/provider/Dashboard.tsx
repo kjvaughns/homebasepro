@@ -208,7 +208,7 @@ export default function ProviderDashboard() {
                     className="w-full flex items-center justify-between p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all min-h-[44px]"
                     onClick={() => {
                       triggerHaptic('light');
-                      navigate('/provider/money');
+                      navigate('/provider/money?tab=invoices&filter=unpaid');
                     }}
                   >
                     <div className="flex items-center gap-3">
@@ -241,38 +241,7 @@ export default function ProviderDashboard() {
               </Card>
 
               {/* 💰 Section 2: THIS WEEK'S MONEY */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    💰 This Week's Money
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <EnhancedMoneyCard />
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button 
-                      className="h-12"
-                      onClick={() => {
-                        triggerHaptic('light');
-                        navigate('/provider/money?action=send-invoice');
-                      }}
-                    >
-                      Send Invoice
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      className="h-12"
-                      onClick={() => {
-                        triggerHaptic('light');
-                        navigate('/provider/money?action=record-payment');
-                      }}
-                    >
-                      Record Payment
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <EnhancedMoneyCard />
 
               {/* 📅 Section 3: UPCOMING SCHEDULE */}
               <Card>
