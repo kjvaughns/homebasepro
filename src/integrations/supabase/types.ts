@@ -2671,6 +2671,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          ai_generated_description: string | null
           avg_response_time_hours: number | null
           base_zip: string | null
           business_address: string | null
@@ -2712,6 +2713,7 @@ export type Database = {
           stripe_onboarding_complete: boolean | null
           tagline: string | null
           team_limit: number | null
+          trade_type: string | null
           transaction_fee_pct: number | null
           updated_at: string
           verification_notes: string | null
@@ -2720,6 +2722,7 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
+          ai_generated_description?: string | null
           avg_response_time_hours?: number | null
           base_zip?: string | null
           business_address?: string | null
@@ -2761,6 +2764,7 @@ export type Database = {
           stripe_onboarding_complete?: boolean | null
           tagline?: string | null
           team_limit?: number | null
+          trade_type?: string | null
           transaction_fee_pct?: number | null
           updated_at?: string
           verification_notes?: string | null
@@ -2769,6 +2773,7 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
+          ai_generated_description?: string | null
           avg_response_time_hours?: number | null
           base_zip?: string | null
           business_address?: string | null
@@ -2810,6 +2815,7 @@ export type Database = {
           stripe_onboarding_complete?: boolean | null
           tagline?: string | null
           team_limit?: number | null
+          trade_type?: string | null
           transaction_fee_pct?: number | null
           updated_at?: string
           verification_notes?: string | null
@@ -3576,6 +3582,7 @@ export type Database = {
           address_line2: string | null
           address_postal_code: string | null
           address_state: string | null
+          ai_features_enabled: Json | null
           avatar_url: string | null
           created_at: string
           default_property_id: string | null
@@ -3586,14 +3593,17 @@ export type Database = {
           last_activity_at: string | null
           milestone_celebrations: Json | null
           onboarded_at: string | null
+          onboarding_progress: Json | null
           phone: string | null
           plan: string | null
+          pricing_preferences: Json | null
           seen_tutorial_at: string | null
           setup_completed: boolean | null
           setup_completed_at: string | null
           stripe_customer_id: string | null
           stripe_default_payment_method: string | null
           stripe_subscription_id: string | null
+          trade_type: string | null
           trial_ends_at: string | null
           trial_extended: boolean | null
           trial_started_at: string | null
@@ -3609,6 +3619,7 @@ export type Database = {
           address_line2?: string | null
           address_postal_code?: string | null
           address_state?: string | null
+          ai_features_enabled?: Json | null
           avatar_url?: string | null
           created_at?: string
           default_property_id?: string | null
@@ -3619,14 +3630,17 @@ export type Database = {
           last_activity_at?: string | null
           milestone_celebrations?: Json | null
           onboarded_at?: string | null
+          onboarding_progress?: Json | null
           phone?: string | null
           plan?: string | null
+          pricing_preferences?: Json | null
           seen_tutorial_at?: string | null
           setup_completed?: boolean | null
           setup_completed_at?: string | null
           stripe_customer_id?: string | null
           stripe_default_payment_method?: string | null
           stripe_subscription_id?: string | null
+          trade_type?: string | null
           trial_ends_at?: string | null
           trial_extended?: boolean | null
           trial_started_at?: string | null
@@ -3642,6 +3656,7 @@ export type Database = {
           address_line2?: string | null
           address_postal_code?: string | null
           address_state?: string | null
+          ai_features_enabled?: Json | null
           avatar_url?: string | null
           created_at?: string
           default_property_id?: string | null
@@ -3652,14 +3667,17 @@ export type Database = {
           last_activity_at?: string | null
           milestone_celebrations?: Json | null
           onboarded_at?: string | null
+          onboarding_progress?: Json | null
           phone?: string | null
           plan?: string | null
+          pricing_preferences?: Json | null
           seen_tutorial_at?: string | null
           setup_completed?: boolean | null
           setup_completed_at?: string | null
           stripe_customer_id?: string | null
           stripe_default_payment_method?: string | null
           stripe_subscription_id?: string | null
+          trade_type?: string | null
           trial_ends_at?: string | null
           trial_extended?: boolean | null
           trial_started_at?: string | null
@@ -4185,6 +4203,50 @@ export type Database = {
           {
             foreignKeyName: "provider_rates_provider_org_id_fkey"
             columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_services: {
+        Row: {
+          ai_generated: boolean | null
+          base_price_cents: number | null
+          created_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          base_price_cents?: number | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          ai_generated?: boolean | null
+          base_price_cents?: number | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_services_organization_id_fkey"
+            columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
