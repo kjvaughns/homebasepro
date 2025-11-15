@@ -85,6 +85,8 @@ export function AIPricingCoach({ tradeType, serviceArea, value, onChange }: AIPr
     }
   };
 
+  const hasAnalysis = !!value.market_analysis;
+
   return (
     <div className="space-y-6">
       <ServiceCategorySelector
@@ -117,7 +119,7 @@ export function AIPricingCoach({ tradeType, serviceArea, value, onChange }: AIPr
           background: 'linear-gradient(90deg, hsl(var(--onboarding-green)), hsl(var(--accent)))',
           color: '#0b0d10'
         }}>
-          {isAnalyzing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing...</> : <><TrendingUp className="w-4 h-4 mr-2" />Analyze Pricing</>}
+          {isAnalyzing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing...</> : <><TrendingUp className="w-4 h-4 mr-2" />{hasAnalysis ? 'Re-analyze Pricing' : 'Analyze Pricing'}</>}
         </Button>
       </div>
 

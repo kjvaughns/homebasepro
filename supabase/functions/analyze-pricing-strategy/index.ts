@@ -58,6 +58,7 @@ What is the typical local market median for this service? How do they compare? P
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
+        temperature: 0,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

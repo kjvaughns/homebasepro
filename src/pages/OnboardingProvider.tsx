@@ -64,15 +64,12 @@ export default function OnboardingProvider() {
   const [loading, setLoading] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    // Detect system preference on mount
+    // Default to light mode
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('onboarding-theme') as 'light' | 'dark' | null;
       if (savedTheme) return savedTheme;
-      
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      return prefersDark ? 'dark' : 'light';
     }
-    return 'dark';
+    return 'light';
   });
   
   const [formData, setFormData] = useState<OnboardingData>({
@@ -343,6 +340,7 @@ export default function OnboardingProvider() {
           <OnboardingCard title="Client Intake Questions" subtitle="Collect key info to scope jobs better (optional)">
             <ClientQABuilder
               tradeType={formData.tradeType === 'other' ? formData.customTrade : formData.tradeType || ''}
+              services={formData.services}
               questions={formData.clientQuestions}
               onChange={(questions) => setFormData(prev => ({ ...prev, clientQuestions: questions }))}
             />
