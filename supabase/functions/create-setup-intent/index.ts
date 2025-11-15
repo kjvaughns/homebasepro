@@ -29,11 +29,13 @@ serve(async (req) => {
         },
       }
     );
+    const bearer = authHeader.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length)
+      : authHeader;
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(bearer);
     
     console.log('Auth check - User:', user?.id, 'Error:', authError?.message);
-    
     if (authError || !user) {
       console.error('Authentication failed:', authError);
       throw new Error(`Unauthorized: ${authError?.message || 'No user found'}`);
