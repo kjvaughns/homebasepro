@@ -8,15 +8,16 @@ import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
 import { OnboardingCard } from "@/components/onboarding/OnboardingCard";
 import { TradeSelector } from "@/components/onboarding/TradeSelector";
 import { AIServiceGenerator } from "@/components/onboarding/AIServiceGenerator";
-import { ServicesList } from "@/components/onboarding/ServicesList";
+import { EditableServicesList } from "@/components/onboarding/EditableServicesList";
 import { PricingSliders } from "@/components/onboarding/PricingSliders";
 import { FeatureToggles } from "@/components/onboarding/FeatureToggles";
 import { PlanComparison } from "@/components/onboarding/PlanComparison";
+import { StripePaymentCollection } from "@/components/onboarding/StripePaymentCollection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Calendar, ArrowRight } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, Calendar } from "lucide-react";
 
 interface Service {
   name: string;
@@ -27,16 +28,13 @@ interface Service {
 
 interface OnboardingData {
   tradeType: string | null;
+  customTrade: string;
   businessName: string;
   phone: string;
   serviceArea: string;
   businessDescription: string;
   services: Service[];
-  pricingPreferences: {
-    min: number;
-    avg: number;
-    max: number;
-  };
+  pricingPreferences: { min: number; avg: number; max: number };
   calendarSynced: boolean;
   calendarType: 'google' | 'apple' | null;
   aiFeatures: {
@@ -47,6 +45,7 @@ interface OnboardingData {
   };
   selectedPlan: 'trial' | 'free';
   stripeConnected: boolean;
+  paymentMethodId: string | null;
 }
 
 export default function OnboardingProvider() {
@@ -54,9 +53,11 @@ export default function OnboardingProvider() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
   const [formData, setFormData] = useState<OnboardingData>({
     tradeType: null,
+    customTrade: "",
     businessName: "",
     phone: "",
     serviceArea: "",
@@ -72,22 +73,35 @@ export default function OnboardingProvider() {
       appointment_reminders: true
     },
     selectedPlan: 'trial',
-    stripeConnected: false
+    stripeConnected: false,
+    paymentMethodId: null
   });
 
-  // Load progress on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('onboarding-theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      setTheme('light');
+    }
+  }, []);
+
+  const handleThemeToggle = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('onboarding-theme', newTheme);
+  };
+
   useEffect(() => {
     const loadProgress = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Pre-fill from auth metadata
         setFormData(prev => ({
           ...prev,
           businessName: user.user_metadata?.full_name || "",
           phone: user.user_metadata?.phone || ""
         }));
         
-        // Load saved progress
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_progress')
@@ -95,32 +109,21 @@ export default function OnboardingProvider() {
           .single();
         
         if (profile?.onboarding_progress) {
-          const progress = profile.onboarding_progress as any as OnboardingData;
+          const progress = profile.onboarding_progress as any;
           setFormData(prev => ({ ...prev, ...progress }));
-          // If they have progress, start at their last step
-          if (progress.tradeType) {
-            const lastStep = progress.services?.length > 0 ? 4 : 
-                           progress.tradeType ? 2 : 0;
-            setCurrentStep(lastStep);
-          }
         }
       }
     };
     loadProgress();
   }, []);
 
-  // Save progress after each step
   const saveProgress = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase
-        .from('profiles')
-        .update({ onboarding_progress: formData as any })
-        .eq('user_id', user.id);
+      await supabase.from('profiles').update({ onboarding_progress: formData as any }).eq('user_id', user.id);
     }
   };
 
-  // Generate business description with AI
   const handleGenerateDescription = async () => {
     if (!formData.businessName || !formData.tradeType) {
       toast.error("Please select a trade and enter business name first");
@@ -131,442 +134,212 @@ export default function OnboardingProvider() {
     try {
       const { data, error } = await supabase.functions.invoke('generate-business-description', {
         body: {
-          businessName: formData.businessName,
-          tradeType: formData.tradeType,
+          name: formData.businessName,
+          tradeType: formData.tradeType === 'other' ? formData.customTrade : formData.tradeType,
           location: formData.serviceArea
         }
       });
       
       if (error) throw error;
-      
-      setFormData(prev => ({
-        ...prev,
-        businessDescription: data.description
-      }));
-      
+      setFormData(prev => ({ ...prev, businessDescription: data.description }));
       toast.success("Description generated!");
     } catch (error: any) {
-      console.error(error);
       toast.error(error.message || "Failed to generate description");
     } finally {
       setGeneratingDescription(false);
     }
   };
 
-  // Handle services generated from AI
-  const handleServicesGenerated = (services: Service[]) => {
-    setFormData(prev => ({ ...prev, services }));
-    toast.success(`Generated ${services.length} services!`);
-  };
-
-  // Final submission
   const handleComplete = async () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      
-      // 1. Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: formData.businessName,
-          slug: formData.businessName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-          trade_type: formData.tradeType,
-          service_area: formData.serviceArea,
-          description: formData.businessDescription,
-          owner_id: user.id,
-          plan: 'free'
-        })
-        .select()
-        .single();
-      
+
+      const finalTradeType = formData.tradeType === 'other' ? formData.customTrade : formData.tradeType;
+
+      const { data: org, error: orgError } = await supabase.from('organizations').insert({
+        name: formData.businessName,
+        slug: formData.businessName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        trade_type: finalTradeType,
+        service_area: formData.serviceArea,
+        ai_generated_description: formData.businessDescription,
+        owner_id: user.id,
+        plan: 'free'
+      }).select().single();
+
       if (orgError) throw orgError;
-      
-      // 2. Create services
+
       if (formData.services.length > 0) {
-        const { error: servicesError } = await supabase
-          .from('provider_services')
-          .insert(
-            formData.services.map(s => ({
-              organization_id: org.id,
-              name: s.name,
-              description: s.description,
-              base_price_cents: s.base_price_cents,
-              duration_minutes: s.duration_minutes
-            }))
-          );
-        
-        if (servicesError) throw servicesError;
+        await supabase.from('provider_services').insert(
+          formData.services.map(s => ({
+            organization_id: org.id,
+            name: s.name,
+            description: s.description,
+            base_price_cents: s.base_price_cents,
+            duration_minutes: s.duration_minutes,
+            ai_generated: true
+          }))
+        );
       }
-      
-      // 3. Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          onboarded_at: new Date().toISOString(),
-          onboarding_progress: null
-        })
-        .eq('user_id', user.id);
-      
-      if (profileError) throw profileError;
-      
-      // 4. Show success message
-      if (formData.selectedPlan === 'trial') {
-        toast.success("Your 14-day Pro trial has started! 🎉");
-      } else {
-        toast.success("Welcome to HomeBase!");
+
+      const updateData: any = {
+        onboarded_at: new Date().toISOString(),
+        trade_type: finalTradeType,
+        pricing_preferences: formData.pricingPreferences,
+        ai_features_enabled: formData.aiFeatures,
+        onboarding_progress: null,
+        plan_type: formData.selectedPlan
+      };
+
+      if (formData.selectedPlan === 'trial' && formData.paymentMethodId) {
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 7);
+        updateData.trial_started_at = new Date().toISOString();
+        updateData.trial_ends_at = trialEndDate.toISOString();
+        updateData.stripe_payment_method_id = formData.paymentMethodId;
       }
-      
-      // 5. Navigate to dashboard
+
+      await supabase.from('profiles').update(updateData).eq('user_id', user.id);
+
+      toast.success(formData.selectedPlan === 'trial' ? "Your 7-day Pro trial has started! 🎉" : "Welcome to HomeBase!");
       navigate('/provider/dashboard');
-      
     } catch (error: any) {
-      console.error("Completion error:", error);
       toast.error(error.message || "Failed to complete onboarding");
     } finally {
       setLoading(false);
     }
   };
 
-  // Navigation
   const handleNext = async () => {
-    // Validate current step
-    if (currentStep === 1 && !formData.tradeType) {
-      toast.error("Please select your trade");
-      return;
+    if (currentStep === 1 && !formData.tradeType) return toast.error("Please select your trade");
+    if (currentStep === 1 && formData.tradeType === 'other' && !formData.customTrade.trim()) return toast.error("Please specify your trade");
+    if (currentStep === 2 && (!formData.businessName || !formData.serviceArea)) return toast.error("Please fill in business name and service area");
+    if (currentStep === 3 && formData.services.length === 0) return toast.error("Please generate at least one service");
+
+    if (currentStep === 7) {
+      if (formData.selectedPlan === 'trial') {
+        setCurrentStep(8);
+        await saveProgress();
+        return;
+      } else {
+        await handleComplete();
+        return;
+      }
     }
-    
-    if (currentStep === 2 && (!formData.businessName || !formData.serviceArea)) {
-      toast.error("Please fill in business name and service area");
-      return;
-    }
-    
-    if (currentStep === 3 && formData.services.length === 0) {
-      toast.error("Please generate at least one service");
-      return;
-    }
-    
-    // Save progress
-    await saveProgress();
-    
-    // Move to next step or complete
-    if (currentStep < 7) {
-      setCurrentStep(currentStep + 1);
-    } else {
+
+    if (currentStep === 8) {
+      if (!formData.paymentMethodId) return toast.error("Please add a payment method or choose the free plan");
       await handleComplete();
+      return;
     }
-  };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSkip = async () => {
     await saveProgress();
-    setCurrentStep(currentStep + 1);
+    if (currentStep < 8) setCurrentStep(currentStep + 1);
+  };
+
+  const handleBack = () => { if (currentStep > 0) setCurrentStep(currentStep - 1); };
+  const handlePaymentSuccess = async (paymentMethodId: string) => {
+    setFormData(prev => ({ ...prev, paymentMethodId }));
+    toast.success("Payment method saved!");
+    await handleComplete();
+  };
+  const handlePaymentSkip = async () => {
+    setFormData(prev => ({ ...prev, selectedPlan: 'free', paymentMethodId: null }));
+    toast.info("Switched to Free Plan");
+    await handleComplete();
   };
 
   return (
-    <OnboardingFrame>
-      <OnboardingHeader />
-      
+    <OnboardingFrame theme={theme}>
+      <OnboardingHeader theme={theme} onThemeToggle={handleThemeToggle} />
       <div className="p-5 space-y-4 flex-1 overflow-y-auto">
-        <OnboardingProgress currentStep={currentStep} totalSteps={8} />
-        
-        {/* Step 0: Welcome */}
+        <OnboardingProgress currentStep={currentStep} totalSteps={9} />
+
         {currentStep === 0 && (
-          <OnboardingCard>
-            <div className="text-center space-y-4">
-              <div className="text-4xl">👋</div>
-              <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--onboarding-text))' }}>
-                Welcome to HomeBase Pro
-              </h2>
-              <p className="text-sm" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-                Set up your business in under 3 minutes with AI assistance
-              </p>
-              
-              <div className="grid gap-3 mt-6">
-                <div className="flex items-center gap-3 p-3 rounded-lg" 
-                     style={{ background: 'hsla(var(--onboarding-card))' }}>
-                  <div className="text-2xl">⚡</div>
-                  <div className="text-left">
-                    <div className="font-bold text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>
-                      Lightning Fast Setup
-                    </div>
-                    <div className="text-xs" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-                      AI generates your services automatically
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 rounded-lg" 
-                     style={{ background: 'hsla(var(--onboarding-card))' }}>
-                  <div className="text-2xl">🤖</div>
-                  <div className="text-left">
-                    <div className="font-bold text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>
-                      Smart Automation
-                    </div>
-                    <div className="text-xs" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-                      Auto follow-ups, reminders & more
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 p-3 rounded-lg" 
-                     style={{ background: 'hsla(var(--onboarding-card))' }}>
-                  <div className="text-2xl">💳</div>
-                  <div className="text-left">
-                    <div className="font-bold text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>
-                      Get Paid Instantly
-                    </div>
-                    <div className="text-xs" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-                      Connect your bank in minutes
-                    </div>
-                  </div>
-                </div>
+          <OnboardingCard title="Welcome to HomeBase Pro" subtitle="Set up your business in under 3 minutes">
+            <div className="space-y-4 text-center">
+              <div className="text-6xl mb-4">🏠</div>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>✨ AI-powered service generation</p>
+                <p>💳 Instant payments & invoicing</p>
+                <p>📅 Smart scheduling & reminders</p>
               </div>
-              
-              <Button 
-                onClick={() => setCurrentStep(1)} 
-                className="w-full mt-6"
-                size="lg"
-              >
-                Start Setup <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
             </div>
           </OnboardingCard>
         )}
-        
-        {/* Step 1: Trade Selection */}
+
         {currentStep === 1 && (
-          <OnboardingCard>
-            <h3 className="text-xl font-bold mb-4" style={{ color: 'hsl(var(--onboarding-text))' }}>
-              What's your trade?
-            </h3>
-            <TradeSelector
-              selected={formData.tradeType}
-              onSelect={(trade) => setFormData(prev => ({ ...prev, tradeType: trade }))}
-            />
+          <OnboardingCard title="What's your trade?" subtitle="Select your primary service category">
+            <TradeSelector selected={formData.tradeType} onSelect={(trade) => setFormData(prev => ({ ...prev, tradeType: trade }))} customTrade={formData.customTrade} onCustomTradeChange={(value) => setFormData(prev => ({ ...prev, customTrade: value }))} />
           </OnboardingCard>
         )}
-        
-        {/* Step 2: Business Information */}
+
         {currentStep === 2 && (
-          <OnboardingCard>
-            <h3 className="text-xl font-bold mb-4" style={{ color: 'hsl(var(--onboarding-text))' }}>
-              Tell us about your business
-            </h3>
-            
+          <OnboardingCard title="Tell us about your business" subtitle="Basic information to get started">
             <div className="space-y-4">
+              <div><Label>Business Name</Label><Input value={formData.businessName} onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))} placeholder="e.g., Joe's Plumbing" className="bg-background" /></div>
+              <div><Label>Phone Number</Label><Input type="tel" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="(555) 123-4567" className="bg-background" /></div>
+              <div><Label>Service Area (ZIP)</Label><Input value={formData.serviceArea} onChange={(e) => setFormData(prev => ({ ...prev, serviceArea: e.target.value }))} placeholder="e.g., 90210" className="bg-background" /></div>
               <div>
-                <Label style={{ color: 'hsl(var(--onboarding-text))' }}>Business Name</Label>
-                <Input
-                  value={formData.businessName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
-                  placeholder="e.g., Smith Plumbing"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label style={{ color: 'hsl(var(--onboarding-text))' }}>Phone Number</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="(555) 123-4567"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label style={{ color: 'hsl(var(--onboarding-text))' }}>Service Area (ZIP Code)</Label>
-                <Input
-                  value={formData.serviceArea}
-                  onChange={(e) => setFormData(prev => ({ ...prev, serviceArea: e.target.value }))}
-                  placeholder="90210"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <Label style={{ color: 'hsl(var(--onboarding-text))' }}>Business Description</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleGenerateDescription}
-                    disabled={generatingDescription || !formData.businessName}
-                  >
-                    {generatingDescription ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3 w-3" />
-                    )}
-                    <span className="ml-1 text-xs">Generate with AI</span>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Business Description</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={handleGenerateDescription} disabled={generatingDescription || !formData.businessName || !formData.tradeType}>
+                    {generatingDescription ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating...</> : <><Sparkles className="h-3 w-3 mr-1" />AI Generate</>}
                   </Button>
                 </div>
-                <Textarea
-                  value={formData.businessDescription}
-                  onChange={(e) => setFormData(prev => ({ ...prev, businessDescription: e.target.value }))}
-                  placeholder="Tell clients about your business..."
-                  rows={4}
-                  className="mt-1"
-                />
+                <Textarea value={formData.businessDescription} onChange={(e) => setFormData(prev => ({ ...prev, businessDescription: e.target.value }))} placeholder="Describe your services..." rows={4} className="bg-background" />
               </div>
             </div>
           </OnboardingCard>
         )}
-        
-        {/* Step 3: AI Service Generation */}
+
         {currentStep === 3 && (
-          <OnboardingCard>
-            <h3 className="text-xl font-bold mb-4" style={{ color: 'hsl(var(--onboarding-text))' }}>
-              What services do you offer?
-            </h3>
-            
-            <AIServiceGenerator
-              tradeType={formData.tradeType || ''}
-              defaultDescription={`I offer ${formData.tradeType} services including...`}
-              onServicesGenerated={handleServicesGenerated}
-            />
-            
-            {formData.services.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm font-semibold mb-2" style={{ color: 'hsl(var(--onboarding-text))' }}>
-                  Generated Services:
-                </p>
-                <ServicesList services={formData.services} />
-              </div>
-            )}
+          <OnboardingCard title="Your services" subtitle="Let AI generate your service catalog">
+            <AIServiceGenerator tradeType={formData.tradeType === 'other' ? formData.customTrade : formData.tradeType || ''} onGenerate={(services) => setFormData(prev => ({ ...prev, services }))} />
+            {formData.services.length > 0 && <EditableServicesList services={formData.services} onChange={(services) => setFormData(prev => ({ ...prev, services }))} />}
           </OnboardingCard>
         )}
-        
-        {/* Step 4: Pricing Intelligence */}
+
         {currentStep === 4 && (
-          <OnboardingCard>
-            <h3 className="text-xl font-bold mb-4" style={{ color: 'hsl(var(--onboarding-text))' }}>
-              Set your pricing range
-            </h3>
-            <p className="text-sm mb-4" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-              Help our AI suggest realistic quotes for your jobs
-            </p>
-            
-            <PricingSliders
-              value={formData.pricingPreferences}
-              onChange={(prefs) => setFormData(prev => ({ ...prev, pricingPreferences: prefs }))}
-            />
+          <OnboardingCard title="Set your pricing range" subtitle="Help us understand your pricing strategy">
+            <PricingSliders value={formData.pricingPreferences} onChange={(value) => setFormData(prev => ({ ...prev, pricingPreferences: value }))} />
           </OnboardingCard>
         )}
-        
-        {/* Step 5: Calendar Integration (Optional) */}
+
         {currentStep === 5 && (
-          <OnboardingCard>
-            <h3 className="text-xl font-bold mb-4" style={{ color: 'hsl(var(--onboarding-text))' }}>
-              Sync your calendar
-            </h3>
-            <p className="text-sm mb-4" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-              AI will automatically detect your open slots
-            </p>
-            
+          <OnboardingCard title="Sync your calendar" subtitle="Connect to auto-detect availability (optional)">
             <div className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => {
-                  toast.info("Google Calendar sync coming soon!");
-                  setFormData(prev => ({ ...prev, calendarSynced: true, calendarType: 'google' }));
-                }}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                Connect Google Calendar
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => {
-                  toast.info("Apple Calendar sync coming soon!");
-                  setFormData(prev => ({ ...prev, calendarSynced: true, calendarType: 'apple' }));
-                }}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                Connect Apple Calendar
-              </Button>
-              
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={handleSkip}
-              >
-                Skip for now
-              </Button>
+              <Button variant="outline" className="w-full" onClick={() => toast.info("Calendar sync coming soon!")}><Calendar className="h-4 w-4 mr-2" />Google Calendar</Button>
+              <Button variant="outline" className="w-full" onClick={() => toast.info("Calendar sync coming soon!")}><Calendar className="h-4 w-4 mr-2" />Apple Calendar</Button>
+              <p className="text-xs text-center text-muted-foreground mt-4">You can skip this and set it up later</p>
             </div>
           </OnboardingCard>
         )}
-        
-        {/* Step 6: AI Features & Automation */}
+
         {currentStep === 6 && (
-          <OnboardingCard>
-            <h3 className="text-xl font-bold mb-4" style={{ color: 'hsl(var(--onboarding-text))' }}>
-              Enable AI automation
-            </h3>
-            <p className="text-sm mb-4" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-              Let HomeBase handle follow-ups automatically
-            </p>
-            
-            <FeatureToggles
-              value={formData.aiFeatures}
-              onChange={(features) => setFormData(prev => ({ ...prev, aiFeatures: features }))}
-            />
+          <OnboardingCard title="AI automation features" subtitle="Let AI handle the busywork">
+            <FeatureToggles value={formData.aiFeatures} onChange={(value) => setFormData(prev => ({ ...prev, aiFeatures: value }))} />
           </OnboardingCard>
         )}
-        
-        {/* Step 7: Plan Selection */}
+
         {currentStep === 7 && (
-          <OnboardingCard>
-            <h3 className="text-xl font-bold mb-4" style={{ color: 'hsl(var(--onboarding-text))' }}>
-              Choose your plan
-            </h3>
-            
-            <PlanComparison
-              selected={formData.selectedPlan}
-              onSelect={(plan) => setFormData(prev => ({ ...prev, selectedPlan: plan }))}
-            />
+          <OnboardingCard title="Choose your plan" subtitle="Start with a trial or go free">
+            <PlanComparison selected={formData.selectedPlan} onSelect={(plan) => setFormData(prev => ({ ...prev, selectedPlan: plan }))} />
           </OnboardingCard>
         )}
-        
-        {/* Navigation Buttons */}
-        <div className="flex gap-3 sticky bottom-0 pt-4 pb-2" 
-             style={{ 
-               background: 'linear-gradient(180deg, transparent, hsl(var(--onboarding-bg-end)) 20%)',
-             }}>
-          {currentStep > 0 && currentStep < 7 && (
-            <Button 
-              variant="ghost" 
-              onClick={handleBack}
-              disabled={loading}
-            >
-              Back
-            </Button>
-          )}
-          
-          {currentStep > 0 && (
-            <Button 
-              onClick={handleNext} 
-              className="flex-1" 
-              disabled={loading}
-              size="lg"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : currentStep === 7 ? (
-                "Complete Setup"
-              ) : (
-                "Continue"
-              )}
+
+        {currentStep === 8 && formData.selectedPlan === 'trial' && (
+          <OnboardingCard title="Start your 7-day trial" subtitle="Add payment method to unlock Pro features">
+            <StripePaymentCollection onSuccess={handlePaymentSuccess} onSkip={handlePaymentSkip} />
+          </OnboardingCard>
+        )}
+
+        <div className="flex gap-3 pt-4">
+          {currentStep > 0 && currentStep !== 8 && <Button variant="outline" onClick={handleBack} disabled={loading}>Back</Button>}
+          {currentStep < 8 && (
+            <Button onClick={handleNext} disabled={loading} className="flex-1">
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : currentStep === 7 && formData.selectedPlan === 'free' ? <><CheckCircle2 className="h-4 w-4 mr-2" />Complete Setup</> : "Continue"}
             </Button>
           )}
         </div>

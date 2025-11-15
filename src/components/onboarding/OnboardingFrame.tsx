@@ -2,14 +2,17 @@ import { ReactNode } from "react";
 
 interface OnboardingFrameProps {
   children: ReactNode;
+  theme?: 'light' | 'dark';
 }
 
-export function OnboardingFrame({ children }: OnboardingFrameProps) {
+export function OnboardingFrame({ children, theme = 'dark' }: OnboardingFrameProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-8" 
-         style={{ 
-           background: 'linear-gradient(180deg, hsl(var(--onboarding-bg-start)), hsl(var(--onboarding-bg-end)))' 
-         }}>
+    <div 
+      className={`min-h-screen flex items-center justify-center p-4 md:p-8 ${theme}`}
+      style={{ 
+        background: 'linear-gradient(180deg, hsl(var(--onboarding-bg-start)), hsl(var(--onboarding-bg-end)))' 
+      }}
+    >
       <div className="w-full max-w-md mx-auto">
         <div className="relative rounded-[36px] overflow-hidden"
              style={{

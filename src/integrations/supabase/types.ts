@@ -3596,12 +3596,14 @@ export type Database = {
           onboarding_progress: Json | null
           phone: string | null
           plan: string | null
+          plan_type: string | null
           pricing_preferences: Json | null
           seen_tutorial_at: string | null
           setup_completed: boolean | null
           setup_completed_at: string | null
           stripe_customer_id: string | null
           stripe_default_payment_method: string | null
+          stripe_payment_method_id: string | null
           stripe_subscription_id: string | null
           trade_type: string | null
           trial_ends_at: string | null
@@ -3633,12 +3635,14 @@ export type Database = {
           onboarding_progress?: Json | null
           phone?: string | null
           plan?: string | null
+          plan_type?: string | null
           pricing_preferences?: Json | null
           seen_tutorial_at?: string | null
           setup_completed?: boolean | null
           setup_completed_at?: string | null
           stripe_customer_id?: string | null
           stripe_default_payment_method?: string | null
+          stripe_payment_method_id?: string | null
           stripe_subscription_id?: string | null
           trade_type?: string | null
           trial_ends_at?: string | null
@@ -3670,12 +3674,14 @@ export type Database = {
           onboarding_progress?: Json | null
           phone?: string | null
           plan?: string | null
+          plan_type?: string | null
           pricing_preferences?: Json | null
           seen_tutorial_at?: string | null
           setup_completed?: boolean | null
           setup_completed_at?: string | null
           stripe_customer_id?: string | null
           stripe_default_payment_method?: string | null
+          stripe_payment_method_id?: string | null
           stripe_subscription_id?: string | null
           trade_type?: string | null
           trial_ends_at?: string | null
