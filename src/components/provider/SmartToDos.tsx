@@ -37,14 +37,27 @@ export function SmartToDos() {
 
       if (orgError || !org) return;
 
+      console.log('[SmartToDos] Checking unpaid invoices for org:', org.id);
+
       const generatedTodos: ToDo[] = [];
 
-      // Check for unpaid invoices
-      const { count: unpaidCount } = await supabase
+      // Check for unpaid invoices - WITH DEBUG LOGGING
+      const { data: unpaidInvoices, count: unpaidCount, error: invoiceError } = await supabase
         .from("invoices")
-        .select("*", { count: 'exact', head: true })
+        .select("id, invoice_number, status, amount", { count: 'exact' })
         .eq("organization_id", org.id)
         .in("status", ["pending", "overdue"]);
+
+      console.log('[SmartToDos] Unpaid invoices query result:', {
+        count: unpaidCount,
+        error: invoiceError,
+        invoiceIds: unpaidInvoices?.map(i => ({ 
+          id: i.id, 
+          number: i.invoice_number, 
+          status: i.status, 
+          amount: i.amount 
+        }))
+      });
 
       if (unpaidCount && unpaidCount > 0) {
         generatedTodos.push({
