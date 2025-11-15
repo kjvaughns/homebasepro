@@ -452,9 +452,10 @@ Deno.serve(async (req) => {
               trial_settings: { end_behavior: { missing_payment_method: 'cancel' }},
               metadata: { org_id: org.id, user_id: user.id, plan }
             },
-            success_url: `${APP_URL}/provider/dashboard?trial_started=true`,
-            cancel_url: `${APP_URL}/onboarding/provider?canceled=true`,
+            success_url: `${APP_URL}/onboarding/provider?checkout=success`,
+            cancel_url: `${APP_URL}/onboarding/provider?checkout=cancel`,
             payment_method_collection: 'always',
+            allow_promotion_codes: true,
             metadata: { org_id: org.id, user_id: user.id, plan }
           });
           return ok({ ok: true, checkoutUrl: checkoutSession.url });
