@@ -9,22 +9,15 @@ import {
   Settings,
   HelpCircle,
   MessageSquare,
-  Megaphone,
-  DollarSign,
-  Briefcase,
-  Users,
-  TrendingUp,
   LogOut,
-  Plus,
-  ArrowRight
+  ArrowRight,
+  User
 } from "lucide-react";
-import { QuickActionsSheet } from "@/components/provider/QuickActionsSheet";
 
 export default function More() {
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const { triggerHaptic } = useDespia();
 
   useEffect(() => {
@@ -59,38 +52,14 @@ export default function More() {
     navigate('/');
   };
 
-  const businessHubItems = [
+  const menuItems = [
     {
-      icon: DollarSign,
-      title: "Payments & Balance",
-      description: "View earnings and manage payouts",
-      href: "/provider/money",
-      color: "text-emerald-600"
-    },
-    {
-      icon: Briefcase,
-      title: "Jobs & Work Orders",
-      description: "Manage your service schedule",
-      href: "/provider/schedule",
+      icon: User,
+      title: "Profile",
+      description: "Manage your personal information",
+      href: "/provider/settings",
       color: "text-blue-600"
     },
-    {
-      icon: Users,
-      title: "Team Management",
-      description: "Manage your team members",
-      href: "/provider/team",
-      color: "text-purple-600"
-    },
-    {
-      icon: TrendingUp,
-      title: "Analytics",
-      description: "View business insights",
-      href: "/provider/analytics",
-      color: "text-orange-600"
-    }
-  ];
-
-  const supportItems = [
     {
       icon: Settings,
       title: "Settings",
@@ -116,13 +85,6 @@ export default function More() {
       },
       color: "text-orange-600"
     },
-    {
-      icon: Megaphone,
-      title: "Product Updates",
-      description: "See what's new",
-      href: "/announcements",
-      color: "text-pink-600"
-    }
   ];
 
   if (loading) {
@@ -141,79 +103,27 @@ export default function More() {
     <div className="min-h-screen bg-background">
       <div className="p-4 md:p-6 space-y-6 pb-20">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">More</h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            {organization?.name || "Your business"}
+          <h1 className="text-2xl font-bold mb-1">More</h1>
+          <p className="text-muted-foreground">
+            {organization?.name || 'Settings & Support'}
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Business Hub</CardTitle>
-              <CardDescription>Core business operations</CardDescription>
+              <CardTitle className="text-lg">Settings & Support</CardTitle>
+              <CardDescription>Manage your account and get help</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3">
-              {businessHubItems.map((item, index) => (
-                <Link
-                  key={index}
-                  to={item.href}
-                  className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px]"
-                  onClick={() => triggerHaptic('light')}
-                >
-                  <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
-                    <item.icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm group-hover:text-primary transition-colors">
-                      {item.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.description}
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Support</CardTitle>
-              <CardDescription>Help and configuration</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              {supportItems.map((item, index) => (
-                item.external ? (
-                  <a
-                    key={index}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px]"
-                    onClick={() => triggerHaptic('light')}
-                  >
-                    <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
-                      <item.icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm group-hover:text-primary transition-colors">
-                        {item.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {item.description}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                  </a>
-                ) : item.onClick ? (
+            <CardContent className="space-y-2">
+              {menuItems.map((item) => (
+                item.onClick ? (
                   <button
-                    key={index}
+                    key={item.title}
                     onClick={item.onClick}
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px] text-left w-full"
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors group text-left"
                   >
-                    <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
+                    <div className={`w-10 h-10 rounded-full bg-accent flex items-center justify-center ${item.color}`}>
                       <item.icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -228,12 +138,14 @@ export default function More() {
                   </button>
                 ) : (
                   <Link
-                    key={index}
-                    to={item.href!}
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all group min-h-[60px]"
+                    key={item.title}
+                    to={item.href}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noopener noreferrer" : undefined}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors group"
                     onClick={() => triggerHaptic('light')}
                   >
-                    <div className={`p-3 rounded-lg bg-accent/20 ${item.color}`}>
+                    <div className={`w-10 h-10 rounded-full bg-accent flex items-center justify-center ${item.color}`}>
                       <item.icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -261,25 +173,6 @@ export default function More() {
           </Button>
         </div>
       </div>
-
-      {/* Floating Action Button */}
-      <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50">
-        <Button
-          size="icon"
-          className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => {
-            triggerHaptic('light');
-            setQuickActionsOpen(true);
-          }}
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </div>
-
-      <QuickActionsSheet 
-        open={quickActionsOpen}
-        onOpenChange={setQuickActionsOpen}
-      />
     </div>
   );
 }

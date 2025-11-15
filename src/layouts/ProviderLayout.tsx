@@ -44,8 +44,7 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
 import { initPWADetection } from "@/utils/pwaDetection";
-import { FloatingAIButton } from "@/components/provider/FloatingAIButton";
-import { AIChatModal } from "@/components/ai/AIChatModal";
+import { UnifiedFloatingWidget } from "@/components/provider/UnifiedFloatingWidget";
 
 // --- Mobile bottom nav (icons + label) content height ---
 const TABBAR_H = 80;
@@ -75,7 +74,6 @@ const ProviderLayout = () => {
   const [jobsSheetOpen, setJobsSheetOpen] = useState(false);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
   const [financialSheetOpen, setFinancialSheetOpen] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(false);
 
   const isMessagesRoute = location.pathname.startsWith("/provider/messages");
   const mainRef = useRef<HTMLDivElement>(null);
@@ -316,11 +314,8 @@ const ProviderLayout = () => {
         {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
         <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
 
-        {/* Floating AI Button */}
-        <FloatingAIButton onAIChat={() => setShowAIChat(true)} />
-
-        {/* AI Chat Modal */}
-        <AIChatModal open={showAIChat} onOpenChange={setShowAIChat} userRole="provider" />
+        {/* Unified Floating Widget */}
+        <UnifiedFloatingWidget />
 
         {!isMobile && <TutorialOverlay />}
       </div>
@@ -438,11 +433,8 @@ const ProviderLayout = () => {
       {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
       <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
       
-      {/* Floating AI Button */}
-      <FloatingAIButton onAIChat={() => setShowAIChat(true)} />
-
-      {/* AI Chat Modal */}
-      <AIChatModal open={showAIChat} onOpenChange={setShowAIChat} userRole="provider" />
+      {/* Unified Floating Widget */}
+      <UnifiedFloatingWidget />
       
       {/* Tutorial Overlay */}
       {!isMobile && <TutorialOverlay />}
