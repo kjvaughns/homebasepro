@@ -9,7 +9,8 @@ import { OnboardingCard } from "@/components/onboarding/OnboardingCard";
 import { TradeSelector } from "@/components/onboarding/TradeSelector";
 import { AIServiceGenerator } from "@/components/onboarding/AIServiceGenerator";
 import { EditableServicesList } from "@/components/onboarding/EditableServicesList";
-import { PricingSliders } from "@/components/onboarding/PricingSliders";
+import { AIPricingCoach, PricingStrategy } from "@/components/onboarding/AIPricingCoach";
+import { ClientQABuilder } from "@/components/onboarding/ClientQABuilder";
 import { FeatureToggles } from "@/components/onboarding/FeatureToggles";
 import { PlanComparison } from "@/components/onboarding/PlanComparison";
 import { StripePaymentCollection } from "@/components/onboarding/StripePaymentCollection";
@@ -26,6 +27,15 @@ interface Service {
   duration_minutes: number;
 }
 
+interface Question {
+  id: string;
+  question_text: string;
+  question_type: 'text' | 'multiple_choice' | 'yes_no' | 'number' | 'image';
+  options?: string[];
+  complexity_weight: number;
+  is_required: boolean;
+}
+
 interface OnboardingData {
   tradeType: string | null;
   customTrade: string;
@@ -34,7 +44,8 @@ interface OnboardingData {
   serviceArea: string;
   businessDescription: string;
   services: Service[];
-  pricingPreferences: { min: number; avg: number; max: number };
+  pricingStrategy: PricingStrategy;
+  clientQuestions: Question[];
   calendarSynced: boolean;
   calendarType: 'google' | 'apple' | null;
   aiFeatures: {
@@ -63,7 +74,13 @@ export default function OnboardingProvider() {
     serviceArea: "",
     businessDescription: "",
     services: [],
-    pricingPreferences: { min: 50, avg: 250, max: 1500 },
+    pricingStrategy: {
+      category: '',
+      overhead_per_job_cents: 0,
+      urgency_surcharge_pct: 0,
+      enable_urgency_surcharge: false
+    },
+    clientQuestions: [],
     calendarSynced: false,
     calendarType: null,
     aiFeatures: {
@@ -186,7 +203,7 @@ export default function OnboardingProvider() {
       const updateData: any = {
         onboarded_at: new Date().toISOString(),
         trade_type: finalTradeType,
-        pricing_preferences: formData.pricingPreferences,
+        pricing_preferences: formData.pricingStrategy,
         ai_features_enabled: formData.aiFeatures,
         onboarding_progress: null,
         plan_type: formData.selectedPlan
@@ -216,10 +233,11 @@ export default function OnboardingProvider() {
     if (currentStep === 1 && formData.tradeType === 'other' && !formData.customTrade.trim()) return toast.error("Please specify your trade");
     if (currentStep === 2 && (!formData.businessName || !formData.serviceArea)) return toast.error("Please fill in business name and service area");
     if (currentStep === 3 && formData.services.length === 0) return toast.error("Please generate at least one service");
+    if (currentStep === 4 && !formData.pricingStrategy.category) return toast.error("Please select a pricing category");
 
-    if (currentStep === 7) {
+    if (currentStep === 8) {
       if (formData.selectedPlan === 'trial') {
-        setCurrentStep(8);
+        setCurrentStep(9);
         await saveProgress();
         return;
       } else {
@@ -228,14 +246,14 @@ export default function OnboardingProvider() {
       }
     }
 
-    if (currentStep === 8) {
+    if (currentStep === 9) {
       if (!formData.paymentMethodId) return toast.error("Please add a payment method or choose the free plan");
       await handleComplete();
       return;
     }
 
     await saveProgress();
-    if (currentStep < 8) setCurrentStep(currentStep + 1);
+    if (currentStep < 9) setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => { if (currentStep > 0) setCurrentStep(currentStep - 1); };
@@ -254,7 +272,7 @@ export default function OnboardingProvider() {
     <OnboardingFrame theme={theme}>
       <OnboardingHeader theme={theme} onThemeToggle={handleThemeToggle} />
       <div className="p-5 space-y-4 flex-1 overflow-y-auto">
-        <OnboardingProgress currentStep={currentStep} totalSteps={9} />
+        <OnboardingProgress currentStep={currentStep} totalSteps={10} />
 
         {currentStep === 0 && (
           <OnboardingCard title="Welcome to HomeBase Pro" subtitle="Set up your business in under 3 minutes">
@@ -302,12 +320,27 @@ export default function OnboardingProvider() {
         )}
 
         {currentStep === 4 && (
-          <OnboardingCard title="Set your pricing range" subtitle="Help us understand your pricing strategy">
-            <PricingSliders value={formData.pricingPreferences} onChange={(value) => setFormData(prev => ({ ...prev, pricingPreferences: value }))} />
+          <OnboardingCard title="AI Pricing Intelligence" subtitle="Get market-informed pricing guidance">
+            <AIPricingCoach 
+              tradeType={formData.tradeType === 'other' ? formData.customTrade : formData.tradeType || ''}
+              serviceArea={formData.serviceArea}
+              value={formData.pricingStrategy}
+              onChange={(strategy) => setFormData(prev => ({ ...prev, pricingStrategy: strategy }))}
+            />
           </OnboardingCard>
         )}
 
         {currentStep === 5 && (
+          <OnboardingCard title="Client Intake Questions" subtitle="Collect key info to scope jobs better (optional)">
+            <ClientQABuilder
+              tradeType={formData.tradeType === 'other' ? formData.customTrade : formData.tradeType || ''}
+              questions={formData.clientQuestions}
+              onChange={(questions) => setFormData(prev => ({ ...prev, clientQuestions: questions }))}
+            />
+          </OnboardingCard>
+        )}
+
+        {currentStep === 6 && (
           <OnboardingCard title="Sync your calendar" subtitle="Connect to auto-detect availability (optional)">
             <div className="space-y-3">
               <Button variant="outline" className="w-full" onClick={() => toast.info("Calendar sync coming soon!")}><Calendar className="h-4 w-4 mr-2" />Google Calendar</Button>
@@ -317,14 +350,14 @@ export default function OnboardingProvider() {
           </OnboardingCard>
         )}
 
-        {currentStep === 6 && (
+        {currentStep === 7 && (
           <OnboardingCard title="AI automation features" subtitle="Let AI handle the busywork">
             <FeatureToggles value={formData.aiFeatures} onChange={(value) => setFormData(prev => ({ ...prev, aiFeatures: value }))} />
           </OnboardingCard>
         )}
 
-        {currentStep === 7 && (
-          <OnboardingCard title="Choose your plan" subtitle="Start with a trial or go free">
+        {currentStep === 8 && (
+          <OnboardingCard title="Choose your plan" subtitle="Start with a 7-day Pro trial or use Free forever">
             <PlanComparison selected={formData.selectedPlan} onSelect={(plan) => setFormData(prev => ({ ...prev, selectedPlan: plan }))} />
           </OnboardingCard>
         )}

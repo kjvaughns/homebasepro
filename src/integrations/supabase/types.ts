@@ -864,6 +864,56 @@ export type Database = {
           },
         ]
       }
+      client_intake_questions: {
+        Row: {
+          complexity_weight: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          options: Json | null
+          organization_id: string
+          question_text: string
+          question_type: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          complexity_weight?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          options?: Json | null
+          organization_id: string
+          question_text: string
+          question_type: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          complexity_weight?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          options?: Json | null
+          organization_id?: string
+          question_text?: string
+          question_type?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_intake_questions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_notes: {
         Row: {
           author_profile_id: string
@@ -2334,6 +2384,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      market_pricing_cache: {
+        Row: {
+          category: string
+          confidence_level: string | null
+          created_at: string | null
+          data_points: number | null
+          expires_at: string | null
+          id: string
+          local_median_cents: number
+          market_range_high_cents: number | null
+          market_range_low_cents: number | null
+          service_area: string
+          trade_type: string
+        }
+        Insert: {
+          category: string
+          confidence_level?: string | null
+          created_at?: string | null
+          data_points?: number | null
+          expires_at?: string | null
+          id?: string
+          local_median_cents: number
+          market_range_high_cents?: number | null
+          market_range_low_cents?: number | null
+          service_area: string
+          trade_type: string
+        }
+        Update: {
+          category?: string
+          confidence_level?: string | null
+          created_at?: string | null
+          data_points?: number | null
+          expires_at?: string | null
+          id?: string
+          local_median_cents?: number
+          market_range_high_cents?: number | null
+          market_range_low_cents?: number | null
+          service_area?: string
+          trade_type?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
