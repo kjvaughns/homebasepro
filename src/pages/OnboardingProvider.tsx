@@ -130,8 +130,15 @@ export default function OnboardingProvider() {
           // Clear the query params
           window.history.replaceState({}, '', window.location.pathname);
           
-          // Complete onboarding
-          await handleComplete();
+          // Mark as onboarded and navigate to dashboard
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from('profiles').update({
+              onboarded_at: new Date().toISOString()
+            }).eq('user_id', user.id);
+          }
+          
+          navigate('/provider/dashboard');
           setCheckingCheckout(false);
           return;
         } else if (checkoutStatus === 'cancel') {
@@ -278,11 +285,56 @@ export default function OnboardingProvider() {
       if (formData.selectedPlan === 'free') {
         await handleComplete();
       } else if (formData.selectedPlan === 'trial') {
-        // Redirect to hosted Stripe Checkout with promo codes enabled
+        // Create organization first, then redirect to Stripe Checkout
         setLoading(true);
         try {
-          console.log('🎯 Redirecting to Stripe Checkout for trial subscription...');
+          console.log('🎯 Creating organization before Stripe Checkout...');
           
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error("Not authenticated");
+
+          const finalTradeType = formData.tradeType === 'other' ? formData.customTrade : formData.tradeType;
+
+          // Create organization
+          const { data: org, error: orgError } = await supabase.from('organizations').insert({
+            name: formData.businessName,
+            slug: formData.businessName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+            trade_type: finalTradeType,
+            service_area: formData.serviceArea,
+            ai_generated_description: formData.businessDescription,
+            owner_id: user.id,
+            plan: 'free' // Will be updated by Stripe webhook
+          }).select().single();
+
+          if (orgError) throw orgError;
+          
+          console.log('✅ Organization created:', org.id);
+
+          // Create services if any
+          if (formData.services.length > 0) {
+            await supabase.from('provider_services').insert(
+              formData.services.map(s => ({
+                organization_id: org.id,
+                name: s.name,
+                description: s.description,
+                base_price_cents: s.base_price_cents,
+                duration_minutes: s.duration_minutes,
+                ai_generated: true
+              }))
+            );
+          }
+
+          // Update profile with onboarding progress
+          await supabase.from('profiles').update({
+            trade_type: finalTradeType,
+            pricing_preferences: formData.pricingStrategy as any,
+            ai_features_enabled: formData.aiFeatures as any,
+            plan_type: 'trial' // Will be confirmed after payment
+          }).eq('user_id', user.id);
+
+          console.log('🎯 Now redirecting to Stripe Checkout...');
+          
+          // Now create Stripe checkout session
           const { data, error } = await supabase.functions.invoke('payments-api', {
             body: { 
               action: 'create-subscription',
