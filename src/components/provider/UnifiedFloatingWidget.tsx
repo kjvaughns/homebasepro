@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Sparkles, UserPlus, Calendar, DollarSign, Receipt, MessageSquare } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDespia } from '@/hooks/useDespia';
@@ -8,11 +7,9 @@ import { AIChatModal } from '@/components/ai/AIChatModal';
 
 interface QuickAction {
   id: string;
-  title: string;
-  description: string;
+  label: string;
   icon: any;
   action: () => void;
-  priority: number;
 }
 
 export function UnifiedFloatingWidget() {
@@ -22,150 +19,114 @@ export function UnifiedFloatingWidget() {
   const location = useLocation();
   const { triggerHaptic } = useDespia();
 
-  const allActions: QuickAction[] = [
+  const actions: QuickAction[] = [
     {
-      id: 'add-client',
-      title: 'Add Client',
-      description: 'Create new client',
+      id: 'client',
+      label: 'Client',
       icon: UserPlus,
       action: () => {
         triggerHaptic('light');
         setIsOpen(false);
         navigate('/provider/clients?action=add');
       },
-      priority: 1
     },
     {
-      id: 'new-job',
-      title: 'New Job',
-      description: 'Schedule a new job',
+      id: 'job',
+      label: 'Job',
       icon: Calendar,
       action: () => {
         triggerHaptic('light');
         setIsOpen(false);
         navigate('/provider/schedule?action=new');
       },
-      priority: 2
     },
     {
-      id: 'send-invoice',
-      title: 'Send Invoice',
-      description: 'Create and send invoice',
+      id: 'invoice',
+      label: 'Invoice',
       icon: DollarSign,
       action: () => {
         triggerHaptic('light');
         setIsOpen(false);
         navigate('/provider/money?action=invoice');
       },
-      priority: 3
     },
     {
-      id: 'record-payment',
-      title: 'Record Payment',
-      description: 'Log a payment received',
+      id: 'payment',
+      label: 'Payment',
       icon: Receipt,
       action: () => {
         triggerHaptic('light');
         setIsOpen(false);
         navigate('/provider/money?action=payment');
       },
-      priority: 4
     },
     {
-      id: 'ask-ai',
-      title: 'Ask HomeBase AI',
-      description: 'Get instant help',
+      id: 'ai',
+      label: 'Ask AI',
       icon: MessageSquare,
       action: () => {
         triggerHaptic('light');
         setIsOpen(false);
         setShowAIChat(true);
       },
-      priority: 5
     },
   ];
 
-  // Context-aware filtering based on current route
-  const getContextualActions = () => {
-    const pathname = location.pathname;
-    
-    if (pathname.includes('/money')) {
-      // Prioritize financial actions on Money page
-      return allActions.sort((a, b) => {
-        const moneyActions = ['send-invoice', 'record-payment'];
-        const aIsMoney = moneyActions.includes(a.id);
-        const bIsMoney = moneyActions.includes(b.id);
-        if (aIsMoney && !bIsMoney) return -1;
-        if (!aIsMoney && bIsMoney) return 1;
-        return a.priority - b.priority;
-      });
-    }
-    
-    if (pathname.includes('/schedule')) {
-      // Prioritize job actions on Schedule page
-      return allActions.sort((a, b) => {
-        const scheduleActions = ['new-job', 'add-client'];
-        const aIsSchedule = scheduleActions.includes(a.id);
-        const bIsSchedule = scheduleActions.includes(b.id);
-        if (aIsSchedule && !bIsSchedule) return -1;
-        if (!aIsSchedule && bIsSchedule) return 1;
-        return a.priority - b.priority;
-      });
-    }
-    
-    // Default order for other pages
-    return allActions;
-  };
-
-  const contextualActions = getContextualActions();
-
   return (
     <>
+      {/* Backdrop Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 animate-fade-in"
+          onClick={() => {
+            triggerHaptic('light');
+            setIsOpen(false);
+          }}
+        />
+      )}
+
+      {/* Action Buttons (appear above FAB) */}
+      {isOpen && (
+        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-2">
+          {actions.map((action, index) => {
+            const Icon = action.icon;
+            const bottomOffset = (actions.length - index) * 64;
+            
+            return (
+              <button
+                key={action.id}
+                onClick={action.action}
+                className="flex items-center gap-3 animate-scale-in group"
+                style={{
+                  animationDelay: `${index * 50}ms`,
+                }}
+              >
+                <span className="text-sm font-medium text-foreground bg-card px-3 py-1.5 rounded-full shadow-md whitespace-nowrap group-hover:bg-accent transition-colors">
+                  {action.label}
+                </span>
+                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <Icon className="h-5 w-5 text-primary-foreground" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Floating Action Button */}
       <Button
         onClick={() => {
           triggerHaptic('light');
           setIsOpen(!isOpen);
         }}
-        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-40 transition-all hover:scale-105"
+        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50 transition-all hover:scale-105"
         style={{
           background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%)',
           boxShadow: '0 4px 20px rgba(32, 196, 99, 0.4)',
         }}
       >
-        <Sparkles className="h-6 w-6 text-primary-foreground" />
+        <Sparkles className={`h-6 w-6 text-primary-foreground transition-transform ${isOpen ? 'rotate-45' : ''}`} />
       </Button>
-
-      {/* Actions Sheet */}
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent 
-        side="bottom" 
-        className="h-auto max-h-[70vh] rounded-t-3xl border-0 pb-safe overflow-y-auto"
-      >
-          <div className="pt-2 pb-4">
-            <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6" />
-            <h3 className="text-center text-base font-semibold mb-6">Quick Actions</h3>
-            
-            <div className="grid grid-cols-2 gap-3">
-              {contextualActions.map((action) => (
-                <button
-                  key={action.id}
-                  onClick={action.action}
-                  className="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-accent/50 active:bg-accent transition-colors text-center min-h-[110px] justify-center group"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <action.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <span className="font-medium text-sm block">{action.title}</span>
-                    <span className="text-xs text-muted-foreground">{action.description}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
 
       {/* AI Chat Modal */}
       <AIChatModal 
