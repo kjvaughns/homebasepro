@@ -55,21 +55,28 @@ export function AIServiceGenerator({
   };
 
   return (
-    <div className="space-y-3">
-      <label className="text-sm font-medium" style={{ color: 'hsl(var(--onboarding-muted))' }}>
-        Describe your services
-      </label>
+    <div className="space-y-4">
+      <div>
+        <label className="text-sm font-medium" style={{ color: 'hsl(var(--onboarding-text))' }}>
+          Describe your services
+        </label>
+        <p className="text-xs mt-1" style={{ color: 'hsl(var(--onboarding-muted))' }}>
+          AI will generate your service catalog with pricing
+        </p>
+      </div>
+      
       <Textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="e.g., I do drain cleaning, fixture repair, and emergency calls"
-        className="min-h-[90px] resize-none"
+        className="min-h-[100px] resize-none"
         style={{
           background: 'hsla(var(--onboarding-card))',
           border: '1px solid hsla(var(--onboarding-border))',
           color: 'hsl(var(--onboarding-text))'
         }}
       />
+      
       <Button 
         onClick={handleGenerate} 
         disabled={loading}

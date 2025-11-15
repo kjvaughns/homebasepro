@@ -109,22 +109,31 @@ export function StripePaymentCollection({ onSuccess, onSkip }: StripePaymentColl
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
 
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-intent`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-          }
+        console.log('Creating setup intent for user:', user.id);
+
+        const { data, error } = await supabase.functions.invoke('create-setup-intent', {
+          body: {}
         });
 
-        const data = await response.json();
+        console.log('Setup intent response:', { data, error });
+
+        if (error) {
+          console.error('Setup intent error:', error);
+          throw new Error(error.message || "Failed to initialize payment");
+        }
         
-        if (!response.ok) throw new Error(data.error || "Failed to initialize payment");
+        if (!data?.clientSecret) {
+          throw new Error("No client secret returned");
+        }
         
         setClientSecret(data.clientSecret);
       } catch (error: any) {
-        console.error(error);
-        toast.error(error.message || "Failed to load payment form");
+        console.error('Payment form error:', error);
+        toast.error(
+          error.message === "Stripe secret key not configured" 
+            ? "Payment system not configured. Please contact support." 
+            : error.message || "Failed to load payment form. You can skip and use the free plan."
+        );
       } finally {
         setLoading(false);
       }
