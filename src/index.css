@@ -60,6 +60,17 @@ All colors MUST be HSL.
     --ai-shimmer: linear-gradient(90deg, transparent, hsla(142, 76%, 45%, 0.2), transparent);
     --success-glow: 0 8px 32px hsla(142, 76%, 36%, 0.3);
     --ai-glow: 0 8px 32px hsla(142, 76%, 36%, 0.3);
+
+    /* Onboarding Glassmorphism Theme */
+    --onboarding-bg-start: 210 40% 3%;
+    --onboarding-bg-end: 215 45% 6%;
+    --onboarding-card: 0 0% 100% / 0.02;
+    --onboarding-glass: 0 0% 100% / 0.04;
+    --onboarding-border: 0 0% 100% / 0.06;
+    --onboarding-green: 142 76% 45%;
+    --onboarding-green-glow: 142 76% 45% / 0.18;
+    --onboarding-text: 0 0% 97%;
+    --onboarding-muted: 220 9% 65%;
   }
 
   .dark {
