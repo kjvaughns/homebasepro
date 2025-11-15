@@ -154,3 +154,12 @@ verify_jwt = false
 
 [functions.partner-track-click]
 verify_jwt = false
+
+[functions.analyze-pricing-strategy]
+verify_jwt = true
+
+[functions.get-market-pricing]
+verify_jwt = true
+
+[functions.create-setup-intent]
+verify_jwt = true
