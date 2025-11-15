@@ -369,17 +369,17 @@ export default function OnboardingProvider() {
           </OnboardingCard>
         )}
 
-        {currentStep === 8 && formData.selectedPlan === 'trial' && (
-          <OnboardingCard title="Start your 7-day trial" subtitle="Add payment method to unlock Pro features">
+        {currentStep === 9 && (
+          <OnboardingCard title="Almost there! Start your 7-day trial" subtitle="Add your payment method to unlock all Pro features">
             <StripePaymentCollection onSuccess={handlePaymentSuccess} onSkip={handlePaymentSkip} />
           </OnboardingCard>
         )}
 
         <div className="flex gap-3 pt-4">
-          {currentStep > 0 && currentStep !== 8 && <Button variant="outline" onClick={handleBack} disabled={loading}>Back</Button>}
-          {currentStep < 8 && (
+          {currentStep > 0 && currentStep !== 8 && currentStep !== 9 && <Button variant="outline" onClick={handleBack} disabled={loading}>Back</Button>}
+          {(currentStep < 8 || (currentStep === 8 && formData.selectedPlan === 'free')) && (
             <Button onClick={handleNext} disabled={loading} className="flex-1">
-              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : currentStep === 7 && formData.selectedPlan === 'free' ? <><CheckCircle2 className="h-4 w-4 mr-2" />Complete Setup</> : "Continue"}
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : currentStep === 8 && formData.selectedPlan === 'free' ? <><CheckCircle2 className="h-4 w-4 mr-2" />Complete Setup</> : "Continue"}
             </Button>
           )}
         </div>
