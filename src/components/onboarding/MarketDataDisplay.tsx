@@ -58,7 +58,7 @@ export function MarketDataDisplay({ yourRate, analysis }: MarketDataDisplayProps
         <div>
           <p className="text-xs text-muted-foreground mb-1">Your Rate</p>
           <p className="text-2xl font-bold text-foreground">
-            ${(yourRate / 100).toFixed(2)}
+            ${yourRate.toFixed(2)}
           </p>
         </div>
         <div>

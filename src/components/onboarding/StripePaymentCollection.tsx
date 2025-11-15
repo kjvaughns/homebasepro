@@ -52,12 +52,15 @@ function PaymentForm({ onSuccess, onSkip, clientSecret }: PaymentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
-        <div className="flex items-start gap-2 text-sm text-blue-200">
-          <Lock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <p>
-            <strong>Card required for 7-day trial.</strong> You won't be charged until day 8. Cancel anytime.
-          </p>
+      <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+        <div className="flex items-start gap-2 text-sm">
+          <Lock className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+          <div>
+            <p className="font-semibold text-foreground mb-1">🎉 One last step to unlock Pro features!</p>
+            <p className="text-muted-foreground">
+              Add your card to start your 7-day trial. <strong>No charge until day 8.</strong> Cancel anytime before then.
+            </p>
+          </div>
         </div>
       </div>
       
@@ -171,8 +174,9 @@ export function StripePaymentCollection({ onSuccess, onSkip }: StripePaymentColl
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Setting up secure payment form...</p>
       </div>
     );
   }
