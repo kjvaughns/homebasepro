@@ -21,33 +21,13 @@ export function UnifiedFloatingWidget() {
 
   const actions: QuickAction[] = [
     {
-      id: 'client',
-      label: 'Client',
-      icon: UserPlus,
+      id: 'ai',
+      label: 'Ask AI',
+      icon: MessageSquare,
       action: () => {
         triggerHaptic('light');
         setIsOpen(false);
-        navigate('/provider/clients?action=add');
-      },
-    },
-    {
-      id: 'job',
-      label: 'Job',
-      icon: Calendar,
-      action: () => {
-        triggerHaptic('light');
-        setIsOpen(false);
-        navigate('/provider/schedule?action=new');
-      },
-    },
-    {
-      id: 'invoice',
-      label: 'Invoice',
-      icon: DollarSign,
-      action: () => {
-        triggerHaptic('light');
-        setIsOpen(false);
-        navigate('/provider/money?action=invoice');
+        setShowAIChat(true);
       },
     },
     {
@@ -61,13 +41,33 @@ export function UnifiedFloatingWidget() {
       },
     },
     {
-      id: 'ai',
-      label: 'Ask AI',
-      icon: MessageSquare,
+      id: 'invoice',
+      label: 'Invoice',
+      icon: DollarSign,
       action: () => {
         triggerHaptic('light');
         setIsOpen(false);
-        setShowAIChat(true);
+        navigate('/provider/money?action=invoice');
+      },
+    },
+    {
+      id: 'job',
+      label: 'Job',
+      icon: Calendar,
+      action: () => {
+        triggerHaptic('light');
+        setIsOpen(false);
+        navigate('/provider/schedule?action=new');
+      },
+    },
+    {
+      id: 'client',
+      label: 'Client',
+      icon: UserPlus,
+      action: () => {
+        triggerHaptic('light');
+        setIsOpen(false);
+        navigate('/provider/clients?action=add');
       },
     },
   ];
@@ -87,7 +87,7 @@ export function UnifiedFloatingWidget() {
 
       {/* Action Buttons (appear above FAB) */}
       {isOpen && (
-        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-2">
+        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-4">
           {actions.map((action, index) => {
             const Icon = action.icon;
             const bottomOffset = (actions.length - index) * 64;
