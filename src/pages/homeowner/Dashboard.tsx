@@ -7,7 +7,7 @@ import { Calendar, ChevronRight, Plus, Clock, CheckCircle2, Bot, Wrench, Droplet
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AIChatModal } from "@/components/ai/AIChatModal";
 import HomeBaseAI from "@/components/ai/HomeBaseAI";
 import { RemindersWidget } from "@/components/homeowner/RemindersWidget";
 import { FollowUpDialog } from "@/components/homeowner/FollowUpDialog";
@@ -308,28 +308,12 @@ export default function HomeownerDashboard() {
         <ServiceHistory />
       </div>
 
-      {/* HomeBase AI Dialog */}
-      <Dialog open={showAI} onOpenChange={setShowAI}>
-        <DialogContent className="max-w-2xl h-[100vh] sm:h-[80vh] sm:max-h-[700px] p-0 flex flex-col">
-          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2 flex-shrink-0 border-b">
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Bot className="w-5 h-5 text-primary" />
-              HomeBase AI
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 min-h-0">
-            <HomeBaseAI 
-              context={{ homeId: profileId || undefined }}
-              onServiceRequestCreated={(request) => {
-                toast({
-                  title: 'Service Request Created',
-                  description: 'We found trusted providers for you!'
-                });
-              }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* HomeBase AI Modal */}
+      <AIChatModal 
+        open={showAI}
+        onOpenChange={setShowAI}
+        userRole="homeowner"
+      />
 
       {/* Follow-up Dialog */}
       <FollowUpDialog />
