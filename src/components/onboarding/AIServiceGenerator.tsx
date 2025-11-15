@@ -14,13 +14,15 @@ interface Service {
 
 interface AIServiceGeneratorProps {
   tradeType: string;
-  defaultDescription: string;
-  onServicesGenerated: (services: Service[]) => void;
+  defaultDescription?: string;
+  onGenerate?: (services: Service[]) => void;
+  onServicesGenerated?: (services: Service[]) => void;
 }
 
 export function AIServiceGenerator({ 
   tradeType, 
-  defaultDescription,
+  defaultDescription = "",
+  onGenerate,
   onServicesGenerated 
 }: AIServiceGeneratorProps) {
   const [description, setDescription] = useState(defaultDescription);
@@ -41,7 +43,8 @@ export function AIServiceGenerator({
       if (error) throw error;
       if (!data?.services) throw new Error('No services generated');
 
-      onServicesGenerated(data.services);
+      const callback = onGenerate || onServicesGenerated;
+      if (callback) callback(data.services);
       toast.success(`Generated ${data.services.length} services!`);
     } catch (error: any) {
       console.error('Error generating services:', error);
