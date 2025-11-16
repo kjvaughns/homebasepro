@@ -487,6 +487,7 @@ export type Database = {
           assigned_team_member_id: string | null
           calendar_sync_status: string | null
           cancellation_reason: string | null
+          client_id: string | null
           completion_notes: string | null
           completion_photos: Json | null
           created_at: string
@@ -500,7 +501,7 @@ export type Database = {
           external_calendar_event_id: string | null
           final_price: number | null
           home_id: string | null
-          homeowner_profile_id: string
+          homeowner_profile_id: string | null
           id: string
           invoice_id: string | null
           is_calendar_block: boolean | null
@@ -521,6 +522,7 @@ export type Database = {
           assigned_team_member_id?: string | null
           calendar_sync_status?: string | null
           cancellation_reason?: string | null
+          client_id?: string | null
           completion_notes?: string | null
           completion_photos?: Json | null
           created_at?: string
@@ -534,7 +536,7 @@ export type Database = {
           external_calendar_event_id?: string | null
           final_price?: number | null
           home_id?: string | null
-          homeowner_profile_id: string
+          homeowner_profile_id?: string | null
           id?: string
           invoice_id?: string | null
           is_calendar_block?: boolean | null
@@ -555,6 +557,7 @@ export type Database = {
           assigned_team_member_id?: string | null
           calendar_sync_status?: string | null
           cancellation_reason?: string | null
+          client_id?: string | null
           completion_notes?: string | null
           completion_photos?: Json | null
           created_at?: string
@@ -568,7 +571,7 @@ export type Database = {
           external_calendar_event_id?: string | null
           final_price?: number | null
           home_id?: string | null
-          homeowner_profile_id?: string
+          homeowner_profile_id?: string | null
           id?: string
           invoice_id?: string | null
           is_calendar_block?: boolean | null
@@ -590,6 +593,13 @@ export type Database = {
             columns: ["assigned_team_member_id"]
             isOneToOne: false
             referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {
@@ -2763,6 +2773,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          ai_automation_settings: Json | null
           ai_generated_description: string | null
           avg_response_time_hours: number | null
           base_zip: string | null
@@ -2814,6 +2825,7 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
+          ai_automation_settings?: Json | null
           ai_generated_description?: string | null
           avg_response_time_hours?: number | null
           base_zip?: string | null
@@ -2865,6 +2877,7 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
+          ai_automation_settings?: Json | null
           ai_generated_description?: string | null
           avg_response_time_hours?: number | null
           base_zip?: string | null

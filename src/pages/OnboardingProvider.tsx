@@ -226,6 +226,7 @@ export default function OnboardingProvider() {
         trade_type: finalTradeType,
         service_area: formData.serviceArea,
         ai_generated_description: formData.businessDescription,
+        ai_automation_settings: formData.aiFeatures,
         owner_id: user.id,
         plan: 'free'
       }).select().single();
