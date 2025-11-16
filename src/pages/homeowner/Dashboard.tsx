@@ -76,7 +76,7 @@ export default function HomeownerDashboard() {
           organizations(name)
         `)
         .eq("homeowner_id", profile.id)
-        .eq("status", "scheduled")
+        .in("status", ["pending", "confirmed"])
         .gte("scheduled_date", new Date().toISOString())
         .order("scheduled_date", { ascending: true })
         .limit(3);
