@@ -77,7 +77,7 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tab]);
+  }, [tab, selectedDay]);
 
   const setupPullToRefresh = () => {
     let startY = 0;
@@ -122,80 +122,89 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get organizations where user is owner
-      const { data: ownedOrgs } = await supabase
-        .from("organizations")
-        .select("id")
-        .eq("owner_id", user.id);
+      // Try to resolve organizations the user can access (owner or active team member)
+      const [ownedResult, teamResult] = await Promise.all([
+        supabase.from('organizations').select('id').eq('owner_id', user.id),
+        supabase.from('team_members').select('organization_id').eq('user_id', user.id).eq('status', 'active')
+      ]);
 
-      // Get organizations where user is active team member
-      const { data: teamMemberships } = await supabase
-        .from("team_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .eq("status", "active");
+      const ownedOrgs = ownedResult.data || [];
+      const teamMemberships = teamResult.data || [];
 
-      // Combine org IDs
       const orgIds = [
-        ...(ownedOrgs || []).map(o => o.id),
-        ...(teamMemberships || []).map(m => m.organization_id)
+        ...ownedOrgs.map((o: any) => o.id),
+        ...teamMemberships.map((m: any) => m.organization_id),
       ];
 
-      if (orgIds.length === 0) return;
+      if (ownedResult.error || teamResult.error) {
+        console.warn('Org lookup warning', { ownedError: ownedResult.error, teamError: teamResult.error });
+      }
 
       let query = supabase
-        .from("bookings")
-        .select(`
-          *,
-          clients(name, email, phone),
-          invoice:invoices(id, status, amount)
-        `)
-        .in("provider_org_id", orgIds)
-        .order("date_time_start", { ascending: true });
+        .from('bookings')
+        .select('*')
+        .order('date_time_start', { ascending: true });
 
-      // Filter by timeframe
-      if (tab === "day") {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
-        query = query.gte("date_time_start", startOfDay.toISOString())
-          .lt("date_time_start", endOfDay.toISOString());
-      } else if (tab === "week") {
-        const now = new Date();
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
-        startOfWeek.setHours(0, 0, 0, 0);
+      // Apply org filter only if we have orgIds; otherwise rely on backend access rules
+      if (orgIds.length > 0) {
+        query = query.in('provider_org_id', orgIds as any);
+      } else {
+        console.info('No orgIds resolved; relying on backend access rules');
+      }
+
+      // Build date filters based on selected view
+      const day = selectedDay;
+      const startOfDay = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0);
+      const endOfDay = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1, 0, 0, 0);
+
+      if (tab === 'day') {
+        query = query
+          .gte('date_time_start', startOfDay.toISOString())
+          .lt('date_time_start', endOfDay.toISOString());
+      } else if (tab === 'week') {
+        const startOfWeek = new Date(startOfDay);
+        const dayOfWeek = (startOfWeek.getDay() + 6) % 7; // 0 = Monday
+        startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 7);
-        query = query.gte("date_time_start", startOfWeek.toISOString())
-          .lt("date_time_start", endOfWeek.toISOString());
-      } else if (tab === "month") {
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        query = query.gte("date_time_start", monthStart.toISOString())
-          .lt("date_time_start", monthEnd.toISOString());
+        query = query
+          .gte('date_time_start', startOfWeek.toISOString())
+          .lt('date_time_start', endOfWeek.toISOString());
+      } else if (tab === 'month') {
+        const monthStart = new Date(day.getFullYear(), day.getMonth(), 1);
+        const monthEnd = new Date(day.getFullYear(), day.getMonth() + 1, 1);
+        query = query
+          .gte('date_time_start', monthStart.toISOString())
+          .lt('date_time_start', monthEnd.toISOString());
+      } else if (tab === 'list') {
+        // Show future bookings only in list view
+        query = query.gte('date_time_start', new Date().toISOString());
       }
-      // else tab === "list" shows all jobs (no filter)
 
-      const { data: jobsData } = await query;
-      
-      // Map bookings fields to job fields for UI compatibility
+      const { data: jobsData, error } = await query;
+      if (error) {
+        console.error('Failed to load bookings:', error);
+        toast.error('Failed to load schedule');
+        setJobs([]);
+        return;
+      }
+
       const mappedJobs = (jobsData || []).map((booking: any) => ({
         ...booking,
         window_start: booking.date_time_start,
         window_end: booking.date_time_end,
-        service_type: booking.service_name
+        service_type: booking.service_name,
       }));
-      
+
+      console.info('Loaded jobs:', mappedJobs.length, { tab, selectedDay: day.toISOString() });
       setJobs(mappedJobs);
     } catch (error) {
-      console.error("Error loading jobs:", error);
-      toast.error("Failed to load schedule");
+      console.error('Error loading jobs:', error);
+      toast.error('Failed to load schedule');
     } finally {
       setLoading(false);
     }
-  }, [tab]);
+  }, [tab, selectedDay]);
 
   const handleRefresh = async () => {
     triggerHaptic('light');
