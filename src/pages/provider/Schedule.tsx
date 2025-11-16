@@ -39,7 +39,13 @@ export default function Schedule() {
     return isMobile ? 'day' : 'week';
   };
   
-  const [tab, setTab] = useState(getDefaultView());
+const [tab, setTab] = useState(getDefaultView());
+
+// Selected day for filtering and navigation
+const [selectedDay, setSelectedDay] = useState<Date>(() => {
+  const saved = localStorage.getItem('schedule_selected_day');
+  return saved ? new Date(saved) : new Date();
+});
   
   // Calculate schedule stats
   const stats = useScheduleStats(jobs);

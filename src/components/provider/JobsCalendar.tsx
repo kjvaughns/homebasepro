@@ -21,11 +21,13 @@ interface JobEvent extends Event {
 interface JobsCalendarProps {
   jobs: any[];
   onSelectJob: (job: any) => void;
+  showOptimize?: boolean;
 }
 
 const DnDCalendar = withDragAndDrop(Calendar);
 
-export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
+
+export function JobsCalendar({ jobs, onSelectJob, showOptimize = false }: JobsCalendarProps) {
   const localizer = momentLocalizer(moment);
   const [optimizing, setOptimizing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -181,7 +183,7 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
 
   return (
     <div className="space-y-4">
-      {selectedDate && (
+      {showOptimize && selectedDate && (
         <div className="flex items-center gap-2">
           <Button onClick={handleOptimizeRoute} disabled={optimizing}>
             {optimizing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Route className="h-4 w-4 mr-2" />}
