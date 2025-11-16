@@ -40,16 +40,35 @@ export default function Money() {
 
   const loadData = async (): Promise<void> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('Auth error:', userError);
+        return;
+      }
 
       const orgResponse = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
       if (!orgResponse.data) return;
       
       const orgId = orgResponse.data.id;
 
-      // Load metrics
-      const metricsResponse = await supabase.functions.invoke('get-enhanced-metrics');
+      // Load metrics with explicit auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('No active session');
+        toast({
+          title: "Session expired",
+          description: "Please refresh the page to continue.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const metricsResponse = await supabase.functions.invoke('get-enhanced-metrics', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      
       if (metricsResponse.error) {
         console.error('Metrics error:', metricsResponse.error);
         toast({
