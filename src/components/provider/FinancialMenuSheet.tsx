@@ -11,10 +11,10 @@ export function FinancialMenuSheet({ open, onOpenChange }: FinancialMenuSheetPro
   const navigate = useNavigate();
 
   const menuItems = [
-    { title: "Payments", href: "/provider/payments", icon: CreditCard },
-    { title: "Accounting", href: "/provider/accounting", icon: FileText },
-    { title: "Analytics", href: "/provider/analytics", icon: BarChart3 },
-    { title: "Balance", href: "/provider/balance", icon: Wallet },
+    { title: "Money Owed", href: "/provider/money?tab=owed", icon: FileText },
+    { title: "Money Received", href: "/provider/money?tab=received", icon: CreditCard },
+    { title: "Summary", href: "/provider/money?tab=summary", icon: BarChart3 },
+    { title: "Stripe Balance", href: "/provider/balance", icon: Wallet },
   ];
 
   const handleNavigate = (href: string) => {
