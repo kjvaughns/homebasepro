@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDespia } from "@/hooks/useDespia";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Settings,
   HelpCircle,
@@ -16,6 +18,7 @@ import {
 
 export default function More() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [organization, setOrganization] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { triggerHaptic } = useDespia();
@@ -110,6 +113,18 @@ export default function More() {
         </div>
 
         <div className="space-y-4">
+          {/* Role Switcher - Mobile Only */}
+          {isMobile && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Switch Profile</CardTitle>
+                <CardDescription>Toggle between Homeowner and Provider views</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RoleSwitcher />
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Settings & Support</CardTitle>
