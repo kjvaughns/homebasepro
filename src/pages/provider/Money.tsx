@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -38,33 +38,54 @@ export default function Money() {
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const { toast } = useToast();
 
-  const loadData = useCallback(async () => {
+  const loadData = async (): Promise<void> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
-      if (!org) return;
-
-      const { data: metricsData } = await supabase.functions.invoke('get-enhanced-metrics');
-      setEnhancedMetrics(metricsData);
-
-      const { data: invoicesData } = await supabase.from('invoices').select('*, client:clients(name, email)').eq('org_id', org.id).order('created_at', { ascending: false });
-      setInvoices(invoicesData || []);
-
-      const { data: paymentsData } = await supabase.from('payments').select('*, homeowner:profiles!payments_homeowner_profile_id_fkey(full_name), booking:bookings(service_name)').eq('org_id', org.id).order('created_at', { ascending: false });
-      setPayments(paymentsData || []);
-
-      const { data: transactionsData } = await supabase.from('accounting_transactions').select('*').eq('organization_id', org.id).order('transaction_date', { ascending: false });
-      setTransactions(transactionsData || []);
+      const orgResponse = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
+      if (!orgResponse.data) return;
       
+      const orgId = orgResponse.data.id;
+
+      // Load metrics
+      const metricsResponse = await supabase.functions.invoke('get-enhanced-metrics');
+      setEnhancedMetrics(metricsResponse.data);
+      
+      // Load invoices
+      // @ts-ignore - Supabase type inference issue
+      const invoicesResponse: any = await supabase.from('invoices').select('*').eq('org_id', orgId).order('created_at', { ascending: false });
+      const invoicesList = invoicesResponse.data || [];
+      
+      // Load client details for invoices
+      const invoicesWithClients: any[] = [];
+      for (const inv of invoicesList) {
+        if (inv.client_id) {
+          // @ts-ignore - Supabase type inference issue
+          const clientResp: any = await supabase.from('clients').select('name, email').eq('id', inv.client_id).single();
+          invoicesWithClients.push({ ...inv, client: clientResp.data });
+        } else {
+          invoicesWithClients.push(inv);
+        }
+      }
+      setInvoices(invoicesWithClients);
+      
+      // Load payments
+      // @ts-ignore - Supabase type inference issue
+      const paymentsResponse: any = await supabase.from('payments').select('*').eq('org_id', orgId).order('created_at', { ascending: false });
+      setPayments(paymentsResponse.data || []);
+      
+      // Load transactions
+      // @ts-ignore - Supabase type inference issue
+      const transactionsResponse: any = await supabase.from('accounting_transactions').select('*').eq('organization_id', orgId).order('transaction_date', { ascending: false });
+      setTransactions(transactionsResponse.data || []);
       setLastSyncTime(new Date());
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadData();
@@ -78,7 +99,7 @@ export default function Money() {
       supabase.removeChannel(paymentsChannel);
       clearInterval(interval);
     };
-  }, [loadData]);
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -183,7 +204,7 @@ export default function Money() {
 
       {showInvoiceModal && <CreateInvoiceModal open={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} onSuccess={loadData} />}
       {showQuickPaymentModal && <QuickPaymentLinkModal open={showQuickPaymentModal} onClose={() => { setShowQuickPaymentModal(false); loadData(); }} />}
-      {selectedPayment && (isMobile ? <Sheet open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}><SheetContent side="bottom" className="h-[90vh]"><PaymentDrawer payment={selectedPayment} onClose={() => setSelectedPayment(null)} /></SheetContent></Sheet> : <PaymentDrawer payment={selectedPayment} onClose={() => setSelectedPayment(null)} />)}
+      {selectedPayment && (isMobile ? <Sheet open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}><SheetContent side="bottom" className="h-[90vh]"><PaymentDrawer payment={selectedPayment} onClose={() => setSelectedPayment(null)} onRefresh={loadData} /></SheetContent></Sheet> : <PaymentDrawer payment={selectedPayment} onClose={() => setSelectedPayment(null)} onRefresh={loadData} />)}
     </div>
   );
 }
