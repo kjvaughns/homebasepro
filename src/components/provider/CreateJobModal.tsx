@@ -462,6 +462,7 @@ export default function CreateJobModal({
           variant: "destructive",
         });
         setLoading(false);
+        onOpenChange(false);
         return;
       }
 
@@ -497,6 +498,7 @@ export default function CreateJobModal({
           description: result?.error || "This time slot is already booked",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 

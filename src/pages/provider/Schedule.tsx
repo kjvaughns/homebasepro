@@ -7,6 +7,9 @@ import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
 import { JobsCalendar } from "@/components/provider/JobsCalendar";
 import CreateJobModal from "@/components/provider/CreateJobModal";
+import { QuickAddSheet } from "@/components/provider/QuickAddSheet";
+import { ScheduleStatsCard } from "@/components/provider/ScheduleStatsCard";
+import { useScheduleStats } from "@/hooks/useScheduleStats";
 import { toast } from "sonner";
 import { syncJobToWorkflow } from "@/lib/workflow-sync";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -26,11 +29,48 @@ export default function Schedule() {
   const [selectedJobReviews, setSelectedJobReviews] = useState<any[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showCreateJob, setShowCreateJob] = useState(false);
-  const [tab, setTab] = useState("week");
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddMode, setQuickAddMode] = useState<'existing' | 'new' | 'block'>('existing');
+  
+  // Smart default view: mobile = day, desktop = week
+  const getDefaultView = () => {
+    const saved = localStorage.getItem('schedule_view');
+    if (saved) return saved;
+    return isMobile ? 'day' : 'week';
+  };
+  
+  const [tab, setTab] = useState(getDefaultView());
+  
+  // Calculate schedule stats
+  const stats = useScheduleStats(jobs);
 
   useEffect(() => {
     loadJobs();
     setupPullToRefresh();
+    
+    // Save view preference
+    localStorage.setItem('schedule_view', tab);
+    
+    // Real-time subscription for job updates
+    const channel = supabase
+      .channel('schedule-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        (payload) => {
+          console.log('Job updated:', payload);
+          loadJobs();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [tab]);
 
   const setupPullToRefresh = () => {
@@ -257,7 +297,11 @@ export default function Schedule() {
           </Button>
           <Button onClick={() => {
             triggerHaptic('light');
-            setShowCreateJob(true);
+            if (isMobile) {
+              setShowQuickAdd(true);
+            } else {
+              setShowCreateJob(true);
+            }
           }}>
             <Plus className="h-4 w-4 mr-2" />
             {isMobile ? 'New' : 'Create Job'}
@@ -265,20 +309,37 @@ export default function Schedule() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(value) => {
-        triggerHaptic('light');
-        setTab(value);
-      }}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="week" className="text-xs md:text-sm">This Week</TabsTrigger>
-          <TabsTrigger value="all" className="text-xs md:text-sm">All Jobs</TabsTrigger>
-          <TabsTrigger value="calendar" className="text-xs md:text-sm">
-            <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-            <span className="hidden md:inline">Calendar</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Daily Stats - show on day/week views */}
+      {(tab === 'week' || tab === 'day') && jobs.length > 0 && (
+        <ScheduleStatsCard
+          todayJobCount={stats.todayJobCount}
+          todayRevenue={stats.todayRevenue}
+          completedCount={stats.completedCount}
+          totalCount={stats.totalCount}
+          progressPercentage={stats.progressPercentage}
+          nextJob={stats.nextJob}
+          onViewRoute={() => {
+            // Navigate to today in calendar and trigger optimize
+            setTab('calendar');
+          }}
+        />
+      )}
 
-        <TabsContent value="week" className="space-y-3 mt-4">
+      <div className="bg-card rounded-lg shadow-sm">
+        <Tabs value={tab} onValueChange={(value) => {
+          triggerHaptic('light');
+          setTab(value);
+        }}>
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
+            <TabsTrigger value="week" className="text-xs md:text-sm data-[state=active]:bg-background">This Week</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs md:text-sm data-[state=active]:bg-background">All Jobs</TabsTrigger>
+            <TabsTrigger value="calendar" className="text-xs md:text-sm data-[state=active]:bg-background">
+              <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Calendar</span>
+            </TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="week" className="space-y-3 mt-4 p-4">
           {jobs.length > 0 ? (
             jobs.map((job) => (
               <div key={job.id} onClick={() => openJobDetail(job)}>
@@ -290,7 +351,7 @@ export default function Schedule() {
               <p className="text-muted-foreground">No jobs scheduled this week</p>
               <Button onClick={() => {
                 triggerHaptic('light');
-                setShowCreateJob(true);
+                isMobile ? setShowQuickAdd(true) : setShowCreateJob(true);
               }} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Job
@@ -299,7 +360,7 @@ export default function Schedule() {
           )}
         </TabsContent>
 
-        <TabsContent value="all" className="space-y-3 mt-4">
+        <TabsContent value="all" className="space-y-3 mt-4 p-4">
           {jobs.length > 0 ? (
             jobs.map((job) => (
               <div key={job.id} onClick={() => openJobDetail(job)}>
@@ -313,7 +374,7 @@ export default function Schedule() {
           )}
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-4">
+        <TabsContent value="calendar" className="mt-4 p-4">
           <div className="h-[500px] md:h-[600px]">
             <JobsCalendar 
               jobs={jobs}
@@ -322,6 +383,7 @@ export default function Schedule() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {showCreateJob && (
         <CreateJobModal
@@ -339,6 +401,18 @@ export default function Schedule() {
           }}
         />
       )}
+
+      <QuickAddSheet
+        open={showQuickAdd}
+        onOpenChange={setShowQuickAdd}
+        onSelectMode={(mode) => {
+          setQuickAddMode(mode);
+          if (mode === 'existing' || mode === 'new') {
+            setShowCreateJob(true);
+          }
+          // TODO: Implement 'block' mode for time blocking
+        }}
+      />
 
       {drawerOpen && selectedJob && (
         isMobile ? (

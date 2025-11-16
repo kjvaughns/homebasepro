@@ -30,18 +30,38 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
   const [optimizing, setOptimizing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  // Hide inactive hours (7 AM - 8 PM)
+  const minTime = new Date();
+  minTime.setHours(7, 0, 0);
+  
+  const maxTime = new Date();
+  maxTime.setHours(20, 0, 0);
+
   const events: JobEvent[] = jobs
     .filter(job => job.window_start && job.window_end)
-    .map(job => ({
-      id: job.id,
-      title: `${job.clients?.name || 'Unknown'} - ${job.service_type || 'Service'}`,
-      start: new Date(job.window_start),
-      end: new Date(job.window_end),
-      status: job.status,
-      client_name: job.clients?.name,
-      service_type: job.service_type,
-      resource: job
-    }));
+    .map(job => {
+      const statusIcon = {
+        paid: '💰',
+        confirmed: '✅',
+        in_progress: '🚗',
+        cancelled: '❌',
+        scheduled: '⏳',
+        completed: '✅'
+      }[job.status] || '⏳';
+      
+      const price = job.invoice?.amount ? `$${job.invoice.amount}` : '';
+      
+      return {
+        id: job.id,
+        title: `${statusIcon} ${job.clients?.name || 'Unknown'}\n${job.service_type || 'Service'} ${price}`,
+        start: new Date(job.window_start),
+        end: new Date(job.window_end),
+        status: job.status,
+        client_name: job.clients?.name,
+        service_type: job.service_type,
+        resource: job
+      };
+    });
 
   const eventStyleGetter = (event: JobEvent) => {
     const statusColors: Record<string, string> = {
@@ -60,13 +80,15 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
     return {
       style: {
         backgroundColor: statusColors[event.status] || '#94a3b8',
-        borderRadius: '4px',
-        opacity: 0.9,
+        borderRadius: '8px',
+        opacity: 0.95,
         color: 'white',
-        border: '0px',
+        border: 'none',
         display: 'block',
         fontSize: '0.875rem',
-        padding: '2px 6px'
+        padding: '6px 10px',
+        fontWeight: '500',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
       }
     };
   };
@@ -184,6 +206,8 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
           onEventResize={handleEventResize}
           views={['month', 'week', 'day']}
           defaultView="week"
+          min={minTime}
+          max={maxTime}
           resizable
           selectable
           draggableAccessor={() => true}
