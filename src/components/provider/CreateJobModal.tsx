@@ -42,6 +42,7 @@ interface Client {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   homeowner_profile_id: string;
   address?: string;
 }
@@ -98,8 +99,17 @@ export default function CreateJobModal({
 
   // Pre-fill address when client is selected
   useEffect(() => {
-    if (selectedClient?.address) {
-      setFormData(prev => ({ ...prev, address: selectedClient.address || "" }));
+    if (selectedClient) {
+      setFormData(prev => ({
+        ...prev,
+        address: selectedClient.address || ""
+      }));
+      setNewClientData({
+        name: selectedClient.name || "",
+        email: selectedClient.email || "",
+        phone: selectedClient.phone || "",
+        address: selectedClient.address || ""
+      });
     }
   }, [selectedClient]);
 
@@ -383,14 +393,14 @@ export default function CreateJobModal({
         return;
       }
 
-      let clientProfileId = selectedClient?.homeowner_profile_id;
+      let clientId = selectedClient?.id;
 
       // Create new client if needed
       if (clientMode === "new") {
         // Check for duplicate email
         const { data: existingClient } = await supabase
           .from("clients")
-          .select("id, homeowner_profile_id")
+          .select("id")
           .eq("organization_id", org.id)
           .eq("email", newClientData.email.toLowerCase())
           .maybeSingle();
@@ -405,136 +415,70 @@ export default function CreateJobModal({
           return;
         }
 
-        // Create client record (homeowner_profile_id can be null until they sign up)
+        // Create client record
         const { data: newClient, error: clientError } = await supabase
           .from("clients")
           .insert({
             organization_id: org.id,
-            homeowner_profile_id: null, // Will be linked when/if they create an account
+            homeowner_profile_id: null,
             name: newClientData.name,
             email: newClientData.email.toLowerCase(),
             phone: newClientData.phone || null,
             address: newClientData.address,
             status: "active",
           })
-          .select()
+          .select("id")
           .single();
 
         if (clientError) throw clientError;
-
-        // For jobs, we'll use a placeholder profile approach
-        // Try to find or create a minimal profile entry
-        const { data: existingProfile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("user_type", "homeowner")
-          .is("user_id", null)
-          .limit(1)
-          .maybeSingle();
-
-        if (existingProfile) {
-          clientProfileId = existingProfile.id;
-          // Link the client to this profile
-          await supabase
-            .from("clients")
-            .update({ homeowner_profile_id: existingProfile.id })
-            .eq("id", newClient.id);
-        } else {
-          // We need a profile ID for bookings - this is a limitation
-          // For now, skip creating the job if no profile exists
-          toast({
-            title: "Client created successfully",
-            description: "However, jobs require clients to have an account. Ask them to sign up first.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          onSuccess();
-          onOpenChange(false);
-          return;
-        }
+        clientId = newClient.id;
       }
 
-      // Only create job if we have a valid profile ID
-      if (!clientProfileId) {
-        toast({
-          title: "Cannot create job",
-          description: "This client needs to create an account before jobs can be scheduled",
-          variant: "destructive",
-        });
-        setLoading(false);
-        onOpenChange(false);
-        return;
-      }
-
-      // Calculate total parts cost
-      const totalPartsCost = selectedParts.reduce((sum, part) => 
-        sum + (part.sell_price || 0), 0
-      );
-
-      // Create job using atomic RPC function
+      // Create booking
       const startDateTime = formData.scheduled_date;
       const durationHours = parseFloat(formData.duration);
       const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
+      const quoteAmount = formData.quote_amount ? parseFloat(formData.quote_amount) * 100 : null;
 
-      const { data: result, error: bookingError } = await supabase.rpc(
-        "check_and_create_booking",
-        {
-          p_provider_org_id: org.id,
-          p_homeowner_profile_id: clientProfileId!,
-          p_service_name: formData.service_name,
-          p_address: formData.address,
-          p_date_time_start: startDateTime.toISOString(),
-          p_date_time_end: endDateTime.toISOString(),
-          p_notes: formData.notes || null,
-          p_home_id: null,
-        }
-      ) as { data: any; error: any };
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          provider_org_id: org.id,
+          client_id: clientId,
+          homeowner_profile_id: selectedClient?.homeowner_profile_id || null,
+          service_name: formData.service_name || 'Service',
+          address: formData.address,
+          date_time_start: startDateTime.toISOString(),
+          date_time_end: endDateTime.toISOString(),
+          status: formData.status || 'scheduled',
+          notes: formData.notes || null,
+          estimated_price_low: quoteAmount,
+          estimated_price_high: quoteAmount,
+        })
+        .select()
+        .single();
 
-      if (bookingError) throw bookingError;
-
-      if (!result?.success) {
-        toast({
-          title: "Scheduling Conflict",
-          description: result?.error || "This time slot is already booked",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
+      if (bookingError) {
+        console.error("Booking creation error:", bookingError);
+        throw bookingError;
       }
 
-      const bookingId = result?.booking_id;
-
-      // Update booking with service_id and final_price including parts
-      if (bookingId) {
-        const finalPrice = (parseFloat(formData.quote_amount || "0") * 100) + totalPartsCost;
-        
-        await supabase
-          .from('bookings')
-          .update({
-            service_id: selectedService?.id || null,
-            final_price: finalPrice > 0 ? finalPrice : null
-          })
-          .eq('id', bookingId);
-
-        // Link parts to job if any selected
-        if (selectedParts.length > 0) {
-          const jobPartsData = selectedParts.map(part => ({
-            job_id: bookingId,
-            part_id: part.id,
-            quantity: 1,
-            cost_per_unit: part.cost_price || 0,
-            markup_percentage: part.markup_percentage || 50,
-            sell_price_per_unit: part.sell_price || 0,
-          }));
-
-          // @ts-ignore - job_parts table exists but not in generated types yet
-          await supabase.from('job_parts').insert(jobPartsData);
-        }
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-job-notification', {
+          body: {
+            bookingId: booking.id,
+            type: 'job_created'
+          }
+        });
+      } catch (emailError) {
+        console.error("Email notification error:", emailError);
+        // Don't fail the whole operation if email fails
       }
 
       toast({
-        title: "Job created successfully",
-        description: `${formData.service_name} scheduled for ${clientMode === "new" ? newClientData.name : selectedClient?.name}`,
+        title: "Job created!",
+        description: `${formData.service_name} scheduled. Email sent to client.`,
       });
 
       // Reset form
