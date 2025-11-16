@@ -40,14 +40,15 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
   const events: JobEvent[] = jobs
     .filter(job => job.window_start && job.window_end)
     .map(job => {
-      const statusIcon = {
-        paid: '💰',
-        confirmed: '✅',
-        in_progress: '🚗',
-        cancelled: '❌',
-        scheduled: '⏳',
-        completed: '✅'
-      }[job.status] || '⏳';
+    const statusIcon = {
+      pending: '⏳',
+      confirmed: '✅',
+      in_progress: '🚗',
+      completed: '✅',
+      cancelled: '❌',
+      scheduled: '⏳',
+      paid: '💰'
+    }[job.status] || '⏳';
       
       const price = job.invoice?.amount ? `$${job.invoice.amount}` : '';
       
@@ -65,16 +66,13 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
 
   const eventStyleGetter = (event: JobEvent) => {
     const statusColors: Record<string, string> = {
-      lead: '#94a3b8',
-      service_call: '#f59e0b',
-      quoted: '#8b5cf6',
-      scheduled: '#3b82f6',
+      pending: '#3b82f6',
       confirmed: '#22c55e',
       in_progress: '#06b6d4',
       completed: '#10b981',
-      invoiced: '#eab308',
-      paid: '#059669',
-      cancelled: '#ef4444'
+      cancelled: '#ef4444',
+      scheduled: '#3b82f6',
+      paid: '#059669'
     };
 
     return {
@@ -96,10 +94,10 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
   const handleEventDrop = async ({ event, start, end }: any) => {
     try {
       const { error } = await supabase
-        .from('jobs' as any)
+        .from('bookings')
         .update({
-          window_start: start.toISOString(),
-          window_end: end.toISOString()
+          date_time_start: start.toISOString(),
+          date_time_end: end.toISOString()
         })
         .eq('id', event.id);
 
@@ -119,10 +117,10 @@ export function JobsCalendar({ jobs, onSelectJob }: JobsCalendarProps) {
   const handleEventResize = async ({ event, start, end }: any) => {
     try {
       const { error } = await supabase
-        .from('jobs' as any)
+        .from('bookings')
         .update({
-          window_start: start.toISOString(),
-          window_end: end.toISOString()
+          date_time_start: start.toISOString(),
+          date_time_end: end.toISOString()
         })
         .eq('id', event.id);
 

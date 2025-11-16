@@ -465,23 +465,47 @@ export default function CreateJobModal({
         throw bookingError;
       }
 
-      // Send email notification
-      try {
-        await supabase.functions.invoke('send-job-notification', {
-          body: {
-            bookingId: booking.id,
-            type: 'job_created'
-          }
-        });
-      } catch (emailError) {
-        console.error("Email notification error:", emailError);
-        // Don't fail the whole operation if email fails
-      }
+      // Send email notification if client has email
+      const clientEmail = clientMode === "existing" 
+        ? selectedClient?.email 
+        : newClientData.email;
 
-      toast({
-        title: "Job created!",
-        description: `${formData.service_name} scheduled. Email sent to client.`,
-      });
+      if (clientEmail) {
+        try {
+          const { data: fnData, error: fnError } = await supabase.functions.invoke('send-job-notification', {
+            body: {
+              bookingId: booking.id,
+              type: 'job_created'
+            }
+          });
+
+          if (fnError || fnData?.error) {
+            console.error("Email notification error:", fnError || fnData?.error);
+            toast({
+              title: "Job created!",
+              description: `${formData.service_name} scheduled, but email could not be sent.`,
+              variant: "default",
+            });
+          } else {
+            toast({
+              title: "Job created!",
+              description: `${formData.service_name} scheduled. Email sent to client.`,
+            });
+          }
+        } catch (emailError) {
+          console.error("Email notification error:", emailError);
+          toast({
+            title: "Job created!",
+            description: `${formData.service_name} scheduled, but email could not be sent.`,
+            variant: "default",
+          });
+        }
+      } else {
+        toast({
+          title: "Job created!",
+          description: `${formData.service_name} scheduled. No client email provided.`,
+        });
+      }
 
       // Reset form
       setFormData({
