@@ -125,38 +125,46 @@ export default function Schedule() {
       if (!org) return;
 
       let query = supabase
-        .from("jobs" as any)
+        .from("bookings")
         .select(`
           *,
           clients(name, email, phone),
-          service:services(name, default_price),
           invoice:invoices(id, status, amount)
         `)
         .eq("provider_org_id", org.id)
-        .order("window_start", { ascending: true });
+        .order("date_time_start", { ascending: true });
 
       // Filter by timeframe
       if (tab === "day") {
         const now = new Date();
         const dayEnd = new Date(now.getTime() + 24*60*60*1000);
-        query = query.gte("window_start", now.toISOString())
-          .lt("window_start", dayEnd.toISOString());
+        query = query.gte("date_time_start", now.toISOString())
+          .lt("date_time_start", dayEnd.toISOString());
       } else if (tab === "week") {
         const now = new Date();
         const weekEnd = new Date(now.getTime() + 7*24*60*60*1000);
-        query = query.gte("window_start", now.toISOString())
-          .lt("window_start", weekEnd.toISOString());
+        query = query.gte("date_time_start", now.toISOString())
+          .lt("date_time_start", weekEnd.toISOString());
       } else if (tab === "month") {
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        query = query.gte("window_start", monthStart.toISOString())
-          .lt("window_start", monthEnd.toISOString());
+        query = query.gte("date_time_start", monthStart.toISOString())
+          .lt("date_time_start", monthEnd.toISOString());
       }
       // else tab === "list" shows all jobs (no filter)
 
       const { data: jobsData } = await query;
-      setJobs(jobsData || []);
+      
+      // Map bookings fields to job fields for UI compatibility
+      const mappedJobs = (jobsData || []).map((booking: any) => ({
+        ...booking,
+        window_start: booking.date_time_start,
+        window_end: booking.date_time_end,
+        service_type: booking.service_name
+      }));
+      
+      setJobs(mappedJobs);
     } catch (error) {
       console.error("Error loading jobs:", error);
       toast.error("Failed to load schedule");
