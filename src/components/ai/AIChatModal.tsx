@@ -44,18 +44,18 @@ export function AIChatModal({ open, onOpenChange, userRole = 'provider' }: AICha
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-gradient-to-b from-primary/5 via-background to-primary/10
+      className="fixed inset-0 z-[60] bg-gradient-to-b from-primary/5 via-background to-primary/10
                  flex items-center justify-center p-0"
     >
       {/* Backdrop - click to close */}
       <div 
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm z-[60]"
         onClick={() => onOpenChange(false)}
       />
       
       {/* Main Content Container */}
       <div 
-        className="relative w-full h-full bg-background flex flex-col overflow-hidden z-10 border-t border-border"
+        className="relative w-full h-full bg-background flex flex-col overflow-hidden z-[61] border-t border-border"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Custom Header */}
