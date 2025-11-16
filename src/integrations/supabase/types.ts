@@ -2133,6 +2133,7 @@ export type Database = {
           organization_id: string
           paid_at: string | null
           pdf_url: string | null
+          refunded_at: string | null
           status: string | null
           stripe_checkout_session_id: string | null
           stripe_checkout_url: string | null
@@ -2159,6 +2160,7 @@ export type Database = {
           organization_id: string
           paid_at?: string | null
           pdf_url?: string | null
+          refunded_at?: string | null
           status?: string | null
           stripe_checkout_session_id?: string | null
           stripe_checkout_url?: string | null
@@ -2185,6 +2187,7 @@ export type Database = {
           organization_id?: string
           paid_at?: string | null
           pdf_url?: string | null
+          refunded_at?: string | null
           status?: string | null
           stripe_checkout_session_id?: string | null
           stripe_checkout_url?: string | null
@@ -5825,6 +5828,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stripe_webhook_events: {
+        Row: {
+          data: Json | null
+          event_id: string
+          event_type: string
+          id: string
+          processed_at: string | null
+        }
+        Insert: {
+          data?: Json | null
+          event_id: string
+          event_type: string
+          id?: string
+          processed_at?: string | null
+        }
+        Update: {
+          data?: Json | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          processed_at?: string | null
+        }
+        Relationships: []
       }
       subscription_plans: {
         Row: {
