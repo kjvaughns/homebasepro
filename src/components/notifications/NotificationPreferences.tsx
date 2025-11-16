@@ -196,7 +196,6 @@ export function NotificationPreferences() {
 
   const eventGroups = [
     { key: 'announce', label: 'Announcements', icon: Bell },
-    { key: 'message', label: 'Messages', icon: MessageSquare },
     { key: 'payment', label: 'Payments', icon: DollarSign },
     { key: 'payout', label: 'Payouts 🎉', icon: TrendingUp },
     { key: 'job', label: 'Jobs', icon: Briefcase },

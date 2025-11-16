@@ -217,14 +217,6 @@ export default function TechnicianHome() {
             <Calendar className="mr-2 h-4 w-4" />
             View Schedule
           </Button>
-          <Button
-            variant="outline"
-            className="justify-start"
-            onClick={() => navigate("/provider/messages")}
-          >
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Messages
-          </Button>
         </CardContent>
       </Card>
     </div>

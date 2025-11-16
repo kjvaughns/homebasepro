@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare } from "lucide-react";
+import { Plus, Phone } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,7 +20,11 @@ interface Subscription {
   status: string;
   start_date: string;
   next_billing_date: string | null;
-  clients: { name: string; homeowner_profile_id: string | null };
+  clients: { 
+    name: string; 
+    homeowner_profile_id: string | null;
+    phone: string | null;
+  };
   service_plans: { name: string; price: number; billing_frequency: string };
 }
 
@@ -54,7 +58,7 @@ export default function Subscriptions() {
         .from("client_subscriptions")
         .select(`
           *,
-          clients!inner (name, organization_id, homeowner_profile_id),
+          clients!inner (name, organization_id, homeowner_profile_id, phone),
           service_plans (name, price, billing_frequency)
         `)
         .eq("clients.organization_id", organization.id)
@@ -77,39 +81,6 @@ export default function Subscriptions() {
   const handleMessageClient = async (subscription: Subscription) => {
     if (!subscription.clients.homeowner_profile_id || !orgId) return;
 
-    try {
-      // Check if conversation exists
-      const { data: existingConv } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("homeowner_profile_id", subscription.clients.homeowner_profile_id)
-        .eq("provider_org_id", orgId)
-        .maybeSingle();
-
-      if (existingConv) {
-        navigate("/provider/messages");
-        return;
-      }
-
-      // Create new conversation
-      const { error } = await supabase
-        .from("conversations")
-        .insert({
-          homeowner_profile_id: subscription.clients.homeowner_profile_id,
-          provider_org_id: orgId,
-        });
-
-      if (error) throw error;
-
-      navigate("/provider/messages");
-    } catch (error) {
-      console.error("Error opening conversation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to open conversation",
-        variant: "destructive",
-      });
-    }
   };
 
   return (
@@ -175,14 +146,15 @@ export default function Subscriptions() {
                     : "—"}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleMessageClient(sub)}
-                    disabled={!sub.clients.homeowner_profile_id}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => window.location.href = `tel:${sub.clients.phone}`}
+                    >
+                      <Phone className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

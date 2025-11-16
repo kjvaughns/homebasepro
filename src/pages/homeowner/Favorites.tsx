@@ -94,9 +94,6 @@ export default function Favorites() {
     }
   };
 
-  const handleMessage = (providerId: string) => {
-    navigate(`/homeowner/messages?provider=${providerId}`);
-  };
 
   if (loading) {
     return (
@@ -180,17 +177,9 @@ export default function Favorites() {
                           size="sm"
                           variant="outline"
                           onClick={() => navigate(`/homeowner/provider/${favorite.organization.slug}`)}
-                          className="flex-1"
+                          className="w-full"
                         >
                           View Profile
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleMessage(favorite.provider_org_id)}
-                          className="flex-1"
-                        >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          Message
                         </Button>
                       </div>
                     </div>

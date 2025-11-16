@@ -126,50 +126,9 @@ export default function SubscriptionDetail() {
     }
   };
 
-  const handleMessageProvider = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) return;
-
-      // Check if conversation exists
-      const { data: existingConv } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("homeowner_profile_id", profile.id)
-        .eq("provider_org_id", subscription.provider_org_id)
-        .maybeSingle();
-
-      if (existingConv) {
-        navigate("/homeowner/messages");
-        return;
-      }
-
-      // Create new conversation
-      const { error } = await supabase
-        .from("conversations")
-        .insert({
-          homeowner_profile_id: profile.id,
-          provider_org_id: subscription.provider_org_id,
-        });
-
-      if (error) throw error;
-
-      navigate("/homeowner/messages");
-    } catch (error) {
-      console.error("Error opening conversation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to open conversation",
-        variant: "destructive",
-      });
+  const handleContactProvider = () => {
+    if (subscription.organizations.phone) {
+      window.location.href = `tel:${subscription.organizations.phone}`;
     }
   };
 
@@ -206,9 +165,9 @@ export default function SubscriptionDetail() {
           Back
         </Button>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline" size="sm" onClick={handleMessageProvider} className="w-full sm:w-auto">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Message Provider
+          <Button variant="outline" size="sm" onClick={handleContactProvider} className="w-full sm:w-auto">
+            <Phone className="mr-2 h-4 w-4" />
+            Call Provider
           </Button>
           {subscription.status === "active" && (
             <Button variant="default" size="sm" onClick={() => setRescheduleDialogOpen(true)} className="w-full sm:w-auto">

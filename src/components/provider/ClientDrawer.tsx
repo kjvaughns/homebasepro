@@ -67,64 +67,6 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
     );
   }
 
-  const handleMessage = async () => {
-    if (!client.homeowner_profile_id) {
-      toast.error('Client profile not found');
-      return;
-    }
-    
-    try {
-      // Get current user's org
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-      
-      if (!org) return;
-      
-      // Check if conversation exists
-      let conversationId = client.conversation_id;
-      
-      if (!conversationId) {
-        // Create conversation
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-        
-        const { data: newConv, error: convError } = await supabase
-          .from('conversations')
-          .insert({
-            homeowner_profile_id: client.homeowner_profile_id,
-            provider_org_id: org.id
-          })
-          .select('id')
-          .single();
-        
-        if (convError) throw convError;
-        
-        // Create members
-        await supabase.from('conversation_members').insert([
-          { conversation_id: newConv.id, profile_id: client.homeowner_profile_id },
-          { conversation_id: newConv.id, profile_id: profile.id }
-        ]);
-        
-        conversationId = newConv.id;
-      }
-      
-      navigate(`/provider/messages?conversation=${conversationId}`);
-      onClose();
-    } catch (error) {
-      console.error('Error opening conversation:', error);
-      toast.error('Failed to open conversation');
-    }
-  };
-
   const handleEmail = () => {
     if (client.email) {
       window.location.href = `mailto:${client.email}`;
@@ -209,20 +151,11 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
 
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            onClick={handleMessage}
-            disabled={!client.homeowner_profile_id}
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Message
+          <Button variant="outline" size="sm" onClick={() => window.location.href = `tel:${client.phone}`}>
+            <Phone className="h-4 w-4 mr-2" />
+            Call
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleEmail}
-            disabled={!client.email}
-          >
+          <Button variant="outline" size="sm" onClick={() => window.location.href = `mailto:${client.email}`}>
             <Mail className="h-4 w-4 mr-2" />
             Email
           </Button>
@@ -455,13 +388,6 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
                 <h3 className="text-lg font-semibold mb-2">
                   Messages with {client.name}
                 </h3>
-                <p className="text-muted-foreground mb-4">
-                  Start a conversation with this client
-                </p>
-                <Button onClick={handleMessage}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Open Messages
-                </Button>
               </div>
             </TabsContent>
 

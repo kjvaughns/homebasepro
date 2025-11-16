@@ -221,22 +221,6 @@ export default function ProviderDashboard() {
                     <ArrowRight className="h-5 w-5 text-muted-foreground" />
                   </button>
 
-                  <button
-                    className="w-full flex items-center justify-between p-4 rounded-lg border hover:border-primary hover:bg-accent/50 transition-all min-h-[44px]"
-                    onClick={() => {
-                      triggerHaptic('light');
-                      navigate('/provider/messages');
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <MessageCircle className="h-5 w-5 text-primary" />
-                      <div className="text-left">
-                        <p className="font-medium">Messages to Reply</p>
-                        <p className="text-sm text-muted-foreground">{unreadThreads.length} unread</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                  </button>
                 </CardContent>
               </Card>
 

@@ -324,12 +324,6 @@ export function QuoteViewer({ quoteId, onStatusChange }: QuoteViewerProps) {
             <XCircle className="h-4 w-4 mr-2" />
             Reject
           </Button>
-          <Button
-            variant="ghost"
-            onClick={() => navigate(`/homeowner/messages?provider=${quote.organizations.name}`)}
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
         </CardFooter>
       )}
 
