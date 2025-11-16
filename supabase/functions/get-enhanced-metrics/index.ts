@@ -8,13 +8,18 @@ serve(async (req) => {
   if (cors) return cors;
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
-
     const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+    if (!token) {
+      console.error('UNAUTHORIZED: Missing Authorization header');
+      return errorResponse('UNAUTHORIZED', 'Not authenticated', 401);
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
