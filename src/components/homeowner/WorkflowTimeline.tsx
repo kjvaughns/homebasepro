@@ -196,14 +196,6 @@ export default function WorkflowTimeline({ serviceRequestId, compact = false }: 
                 {action.label}
               </Button>
             )}
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => navigate('/messages')}
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Message Provider
-            </Button>
           </div>
 
           {/* Estimated Time */}

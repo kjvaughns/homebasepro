@@ -120,14 +120,13 @@ export default function HomeownerLayout() {
           .toUpperCase()
           .slice(0, 2);
 
-  const isMessagesRoute = location.pathname.startsWith("/homeowner/messages");
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isMessagesRoute && mainRef.current) {
+    if (mainRef.current) {
       mainRef.current.scrollTo({ top: 0, behavior: "auto" });
     }
-  }, [location.pathname, isMessagesRoute]);
+  }, [location.pathname]);
 
   return (
     <TutorialProvider role="homeowner">
@@ -203,7 +202,6 @@ export default function HomeownerLayout() {
         ref={mainRef}
         className={cn(
           isMobile ? "overflow-y-auto" : "overflow-y-auto h-[calc(100svh-3.5rem)] pl-64",
-          isMessagesRoute ? "overflow-hidden" : "",
         )}
         style={
           isMobile

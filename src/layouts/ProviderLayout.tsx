@@ -263,23 +263,6 @@ const ProviderLayout = () => {
           <div className="flex items-center justify-around" style={{ height: `${TABBAR_H}px` }}>
             {mobileNavigation.map((item) => {
               const isActive = location.pathname === item.href;
-              
-              // Messages link with unread badge
-              if (item.name === "Messages") {
-                return (
-                  <button
-                    key={item.name}
-                    onClick={() => navigate(item.href)}
-                    className={cn(
-                      "flex flex-col items-center justify-start gap-1 transition-colors min-w-0 flex-1 relative",
-                      isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
-                    )}
-                  >
-                    <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-[11.5px] font-medium leading-tight">{item.name}</span>
-                  </button>
-                );
-              }
 
               return (
                 <button

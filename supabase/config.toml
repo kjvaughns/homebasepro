@@ -83,9 +83,6 @@ verify_jwt = true
 [functions.issue-referral-reward]
 verify_jwt = true
 
-[functions.push-on-message]
-verify_jwt = true
-
 [functions.get-stripe-config]
 verify_jwt = false
 

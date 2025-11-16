@@ -161,18 +161,6 @@ export default function MyProviders() {
           </div>
         </div>
         <div className="flex gap-2 mt-4">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate("/homeowner/messages");
-            }}
-          >
-            <MessageSquare className="h-4 w-4 mr-1" />
-            Message
-          </Button>
           {showBookAgain && (
             <Button 
               size="sm" 

@@ -142,81 +142,6 @@ export default function ProviderDetail() {
     }
   };
 
-  const handleStartConversation = async () => {
-    setStartingConversation(true);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to send messages",
-          variant: "destructive",
-        });
-        navigate("/auth");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) {
-        toast({
-          title: "Profile not found",
-          description: "Please complete your profile setup",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check for existing conversation
-      const { data: existingConvo } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("homeowner_profile_id", profile.id)
-        .eq("provider_org_id", id)
-        .single();
-
-      if (existingConvo) {
-        // Navigate to existing conversation
-        navigate("/homeowner/messages");
-        return;
-      }
-
-      // Create new conversation
-      const { data: newConvo, error: convoError } = await supabase
-        .from("conversations")
-        .insert({
-          homeowner_profile_id: profile.id,
-          provider_org_id: id,
-        })
-        .select()
-        .single();
-
-      if (convoError) throw convoError;
-
-      toast({
-        title: "Success",
-        description: "Conversation started - you can now send messages",
-      });
-
-      // Navigate with conversation ID so Messages page can auto-select it
-      navigate("/homeowner/messages", { state: { conversationId: newConvo.id } });
-    } catch (error) {
-      console.error("Error starting conversation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to start conversation",
-        variant: "destructive",
-      });
-    } finally {
-      setStartingConversation(false);
-    }
-  };
-
   const handleSubscribe = async () => {
     if (!selectedHome || !selectedPlan) {
       toast({
@@ -361,15 +286,6 @@ export default function ProviderDetail() {
             SAVE UP TO 20%
           </Badge>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full bg-background shadow-md hover:bg-muted"
-              onClick={handleStartConversation}
-              disabled={startingConversation}
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
             <Button variant="outline" size="icon" className="rounded-full bg-background shadow-md hover:bg-muted">
               <Share2 className="h-4 w-4" />
             </Button>
