@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Send } from "lucide-react";
+import { Plus, Trash2, Send, Eye } from "lucide-react";
 import { copyToClipboard } from "@/utils/clipboard";
 import { PaymentLinkDialog } from "./PaymentLinkDialog";
 
@@ -35,13 +35,14 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }
   ]);
   const [notes, setNotes] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [clientMode, setClientMode] = useState<'existing' | 'new'>('existing');
+  const [clientMode, setClientMode] = useState<'existing' | 'new' | 'linkOnly'>('existing');
   const [newClientData, setNewClientData] = useState({
     name: '',
     email: '',
     phone: ''
   });
   const [showPaymentLinkDialog, setShowPaymentLinkDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [generatedPaymentLink, setGeneratedPaymentLink] = useState("");
   const [generatedClientName, setGeneratedClientName] = useState("");
   const [sendEmail, setSendEmail] = useState(false);
@@ -89,6 +90,11 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }
 
   const calculateTotal = () => {
     return lineItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+  };
+
+  const calculateNetAfterFees = (total: number) => {
+    const stripeFee = total * 0.029 + 30; // 2.9% + $0.30
+    return total - stripeFee;
   };
 
   const handleCreate = async (sendEmail: boolean) => {
@@ -354,23 +360,31 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Client Mode Toggle */}
+          {/* Mode Selection */}
           <div className="flex gap-2">
             <Button
-              type="button"
               variant={clientMode === 'existing' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setClientMode('existing')}
+              type="button"
             >
               Existing Client
             </Button>
             <Button
-              type="button"
               variant={clientMode === 'new' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setClientMode('new')}
+              type="button"
             >
-              + New Client
+              New Client
+            </Button>
+            <Button
+              variant={clientMode === 'linkOnly' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setClientMode('linkOnly')}
+              type="button"
+            >
+              Link Only
             </Button>
           </div>
 
@@ -497,12 +511,22 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }
             ))}
           </div>
 
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Total: ${calculateTotal().toFixed(2)}</p>
+          {/* Live Total Preview */}
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Total Amount:</span>
+              <span className="text-2xl font-bold">${calculateTotal().toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-muted-foreground">
+              <span>After 2.9% + $0.30 fees:</span>
+              <span className="font-semibold text-green-600">
+                ${calculateNetAfterFees(calculateTotal()).toFixed(2)}
+              </span>
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="flex gap-2 sm:gap-2">
           <Button
             type="button"
             variant="outline"
@@ -513,21 +537,29 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }
           </Button>
           <Button
             type="button"
+            variant="outline"
+            onClick={() => setShowPreview(true)}
+            disabled={loading || (!selectedClient && clientMode !== 'linkOnly')}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button
+            type="button"
             variant="secondary"
             onClick={() => handleCreate(false)}
-            disabled={loading || !selectedClient && clientMode === 'existing'}
-            className="flex-1"
+            disabled={loading || (!selectedClient && clientMode !== 'linkOnly')}
           >
             {loading ? "Creating..." : "Create Link Only"}
           </Button>
           <Button
             type="button"
             onClick={() => handleCreate(true)}
-            disabled={loading || !selectedClient && clientMode === 'existing'}
-            className="flex-1 bg-green-600 hover:bg-green-700"
+            disabled={loading || (!selectedClient && clientMode !== 'linkOnly')}
+            className="bg-green-600 hover:bg-green-700"
           >
             <Send className="h-4 w-4 mr-2" />
-            {loading ? "Sending..." : "Send Invoice via Email"}
+            {loading ? "Sending..." : "Send via Email"}
           </Button>
         </DialogFooter>
         </DialogContent>
