@@ -39,7 +39,6 @@ import { cn } from "@/lib/utils";
 import { JobsMenuSheet } from "@/components/provider/JobsMenuSheet";
 import { TeamMenuSheet } from "@/components/provider/TeamMenuSheet";
 import { FinancialMenuSheet } from "@/components/provider/FinancialMenuSheet";
-import { useMessaging } from "@/contexts/MessagingContext";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
@@ -53,7 +52,7 @@ const mobileNavigation = [
   { name: "Home", href: "/provider/dashboard", icon: Home },
   { name: "Schedule", href: "/provider/schedule", icon: Briefcase },
   { name: "Money", href: "/provider/money", icon: DollarSign },
-  { name: "Messages", href: "/provider/messages", icon: MessageSquare },
+  { name: "Clients", href: "/provider/clients", icon: Users },
   { name: "More", href: "/provider/more", icon: MoreHorizontal },
 ];
 
@@ -62,7 +61,6 @@ const ProviderLayout = () => {
   const location = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const isMessagesPage = location.pathname.startsWith('/provider/messages');
   const keyboardHeight = useKeyboardHeight();
   useAutoScrollToInput();
 
@@ -70,12 +68,10 @@ const ProviderLayout = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const { totalUnread } = useMessaging();
   const [jobsSheetOpen, setJobsSheetOpen] = useState(false);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
   const [financialSheetOpen, setFinancialSheetOpen] = useState(false);
 
-  const isMessagesRoute = location.pathname.startsWith("/provider/messages");
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,8 +126,8 @@ const ProviderLayout = () => {
   }, [navigate, toast]);
 
   useEffect(() => {
-    if (!isMessagesRoute && mainRef.current) mainRef.current.scrollTo({ top: 0, behavior: "auto" });
-  }, [location.pathname, isMessagesRoute]);
+    if (mainRef.current) mainRef.current.scrollTo({ top: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -246,7 +242,7 @@ const ProviderLayout = () => {
         {/* Main — scroller between header and tab bar */}
         <main
           ref={mainRef}
-          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-4")}
+          className="overflow-y-auto overflow-x-hidden pb-4"
           style={{
             height: `calc(100svh - 56px - env(safe-area-inset-top) - (${TABBAR_H}px + env(safe-area-inset-bottom)) - ${keyboardHeight}px)`,
           }}
@@ -279,14 +275,7 @@ const ProviderLayout = () => {
                       isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
                     )}
                   >
-                    <div className="relative">
-                      <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                      {totalUnread > 0 && (
-                        <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[10px] font-bold bg-[#00B67A] text-white rounded-full">
-                          {totalUnread > 9 ? '9+' : totalUnread}
-                        </span>
-                      )}
-                    </div>
+                    <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
                     <span className="text-[11.5px] font-medium leading-tight">{item.name}</span>
                   </button>
                 );
@@ -421,7 +410,7 @@ const ProviderLayout = () => {
 
         <main
           ref={mainRef}
-          className={cn(isMessagesRoute ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden", "pb-[120px] md:pb-8")}
+          className="overflow-y-auto overflow-x-hidden pb-[120px] md:pb-8"
           style={{ height: "calc(100vh - 56px - env(safe-area-inset-top))" }}
         >
           <Outlet />

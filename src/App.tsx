@@ -71,7 +71,6 @@ import Appointments from "./pages/homeowner/Appointments";
 import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
 import HomeownerPaymentSettings from "./pages/homeowner/PaymentSettings";
-import MessagesPage from "./pages/Messages";
 import Jobs from "@/pages/provider/Jobs";
 import MyJobs from "@/pages/provider/MyJobs";
 import Services from "@/pages/provider/Services";
@@ -125,8 +124,6 @@ import BookProvider from "./pages/BookProvider";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { MessagingProvider } from "@/contexts/MessagingContext";
-import Messages from "./pages/Messages";
 import { SubscriptionGuard } from "@/components/provider/SubscriptionGuard";
 import ServiceProgress from "./pages/homeowner/ServiceProgress";
 import PricingIntelligence from "./pages/provider/PricingIntelligence";
@@ -315,9 +312,8 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <MessagingProvider>
-          <Toaster />
-          <Sonner />
+        <Toaster />
+        <Sonner />
           <BrowserRouter>
             <IntercomProvider>
               <ErrorBoundary>
@@ -385,7 +381,6 @@ const App = () => {
                   {React.createElement(lazy(() => import('./pages/homeowner/NotificationSettings')))}
                 </Suspense>
               } />
-              <Route path="messages" element={<Messages role="homeowner" />} />
               <Route path="notifications" element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <HomeownerNotifications />
@@ -468,7 +463,6 @@ const App = () => {
               {/* Stripe onboarding redirect - handle old route */}
               <Route path="stripe-onboarding" element={<Navigate to="/provider/dashboard" replace />} />
               
-              <Route path="messages" element={<Messages role="provider" />} />
               <Route path="more" element={<MorePage />} />
               <Route path="notifications" element={
                 <Suspense fallback={<div>Loading...</div>}>
@@ -548,7 +542,6 @@ const App = () => {
               />
             </IntercomProvider>
           </BrowserRouter>
-        </MessagingProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

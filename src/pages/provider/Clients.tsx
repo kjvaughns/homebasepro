@@ -55,6 +55,11 @@ export default function Clients() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [orgPlan, setOrgPlan] = useState<string>('free');
   const [orgFee, setOrgFee] = useState<number>(0.08);
+
+  // Stats for CRM
+  const activeClients = clients.filter(c => c.status === 'active').length;
+  const leadClients = clients.filter(c => c.status === 'lead').length;
+  const inactiveClients = clients.filter(c => c.status === 'inactive').length;
   
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");

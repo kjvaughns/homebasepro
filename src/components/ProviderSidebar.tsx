@@ -84,8 +84,7 @@ export function ProviderSidebar() {
     { to: "/provider/schedule", title: "Schedule", icon: Calendar, showFor: "all" },
     { to: "/provider/money", title: "Money", icon: DollarSign, showFor: "all" },
     { to: "/provider/clients", title: "Clients", icon: Users, showFor: "all" },
-    { to: "/provider/messages", title: "Messages", icon: MessageSquare, showFor: "all" },
-    { to: "/provider/settings", title: "Settings", icon: Settings, showFor: "all" },
+    { to: "/provider/more", title: "More", icon: Menu, showFor: "all" },
   ];
 
   // Simplified navigation - no route groups needed

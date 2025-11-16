@@ -32,7 +32,6 @@ import { TutorialProvider } from "@/contexts/TutorialContext";
 import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { SupportDrawer } from "@/components/support/SupportDrawer";
-import { useMessaging } from "@/contexts/MessagingContext";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Bell } from "lucide-react";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
@@ -44,7 +43,6 @@ import { initPWADetection } from "@/utils/pwaDetection";
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
     { name: "Providers", href: "/homeowner/providers", icon: Users },
-    { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
   ];
 
   const desktopNavigation = [
@@ -53,7 +51,6 @@ import { initPWADetection } from "@/utils/pwaDetection";
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "My Providers", href: "/homeowner/providers", icon: Users },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
-    { name: "Messages", href: "/homeowner/messages", icon: MessageSquare },
     { name: "Settings", href: "/homeowner/settings", icon: Settings },
   ];
 
@@ -63,12 +60,10 @@ const TABBAR_H = 80;
 export default function HomeownerLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const isMessagesPage = location.pathname.startsWith('/homeowner/messages');
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const { totalUnread } = useMessaging();
   const keyboardHeight = useKeyboardHeight();
   useAutoScrollToInput();
 
@@ -251,14 +246,7 @@ export default function HomeownerLayout() {
                       isActive ? "text-primary" : "text-[hsl(0_0%_70%)] hover:text-foreground",
                     )}
                   >
-                    <div className="relative">
-                      <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                      {totalUnread > 0 && (
-                        <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[10px] font-bold bg-[#00B67A] text-white rounded-full">
-                          {totalUnread > 9 ? '9+' : totalUnread}
-                        </span>
-                      )}
-                    </div>
+                    <item.icon className="h-6 w-6 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
                     <span className="text-[11.5px] font-medium leading-tight">{item.name}</span>
                   </Link>
                 );
