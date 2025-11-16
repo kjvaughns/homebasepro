@@ -136,12 +136,24 @@ export default function Schedule() {
         .order("window_start", { ascending: true });
 
       // Filter by timeframe
-      if (tab === "week") {
+      if (tab === "day") {
+        const now = new Date();
+        const dayEnd = new Date(now.getTime() + 24*60*60*1000);
+        query = query.gte("window_start", now.toISOString())
+          .lt("window_start", dayEnd.toISOString());
+      } else if (tab === "week") {
         const now = new Date();
         const weekEnd = new Date(now.getTime() + 7*24*60*60*1000);
         query = query.gte("window_start", now.toISOString())
           .lt("window_start", weekEnd.toISOString());
+      } else if (tab === "month") {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        query = query.gte("window_start", monthStart.toISOString())
+          .lt("window_start", monthEnd.toISOString());
       }
+      // else tab === "list" shows all jobs (no filter)
 
       const { data: jobsData } = await query;
       setJobs(jobsData || []);
@@ -309,8 +321,8 @@ export default function Schedule() {
         </div>
       </div>
 
-      {/* Daily Stats - show on day/week views */}
-      {(tab === 'week' || tab === 'day') && jobs.length > 0 && (
+      {/* Daily Stats - show on day/week/month views */}
+      {(tab === 'day' || tab === 'week' || tab === 'month') && jobs.length > 0 && (
         <ScheduleStatsCard
           todayJobCount={stats.todayJobCount}
           todayRevenue={stats.todayRevenue}
@@ -320,7 +332,7 @@ export default function Schedule() {
           nextJob={stats.nextJob}
           onViewRoute={() => {
             // Navigate to today in calendar and trigger optimize
-            setTab('calendar');
+            setTab('month');
           }}
         />
       )}
@@ -330,14 +342,38 @@ export default function Schedule() {
           triggerHaptic('light');
           setTab(value);
         }}>
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
-            <TabsTrigger value="week" className="text-xs md:text-sm data-[state=active]:bg-background">This Week</TabsTrigger>
-            <TabsTrigger value="all" className="text-xs md:text-sm data-[state=active]:bg-background">All Jobs</TabsTrigger>
-            <TabsTrigger value="calendar" className="text-xs md:text-sm data-[state=active]:bg-background">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
+            <TabsTrigger value="day" className="text-xs md:text-sm data-[state=active]:bg-background">Day</TabsTrigger>
+            <TabsTrigger value="week" className="text-xs md:text-sm data-[state=active]:bg-background">Week</TabsTrigger>
+            <TabsTrigger value="month" className="text-xs md:text-sm data-[state=active]:bg-background">
               <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden md:inline">Calendar</span>
+              <span className="hidden md:inline">Month</span>
             </TabsTrigger>
+            <TabsTrigger value="list" className="text-xs md:text-sm data-[state=active]:bg-background">List</TabsTrigger>
           </TabsList>
+
+        <TabsContent value="day" className="space-y-3 mt-4 p-4">
+          {jobs.length > 0 ? (
+            jobs.map((job) => (
+              <div key={job.id} onClick={() => openJobDetail(job)}>
+                <UnifiedJobCard job={job} onAction={handleAction} />
+              </div>
+            ))
+          ) : (
+            <Card className="p-8 md:p-12 text-center rounded-2xl">
+              <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No jobs today</h3>
+              <p className="text-muted-foreground mb-4">You don't have any scheduled jobs for today</p>
+              <Button onClick={() => {
+                triggerHaptic('light');
+                isMobile ? setShowQuickAdd(true) : setShowCreateJob(true);
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Job
+              </Button>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="week" className="space-y-3 mt-4 p-4">
           {jobs.length > 0 ? (
@@ -348,11 +384,13 @@ export default function Schedule() {
             ))
           ) : (
             <Card className="p-8 md:p-12 text-center rounded-2xl">
-              <p className="text-muted-foreground">No jobs scheduled this week</p>
+              <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No jobs this week</h3>
+              <p className="text-muted-foreground mb-4">You don't have any scheduled jobs for this week</p>
               <Button onClick={() => {
                 triggerHaptic('light');
                 isMobile ? setShowQuickAdd(true) : setShowCreateJob(true);
-              }} className="mt-4">
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Job
               </Button>
@@ -360,7 +398,7 @@ export default function Schedule() {
           )}
         </TabsContent>
 
-        <TabsContent value="all" className="space-y-3 mt-4 p-4">
+        <TabsContent value="list" className="space-y-3 mt-4 p-4">
           {jobs.length > 0 ? (
             jobs.map((job) => (
               <div key={job.id} onClick={() => openJobDetail(job)}>
@@ -369,12 +407,21 @@ export default function Schedule() {
             ))
           ) : (
             <Card className="p-8 md:p-12 text-center rounded-2xl">
-              <p className="text-muted-foreground">No jobs found</p>
+              <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No jobs yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first job to get started</p>
+              <Button onClick={() => {
+                triggerHaptic('light');
+                isMobile ? setShowQuickAdd(true) : setShowCreateJob(true);
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Job
+              </Button>
             </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-4 p-4">
+        <TabsContent value="month" className="mt-4 p-4">
           <div className="h-[500px] md:h-[600px]">
             <JobsCalendar 
               jobs={jobs}
