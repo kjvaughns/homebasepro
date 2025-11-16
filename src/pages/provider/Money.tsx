@@ -1,425 +1,189 @@
 import { useEffect, useState, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { DollarSign, Receipt, TrendingUp, Plus, Download, RefreshCw } from "lucide-react";
+import { DollarSign, Receipt, TrendingUp, Plus, RefreshCw, Link2, Clock, Wallet, Copy, Send, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CreateInvoiceModal } from "@/components/provider/CreateInvoiceModal";
 import { PaymentDrawer } from "@/components/provider/PaymentDrawer";
+import { EnhancedMetricCard } from "@/components/provider/EnhancedMetricCard";
+import { WeeklySnapshot } from "@/components/provider/WeeklySnapshot";
+import { QuickPaymentLinkModal } from "@/components/provider/QuickPaymentLinkModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useDespia } from "@/hooks/useDespia";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast as sonnerToast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
 
 export default function Money() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { triggerHaptic, showSpinner, hideSpinner } = useDespia();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [metrics, setMetrics] = useState<any>({});
+  const [enhancedMetrics, setEnhancedMetrics] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showQuickPaymentModal, setShowQuickPaymentModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'invoices');
-  const [invoiceFilter, setInvoiceFilter] = useState(searchParams.get('filter') || 'all');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'owed');
+  const [dateFilter, setDateFilter] = useState<'week' | 'lastWeek' | 'all'>('all');
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const { toast } = useToast();
-
-  useEffect(() => {
-    loadData();
-    setupPullToRefresh();
-  }, []);
-
-  useEffect(() => {
-    // Handle deep links
-    const action = searchParams.get('action');
-    if (action === 'invoice') {
-      setShowInvoiceModal(true);
-      // Clear action param after opening modal
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete('action');
-      setSearchParams(newParams);
-    } else if (action === 'payment') {
-      setActiveTab('payments');
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete('action');
-      setSearchParams(newParams);
-    }
-  }, [searchParams]);
-
-  const setupPullToRefresh = () => {
-    let startY = 0;
-    let currentY = 0;
-    let pulling = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY === 0) {
-        startY = e.touches[0].clientY;
-        pulling = true;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!pulling) return;
-      currentY = e.touches[0].clientY;
-      const distance = currentY - startY;
-      
-      if (distance > 100) {
-        handleRefresh();
-        pulling = false;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      pulling = false;
-    };
-
-    document.addEventListener('touchstart', handleTouchStart);
-    document.addEventListener('touchmove', handleTouchMove);
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  };
 
   const loadData = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
+      const { data: org } = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
       if (!org) return;
 
-      // Load KPIs
-      const { data: kpis } = await supabase.rpc('payments_kpis', { org_uuid: org.id });
-      setMetrics(kpis || {});
+      const { data: metricsData } = await supabase.functions.invoke('get-enhanced-metrics');
+      setEnhancedMetrics(metricsData);
 
-      // Load invoices
-      const { data: invoicesData } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('organization_id', org.id)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
+      const { data: invoicesData } = await supabase.from('invoices').select('*, client:clients(name, email)').eq('org_id', org.id).order('created_at', { ascending: false });
       setInvoices(invoicesData || []);
 
-      // Load payments
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('org_id', org.id)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
+      const { data: paymentsData } = await supabase.from('payments').select('*, homeowner:profiles!payments_homeowner_profile_id_fkey(full_name), booking:bookings(service_name)').eq('org_id', org.id).order('created_at', { ascending: false });
       setPayments(paymentsData || []);
 
-      // Load transactions (for accounting)
-      const { data: transactionsData } = await supabase
-        .from('transactions' as any)
-        .select('*')
-        .eq('organization_id', org.id)
-        .order('transaction_date', { ascending: false })
-        .limit(100);
-
+      const { data: transactionsData } = await supabase.from('accounting_transactions').select('*').eq('organization_id', org.id).order('transaction_date', { ascending: false });
       setTransactions(transactionsData || []);
-
+      
+      setLastSyncTime(new Date());
     } catch (error) {
-      console.error('Error loading financial data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load financial data",
-        variant: "destructive",
-      });
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    
+    const invoiceChannel = supabase.channel('invoices-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, loadData).subscribe();
+    const paymentsChannel = supabase.channel('payments-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, loadData).subscribe();
+    const interval = setInterval(loadData, 60000);
+    
+    return () => {
+      supabase.removeChannel(invoiceChannel);
+      supabase.removeChannel(paymentsChannel);
+      clearInterval(interval);
+    };
+  }, [loadData]);
 
   const handleRefresh = async () => {
-    triggerHaptic('light');
     setRefreshing(true);
+    triggerHaptic('light');
+    showSpinner();
     await loadData();
+    hideSpinner();
     setRefreshing(false);
-    triggerHaptic('success');
-    sonnerToast.success("Financial data refreshed");
+    sonnerToast.success("Data refreshed");
   };
 
-  const currency = (val: number) => `$${val.toFixed(2)}`;
+  const formatCurrency = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(cents / 100);
 
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const netProfit = totalIncome - totalExpenses;
 
-  if (loading) {
-    return (
-      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="rounded-2xl">
-              <CardContent className="p-4">
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-6 w-16" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const groupPaymentsByDate = (paymentsList: any[]) => {
+    const groups: { [key: string]: any[] } = { today: [], yesterday: [], thisWeek: [], earlier: [] };
+    paymentsList.forEach(payment => {
+      const paymentDate = new Date(payment.created_at);
+      if (isToday(paymentDate)) groups.today.push(payment);
+      else if (isYesterday(paymentDate)) groups.yesterday.push(payment);
+      else if (isThisWeek(paymentDate)) groups.thisWeek.push(payment);
+      else groups.earlier.push(payment);
+    });
+    return groups;
+  };
+
+  const filteredPayments = payments.filter(payment => {
+    if (dateFilter === 'week') return isThisWeek(new Date(payment.created_at));
+    if (dateFilter === 'lastWeek') {
+      const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+      const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+      const paymentDate = new Date(payment.created_at);
+      return paymentDate >= twoWeeksAgo && paymentDate < weekAgo;
+    }
+    return true;
+  });
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Copied!", description: `${label} copied to clipboard` });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to copy to clipboard", variant: "destructive" });
+    }
+  };
+
+  if (loading) return <div className="p-6 space-y-4 max-w-7xl mx-auto"><Skeleton className="h-10 w-48" /><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[1,2,3,4].map(i => <Skeleton key={i} className="h-32" />)}</div><Skeleton className="h-64" /></div>;
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-4 md:py-8 space-y-4 md:space-y-6 pb-safe">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Money</h1>
-          <p className="text-sm text-muted-foreground">Your finances</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size={isMobile ? "icon" : "default"}
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''} ${!isMobile ? 'mr-2' : ''}`} />
-            {!isMobile && 'Refresh'}
-          </Button>
-          <Button onClick={() => {
-            triggerHaptic('light');
-            setShowInvoiceModal(true);
-          }}>
-            {isMobile ? <Receipt className="h-4 w-4" /> : <><Receipt className="h-4 w-4 mr-2" />Send Invoice</>}
-          </Button>
-        </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-        <Card className="rounded-2xl">
-          <CardContent className="p-3 md:p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1">
-              <DollarSign className="h-3 w-3 md:h-4 md:w-4" />
-              <span>Total Revenue</span>
-            </div>
-            <p className="text-xl md:text-2xl font-bold">{currency((metrics.total || 0) / 100)}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl">
-          <CardContent className="p-3 md:p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1">
-              <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
-              <span>Unpaid (AR)</span>
-            </div>
-            <p className="text-xl md:text-2xl font-bold">{currency((metrics.ar || 0) / 100)}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl col-span-2 md:col-span-1">
-          <CardContent className="p-3 md:p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-1">
-              <Receipt className="h-3 w-3 md:h-4 md:w-4" />
-              <span>Net Profit</span>
-            </div>
-            <p className="text-xl md:text-2xl font-bold">{currency(netProfit)}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={(value) => {
-        setActiveTab(value);
-        triggerHaptic('light');
-      }}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="invoices" className="text-xs md:text-sm">Invoices</TabsTrigger>
-          <TabsTrigger value="payments" className="text-xs md:text-sm">Payments</TabsTrigger>
-          <TabsTrigger value="reports" className="text-xs md:text-sm">Reports</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="invoices" className="mt-4 md:mt-6 space-y-3">
-          <div className="flex justify-between items-center mb-3">
-            {invoiceFilter === 'unpaid' && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  setInvoiceFilter('all');
-                  const newParams = new URLSearchParams(searchParams);
-                  newParams.delete('filter');
-                  setSearchParams(newParams);
-                }}
-              >
-                Clear Filter
-              </Button>
-            )}
+    <div className="min-h-screen bg-background">
+      <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto pb-24">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div><h1 className="text-3xl font-bold">Money</h1><p className="text-xs text-muted-foreground mt-1">Synced {formatDistanceToNow(lastSyncTime, { addSuffix: true })}</p></div>
+            <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} className="rounded-full"><RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} /></Button>
           </div>
           
-          {(invoiceFilter === 'unpaid' 
-            ? invoices.filter(inv => ['pending', 'overdue'].includes(inv.status || ''))
-            : invoices
-          ).length > 0 ? (
-            (invoiceFilter === 'unpaid' 
-              ? invoices.filter(inv => ['pending', 'overdue'].includes(inv.status || ''))
-              : invoices
-            ).map((invoice) => (
-              <Card 
-                key={invoice.id} 
-                className="p-3 md:p-4 hover:bg-accent/50 cursor-pointer transition-all rounded-2xl active:scale-[0.98]"
-                onClick={() => triggerHaptic('light')}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm md:text-base">{invoice.client_name || 'Unnamed Client'}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      Invoice #{invoice.invoice_number} • {new Date(invoice.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-base md:text-lg font-semibold">{currency(invoice.amount / 100)}</p>
-                    <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className="text-xs">
-                      {invoice.status}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-            ))
-          ) : (
-            <Card className="p-8 md:p-12 text-center rounded-2xl">
-              <p className="text-muted-foreground">
-                {invoiceFilter === 'unpaid' ? 'No unpaid invoices' : 'No invoices yet'}
-              </p>
-              <Button onClick={() => {
-                triggerHaptic('light');
-                setShowInvoiceModal(true);
-              }} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Invoice
-              </Button>
-            </Card>
-          )}
-        </TabsContent>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button size="lg" className="w-full md:w-auto"><Plus className="h-5 w-5 mr-2" />New Invoice / Payment</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56"><DropdownMenuItem onClick={() => setShowInvoiceModal(true)}><Receipt className="h-4 w-4 mr-2" />Send Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => setShowQuickPaymentModal(true)}><Link2 className="h-4 w-4 mr-2" />Create Payment Link</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+        </div>
 
-        <TabsContent value="payments" className="mt-4 md:mt-6 space-y-3">
-          {payments.length > 0 ? (
-            payments.map((payment) => (
-              <Card 
-                key={payment.id} 
-                className="p-3 md:p-4 hover:bg-accent/50 cursor-pointer transition-all rounded-2xl active:scale-[0.98]"
-                onClick={() => {
-                  triggerHaptic('light');
-                  setSelectedPayment(payment);
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm md:text-base capitalize">{payment.type?.replace('_', ' ')}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      {new Date(payment.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-base md:text-lg font-semibold">{currency(payment.amount / 100)}</p>
-                    <Badge variant={payment.status === 'paid' ? 'default' : 'secondary'} className="text-xs">
-                      {payment.status}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-            ))
-          ) : (
-            <Card className="p-8 md:p-12 text-center rounded-2xl">
-              <p className="text-muted-foreground">No payments yet</p>
-            </Card>
-          )}
-        </TabsContent>
+        {enhancedMetrics && <WeeklySnapshot jobCount={enhancedMetrics.thisWeekJobs || 0} completedCount={enhancedMetrics.thisWeekCompleted || 0} earned={enhancedMetrics.thisWeekEarnings || 0} pending={enhancedMetrics.stripePending || 0} />}
 
-        <TabsContent value="reports" className="mt-4 md:mt-6">
-          <Card className="rounded-2xl">
-            <CardContent className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-semibold mb-4">Profit & Loss Statement</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b">
-                  <span className="font-medium text-sm md:text-base">Total Revenue</span>
-                  <span className="text-base md:text-lg font-semibold text-emerald-600">{currency(totalIncome)}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b">
-                  <span className="font-medium text-sm md:text-base">Total Expenses</span>
-                  <span className="text-base md:text-lg font-semibold text-red-600">{currency(totalExpenses)}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="font-bold text-base md:text-lg">Net Profit</span>
-                  <span className="text-xl md:text-2xl font-bold">{currency(netProfit)}</span>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                className="w-full mt-6" 
-                onClick={() => triggerHaptic('light')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <EnhancedMetricCard icon={DollarSign} label="Total Earned" value={formatCurrency(enhancedMetrics?.totalEarned || 0)} subValue="Lifetime revenue" colorClass="text-green-600" />
+          <EnhancedMetricCard icon={Wallet} label="Pending Payouts" value={formatCurrency(enhancedMetrics?.pendingPayouts || 0)} subValue="Available in Stripe" colorClass="text-blue-600" />
+          <EnhancedMetricCard icon={Clock} label="Outstanding" value={formatCurrency(enhancedMetrics?.outstanding || 0)} subValue="Unpaid invoices" colorClass="text-orange-600" onClick={() => setActiveTab('owed')} />
+          <EnhancedMetricCard icon={TrendingUp} label="This Week" value={formatCurrency(enhancedMetrics?.thisWeekEarnings || 0)} subValue={`${enhancedMetrics?.thisWeekJobs || 0} jobs`} colorClass="text-primary" />
+        </div>
 
-      {showInvoiceModal && (
-        <CreateInvoiceModal
-          open={showInvoiceModal}
-          onClose={() => {
-            triggerHaptic('light');
-            setShowInvoiceModal(false);
-            loadData();
-          }}
-        />
-      )}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="owed"><span className="text-lg mr-1">💸</span><span className="hidden sm:inline">Money Owed</span><span className="sm:hidden">Owed</span></TabsTrigger>
+            <TabsTrigger value="received"><span className="text-lg mr-1">✅</span><span className="hidden sm:inline">Money Received</span><span className="sm:hidden">Received</span></TabsTrigger>
+            <TabsTrigger value="summary"><span className="text-lg mr-1">📊</span><span className="hidden sm:inline">Earnings Summary</span><span className="sm:hidden">Summary</span></TabsTrigger>
+          </TabsList>
 
-      {selectedPayment && (
-        isMobile ? (
-          <Sheet open={!!selectedPayment} onOpenChange={() => {
-            triggerHaptic('light');
-            setSelectedPayment(null);
-          }}>
-            <SheetContent side="bottom" className="h-[90vh] p-0 rounded-t-3xl">
-              <div className="h-full overflow-y-auto">
-                <PaymentDrawer
-                  payment={selectedPayment}
-                  onClose={() => {
-                    triggerHaptic('light');
-                    setSelectedPayment(null);
-                  }}
-                  onRefresh={loadData}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-        ) : (
-          <PaymentDrawer
-            payment={selectedPayment}
-            onClose={() => setSelectedPayment(null)}
-            onRefresh={loadData}
-          />
-        )
-      )}
+          <TabsContent value="owed" className="space-y-4">
+            {invoices.length === 0 ? <Card><CardContent className="pt-6 text-center text-muted-foreground">No invoices yet. Create your first invoice to get started!</CardContent></Card> : 
+              invoices.map(inv => <Card key={inv.id} className="hover:shadow-md transition-shadow"><CardContent className="pt-6"><div className="flex items-start justify-between mb-4"><div className="space-y-1"><p className="font-medium">{inv.client?.name || 'Unknown Client'}</p><p className="text-sm text-muted-foreground">Invoice #{inv.id.slice(0, 8)}</p><p className="text-sm text-muted-foreground">Due: {new Date(inv.due_date).toLocaleDateString()}</p></div><div className="text-right space-y-1"><p className="text-2xl font-bold">{formatCurrency(inv.amount)}</p><Badge variant={inv.status === 'paid' ? 'default' : inv.status === 'pending' ? 'secondary' : 'destructive'}>{inv.status}</Badge></div></div>{inv.stripe_payment_link && <div className="flex gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={() => copyToClipboard(inv.stripe_payment_link, 'Payment link')}><Copy className="h-3 w-3 mr-1" />Copy Link</Button>{inv.status !== 'paid' && <Button size="sm" variant="outline" onClick={() => toast({ title: "Reminder sent", description: "Payment reminder sent to client" })}><Send className="h-3 w-3 mr-1" />Send Reminder</Button>}</div>}</CardContent></Card>)
+            }
+          </TabsContent>
+
+          <TabsContent value="received" className="space-y-4">
+            <div className="flex gap-2 mb-4 flex-wrap">
+              <Button size="sm" variant={dateFilter === 'week' ? 'default' : 'outline'} onClick={() => setDateFilter('week')}>This Week</Button>
+              <Button size="sm" variant={dateFilter === 'lastWeek' ? 'default' : 'outline'} onClick={() => setDateFilter('lastWeek')}>Last Week</Button>
+              <Button size="sm" variant={dateFilter === 'all' ? 'default' : 'outline'} onClick={() => setDateFilter('all')}>All Time</Button>
+            </div>
+            {filteredPayments.length === 0 ? <Card><CardContent className="pt-6 text-center text-muted-foreground">No payments received yet.</CardContent></Card> :
+              Object.entries(groupPaymentsByDate(filteredPayments)).map(([group, groupPayments]: [string, any]) => groupPayments.length > 0 && <div key={group} className="space-y-2"><h3 className="text-sm font-medium text-muted-foreground capitalize">{group === 'thisWeek' ? 'This Week' : group}</h3>{groupPayments.map((payment: any) => <Card key={payment.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedPayment(payment)}><CardContent className="pt-6"><div className="flex items-start justify-between"><div className="space-y-1"><p className="font-medium">{payment.homeowner?.full_name || 'Unknown Client'}</p><p className="text-sm text-muted-foreground">{payment.booking?.service_name || 'Service'}</p><p className="text-xs text-muted-foreground">{new Date(payment.created_at).toLocaleDateString()}</p></div><div className="text-right space-y-1"><p className="text-2xl font-bold">{formatCurrency(payment.amount)}</p><Badge variant={payment.status === 'paid' || payment.status === 'completed' ? 'default' : 'secondary'}>{payment.status === 'paid' || payment.status === 'completed' ? '✅ Paid' : '⏳ Pending'}</Badge></div></div></CardContent></Card>)}</div>)
+            }
+          </TabsContent>
+
+          <TabsContent value="summary" className="space-y-4">
+            {enhancedMetrics && <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20"><CardContent className="p-4"><p className="text-lg">🔥 <strong>This month</strong> you've earned approximately <strong>{formatCurrency(enhancedMetrics.thisWeekEarnings * 4)}</strong></p></CardContent></Card>}
+            <Card><CardContent className="pt-6"><h3 className="text-lg font-semibold mb-4">Profit & Loss</h3><div className="space-y-4"><div className="flex justify-between items-center border-b pb-2"><span className="text-muted-foreground">Total Revenue</span><span className="font-semibold text-green-600">{formatCurrency(enhancedMetrics?.totalEarned || 0)}</span></div><div className="flex justify-between items-center border-b pb-2"><span className="text-muted-foreground">Total Expenses</span><span className="font-semibold text-red-600">{formatCurrency(totalExpenses)}</span></div><div className="flex justify-between items-center border-b pb-2"><span className="text-muted-foreground">Processing Fees</span><span className="font-semibold text-red-600">{formatCurrency(enhancedMetrics?.fees || 0)}</span></div><div className="flex justify-between items-center pt-2"><span className="font-bold text-lg">Net Profit</span><span className="text-2xl font-bold">{formatCurrency(enhancedMetrics?.net || 0)}</span></div></div></CardContent></Card>
+            <Button variant="outline" className="w-full"><FileText className="h-4 w-4 mr-2" />Export CSV</Button>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {showInvoiceModal && <CreateInvoiceModal open={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} onSuccess={loadData} />}
+      {showQuickPaymentModal && <QuickPaymentLinkModal open={showQuickPaymentModal} onClose={() => { setShowQuickPaymentModal(false); loadData(); }} />}
+      {selectedPayment && (isMobile ? <Sheet open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}><SheetContent side="bottom" className="h-[90vh]"><PaymentDrawer payment={selectedPayment} onClose={() => setSelectedPayment(null)} /></SheetContent></Sheet> : <PaymentDrawer payment={selectedPayment} onClose={() => setSelectedPayment(null)} />)}
     </div>
   );
 }
