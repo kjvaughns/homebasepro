@@ -17,6 +17,7 @@ interface CreateInvoiceModalProps {
   onClose: () => void;
   clientId?: string;
   jobId?: string;
+  onSuccess?: () => void;
 }
 
 interface LineItem {
@@ -25,7 +26,7 @@ interface LineItem {
   rate: number;
 }
 
-export function CreateInvoiceModal({ open, onClose, clientId, jobId }: CreateInvoiceModalProps) {
+export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }: CreateInvoiceModalProps) {
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState(clientId || "");
