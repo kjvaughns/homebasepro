@@ -196,4 +196,26 @@
   .rbc-event-content {
     font-size: 0.75rem;
   }
+  
+  .rbc-calendar {
+    font-size: 12px;
+  }
+  
+  .rbc-time-content {
+    min-height: auto;
+  }
+  
+  .rbc-timeslot-group {
+    min-height: 60px;
+  }
+  
+  .rbc-event {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .rbc-toolbar button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }
