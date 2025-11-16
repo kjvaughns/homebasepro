@@ -50,11 +50,20 @@ export default function Money() {
 
       // Load metrics
       const metricsResponse = await supabase.functions.invoke('get-enhanced-metrics');
+      if (metricsResponse.error) {
+        console.error('Metrics error:', metricsResponse.error);
+        toast({
+          title: "Failed to load metrics",
+          description: "Unable to fetch financial data. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
       setEnhancedMetrics(metricsResponse.data);
       
       // Load invoices
       // @ts-ignore - Supabase type inference issue
-      const invoicesResponse: any = await supabase.from('invoices').select('*').eq('org_id', orgId).order('created_at', { ascending: false });
+      const invoicesResponse: any = await supabase.from('invoices').select('*').eq('organization_id', orgId).order('created_at', { ascending: false });
       const invoicesList = invoicesResponse.data || [];
       
       // Load client details for invoices
@@ -100,6 +109,24 @@ export default function Money() {
       clearInterval(interval);
     };
   }, []);
+
+  // Confetti celebration for first payment
+  useEffect(() => {
+    if (payments.length === 1 && !localStorage.getItem('firstPaymentCelebrated')) {
+      import('canvas-confetti').then(confetti => {
+        confetti.default({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      });
+      localStorage.setItem('firstPaymentCelebrated', 'true');
+      toast({
+        title: "🎉 Congratulations!",
+        description: "You received your first payment!"
+      });
+    }
+  }, [payments, toast]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

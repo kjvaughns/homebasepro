@@ -45,6 +45,7 @@ serve(async (req) => {
 
     // Get Stripe balance if connected
     let stripeBalance = { available: 0, pending: 0 };
+    let stripeError = null;
     if (org.stripe_account_id) {
       try {
         const balance = await stripeGet('balance', org.stripe_account_id);
@@ -54,6 +55,9 @@ serve(async (req) => {
         };
       } catch (error) {
         console.error('Stripe balance fetch error:', error);
+        stripeError = error instanceof Error ? error.message : 'Failed to fetch Stripe balance';
+        // Signal error state with -1
+        stripeBalance = { available: -1, pending: -1 };
       }
     }
 
@@ -92,6 +96,7 @@ serve(async (req) => {
       stripePending: stripeBalance.pending,
       fees: kpis.fees || 0,
       net: kpis.net || 0,
+      stripeError,
     });
   } catch (error) {
     console.error('Get enhanced metrics error:', error);
