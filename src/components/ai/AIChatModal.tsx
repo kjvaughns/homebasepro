@@ -45,7 +45,7 @@ export function AIChatModal({ open, onOpenChange, userRole = 'provider' }: AICha
   return (
     <div 
       className="fixed inset-0 z-50 bg-gradient-to-b from-primary/5 via-background to-primary/10
-                 flex items-center justify-center p-0 md:p-8"
+                 flex items-center justify-center p-0"
     >
       {/* Backdrop - click to close */}
       <div 
@@ -55,9 +55,7 @@ export function AIChatModal({ open, onOpenChange, userRole = 'provider' }: AICha
       
       {/* Main Content Container */}
       <div 
-        className="relative w-full h-full md:h-[90vh] md:max-w-2xl md:rounded-[36px] 
-                   bg-background md:shadow-2xl md:border md:border-border/50
-                   flex flex-col overflow-hidden z-10"
+        className="relative w-full h-full bg-background flex flex-col overflow-hidden z-10 border-t border-border"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Custom Header */}
