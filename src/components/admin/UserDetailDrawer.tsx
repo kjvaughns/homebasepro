@@ -18,7 +18,6 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: UserDetailDrawe
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -66,14 +65,6 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: UserDetailDrawe
           .limit(10);
         setPayments(paymentsQuery.data || []);
       }
-
-      // Fetch conversations with explicit typing
-      const convosQuery = await (supabase as any)
-        .from('conversations')
-        .select('id, created_at')
-        .limit(5);
-      
-      setMessages(convosQuery.data || []);
     } catch (error) {
       console.error('Error fetching user details:', error);
     } finally {
@@ -141,9 +132,6 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: UserDetailDrawe
                 <TabsTrigger value="payments" className="flex-1">
                   Payments ({payments.length})
                 </TabsTrigger>
-                <TabsTrigger value="messages" className="flex-1">
-                  Messages ({messages.length})
-                </TabsTrigger>
               </TabsList>
               <TabsContent value="bookings" className="space-y-2 mt-4">
                 {bookings.length > 0 ? (
@@ -180,21 +168,6 @@ export const UserDetailDrawer = ({ userId, open, onOpenChange }: UserDetailDrawe
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">No payments yet</p>
-                )}
-              </TabsContent>
-              <TabsContent value="messages" className="space-y-2 mt-4">
-                {messages.length > 0 ? (
-                  messages.map(m => (
-                    <Card key={m.id}>
-                      <CardContent className="pt-4">
-                        <p className="text-xs text-muted-foreground">
-                          Conversation started {format(new Date(m.created_at), 'MMM d, yyyy')}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">No messages yet</p>
                 )}
               </TabsContent>
             </Tabs>
