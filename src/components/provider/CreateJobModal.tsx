@@ -162,7 +162,7 @@ export default function CreateJobModal({
       if (!org) return;
 
       const { data, error } = await supabase
-        .from("services")
+        .from("provider_services")
         .select("*")
         .eq("organization_id", org.id)
         .order("name");
@@ -475,7 +475,9 @@ export default function CreateJobModal({
           const { data: fnData, error: fnError } = await supabase.functions.invoke('send-job-notification', {
             body: {
               bookingId: booking.id,
-              type: 'job_created'
+              type: 'job_created',
+              clientEmail,
+              providerOrgId: org.id
             }
           });
 

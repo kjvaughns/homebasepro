@@ -116,13 +116,26 @@ export default function Schedule() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: org } = await supabase
+      // Get organizations where user is owner
+      const { data: ownedOrgs } = await supabase
         .from("organizations")
         .select("id")
-        .eq("owner_id", user.id)
-        .single();
+        .eq("owner_id", user.id);
 
-      if (!org) return;
+      // Get organizations where user is active team member
+      const { data: teamMemberships } = await supabase
+        .from("team_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      // Combine org IDs
+      const orgIds = [
+        ...(ownedOrgs || []).map(o => o.id),
+        ...(teamMemberships || []).map(m => m.organization_id)
+      ];
+
+      if (orgIds.length === 0) return;
 
       let query = supabase
         .from("bookings")
@@ -131,20 +144,25 @@ export default function Schedule() {
           clients(name, email, phone),
           invoice:invoices(id, status, amount)
         `)
-        .eq("provider_org_id", org.id)
+        .in("provider_org_id", orgIds)
         .order("date_time_start", { ascending: true });
 
       // Filter by timeframe
       if (tab === "day") {
         const now = new Date();
-        const dayEnd = new Date(now.getTime() + 24*60*60*1000);
-        query = query.gte("date_time_start", now.toISOString())
-          .lt("date_time_start", dayEnd.toISOString());
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+        query = query.gte("date_time_start", startOfDay.toISOString())
+          .lt("date_time_start", endOfDay.toISOString());
       } else if (tab === "week") {
         const now = new Date();
-        const weekEnd = new Date(now.getTime() + 7*24*60*60*1000);
-        query = query.gte("date_time_start", now.toISOString())
-          .lt("date_time_start", weekEnd.toISOString());
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 7);
+        query = query.gte("date_time_start", startOfWeek.toISOString())
+          .lt("date_time_start", endOfWeek.toISOString());
       } else if (tab === "month") {
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
