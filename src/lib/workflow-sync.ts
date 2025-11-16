@@ -94,10 +94,10 @@ export async function syncJobToWorkflow(jobId: string, jobStatus: string): Promi
 
     // Map job status to workflow stage
     const stageMap: Record<string, string> = {
-      'scheduled': 'job_scheduled',
+      'pending': 'job_scheduled',
+      'confirmed': 'job_scheduled',
       'in_progress': 'job_in_progress',
-      'completed': 'job_completed',
-      'confirmed': 'diagnostic_scheduled'
+      'completed': 'job_completed'
     };
 
     const newStage = stageMap[jobStatus];

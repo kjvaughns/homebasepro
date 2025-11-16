@@ -450,7 +450,9 @@ export default function CreateJobModal({
           address: formData.address,
           date_time_start: startDateTime.toISOString(),
           date_time_end: endDateTime.toISOString(),
-          status: formData.status || 'pending',
+          status: ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'].includes(formData.status) 
+            ? formData.status 
+            : 'pending',
           notes: formData.notes || null,
           estimated_price_low: quoteAmount,
           estimated_price_high: quoteAmount,
@@ -735,10 +737,11 @@ export default function CreateJobModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="quoted">Quoted</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

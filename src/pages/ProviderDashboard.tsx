@@ -125,7 +125,7 @@ const ProviderDashboard = () => {
           )
         `)
         .eq("provider_org_id", orgData.id)
-        .eq("status", "scheduled")
+        .in("status", ["pending", "confirmed"])
         .gte("scheduled_date", new Date().toISOString())
         .order("scheduled_date", { ascending: true })
         .limit(5);

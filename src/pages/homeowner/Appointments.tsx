@@ -65,7 +65,7 @@ export default function Appointments() {
   };
 
   const upcomingVisits = visits.filter(
-    (v) => ['confirmed', 'pending', 'scheduled'].includes(v.status) && 
+    (v) => ['confirmed', 'pending'].includes(v.status) && 
     new Date(v.scheduled_at || v.scheduled_date) >= new Date()
   );
 
@@ -79,7 +79,6 @@ export default function Appointments() {
   const getStatusColor = (status: string): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
       case "confirmed":
-      case "scheduled":
         return "default";
       case "pending":
         return "secondary";

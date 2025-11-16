@@ -127,7 +127,7 @@ export function useClientsList() {
 
           const completedJobs = jobs?.filter(j => j.status === "completed") || [];
           const upcomingJobs = jobs?.filter(j => 
-            j.status === "scheduled" && 
+            ['pending', 'confirmed'].includes(j.status) && 
             new Date(j.date_time_start) > new Date()
           ) || [];
 
