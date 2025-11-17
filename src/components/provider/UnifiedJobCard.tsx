@@ -23,6 +23,10 @@ interface UnifiedJobCardProps {
       name: string;
       phone?: string;
     };
+    profiles?: {
+      full_name: string;
+      phone?: string;
+    };
     workflow?: Array<{
       workflow_stage: string;
       stage_started_at: string;
@@ -127,6 +131,10 @@ export const UnifiedJobCard = ({ job, onAction }: UnifiedJobCardProps) => {
   const primaryAction = config.actions[0];
   const PrimaryIcon = primaryAction?.icon;
   
+  // Get client name from either profiles or clients join
+  const clientName = job.profiles?.full_name || job.clients?.name || 'New Client';
+  const clientPhone = job.profiles?.phone || job.clients?.phone;
+  
   // Calculate workflow progress
   const workflowStages = ['request_submitted', 'providers_matched', 'diagnostic_scheduled', 'quote_sent', 'job_scheduled', 'job_in_progress', 'job_completed', 'invoice_sent', 'payment_received'];
   const currentWorkflow = job.workflow?.[0];
@@ -149,7 +157,7 @@ export const UnifiedJobCard = ({ job, onAction }: UnifiedJobCardProps) => {
         <div className="flex items-start justify-between mb-3">
           <div className="space-y-1 flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold truncate">{job.clients?.name || "New Client"}</h3>
+              <h3 className="font-semibold truncate">{clientName}</h3>
               <Badge className={config.color} variant="secondary">
                 {config.label}
               </Badge>

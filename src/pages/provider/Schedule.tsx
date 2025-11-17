@@ -31,6 +31,7 @@ export default function Schedule() {
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickAddMode, setQuickAddMode] = useState<'existing' | 'new' | 'block'>('existing');
+  const [quotingJob, setQuotingJob] = useState<any>(null);
   
   // Smart default view: mobile = day, desktop = week
   const getDefaultView = () => {
@@ -142,7 +143,7 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
 
       let query = supabase
         .from('bookings')
-        .select('*')
+        .select('*, profiles!homeowner_profile_id(full_name, phone), clients(name, phone)')
         .order('date_time_start', { ascending: true });
 
       // Apply org filter only if we have orgIds; otherwise rely on backend access rules
@@ -217,6 +218,17 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
 
   const handleAction = async (jobId: string, action: string) => {
     triggerHaptic('light');
+    
+    // Handle quote action by opening job modal
+    if (action === "quote") {
+      const job = jobs.find(j => j.id === jobId);
+      if (job) {
+        setQuotingJob(job);
+        setShowCreateJob(true);
+      }
+      return;
+    }
+    
     showSpinner();
     try {
       if (action === "start") {
@@ -477,14 +489,19 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
         <CreateJobModal
           open={showCreateJob}
           onOpenChange={(isOpen) => {
-            if (!isOpen) triggerHaptic('light');
+            if (!isOpen) {
+              triggerHaptic('light');
+              setQuotingJob(null);
+            }
             setShowCreateJob(isOpen);
             if (!isOpen) loadJobs();
           }}
+          preSelectedClient={quotingJob}
           onSuccess={() => {
             triggerHaptic('success');
             toast.success("Job created successfully");
             setShowCreateJob(false);
+            setQuotingJob(null);
             loadJobs();
           }}
         />
