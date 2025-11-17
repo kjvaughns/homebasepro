@@ -58,7 +58,7 @@ export default function CreateJobModal({
   const { isMobile } = useMobileLayout();
   const keyboardHeight = useKeyboardHeight();
   const [loading, setLoading] = useState(false);
-  const [clientMode, setClientMode] = useState<ClientMode>(preSelectedClient ? "existing" : "new");
+  const [clientMode, setClientMode] = useState<ClientMode>("existing");
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(preSelectedClient || null);

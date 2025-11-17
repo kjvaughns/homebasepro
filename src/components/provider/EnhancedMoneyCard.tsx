@@ -76,7 +76,7 @@ export function EnhancedMoneyCard() {
     loadData();
   };
 
-  const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const formatCurrency = (cents: number) => `$${((cents || 0) / 100).toFixed(2)}`;
 
   const getTimeSince = () => {
     const seconds = Math.floor((new Date().getTime() - lastSync.getTime()) / 1000);

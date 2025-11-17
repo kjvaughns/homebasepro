@@ -29,6 +29,7 @@ import AddClientNoteModal from "./AddClientNoteModal";
 import CreateJobModal from "./CreateJobModal";
 import { EditClientDialog } from "./EditClientDialog";
 import { CreateInvoiceModal } from "./CreateInvoiceModal";
+import { SendAnnouncementModal } from "./SendAnnouncementModal";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -48,6 +49,7 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
   const [showJobModal, setShowJobModal] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
   if (loading) {
     return (
@@ -68,9 +70,7 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
   }
 
   const handleEmail = () => {
-    if (client.email) {
-      window.location.href = `mailto:${client.email}`;
-    }
+    setShowAnnouncementModal(true);
   };
 
   const handleCall = () => {
@@ -155,9 +155,13 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
             <Phone className="h-4 w-4 mr-2" />
             Call
           </Button>
-          <Button variant="outline" size="sm" onClick={() => window.location.href = `mailto:${client.email}`}>
+          <Button variant="outline" size="sm" onClick={handleEmail}>
             <Mail className="h-4 w-4 mr-2" />
-            Email
+            Send Update
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => window.location.href = `sms:${client.phone}`}>
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Text
           </Button>
           <Button
             size="sm"
@@ -447,6 +451,13 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
         open={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
         clientId={client.id}
+      />
+
+      <SendAnnouncementModal
+        open={showAnnouncementModal}
+        onOpenChange={setShowAnnouncementModal}
+        recipientEmail={client.email}
+        recipientName={client.name}
       />
     </div>
   );
