@@ -7,8 +7,10 @@ import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
 import { JobsCalendar } from "@/components/provider/JobsCalendar";
 import CreateJobModal from "@/components/provider/CreateJobModal";
+import EditJobModal from "@/components/provider/EditJobModal";
 import { QuickAddSheet } from "@/components/provider/QuickAddSheet";
 import { ScheduleStatsCard } from "@/components/provider/ScheduleStatsCard";
+import { DeleteConfirmDialog } from "@/components/provider/DeleteConfirmDialog";
 import { useScheduleStats } from "@/hooks/useScheduleStats";
 import { toast } from "sonner";
 import { syncJobToWorkflow } from "@/lib/workflow-sync";
@@ -29,6 +31,9 @@ export default function Schedule() {
   const [selectedJobReviews, setSelectedJobReviews] = useState<any[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showCreateJob, setShowCreateJob] = useState(false);
+  const [showEditJob, setShowEditJob] = useState(false);
+  const [editingJob, setEditingJob] = useState<any>(null);
+  const [deletingJob, setDeletingJob] = useState<any>(null);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickAddMode, setQuickAddMode] = useState<'existing' | 'new' | 'block'>('existing');
   const [quotingJob, setQuotingJob] = useState<any>(null);
@@ -229,6 +234,33 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
       return;
     }
     
+    // Handle cancel action
+    if (action === "cancel") {
+      showSpinner();
+      try {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ 
+            status: 'canceled',
+            cancellation_reason: 'Canceled by provider',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', jobId);
+        
+        if (error) throw error;
+        toast.success("Job canceled");
+        loadJobs();
+        triggerHaptic('success');
+      } catch (error) {
+        console.error("Error canceling job:", error);
+        toast.error("Failed to cancel job");
+        triggerHaptic('error');
+      } finally {
+        hideSpinner();
+      }
+      return;
+    }
+    
     showSpinner();
     try {
       if (action === "start") {
@@ -243,6 +275,36 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
       console.error("Error handling action:", error);
       triggerHaptic('error');
       toast.error("Failed to perform action");
+    } finally {
+      hideSpinner();
+    }
+  };
+
+  const handleEditJob = (job: any) => {
+    setEditingJob(job);
+    setShowEditJob(true);
+  };
+
+  const handleDeleteJob = async () => {
+    if (!deletingJob) return;
+    
+    showSpinner();
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', deletingJob.id);
+      
+      if (error) throw error;
+      
+      toast.success("Job deleted");
+      loadJobs();
+      setDeletingJob(null);
+      triggerHaptic('success');
+    } catch (error: any) {
+      console.error("Error deleting job:", error);
+      toast.error(error.message || "Failed to delete job");
+      triggerHaptic('error');
     } finally {
       hideSpinner();
     }
@@ -275,29 +337,38 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
   };
 
   const handleStatusUpdate = async (jobId: string, action: string) => {
-    const { error } = await supabase.functions.invoke("assistant-provider", {
-      body: {
-        message: `update_job_status for ${jobId} with action ${action}`,
-        context: { job_id: jobId, action }
-      }
-    });
-
-    if (error) throw error;
-    
     try {
       const actionToStatusMap: Record<string, string> = {
         'start': 'in_progress',
         'complete': 'completed',
       };
       
-      const jobStatus = actionToStatusMap[action] || action;
-      await syncJobToWorkflow(jobId, jobStatus);
-    } catch (workflowError) {
-      console.error("Failed to sync workflow:", workflowError);
+      const newStatus = actionToStatusMap[action] || action;
+      
+      // Direct database update instead of edge function
+      const { error } = await supabase
+        .from('bookings')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', jobId);
+
+      if (error) throw error;
+      
+      // Sync to workflow
+      try {
+        await syncJobToWorkflow(jobId, newStatus);
+      } catch (workflowError) {
+        console.error("Failed to sync workflow:", workflowError);
+      }
+      
+      toast.success("Job updated");
+      loadJobs();
+    } catch (error: any) {
+      console.error("Error updating job status:", error);
+      throw error;
     }
-    
-    toast.success("Job updated");
-    loadJobs();
   };
 
   const openJobDetail = async (job: any) => {
@@ -319,6 +390,11 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
     setSelectedJobEvents(events || []);
     setSelectedJobReviews(reviews || []);
     setDrawerOpen(true);
+  };
+
+  const handleClientClick = (clientId: string) => {
+    // Navigate to clients page with the selected client
+    window.location.href = `/provider/clients?client=${clientId}`;
   };
 
   if (loading) {
@@ -408,9 +484,16 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
         <TabsContent value="day" className="space-y-3 mt-4 p-4">
           {jobs.length > 0 ? (
             jobs.map((job) => (
-              <div key={job.id} onClick={() => openJobDetail(job)}>
-                <UnifiedJobCard job={job} onAction={handleAction} />
-              </div>
+              <UnifiedJobCard
+                key={job.id}
+                job={job}
+                onAction={handleAction}
+                onClientClick={handleClientClick}
+                onJobClick={openJobDetail}
+                onEdit={handleEditJob}
+                onDelete={setDeletingJob}
+                view="schedule"
+              />
             ))
           ) : (
             <Card className="p-8 md:p-12 text-center rounded-2xl">
@@ -431,9 +514,16 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
         <TabsContent value="week" className="space-y-3 mt-4 p-4">
           {jobs.length > 0 ? (
             jobs.map((job) => (
-              <div key={job.id} onClick={() => openJobDetail(job)}>
-                <UnifiedJobCard job={job} onAction={handleAction} />
-              </div>
+              <UnifiedJobCard
+                key={job.id}
+                job={job}
+                onAction={handleAction}
+                onClientClick={handleClientClick}
+                onJobClick={openJobDetail}
+                onEdit={handleEditJob}
+                onDelete={setDeletingJob}
+                view="schedule"
+              />
             ))
           ) : (
             <Card className="p-8 md:p-12 text-center rounded-2xl">
@@ -497,6 +587,7 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
             if (!isOpen) loadJobs();
           }}
           preSelectedClient={quotingJob}
+          preSelectedDate={selectedDay}
           onSuccess={() => {
             triggerHaptic('success');
             toast.success("Job created successfully");
@@ -506,6 +597,29 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
           }}
         />
       )}
+
+      {/* Edit Job Modal */}
+      {editingJob && (
+        <EditJobModal
+          open={showEditJob}
+          onOpenChange={setShowEditJob}
+          job={editingJob}
+          onSuccess={() => {
+            setShowEditJob(false);
+            setEditingJob(null);
+            loadJobs();
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmDialog
+        open={!!deletingJob}
+        onOpenChange={(open) => !open && setDeletingJob(null)}
+        title="Delete Job?"
+        description="This will permanently delete this job. This action cannot be undone."
+        onConfirm={handleDeleteJob}
+      />
 
       <QuickAddSheet
         open={showQuickAdd}
