@@ -74,7 +74,7 @@ export default function More() {
       icon: HelpCircle,
       title: "Help Center",
       description: "Get help and support",
-      href: "https://docs.homebase.pro",
+      href: "https://intercom.help/homebase-6429d3414518/en",
       external: true,
       color: "text-green-600"
     },
