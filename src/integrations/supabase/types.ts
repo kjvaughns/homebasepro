@@ -1151,7 +1151,9 @@ export type Database = {
           notes: string | null
           organization_id: string
           phone: string | null
+          pipeline_status: string | null
           status: string
+          status_changed_at: string | null
           tags: string[] | null
           updated_at: string
           user_id: string | null
@@ -1170,7 +1172,9 @@ export type Database = {
           notes?: string | null
           organization_id: string
           phone?: string | null
+          pipeline_status?: string | null
           status?: string
+          status_changed_at?: string | null
           tags?: string[] | null
           updated_at?: string
           user_id?: string | null
@@ -1189,7 +1193,9 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           phone?: string | null
+          pipeline_status?: string | null
           status?: string
+          status_changed_at?: string | null
           tags?: string[] | null
           updated_at?: string
           user_id?: string | null
@@ -3379,6 +3385,7 @@ export type Database = {
           org_id: string | null
           payment_date: string
           payment_method: string | null
+          platform_fee_cents: number | null
           refunded_cents: number | null
           status: string
           stripe_payment_intent_id: string | null
@@ -3404,6 +3411,7 @@ export type Database = {
           org_id?: string | null
           payment_date?: string
           payment_method?: string | null
+          platform_fee_cents?: number | null
           refunded_cents?: number | null
           status?: string
           stripe_payment_intent_id?: string | null
@@ -3429,6 +3437,7 @@ export type Database = {
           org_id?: string | null
           payment_date?: string
           payment_method?: string | null
+          platform_fee_cents?: number | null
           refunded_cents?: number | null
           status?: string
           stripe_payment_intent_id?: string | null
