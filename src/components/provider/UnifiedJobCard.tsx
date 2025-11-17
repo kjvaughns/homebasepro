@@ -2,8 +2,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, MapPin, Clock, DollarSign, CheckCircle, PlayCircle, FileText, CreditCard, ArrowRight, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Clock, DollarSign, CheckCircle, PlayCircle, FileText, CreditCard, ArrowRight, AlertCircle, User, Phone, Navigation, MoreVertical, Edit, Trash2, XCircle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface UnifiedJobCardProps {
   job: {
@@ -19,6 +26,12 @@ interface UnifiedJobCardProps {
     deposit_paid?: boolean;
     total_due?: number;
     is_service_call?: boolean;
+    date_time_start?: string;
+    date_time_end?: string;
+    estimated_price_low?: number;
+    estimated_price_high?: number;
+    homeowner_name?: string;
+    client_id?: string;
     clients?: {
       name: string;
       phone?: string;
@@ -34,6 +47,11 @@ interface UnifiedJobCardProps {
     }>;
   };
   onAction?: (jobId: string, action: string) => void;
+  onClientClick?: (clientId: string) => void;
+  onJobClick?: (job: any) => void;
+  onEdit?: (job: any) => void;
+  onDelete?: (job: any) => void;
+  view?: "schedule" | "jobs";
 }
 
 const statusConfig: Record<string, { 
