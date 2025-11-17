@@ -80,7 +80,7 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-x-hidden">
       {/* Header */}
       <div className="p-6 border-b space-y-4">
         <div className="flex items-start justify-between">
@@ -143,10 +143,6 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
               </div>
             )}
           </div>
-          
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
         </div>
 
         {/* Quick Actions */}
@@ -206,12 +202,6 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
               >
                 Activity
-              </TabsTrigger>
-              <TabsTrigger
-                value="messages"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
-              >
-                Messages
               </TabsTrigger>
               <TabsTrigger
                 value="files"
@@ -384,15 +374,6 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
                 timeline={timeline}
                 loading={activityLoading}
               />
-            </TabsContent>
-
-            <TabsContent value="messages" className="mt-0">
-              <div className="text-center py-12">
-                <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  Messages with {client.name}
-                </h3>
-              </div>
             </TabsContent>
 
             <TabsContent value="files" className="mt-0">

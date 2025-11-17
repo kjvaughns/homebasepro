@@ -345,7 +345,7 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
       
       const newStatus = actionToStatusMap[action] || action;
       
-      // Direct database update instead of edge function
+      // Direct database update
       const { error } = await supabase
         .from('bookings')
         .update({ 
@@ -356,6 +356,26 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
 
       if (error) throw error;
       
+      // Send client notification
+      try {
+        const { error: notifyError } = await supabase.functions.invoke('send-status-update', {
+          body: { 
+            bookingId: jobId, 
+            status: newStatus 
+          }
+        });
+
+        if (notifyError) {
+          console.error('Notification error:', notifyError);
+          toast.success("Job updated");
+        } else {
+          toast.success("Job updated - Client notified");
+        }
+      } catch (notifyError) {
+        console.error('Failed to send notification:', notifyError);
+        toast.success("Job updated");
+      }
+      
       // Sync to workflow
       try {
         await syncJobToWorkflow(jobId, newStatus);
@@ -363,7 +383,6 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
         console.error("Failed to sync workflow:", workflowError);
       }
       
-      toast.success("Job updated");
       loadJobs();
     } catch (error: any) {
       console.error("Error updating job status:", error);
