@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { User, CreditCard, DollarSign, Plug, Bell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoScrollToInput } from "@/hooks/useAutoScrollToInput";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
-import { SectionHeader } from "@/components/provider/settings/SectionHeader";
 import { BusinessProfileSection } from "@/components/provider/settings/BusinessProfileSection";
 import { BillingSection } from "@/components/provider/settings/BillingSection";
 import { PaymentsSection } from "@/components/provider/settings/PaymentsSection";
@@ -14,6 +13,7 @@ import { IntegrationsSection } from "@/components/provider/settings/Integrations
 import { PreferencesSection } from "@/components/provider/settings/PreferencesSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface Organization {
   id: string;
@@ -39,6 +39,7 @@ export default function Settings() {
   const [stripeConnected, setStripeConnected] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
   const { toast } = useToast();
   const keyboardHeight = useKeyboardHeight();
   
@@ -268,94 +269,68 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-8 pb-24">
-        {/* Header */}
+      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6 pb-24">
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground">Manage your business profile and platform settings</p>
         </div>
 
-        {/* Section 1: Business Profile */}
-        <div className="space-y-4">
-          <SectionHeader 
-            icon={User}
-            title="Business Profile"
-            description="Your public-facing HomeBase identity"
-          />
-          <BusinessProfileSection 
-            organization={organization}
-            onUpdate={handleOrganizationUpdate}
-          />
-          <Button onClick={handleSaveProfile} disabled={saving}>
-            {saving ? "Saving..." : "Save Profile"}
-          </Button>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="billing">Billing</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="more">More</TabsTrigger>
+          </TabsList>
 
-        {/* Section 2: Billing & Subscription */}
-        <div className="space-y-4">
-          <SectionHeader 
-            icon={CreditCard}
-            title="Billing & Subscription"
-            description="Manage your plan and transaction fees"
-          />
-          <BillingSection 
-            currentPlan={plan}
-            isAdmin={isAdmin}
-            subscription={subscription}
-            onPlanChanged={() => {
-              loadOrganization();
-              loadSubscription();
-            }}
-            onManageSubscription={handleManageSubscription}
-          />
-        </div>
+          <TabsContent value="profile" className="space-y-6">
+            <BusinessProfileSection 
+              organization={organization}
+              onUpdate={handleOrganizationUpdate}
+            />
+            <Button onClick={handleSaveProfile} disabled={saving}>
+              {saving ? "Saving..." : "Save Profile"}
+            </Button>
+          </TabsContent>
 
-        {/* Section 3: Payments & Payouts */}
-        <div className="space-y-4">
-          <SectionHeader 
-            icon={DollarSign}
-            title="Payments & Payouts"
-            description="Stripe integration and payment settings"
-          />
-          <PaymentsSection 
-            stripeConnected={stripeConnected}
-            stripeLoading={stripeLoading}
-            onConnect={handleStripeConnect}
-            onOpenDashboard={openStripeDashboard}
-          />
-        </div>
+          <TabsContent value="billing" className="space-y-6">
+            <BillingSection 
+              currentPlan={plan}
+              isAdmin={isAdmin}
+              subscription={subscription}
+              onPlanChanged={() => {
+                loadOrganization();
+                loadSubscription();
+              }}
+              onManageSubscription={handleManageSubscription}
+            />
+          </TabsContent>
 
-        {/* Section 4: Integrations */}
-        <div className="space-y-4">
-          <SectionHeader 
-            icon={Plug}
-            title="Integrations"
-            description="Connect external tools and services"
-          />
-          <IntegrationsSection organizationId={organization?.id} />
-        </div>
+          <TabsContent value="payments" className="space-y-6">
+            <PaymentsSection 
+              stripeConnected={stripeConnected}
+              stripeLoading={stripeLoading}
+              onConnect={handleStripeConnect}
+              onOpenDashboard={openStripeDashboard}
+            />
+          </TabsContent>
 
-        {/* Section 5: Preferences */}
-        <div className="space-y-4">
-          <SectionHeader 
-            icon={Bell}
-            title="Preferences"
-            description="Notifications and app settings"
-          />
-          <PreferencesSection />
-        </div>
-
-        {/* Sign Out */}
-        <div className="pt-6 border-t">
-          <Button 
-            variant="outline" 
-            onClick={handleSignOut}
-            className="w-full md:w-auto"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
+          <TabsContent value="more" className="space-y-6">
+            <IntegrationsSection organizationId={organization?.id} />
+            <PreferencesSection />
+            
+            <div className="pt-6 border-t">
+              <Button 
+                variant="outline" 
+                onClick={handleSignOut}
+                className="w-full md:w-auto"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
