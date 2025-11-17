@@ -76,7 +76,9 @@ export function EnhancedMoneyCard() {
     loadData();
   };
 
-  const formatCurrency = (cents: number) => `$${((cents || 0) / 100).toFixed(2)}`;
+  const formatCurrency = (cents: number | null | undefined) => {
+    return `$${((cents || 0) / 100).toFixed(2)}`;
+  };
 
   const getTimeSince = () => {
     const seconds = Math.floor((new Date().getTime() - lastSync.getTime()) / 1000);
@@ -146,7 +148,7 @@ export function EnhancedMoneyCard() {
             <div className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">💰 Pending</p>
-                <p className="text-2xl font-bold">{formatCurrency(balance.pending)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(balance?.pending)}</p>
               </div>
               <TrendingUp className="h-4 w-4 text-muted-foreground mt-1" />
             </div>
@@ -155,7 +157,7 @@ export function EnhancedMoneyCard() {
             <div className="flex items-start justify-between p-3 rounded-lg bg-muted/50">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">🏦 Available</p>
-                <p className="text-2xl font-bold">{formatCurrency(balance.available)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(balance?.available)}</p>
               </div>
               <DollarSign className="h-4 w-4 text-muted-foreground mt-1" />
             </div>

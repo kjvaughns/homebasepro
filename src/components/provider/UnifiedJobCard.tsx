@@ -49,6 +49,14 @@ const statusConfig: Record<string, {
       { label: "Book", action: "schedule", icon: Calendar, variant: "outline" }
     ]
   },
+  confirmed: {
+    color: "bg-blue-500/20 text-blue-700",
+    label: "Confirmed",
+    actions: [
+      { label: "Start Job", action: "started", icon: PlayCircle },
+      { label: "Details", action: "view", icon: FileText, variant: "outline" }
+    ]
+  },
   service_call: {
     color: "bg-primary/10 text-primary",
     label: "Service Call",
@@ -127,13 +135,12 @@ const statusConfig: Record<string, {
 };
 
 export const UnifiedJobCard = ({ job, onAction }: UnifiedJobCardProps) => {
-  const config = statusConfig[job.status] || statusConfig.lead;
+  const config = statusConfig[job.status] || statusConfig.confirmed || statusConfig.lead;
   const primaryAction = config.actions[0];
   const PrimaryIcon = primaryAction?.icon;
   
-  // Get client name from either profiles or clients join
-  const clientName = job.profiles?.full_name || job.clients?.name || 'New Client';
-  const clientPhone = job.profiles?.phone || job.clients?.phone;
+  const clientName = job.clients?.name || job.profiles?.full_name || "New Client";
+  const clientPhone = job.clients?.phone || job.profiles?.phone || null;
   
   // Calculate workflow progress
   const workflowStages = ['request_submitted', 'providers_matched', 'diagnostic_scheduled', 'quote_sent', 'job_scheduled', 'job_in_progress', 'job_completed', 'invoice_sent', 'payment_received'];
