@@ -53,7 +53,7 @@ interface OnboardingData {
     review_requests: boolean;
     appointment_reminders: boolean;
   };
-  selectedPlan: 'trial' | 'free';
+  selectedPlan: 'starter' | 'free';
   stripeConnected: boolean;
   paymentMethodId: string | null;
 }
@@ -96,7 +96,7 @@ export default function OnboardingProvider() {
       review_requests: true,
       appointment_reminders: true
     },
-    selectedPlan: 'trial',
+    selectedPlan: 'starter',
     stripeConnected: false,
     paymentMethodId: null
   });
@@ -279,7 +279,7 @@ export default function OnboardingProvider() {
         plan_type: formData.selectedPlan
       };
 
-      if (formData.selectedPlan === 'trial' && formData.paymentMethodId) {
+      if (formData.selectedPlan === 'starter' && formData.paymentMethodId) {
         const trialEndDate = new Date();
         trialEndDate.setDate(trialEndDate.getDate() + 7);
         updateData.trial_started_at = new Date().toISOString();
@@ -289,7 +289,7 @@ export default function OnboardingProvider() {
 
       await supabase.from('profiles').update(updateData).eq('user_id', user.id);
 
-      toast.success(formData.selectedPlan === 'trial' ? "Your 7-day Pro trial has started! 🎉" : "Welcome to HomeBase!");
+      toast.success(formData.selectedPlan === 'starter' ? "Your 7-day trial has started! 🎉" : "Welcome to HomeBase!");
       navigate('/provider/dashboard');
     } catch (error: any) {
       toast.error(error.message || "Failed to complete onboarding");
@@ -309,7 +309,7 @@ export default function OnboardingProvider() {
       // User selected plan, proceed accordingly
       if (formData.selectedPlan === 'free') {
         await handleComplete();
-      } else if (formData.selectedPlan === 'trial') {
+      } else if (formData.selectedPlan === 'starter') {
         // Create organization first, then redirect to Stripe Checkout
         setLoading(true);
         try {
@@ -530,7 +530,7 @@ export default function OnboardingProvider() {
               {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing...</> : <><CheckCircle2 className="h-4 w-4 mr-2" />Complete Setup</>}
             </Button>
           )}
-          {currentStep === 8 && formData.selectedPlan === 'trial' && (
+          {currentStep === 8 && formData.selectedPlan === 'starter' && (
             <Button onClick={handleNext} disabled={loading} className="flex-1">
               {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Redirecting to secure checkout...</> : <><CreditCard className="h-4 w-4 mr-2" />Start 7-Day Trial</>}
             </Button>

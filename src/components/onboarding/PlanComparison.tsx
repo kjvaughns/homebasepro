@@ -1,113 +1,109 @@
-import { CheckCircle2 } from "lucide-react";
+import { Check } from "lucide-react";
 
 interface PlanComparisonProps {
-  selected: 'trial' | 'free';
-  onSelect: (plan: 'trial' | 'free') => void;
+  selected: 'starter' | 'free';
+  onSelect: (plan: 'starter' | 'free') => void;
 }
 
 export function PlanComparison({ selected, onSelect }: PlanComparisonProps) {
   return (
-    <div className="space-y-3">
+    <div className="grid md:grid-cols-2 gap-6">
+      {/* Starter Plan */}
       <button
-        onClick={() => onSelect('trial')}
-        className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-300 ${
-          selected === 'trial' 
+        onClick={() => onSelect('starter')}
+        className={`
+          relative border-2 rounded-xl p-6 text-left transition-all
+          ${selected === 'starter' 
             ? 'scale-[1.02] border-primary shadow-2xl shadow-primary/30' 
-            : 'border-border/50 hover:border-border'
-        }`}
-        style={{
-          background: selected === 'trial' 
-            ? 'hsl(var(--primary) / 0.1)' 
-            : 'hsl(var(--card))',
-        }}
+            : 'border-border hover:border-primary/50'
+          }
+        `}
       >
-        {selected === 'trial' && (
-          <div className="absolute top-3 right-3">
-            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3" />
-              SELECTED
-            </div>
+        {selected === 'starter' && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+            Recommended
           </div>
         )}
-        <h4 className="font-bold mb-1 text-foreground text-base">
-          7-Day Pro Trial — full power ⚡
-        </h4>
-        <p className="text-xs text-muted-foreground mb-3">Card required • No charge until day 8</p>
-        <ul className="space-y-1.5 text-xs text-foreground">
-          <li className="flex items-start gap-2">
-            <span className="text-green-500 font-bold">✓</span>
-            <span>Unlimited jobs & clients</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-500 font-bold">✓</span>
-            <span>AI invoicing & estimates</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-500 font-bold">✓</span>
-            <span>Auto follow-ups & reminders</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-500 font-bold">✓</span>
-            <span>Earnings dashboard & priorities</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-500 font-bold">✓</span>
-            <span>Team management (up to 10)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-500 font-bold">✓</span>
-            <span>2% platform fee</span>
-          </li>
-        </ul>
+        
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-2xl font-bold">Starter</h3>
+            <div className="mt-2">
+              <span className="text-lg line-through text-muted-foreground">$30/mo</span>
+              <p className="text-4xl font-bold text-primary">$15/mo</p>
+              <p className="text-sm text-primary font-medium">Beta: 50% off</p>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">7-day free trial, card required</p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="font-semibold text-sm">Perfect for growing businesses:</p>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>Unlimited jobs</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>4% transaction fee (vs 8% on free)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>3 team seats</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>AI-powered features</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>Automated workflows</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </button>
 
+      {/* Free Plan */}
       <button
         onClick={() => onSelect('free')}
-        className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-300 ${
-          selected === 'free' 
+        className={`
+          relative border-2 rounded-xl p-6 text-left transition-all
+          ${selected === 'free' 
             ? 'scale-[1.02] border-primary shadow-lg' 
-            : 'border-border/50 hover:border-border'
-        }`}
-        style={{
-          background: selected === 'free' 
-            ? 'hsl(var(--primary) / 0.05)' 
-            : 'hsl(var(--card))',
-        }}
+            : 'border-border hover:border-primary/50'
+          }
+        `}
       >
-        {selected === 'free' && (
-          <div className="absolute top-3 right-3">
-            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3" />
-              SELECTED
-            </div>
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-2xl font-bold">Free</h3>
+            <p className="text-4xl font-bold text-primary">$0/mo</p>
+            <p className="text-sm text-muted-foreground mt-2">Try before you commit</p>
           </div>
-        )}
-        <h4 className="font-bold mb-1 text-foreground text-base">
-          Free Plan — no card needed
-        </h4>
-        <p className="text-xs text-muted-foreground mb-3">Start free, upgrade anytime</p>
-        <ul className="space-y-1.5 text-xs text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <span>•</span>
-            <span>Max 3 active jobs</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>•</span>
-            <span>No AI follow-ups</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>•</span>
-            <span>No instant payouts</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>•</span>
-            <span>No money dashboard</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span>•</span>
-            <span>8% platform fee</span>
-          </li>
-        </ul>
+
+          <div className="space-y-2">
+            <p className="font-semibold text-sm">Great for getting started:</p>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>Up to 5 completed jobs/month</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>8% transaction fee</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>Core features</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5" />
+                <span>Basic support</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </button>
     </div>
   );

@@ -175,7 +175,7 @@ export function SubscriptionManager({ currentPlan = 'free', isAdmin = false, onP
     }
   };
 
-  const current = PLANS.find((p) => p.id === (isAdmin ? 'scale' : (subscription?.plan || currentPlan)));
+  const current = PLANS.find((p) => p.id === (isAdmin ? 'pro' : (subscription?.plan || currentPlan)));
 
   if (loading) {
     return (

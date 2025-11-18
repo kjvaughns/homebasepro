@@ -20,10 +20,9 @@ interface SeatLimitModalProps {
 }
 
 const PLAN_DETAILS = {
-  free: { name: "Free", seats: 1, price: 0, additionalSeat: 0 },
-  growth: { name: "Growth", seats: 3, price: 49, additionalSeat: 15 },
-  pro: { name: "Pro", seats: 10, price: 149, additionalSeat: 15 },
-  scale: { name: "Scale", seats: 25, price: 299, additionalSeat: 20 },
+  free: { name: "Free", seats: 0, price: 0, additionalSeat: 0 },
+  starter: { name: "Starter", seats: 3, price: 30, additionalSeat: 15 },
+  pro: { name: "Pro", seats: 10, price: 129, additionalSeat: 15 },
 };
 
 export function SeatLimitModal({
@@ -73,10 +72,10 @@ export function SeatLimitModal({
               <div className="border rounded-lg p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Upgrade to Growth</p>
+                    <p className="font-medium">Upgrade to Starter</p>
                     <p className="text-sm text-muted-foreground">Get 3 team seats included</p>
                   </div>
-                  <p className="text-lg font-bold">${PLAN_DETAILS.growth.price}/mo</p>
+                  <p className="text-lg font-bold">${PLAN_DETAILS.starter.price}/mo</p>
                 </div>
                 <Button 
                   className="w-full" 
@@ -113,7 +112,7 @@ export function SeatLimitModal({
                   </Button>
                 </div>
 
-                {currentPlan !== "scale" && (
+                {currentPlan !== "pro" && (
                   <div className="border rounded-lg p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <div>

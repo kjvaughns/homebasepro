@@ -13,18 +13,14 @@ interface SubscriptionOverviewCardProps {
 export function SubscriptionOverviewCard({ subscription, onUpgrade, onCancel }: SubscriptionOverviewCardProps) {
   const planNames: Record<string, string> = {
     free: "Free",
-    beta: "Beta",
-    growth: "Growth",
-    pro: "Pro",
-    scale: "Scale"
+    starter: "Starter",
+    pro: "Pro"
   };
 
   const planPrices: Record<string, string> = {
     free: "$0/month",
-    beta: "$15/month",
-    growth: "$49/month",
-    pro: "$99/month",
-    scale: "$199/month"
+    starter: "$30/month",
+    pro: "$129/month"
   };
 
   const getStatusColor = (status: string) => {
@@ -59,7 +55,7 @@ export function SubscriptionOverviewCard({ subscription, onUpgrade, onCancel }: 
             <h3 className="text-2xl font-bold">{planNames[currentPlan]}</h3>
             <p className="text-sm text-muted-foreground">{planPrices[currentPlan]}</p>
           </div>
-          {currentPlan !== 'scale' && !isCanceled && (
+          {currentPlan !== 'pro' && !isCanceled && (
             <Button onClick={onUpgrade} variant="default">
               Upgrade Plan
             </Button>
@@ -81,7 +77,7 @@ export function SubscriptionOverviewCard({ subscription, onUpgrade, onCancel }: 
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
               <div>
-                <p className="font-medium text-blue-900 dark:text-blue-100">Trial Active</p>
+                <p className="font-medium text-blue-900 dark:text-blue-100">7-Day Trial Active</p>
                 <p className="text-sm text-blue-700 dark:text-blue-300">
                   Your trial ends on {format(new Date(subscription.trial_end), 'MMM dd, yyyy')}
                 </p>

@@ -16,10 +16,8 @@ interface BillingSectionProps {
 
 const PLAN_FEES: Record<string, number> = {
   free: 8.0,
-  beta: 3.0,
-  growth: 2.5,
+  starter: 4.0,
   pro: 2.0,
-  scale: 2.0,
 };
 
 export function BillingSection({ 

@@ -3,17 +3,15 @@
  * Single source of truth for all fee calculations
  */
 
-export type ProviderPlan = "free" | "beta" | "growth" | "pro" | "scale";
+export type ProviderPlan = "free" | "starter" | "pro";
 
 /**
  * Platform fee percentages by plan tier
  */
 export const PLAN_FEE_PERCENT: Record<ProviderPlan, number> = {
   free: 0.08,        // 8%
-  beta: 0.03,        // 3% (14-day trial)
-  growth: 0.025,     // 2.5%
+  starter: 0.04,     // 4%
   pro: 0.02,         // 2%
-  scale: 0.015       // 1.5%
 };
 
 /**
@@ -25,37 +23,32 @@ export const PLAN_CONFIG: Record<ProviderPlan, {
   priceId: string | null;
   displayName: string;
   trialDays?: number;
+  monthlyPrice: number;
+  jobLimit?: number;
 }> = {
   free: { 
     feePercent: 0.08, 
     teamLimit: 0, 
     priceId: null, 
-    displayName: "Free" 
+    displayName: "Free",
+    monthlyPrice: 0,
+    jobLimit: 5 // 5 completed jobs per month
   },
-  beta: { 
-    feePercent: 0.03, 
+  starter: { 
+    feePercent: 0.04, 
     teamLimit: 3, 
-    priceId: null, 
-    displayName: "Pro Trial",
-    trialDays: 14
-  },
-  growth: { 
-    feePercent: 0.025, 
-    teamLimit: 3, 
-    priceId: "STRIPE_PRICE_GROWTH", 
-    displayName: "Growth" 
+    priceId: "STRIPE_PRICE_STARTER", 
+    displayName: "Starter",
+    trialDays: 7,
+    monthlyPrice: 30
   },
   pro: { 
     feePercent: 0.02, 
     teamLimit: 10, 
     priceId: "STRIPE_PRICE_PRO", 
-    displayName: "Pro" 
-  },
-  scale: { 
-    feePercent: 0.015, 
-    teamLimit: 25, 
-    priceId: "STRIPE_PRICE_SCALE", 
-    displayName: "Scale" 
+    displayName: "Pro",
+    trialDays: 7,
+    monthlyPrice: 129
   }
 };
 
