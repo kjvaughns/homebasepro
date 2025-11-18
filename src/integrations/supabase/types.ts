@@ -357,6 +357,53 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown
+          organization_id: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown
+          organization_id?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown
+          organization_id?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       balance_snapshots: {
         Row: {
           available_cents: number
@@ -6779,6 +6826,15 @@ export type Database = {
       is_org_member: {
         Args: { org_id: string; user_id: string }
         Returns: boolean
+      }
+      log_audit: {
+        Args: {
+          p_action_type: string
+          p_details?: Json
+          p_resource_id?: string
+          p_resource_type: string
+        }
+        Returns: undefined
       }
       match_providers: {
         Args: { p_home_id: string; p_limit?: number; p_service_type: string }

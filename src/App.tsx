@@ -21,7 +21,7 @@ import PartnersDashboard from "./pages/partners/Dashboard";
 import PartnersPayouts from "./pages/partners/Payouts";
 import PartnersResources from "./pages/partners/Resources";
 import PartnersSettings from "./pages/partners/Settings";
-import Signup from "./pages/Signup";
+// Signup removed - consolidated to Register
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pricing from "./pages/Pricing";
@@ -329,7 +329,7 @@ const App = () => {
             <Route path="/resources/home-maintenance-survival-kit" element={<HomeMaintenanceSurvivalKit />} />
             <Route path="/resources/provider-communication-builder" element={<ProviderCommunicationBuilder />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/signup" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/l/:slug" element={<ShortLinkRedirect />} />

@@ -10,6 +10,7 @@ import { Loader2, Mail, Lock, User2, Phone, Gift, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createSafeErrorToast } from "@/utils/errorHandler";
 import { getReferralCookie, getReferralFromSession } from "@/utils/referralTracking";
+import { canSignup, recordSignupAttempt } from "@/utils/signupRateLimiter";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -131,6 +132,15 @@ const Register = () => {
       if (!fullName || !email || !password) {
         throw new Error("Please fill in all required fields");
       }
+
+      // Check rate limiting
+      const rateLimitCheck = canSignup(email);
+      if (!rateLimitCheck.allowed) {
+        throw new Error(rateLimitCheck.reason);
+      }
+
+      // Record attempt
+      recordSignupAttempt(email);
 
       console.log('[Registration] Using admin-signup as primary path');
 

@@ -169,3 +169,9 @@ verify_jwt = true
 
 [functions.send-job-notification]
 verify_jwt = false
+
+[functions.generate-receipt]
+verify_jwt = false
+
+[functions.send-appointment-reminders]
+verify_jwt = false
