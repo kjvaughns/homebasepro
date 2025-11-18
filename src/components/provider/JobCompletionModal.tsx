@@ -56,6 +56,16 @@ export function JobCompletionModal({ open, onOpenChange, job, onComplete }: JobC
 
     setLoading(true);
     try {
+      // Check job limit before proceeding
+      const { data: canComplete } = await supabase.rpc('can_complete_job', {
+        p_provider_org_id: job.provider_org_id
+      });
+
+      if (!canComplete) {
+        toast.error("You've reached your free plan limit of 5 completed jobs. Upgrade to continue.");
+        setLoading(false);
+        return;
+      }
       // Upload photos to storage
       const photoUrls: string[] = [];
       for (const photo of photos) {
@@ -111,18 +121,30 @@ export function JobCompletionModal({ open, onOpenChange, job, onComplete }: JobC
       }
 
       // Schedule review request (48 hours from now)
-      await supabase.functions.invoke('dispatch-notification', {
-        body: {
-          type: 'review_request',
-          userId: job.homeowner_profile_id,
-          data: {
-            jobId: job.id,
-            serviceName: job.service_name,
-            providerOrgId: job.provider_org_id,
-            scheduledFor: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      // Get homeowner's user_id for notification
+      const { data: homeownerProfile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', job.homeowner_profile_id)
+        .single();
+
+      if (homeownerProfile?.user_id) {
+        await supabase.functions.invoke('dispatch-notification', {
+          body: {
+            type: 'review_request',
+            userId: homeownerProfile.user_id,
+            role: 'homeowner',
+            title: '⭐ How did we do?',
+            body: `Please rate your ${job.service_name} experience`,
+            actionUrl: `/reviews/submit/${job.id}`,
+            metadata: {
+              jobId: job.id,
+              serviceName: job.service_name,
+              scheduledFor: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+            }
           }
-        }
-      });
+        });
+      }
 
       toast.success("Job completed successfully!");
       onComplete();

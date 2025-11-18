@@ -5,6 +5,7 @@ import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
 import { JobsMap } from "@/components/provider/JobsMap";
 import { JobCompletionModal } from "@/components/provider/JobCompletionModal";
+import { JobLimitWarning } from "@/components/provider/JobLimitWarning";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Calendar, Map as MapIcon, List, Navigation } from "lucide-react";
@@ -19,9 +20,11 @@ const MyJobs = () => {
   const [filterDate, setFilterDate] = useState<string>("today");
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
   const [jobToComplete, setJobToComplete] = useState<any>(null);
+  const [jobStats, setJobStats] = useState({ completed: 0, limit: 5, canComplete: true });
 
   useEffect(() => {
     loadMyJobs();
+    loadJobStats();
   }, [filterDate]);
 
   const loadMyJobs = async () => {
@@ -62,6 +65,40 @@ const MyJobs = () => {
       toast.error("Failed to load jobs");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadJobStats = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id, plan")
+        .eq("owner_id", user.id)
+        .single();
+
+      if (org) {
+        const monthYear = new Date().toISOString().slice(0, 7);
+        const { data: tracking } = await supabase
+          .from("job_completion_tracking")
+          .select("completed_jobs_count")
+          .eq("provider_org_id", org.id)
+          .eq("month_year", monthYear)
+          .single();
+
+        const completed = tracking?.completed_jobs_count || 0;
+        const limit = org.plan === 'free' ? 5 : 999999;
+        
+        setJobStats({
+          completed,
+          limit,
+          canComplete: completed < limit
+        });
+      }
+    } catch (error) {
+      console.error("Error loading job stats:", error);
     }
   };
 
@@ -145,6 +182,12 @@ const MyJobs = () => {
           </Button>
         </div>
       </div>
+
+      <JobLimitWarning 
+        completedJobs={jobStats.completed}
+        jobLimit={jobStats.limit}
+        isAtLimit={!jobStats.canComplete}
+      />
 
       {/* Filters */}
       <div className="flex gap-2 items-center">
