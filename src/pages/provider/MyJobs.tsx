@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { UnifiedJobCard } from "@/components/provider/UnifiedJobCard";
 import { JobDetailDrawer } from "@/components/provider/JobDetailDrawer";
 import { JobsMap } from "@/components/provider/JobsMap";
+import { JobCompletionModal } from "@/components/provider/JobCompletionModal";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Calendar, Map as MapIcon, List, Navigation } from "lucide-react";
@@ -16,6 +17,8 @@ const MyJobs = () => {
   const [selectedJobEvents, setSelectedJobEvents] = useState<any[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filterDate, setFilterDate] = useState<string>("today");
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+  const [jobToComplete, setJobToComplete] = useState<any>(null);
 
   useEffect(() => {
     loadMyJobs();
@@ -35,21 +38,21 @@ const MyJobs = () => {
       if (!teamMember) return;
 
       let query = supabase
-        .from("jobs" as any)
+        .from("bookings")
         .select("*, clients(name, email, phone)")
         .eq("assigned_team_member_id", teamMember.id)
         .order("route_order", { ascending: true, nullsFirst: false })
-        .order("window_start", { ascending: true });
+        .order("date_time_start", { ascending: true });
 
       if (filterDate === "today") {
         const today = new Date().toISOString().split("T")[0];
-        query = query.gte("window_start", `${today}T00:00:00Z`)
-          .lt("window_start", `${today}T23:59:59Z`);
+        query = query.gte("date_time_start", `${today}T00:00:00Z`)
+          .lt("date_time_start", `${today}T23:59:59Z`);
       } else if (filterDate === "week") {
         const now = new Date();
         const weekEnd = new Date(now.getTime() + 7*24*60*60*1000);
-        query = query.gte("window_start", now.toISOString())
-          .lt("window_start", weekEnd.toISOString());
+        query = query.gte("date_time_start", now.toISOString())
+          .lt("date_time_start", weekEnd.toISOString());
       }
 
       const { data: jobsData } = await query;
@@ -67,7 +70,12 @@ const MyJobs = () => {
       if (action === "start") {
         await handleStatusUpdate(jobId, "start");
       } else if (action === "complete") {
-        await handleStatusUpdate(jobId, "complete");
+        // Open completion modal instead of direct update
+        const job = jobs.find(j => j.id === jobId);
+        if (job) {
+          setJobToComplete(job);
+          setCompletionModalOpen(true);
+        }
       }
     } catch (error) {
       console.error("Error handling action:", error);
@@ -77,7 +85,7 @@ const MyJobs = () => {
 
   const handleStatusUpdate = async (jobId: string, action: string) => {
     const { error } = await supabase
-      .from("jobs" as any)
+      .from("bookings")
       .update({
         status: action === "start" ? "in_progress" : "completed",
         updated_at: new Date().toISOString()
@@ -86,26 +94,12 @@ const MyJobs = () => {
 
     if (error) throw error;
     
-    await supabase.from("job_events" as any).insert({
-      job_id: jobId,
-      event_type: action === "start" ? "started" : "completed",
-      payload: {}
-    });
-    
     toast.success(action === "start" ? "Job started" : "Job completed");
     loadMyJobs();
   };
 
   const openJobDetail = async (job: any) => {
     setSelectedJob(job);
-    
-    const { data: events } = await supabase
-      .from("job_events" as any)
-      .select("*")
-      .eq("job_id", job.id)
-      .order("created_at", { ascending: false });
-    
-    setSelectedJobEvents(events || []);
     setDrawerOpen(true);
   };
 
@@ -225,6 +219,13 @@ const MyJobs = () => {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         events={selectedJobEvents}
+      />
+
+      <JobCompletionModal
+        open={completionModalOpen}
+        onOpenChange={setCompletionModalOpen}
+        job={jobToComplete}
+        onComplete={loadMyJobs}
       />
     </div>
   );

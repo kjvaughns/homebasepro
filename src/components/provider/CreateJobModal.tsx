@@ -489,6 +489,34 @@ export default function CreateJobModal({
         throw updateError;
       }
 
+      // Send notification to homeowner
+      if (selectedClient?.homeowner_profile_id) {
+        try {
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', org.id)
+            .single();
+
+          await supabase.functions.invoke('dispatch-notification', {
+            body: {
+              type: 'job_created',
+              userId: selectedClient.homeowner_profile_id,
+              data: {
+                jobId: bookingId,
+                serviceName: formData.service_name,
+                scheduledDate: startDateTime.toISOString(),
+                providerName: orgData?.name || 'Your provider',
+                address: formData.address
+              }
+            }
+          });
+        } catch (notifError) {
+          console.error('Notification error:', notifError);
+          // Don't fail job creation if notification fails
+        }
+      }
+
       // Send email notification if client has email
       const clientEmail = clientMode === "existing" 
         ? selectedClient?.email 

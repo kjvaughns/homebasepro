@@ -568,6 +568,35 @@ serve(async (req) => {
             })
             .eq('id', existing.id);
 
+          // Send payment confirmation notification to provider
+          if (org_id) {
+            try {
+              const { data: org } = await supabase
+                .from('organizations')
+                .select('owner_id')
+                .eq('id', org_id)
+                .single();
+
+              if (org?.owner_id) {
+                await supabase.functions.invoke('dispatch-notification', {
+                  body: {
+                    type: 'payment_received',
+                    userId: org.owner_id,
+                    data: {
+                      amount: paymentIntent.amount / 100,
+                      customerName: paymentIntent.metadata.customer_name || 'Customer',
+                      paymentMethod: paymentIntent.payment_method_types?.[0] || 'card',
+                      jobId: job_id
+                    }
+                  }
+                });
+              }
+            } catch (notifError) {
+              console.error('Failed to send payment notification:', notifError);
+              // Don't fail payment processing if notification fails
+            }
+          }
+
           // Create ledger entries
           const feeAmount = existing.application_fee_cents || 0;
           const transferAmount = existing.amount - feeAmount;
