@@ -36,6 +36,9 @@ export default function Money() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'owed');
   const [dateFilter, setDateFilter] = useState<'week' | 'lastWeek' | 'all'>('all');
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [stripeConnected, setStripeConnected] = useState<boolean | null>(null);
+  const [connectingStripe, setConnectingStripe] = useState(false);
+  const [organization, setOrganization] = useState<any>(null);
   const { toast } = useToast();
 
   const loadData = async (): Promise<void> => {
@@ -46,10 +49,12 @@ export default function Money() {
         return;
       }
 
-      const orgResponse = await supabase.from('organizations').select('id').eq('owner_id', user.id).single();
+      const orgResponse = await supabase.from('organizations').select('*').eq('owner_id', user.id).single();
       if (!orgResponse.data) return;
       
       const orgId = orgResponse.data.id;
+      setOrganization(orgResponse.data);
+      setStripeConnected(!!orgResponse.data.stripe_account_id);
 
       // Load metrics with explicit auth
       const { data: { session } } = await supabase.auth.getSession();
@@ -193,6 +198,44 @@ export default function Money() {
     }
   };
 
+  const handleConnectStripe = async () => {
+    setConnectingStripe(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-connect-link');
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      console.error('Error connecting Stripe:', error);
+      sonnerToast.error(error.message || 'Failed to connect Stripe');
+    } finally {
+      setConnectingStripe(false);
+    }
+  };
+
+  const handleMarkPaid = async (invoice: any) => {
+    try {
+      sonnerToast.loading("Marking invoice as paid...");
+      
+      const { error } = await supabase.functions.invoke('mark-invoice-paid', {
+        body: { invoiceId: invoice.id }
+      });
+
+      if (error) throw error;
+
+      sonnerToast.dismiss();
+      sonnerToast.success("Invoice marked as paid!");
+      loadData();
+    } catch (error: any) {
+      sonnerToast.dismiss();
+      console.error('Error marking invoice as paid:', error);
+      sonnerToast.error(error.message || 'Failed to mark invoice as paid');
+    }
+  };
+
   if (loading) return <div className="p-6 space-y-4 max-w-7xl mx-auto"><Skeleton className="h-10 w-48" /><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[1,2,3,4].map(i => <Skeleton key={i} className="h-32" />)}</div><Skeleton className="h-64" /></div>;
 
   return (
@@ -200,8 +243,25 @@ export default function Money() {
       <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto pb-24">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <div><h1 className="text-3xl font-bold">Money</h1><p className="text-xs text-muted-foreground mt-1">Synced {formatDistanceToNow(lastSyncTime, { addSuffix: true })}</p></div>
-            <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} className="rounded-full"><RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} /></Button>
+            <div>
+              <h1 className="text-3xl font-bold">Money</h1>
+              <p className="text-xs text-muted-foreground mt-1">Synced {formatDistanceToNow(lastSyncTime, { addSuffix: true })}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {stripeConnected === false && (
+                <Button
+                  onClick={handleConnectStripe}
+                  disabled={connectingStripe}
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {connectingStripe ? "Connecting..." : "Connect Stripe"}
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} className="rounded-full">
+                <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
           
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="lg" className="w-full md:w-auto"><Plus className="h-5 w-5 mr-2" />New Invoice / Payment</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56"><DropdownMenuItem onClick={() => setShowInvoiceModal(true)}><Receipt className="h-4 w-4 mr-2" />Send Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => setShowQuickPaymentModal(true)}><Link2 className="h-4 w-4 mr-2" />Create Payment Link</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
