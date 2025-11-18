@@ -264,7 +264,7 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
     showSpinner();
     try {
       // Route all status change actions through handleStatusUpdate
-      if (["start", "started", "en_route", "complete", "completed"].includes(action)) {
+      if (["on_my_way", "start_work", "mark_done", "confirmed"].includes(action)) {
         await handleStatusUpdate(jobId, action);
       } else if (action === "auto_invoice") {
         await handleAutoInvoice(jobId);
@@ -336,100 +336,103 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
   };
 
   const handleStatusUpdate = async (jobId: string, action: string) => {
+    console.log('handleStatusUpdate called with:', { jobId, action });
+    
+    // Map actions to statuses (simplified)
+    const statusMap: Record<string, string> = {
+      'on_my_way': 'on_my_way',
+      'start_work': 'working',
+      'mark_done': 'completed',
+      'confirmed': 'confirmed'
+    };
+
+    const newStatus = statusMap[action] || action;
+    console.log('Mapped status:', newStatus);
+
     try {
-      const actionToStatusMap: Record<string, string> = {
-        'start': 'in_progress',
-        'started': 'in_progress',
-        'en_route': 'en_route',
-        'complete': 'completed',
-        'completed': 'completed',
-      };
-      
-      const newStatus = actionToStatusMap[action] || action;
-      
-      // Try to get geolocation for event logging
-      let coords = null;
-      try {
-        if (navigator.geolocation) {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-          });
-          coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-        }
-      } catch (geoError) {
-        console.log('Geolocation not available or denied');
-      }
-      
-      // Update booking status and location if available
-      const updateData: any = { 
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      };
-      
-      if (coords) {
-        updateData.lat = coords.lat;
-        updateData.lng = coords.lng;
-      }
-      
-      const { error } = await supabase
+      // Update booking status
+      const { error: updateError } = await supabase
         .from('bookings')
-        .update(updateData)
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', jobId);
 
-      if (error) throw error;
-      
-      // Log job event
-      const eventType = action === 'started' || action === 'start' ? 'started' 
-                      : action === 'en_route' ? 'en_route'
-                      : action === 'complete' || action === 'completed' ? 'completed'
-                      : action;
-      
-      await supabase
-        .from('job_events' as any)
-        .insert({
-          job_id: jobId,
-          event_type: eventType,
-          payload: {
-            at: new Date().toISOString(),
-            source: 'provider',
-            coords: coords || undefined
+      if (updateError) {
+        console.error('Error updating booking:', updateError);
+        throw updateError;
+      }
+
+      // Log job event for status changes
+      const eventTypeMap: Record<string, string> = {
+        'on_my_way': 'on_my_way',
+        'start_work': 'started_work',
+        'mark_done': 'completed'
+      };
+
+      const eventType = eventTypeMap[action];
+      if (eventType) {
+        // Try to get geolocation
+        let coords = null;
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+            coords = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            
+            // Update booking location
+            await supabase
+              .from('bookings')
+              .update({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              })
+              .eq('id', jobId);
+          } catch (geoError) {
+            console.log('Geolocation not available:', geoError);
           }
-        });
-      
-      // Send client notification
+        }
+
+        // Insert job event
+        const { error: eventError } = await supabase
+          .from('job_events')
+          .insert({
+            booking_id: jobId,
+            event_type: eventType,
+            coords: coords
+          });
+
+        if (eventError) {
+          console.error('Error logging job event:', eventError);
+        }
+      }
+
+      // Send status update notification to client
       try {
         const { error: notifyError } = await supabase.functions.invoke('send-status-update', {
-          body: { 
-            bookingId: jobId, 
-            status: newStatus 
-          }
+          body: { bookingId: jobId, status: newStatus }
         });
-
+        
         if (notifyError) {
-          console.error('Notification error:', notifyError);
-          toast.success("Job updated");
+          console.error('Error sending notification:', notifyError);
+          toast.success("✓ Status updated");
         } else {
-          toast.success("Job updated - Client notified");
+          toast.success("✓ Status updated - Client notified");
         }
       } catch (notifyError) {
-        console.error('Failed to send notification:', notifyError);
-        toast.success("Job updated");
+        console.error('Error invoking notification function:', notifyError);
+        toast.success("✓ Status updated");
       }
-      
-      // Sync to workflow
-      try {
-        await syncJobToWorkflow(jobId, newStatus);
-      } catch (workflowError) {
-        console.error("Failed to sync workflow:", workflowError);
-      }
-      
+
       loadJobs();
-    } catch (error: any) {
-      console.error("Error updating job status:", error);
-      throw error;
+    } catch (error) {
+      console.error('Error in handleStatusUpdate:', error);
+      toast.error("Failed to update job status");
     }
   };
 

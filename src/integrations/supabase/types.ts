@@ -2228,6 +2228,41 @@ export type Database = {
           },
         ]
       }
+      job_events: {
+        Row: {
+          booking_id: string
+          coords: Json | null
+          created_at: string
+          event_type: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          booking_id: string
+          coords?: Json | null
+          created_at?: string
+          event_type: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          booking_id?: string
+          coords?: Json | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           body_md: string

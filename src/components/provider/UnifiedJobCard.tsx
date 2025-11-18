@@ -78,15 +78,15 @@ const statusConfig: Record<string, {
     color: "bg-blue-500/20 text-blue-700",
     label: "Confirmed",
     actions: [
-      { label: "En Route", action: "en_route", icon: MapPin },
-      { label: "Details", action: "view", icon: FileText, variant: "outline" }
+      { label: "On My Way 🚗", action: "on_my_way", icon: MapPin },
+      { label: "Cancel", action: "cancel", icon: XCircle, variant: "outline" }
     ]
   },
   service_call: {
     color: "bg-primary/10 text-primary",
     label: "Service Call",
     actions: [
-      { label: "Start", action: "start", icon: PlayCircle },
+      { label: "On My Way 🚗", action: "on_my_way", icon: MapPin },
       { label: "Quote", action: "quote", icon: DollarSign, variant: "outline" }
     ]
   },
@@ -101,43 +101,51 @@ const statusConfig: Record<string, {
     color: "bg-primary/20 text-primary",
     label: "Scheduled",
     actions: [
-      { label: "En Route", action: "en_route", icon: MapPin },
-      { label: "Details", action: "view", icon: FileText, variant: "outline" }
+      { label: "On My Way 🚗", action: "on_my_way", icon: MapPin },
+      { label: "Cancel", action: "cancel", icon: XCircle, variant: "outline" }
     ]
   },
-  en_route: {
-    color: "bg-secondary text-secondary-foreground",
-    label: "En Route",
+  on_my_way: {
+    color: "bg-purple-500/20 text-purple-700",
+    label: "On My Way 🚗",
     actions: [
-      { label: "Start Job", action: "started", icon: PlayCircle }
+      { label: "Start Work 🔨", action: "start_work", icon: PlayCircle }
     ]
   },
-  started: {
-    color: "bg-primary/30 text-primary",
-    label: "In Progress",
+  working: {
+    color: "bg-green-500/20 text-green-700",
+    label: "Working 🔨",
     actions: [
-      { label: "Complete", action: "completed", icon: CheckCircle }
-    ]
-  },
-  paused: {
-    color: "bg-muted text-muted-foreground",
-    label: "Paused",
-    actions: [
-      { label: "Resume", action: "started", icon: PlayCircle }
-    ]
-  },
-  in_progress: {
-    color: "bg-secondary text-secondary-foreground",
-    label: "In Progress",
-    actions: [
-      { label: "Complete", action: "completed", icon: CheckCircle }
+      { label: "Mark Done ✓", action: "mark_done", icon: CheckCircle }
     ]
   },
   completed: {
-    color: "bg-primary/10 text-primary",
-    label: "Completed",
+    color: "bg-gray-500/20 text-gray-700",
+    label: "Done ✓",
     actions: [
-      { label: "Generate Invoice", action: "auto_invoice", icon: FileText }
+      { label: "Create Invoice 📄", action: "auto_invoice", icon: FileText, variant: "outline" }
+    ]
+  },
+  // Legacy statuses for backwards compatibility
+  en_route: {
+    color: "bg-purple-500/20 text-purple-700",
+    label: "On My Way 🚗",
+    actions: [
+      { label: "Start Work 🔨", action: "start_work", icon: PlayCircle }
+    ]
+  },
+  started: {
+    color: "bg-green-500/20 text-green-700",
+    label: "Working 🔨",
+    actions: [
+      { label: "Mark Done ✓", action: "mark_done", icon: CheckCircle }
+    ]
+  },
+  in_progress: {
+    color: "bg-green-500/20 text-green-700",
+    label: "Working 🔨",
+    actions: [
+      { label: "Mark Done ✓", action: "mark_done", icon: CheckCircle }
     ]
   },
   invoiced: {
