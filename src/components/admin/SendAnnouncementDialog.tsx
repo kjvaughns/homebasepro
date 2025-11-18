@@ -129,15 +129,21 @@ export function SendAnnouncementDialog({
       onOpenChange(false);
     } catch (error: any) {
       console.error('Failed to send announcement:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to send announcement",
-      });
+      
+      let errorMessage = "Failed to send announcement";
+      if (error.message?.includes('Unauthorized') || error.message?.includes('permission')) {
+        errorMessage = "You don't have permission to send announcements";
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = "Network error. Please check your connection and try again";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
-  }, [pendingValues, form, onOpenChange, toast]);
+  }, [pendingValues, form, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
