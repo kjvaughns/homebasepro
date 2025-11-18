@@ -46,18 +46,49 @@ serve(async (req) => {
         const paymentIntent = event.data.object;
         console.log('Payment succeeded:', paymentIntent.id);
 
+        // Find the invoice
+        const { data: invoice, error: fetchError } = await supabase
+          .from('invoices')
+          .select('id, organization_id, net_to_provider_cents')
+          .eq('stripe_payment_intent_id', paymentIntent.id)
+          .single();
+
+        if (fetchError || !invoice) {
+          console.error('Error finding invoice:', fetchError);
+          break;
+        }
+
         // Update invoice status
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('invoices')
           .update({ 
             status: 'paid',
             paid_at: new Date().toISOString(),
           })
-          .eq('stripe_payment_intent_id', paymentIntent.id);
+          .eq('id', invoice.id);
 
-        if (error) {
-          console.error('Error updating invoice:', error);
+        if (updateError) {
+          console.error('Error updating invoice:', updateError);
+          break;
         }
+
+        // Update organization lifetime revenue
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('lifetime_revenue')
+          .eq('id', invoice.organization_id)
+          .single();
+
+        if (org) {
+          const newRevenue = (org.lifetime_revenue || 0) + (invoice.net_to_provider_cents || 0);
+          await supabase
+            .from('organizations')
+            .update({ lifetime_revenue: newRevenue })
+            .eq('id', invoice.organization_id);
+          
+          console.log(`Updated org revenue: ${newRevenue} cents`);
+        }
+        
         break;
       }
 
