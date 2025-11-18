@@ -62,11 +62,17 @@ const Pricing = () => {
         </div>
       </header>
 
+      {/* Beta Banner */}
+      <div className="bg-primary/10 border-y border-primary/20 py-3">
+        <div className="container mx-auto px-4">
+          <p className="text-center text-sm md:text-base font-medium">
+            🎉 <span className="font-bold text-primary">Beta Pricing Active:</span> 50% off all paid plans during beta. Prices will increase when beta ends. Lock in your discount now!
+          </p>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="py-16 px-4 text-center">
-        <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20">
-          ⚡ BETA LAUNCH SPECIAL
-        </Badge>
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
           Simple, Transparent Pricing
         </h1>
@@ -77,36 +83,37 @@ const Pricing = () => {
       </section>
 
       {/* Pricing Cards */}
-      <div className="max-w-5xl mx-auto px-4 pb-16 grid md:grid-cols-2 gap-6">
+      <div className="max-w-6xl mx-auto px-4 pb-16 grid md:grid-cols-3 gap-6">
         {/* FREE Plan Card */}
         <Card className="border-2 border-border shadow-lg">
           <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Badge variant="outline">FREE FOREVER</Badge>
-            </div>
-            <CardTitle className="text-3xl">Free Plan</CardTitle>
+            <CardTitle className="text-2xl">Free</CardTitle>
             <div className="mt-4">
               <span className="text-5xl font-bold">$0</span>
               <span className="text-muted-foreground">/month</span>
             </div>
-            <CardDescription className="mt-2 text-base font-medium">
-              For Homeowners & New Providers
+            <CardDescription className="mt-2">
+              Try before you commit
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
+            <div className="text-center py-2 bg-muted/50 rounded-lg">
+              <p className="text-sm font-medium">Up to 5 completed jobs/month</p>
+              <p className="text-xs text-muted-foreground">8% transaction fee</p>
+            </div>
             <ul className="space-y-3">
               {[
-                "Start immediately (no card required)",
-                "Up to 5 clients",
-                "Payment links & invoices",
-                "Client messaging",
-                "8% transaction fees",
-                "Up to 5 team members",
-                "Stripe Connect required for payments",
-              ].map((feature) => (
-                <li key={feature} className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                "Core job creation",
+                "Basic scheduling",
+                "Basic customer list",
+                "Basic quoting",
+                "Basic invoicing with watermark",
+                "Basic support",
+                "No team seats (solo only)"
+              ].map((feature, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                   <span className="text-sm">{feature}</span>
                 </li>
               ))}
@@ -114,80 +121,108 @@ const Pricing = () => {
           </CardContent>
 
           <CardFooter>
-            <Button
-              onClick={() => navigate('/register')}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
+            <Button onClick={() => navigate('/register')} className="w-full" variant="outline" size="lg">
               Get Started Free
             </Button>
           </CardFooter>
         </Card>
 
-        {/* BETA Plan Card */}
-        <Card className="border-2 border-primary shadow-xl">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Badge className="bg-primary text-primary-foreground">BETA ACCESS</Badge>
-            </div>
-            <CardTitle className="text-3xl">Beta Plan</CardTitle>
+        {/* STARTER Plan (Recommended) */}
+        <Card className="border-4 border-primary shadow-2xl relative overflow-hidden">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold z-10">
+            Recommended
+          </div>
+          
+          <CardHeader className="text-center pt-8">
+            <CardTitle className="text-2xl">Starter</CardTitle>
             <div className="mt-4">
+              <div className="text-lg line-through text-muted-foreground">$30/mo</div>
               <span className="text-5xl font-bold text-primary">$15</span>
               <span className="text-muted-foreground">/month</span>
+              <p className="text-sm text-primary font-medium mt-1">🎉 Beta: 50% off</p>
             </div>
-            <CardDescription className="mt-2 text-base font-medium">
-              For Growing Service Providers
-            </CardDescription>
             <CardDescription className="mt-2">
-              <Badge variant="outline" className="text-xs">
-                14-day free trial (no card required)
-              </Badge>
+              7-day free trial (card required)
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
+            <div className="text-center py-2 bg-primary/10 rounded-lg">
+              <p className="text-sm font-medium">Unlimited jobs</p>
+              <p className="text-xs text-muted-foreground">4% transaction fee · 3 team seats</p>
+            </div>
             <ul className="space-y-3">
               {[
-                "Everything in FREE, plus:",
-                "Unlimited clients",
-                "Lower transaction fees (3%)",
-                "Up to 3 team members",
-                "All features unlocked",
-                "Priority support",
-                "14-day free trial (no card required)",
-              ].map((feature) => (
-                <li key={feature} className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                "Standard invoicing (no watermark)",
+                "Customer reminders",
+                "Review requests",
+                "Smart scheduling",
+                "AI service descriptions",
+                "AI pricing suggestions",
+                "AI quoting",
+                "AI message templates",
+                "Automated quote follow-ups",
+                "Payment reminder automation"
+              ].map((feature, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                   <span className="text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
-
           </CardContent>
 
           <CardFooter>
-            <Button
-              onClick={handleStartTrial}
-              disabled={loading}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              size="lg"
-            >
-              {loading ? (
-                "Starting trial..."
-              ) : (
-                <>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Start Free Trial
-                </>
-              )}
+            <Button onClick={handleStartTrial} disabled={loading} className="w-full bg-primary hover:bg-primary/90" size="lg">
+              {loading ? "Starting trial..." : "Start 7-Day Trial"}
             </Button>
           </CardFooter>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          After your 14-day trial, choose Pro ($15/mo + 3% fees) or Free (8% fees). No card required to start.
-        </p>
+        {/* PRO Plan */}
+        <Card className="border-2 border-border shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Pro</CardTitle>
+            <div className="mt-4">
+              <div className="text-lg line-through text-muted-foreground">$129/mo</div>
+              <span className="text-5xl font-bold text-primary">$64.50</span>
+              <span className="text-muted-foreground">/month</span>
+              <p className="text-sm text-primary font-medium mt-1">🎉 Beta: 50% off</p>
+            </div>
+            <CardDescription className="mt-2">
+              7-day free trial (card required)
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <div className="text-center py-2 bg-muted/50 rounded-lg">
+              <p className="text-sm font-medium">Everything in Starter</p>
+              <p className="text-xs text-muted-foreground">2% transaction fee · 10 team seats</p>
+            </div>
+            <ul className="space-y-3">
+              {[
+                "Team seats & permissions",
+                "Team routing & assignments",
+                "GPS job arrival & tracking",
+                "Earnings & tax reports",
+                "Custom booking link templates",
+                "Priority support",
+                "Add more team seats (pay per seat)"
+              ].map((feature, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <span className="text-sm">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+
+          <CardFooter>
+            <Button onClick={handleStartTrial} disabled={loading} className="w-full" size="lg">
+              {loading ? "Starting trial..." : "Start 7-Day Trial"}
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
 
       {/* FAQ Section */}
@@ -196,27 +231,33 @@ const Pricing = () => {
           <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
           <div className="space-y-6">
             <Card className="p-6">
-              <h3 className="font-semibold mb-2">What happens when my 14-day trial ends?</h3>
+              <h3 className="font-semibold mb-2">What happens when my 7-day trial ends?</h3>
               <p className="text-muted-foreground text-sm">
-                You'll choose between upgrading to Pro ($15/month + 3% transaction fees) or continuing with our Free plan (8% transaction fees). We'll send you reminder emails at day 7 and day 12 so you can decide what works best for your business.
+                After your 7-day trial, you'll be charged for your selected plan (Starter or Pro). You can cancel anytime before the trial ends with no charges, or switch to our Free plan.
               </p>
             </Card>
             <Card className="p-6">
               <h3 className="font-semibold mb-2">Do I need a credit card to start?</h3>
               <p className="text-muted-foreground text-sm">
-                No card required! Start your 14-day Pro trial immediately upon signup. After the trial, you can upgrade to Pro or downgrade to our Free plan—your choice.
+                Yes, a credit card is required to start your 7-day trial for Starter or Pro plans. The Free plan requires no card. You won't be charged during the trial period.
               </p>
             </Card>
             <Card className="p-6">
               <h3 className="font-semibold mb-2">How do the transaction fees work?</h3>
               <p className="text-muted-foreground text-sm">
-                Free plan: 8% per transaction. Pro plan: 3% per transaction + $15/month. On a $1,000 job, you'd save $50 with Pro vs Free. If you process ~$300/month, Pro pays for itself.
+                Free plan: 8% per transaction. Starter plan: 4% per transaction + $15/month (currently 50% off at $15/mo during beta). Pro plan: 2% per transaction + $64.50/month (50% off during beta). On a $1,000 job, Starter saves you $40 vs Free.
               </p>
             </Card>
             <Card className="p-6">
               <h3 className="font-semibold mb-2">Is HomeBase really free for homeowners?</h3>
               <p className="text-muted-foreground text-sm">
                 Yes! Homeowners can browse providers, book services, and manage appointments completely free. Service providers pay a subscription to access business tools and accept bookings.
+              </p>
+            </Card>
+            <Card className="p-6">
+              <h3 className="font-semibold mb-2">What happens when beta pricing ends?</h3>
+              <p className="text-muted-foreground text-sm">
+                When beta ends, plan prices will return to their full amounts: Starter $30/mo and Pro $129/mo. We'll notify all users at least 14 days before any price changes take effect.
               </p>
             </Card>
           </div>
