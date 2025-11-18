@@ -45,9 +45,34 @@ export default function EditJobModal({ open, onOpenChange, job, onSuccess }: Edi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!job) return;
 
+    setLoading(true);
     try {
+      // Check if time has changed and verify availability
+      const timeChanged = formData.date_time_start.toISOString() !== job.date_time_start || 
+                         formData.date_time_end.toISOString() !== job.date_time_end;
+      
+      if (timeChanged) {
+        const { data: available, error: availError } = await supabase
+          .rpc('check_provider_availability', {
+            p_provider_id: job.provider_org_id,
+            p_start_time: formData.date_time_start.toISOString(),
+            p_end_time: formData.date_time_end.toISOString()
+          });
+
+        if (availError) {
+          console.error("Availability check error:", availError);
+          throw new Error("Failed to check availability");
+        }
+
+        if (!available) {
+          toast.error("Time slot unavailable - Provider is not available during this time slot. Please choose a different time.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("bookings")
         .update({

@@ -434,35 +434,59 @@ export default function CreateJobModal({
         clientId = newClient.id;
       }
 
-      // Create booking
+      // Create booking using conflict-safe RPC
       const startDateTime = formData.scheduled_date;
       const durationHours = parseFloat(formData.duration);
       const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
       const quoteAmount = formData.quote_amount ? parseFloat(formData.quote_amount) * 100 : null;
 
-      const { data: booking, error: bookingError } = await supabase
+      const { data: rpcResult, error: rpcError } = await supabase
+        .rpc('check_and_create_booking', {
+          p_provider_org_id: org.id,
+          p_homeowner_profile_id: selectedClient?.homeowner_profile_id || null,
+          p_service_name: formData.service_name || 'Service',
+          p_address: formData.address,
+          p_date_time_start: startDateTime.toISOString(),
+          p_date_time_end: endDateTime.toISOString(),
+          p_notes: formData.notes || null,
+          p_home_id: null
+        });
+
+      if (rpcError) {
+        console.error("RPC error:", rpcError);
+        throw rpcError;
+      }
+
+      const result = rpcResult as any;
+      
+      if (!result?.success) {
+        toast({
+          title: "Time slot unavailable",
+          description: result?.error || "Provider is not available during this time slot.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const bookingId = result.booking_id;
+      
+      // Update additional fields not handled by RPC
+      const { error: updateError } = await supabase
         .from('bookings')
-        .insert({
-          provider_org_id: org.id,
+        .update({
           client_id: clientId,
-          homeowner_profile_id: selectedClient?.homeowner_profile_id || null,
-          service_name: formData.service_name || 'Service',
-          address: formData.address,
-          date_time_start: startDateTime.toISOString(),
-          date_time_end: endDateTime.toISOString(),
           status: ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'].includes(formData.status) 
             ? formData.status 
             : 'pending',
-          notes: formData.notes || null,
           estimated_price_low: quoteAmount,
           estimated_price_high: quoteAmount,
         })
-        .select()
-        .single();
+        .eq('id', bookingId);
 
-      if (bookingError) {
-        console.error("Booking creation error:", bookingError);
-        throw bookingError;
+      if (updateError) {
+        console.error("Booking update error:", updateError);
+        throw updateError;
       }
 
       // Send email notification if client has email
@@ -474,7 +498,7 @@ export default function CreateJobModal({
         try {
           const { data: fnData, error: fnError } = await supabase.functions.invoke('send-job-notification', {
             body: {
-              bookingId: booking.id,
+              bookingId: bookingId,
               type: 'job_created',
               clientEmail,
               providerOrgId: org.id
