@@ -109,6 +109,7 @@ verify_jwt = true
 
 [functions.send-appointment-reminders]
 verify_jwt = false
+schedule = "0 */1 * * *"
 
 [functions.short-links-api]
 verify_jwt = true

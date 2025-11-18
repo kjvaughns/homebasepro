@@ -498,19 +498,31 @@ export default function CreateJobModal({
             .eq('id', org.id)
             .single();
 
-          await supabase.functions.invoke('dispatch-notification', {
-            body: {
-              type: 'job_created',
-              userId: selectedClient.homeowner_profile_id,
-              data: {
-                jobId: bookingId,
-                serviceName: formData.service_name,
-                scheduledDate: startDateTime.toISOString(),
-                providerName: orgData?.name || 'Your provider',
-                address: formData.address
+          // Get homeowner's user_id for notification
+          const { data: homeownerProfile } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('id', selectedClient.homeowner_profile_id)
+            .single();
+
+          if (homeownerProfile?.user_id) {
+            await supabase.functions.invoke('dispatch-notification', {
+              body: {
+                type: 'job_created',
+                userId: homeownerProfile.user_id,
+                role: 'homeowner',
+                title: '📅 New Appointment Scheduled',
+                body: `${orgData?.name || 'Your provider'} scheduled ${formData.service_name} for ${startDateTime.toLocaleDateString()}`,
+                actionUrl: `/homeowner/appointments/${bookingId}`,
+                metadata: {
+                  jobId: bookingId,
+                  serviceName: formData.service_name,
+                  scheduledDate: startDateTime.toISOString(),
+                  address: formData.address
+                }
               }
-            }
-          });
+            });
+          }
         } catch (notifError) {
           console.error('Notification error:', notifError);
           // Don't fail job creation if notification fails
