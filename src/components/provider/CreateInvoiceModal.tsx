@@ -92,9 +92,16 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }
     return lineItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
   };
 
-  const calculateNetAfterFees = (total: number) => {
-    const stripeFee = total * 0.029 + 30; // 2.9% + $0.30
-    return total - stripeFee;
+  const calculateFees = (total: number) => {
+    const amountCents = Math.round(total * 100);
+    const stripeFee = Math.round(amountCents * 0.029) + 30; // 2.9% + $0.30
+    const platformFee = Math.round(amountCents * 0.08); // 8% for free plan (default)
+    const netToProvider = amountCents - stripeFee - platformFee;
+    return {
+      stripeFee: stripeFee / 100,
+      platformFee: platformFee / 100,
+      netToProvider: netToProvider / 100
+    };
   };
 
   const handleCreate = async (sendEmail: boolean) => {
@@ -511,17 +518,33 @@ export function CreateInvoiceModal({ open, onClose, clientId, jobId, onSuccess }
             ))}
           </div>
 
-          {/* Live Total Preview */}
-          <div className="bg-muted p-4 rounded-lg space-y-2">
+          {/* Live Total Preview with Fee Breakdown */}
+          <div className="bg-muted p-4 rounded-lg space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Total Amount:</span>
+              <span className="text-sm font-medium">Invoice Total:</span>
               <span className="text-2xl font-bold">${calculateTotal().toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center text-sm text-muted-foreground">
-              <span>After 2.9% + $0.30 fees:</span>
-              <span className="font-semibold text-green-600">
-                ${calculateNetAfterFees(calculateTotal()).toFixed(2)}
-              </span>
+            <div className="border-t border-border pt-2 space-y-1">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  Stripe Fee (2.9% + $0.30)
+                  <span className="text-xs" title="Stripe payment processing fee">ℹ️</span>
+                </span>
+                <span className="text-red-600">-${calculateFees(calculateTotal()).stripeFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  Platform Fee (8%)
+                  <span className="text-xs" title="HomeBase platform fee for marketplace, payments, and support">ℹ️</span>
+                </span>
+                <span className="text-red-600">-${calculateFees(calculateTotal()).platformFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-border">
+                <span className="text-sm font-semibold">You'll Receive:</span>
+                <span className="text-xl font-bold text-green-600">
+                  ${calculateFees(calculateTotal()).netToProvider.toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         </div>

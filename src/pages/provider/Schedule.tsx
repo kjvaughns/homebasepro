@@ -20,6 +20,8 @@ import { useDespia } from "@/hooks/useDespia";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
+import { BlockTimeModal } from "@/components/provider/BlockTimeModal";
+
 export default function Schedule() {
   const { triggerHaptic, showSpinner, hideSpinner } = useDespia();
   const isMobile = useIsMobile();
@@ -37,6 +39,8 @@ export default function Schedule() {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickAddMode, setQuickAddMode] = useState<'existing' | 'new' | 'block'>('existing');
   const [quotingJob, setQuotingJob] = useState<any>(null);
+  const [showBlockTimeModal, setShowBlockTimeModal] = useState(false);
+  const [dateFilter, setDateFilter] = useState<'day' | 'week' | 'month' | 'all'>('week');
   
   // Smart default view: mobile = day, desktop = week
   const getDefaultView = () => {
@@ -694,7 +698,10 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
           if (mode === 'existing' || mode === 'new') {
             setShowCreateJob(true);
           }
-          // TODO: Implement 'block' mode for time blocking
+      // TODO: Implement 'block' mode for time blocking
+      if (mode === 'block') {
+        setShowBlockTimeModal(true);
+      }
         }}
       />
 
@@ -726,6 +733,16 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
           />
         )
       )}
+
+      <BlockTimeModal 
+        open={showBlockTimeModal}
+        onClose={() => setShowBlockTimeModal(false)}
+        onSuccess={() => {
+          setShowBlockTimeModal(false);
+          loadJobs();
+        }}
+        defaultDate={selectedDay}
+      />
     </div>
   );
 }

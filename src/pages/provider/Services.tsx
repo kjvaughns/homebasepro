@@ -78,11 +78,16 @@ const formatPriceDisplay = (min: number | null, max: number | null, single: numb
   return `$${(price / 100).toFixed(2)}`;
 };
 
+import { ServiceGeneratorModal } from "@/components/provider/ServiceGeneratorModal";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sparkles } from "lucide-react";
+
 export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   const { toast } = useToast();
   const { isMobile } = useMobileLayout();
 

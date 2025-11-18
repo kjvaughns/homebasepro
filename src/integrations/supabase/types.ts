@@ -2182,15 +2182,19 @@ export type Database = {
           invoice_number: string
           job_id: string | null
           line_items: Json | null
+          net_to_provider_cents: number | null
           notes: string | null
           organization_id: string
           paid_at: string | null
           pdf_url: string | null
+          platform_fee_cents: number | null
+          received: boolean | null
           refunded_at: string | null
           status: string | null
           stripe_checkout_session_id: string | null
           stripe_checkout_url: string | null
           stripe_customer_id: string | null
+          stripe_fee_cents: number | null
           stripe_hosted_url: string | null
           stripe_invoice_id: string | null
           stripe_payment_intent_id: string | null
@@ -2209,15 +2213,19 @@ export type Database = {
           invoice_number: string
           job_id?: string | null
           line_items?: Json | null
+          net_to_provider_cents?: number | null
           notes?: string | null
           organization_id: string
           paid_at?: string | null
           pdf_url?: string | null
+          platform_fee_cents?: number | null
+          received?: boolean | null
           refunded_at?: string | null
           status?: string | null
           stripe_checkout_session_id?: string | null
           stripe_checkout_url?: string | null
           stripe_customer_id?: string | null
+          stripe_fee_cents?: number | null
           stripe_hosted_url?: string | null
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -2236,15 +2244,19 @@ export type Database = {
           invoice_number?: string
           job_id?: string | null
           line_items?: Json | null
+          net_to_provider_cents?: number | null
           notes?: string | null
           organization_id?: string
           paid_at?: string | null
           pdf_url?: string | null
+          platform_fee_cents?: number | null
+          received?: boolean | null
           refunded_at?: string | null
           status?: string | null
           stripe_checkout_session_id?: string | null
           stripe_checkout_url?: string | null
           stripe_customer_id?: string | null
+          stripe_fee_cents?: number | null
           stripe_hosted_url?: string | null
           stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -5445,6 +5457,7 @@ export type Database = {
           service_type: string
           severity_level: string | null
           status: string
+          type: string | null
           updated_at: string
         }
         Insert: {
@@ -5471,6 +5484,7 @@ export type Database = {
           service_type: string
           severity_level?: string | null
           status?: string
+          type?: string | null
           updated_at?: string
         }
         Update: {
@@ -5497,6 +5511,7 @@ export type Database = {
           service_type?: string
           severity_level?: string | null
           status?: string
+          type?: string | null
           updated_at?: string
         }
         Relationships: [
