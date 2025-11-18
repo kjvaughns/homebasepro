@@ -147,185 +147,201 @@ export function SendAnnouncementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>Send Announcement</DialogTitle>
           <DialogDescription>
             Send a notification to all users or specific user types
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Important Update" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="body"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Message</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Your announcement message..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {field.value.length}/500 characters
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="target_audience"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target Audience</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <ScrollArea className="flex-1 px-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pb-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select audience" />
-                      </SelectTrigger>
+                      <Input placeholder="Important Update" {...field} disabled={isSubmitting} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="providers">Providers Only</SelectItem>
-                      <SelectItem value="homeowners">Homeowners Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Priority</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormField
+                control={form.control}
+                name="body"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Message</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
+                      <Textarea
+                        placeholder="Your announcement message..."
+                        className="min-h-[100px]"
+                        {...field}
+                        disabled={isSubmitting}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="send_push"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-4 min-h-[80px] cursor-pointer active:bg-accent/50 transition-colors"
-                  onClick={() => {
-                    const newValue = !field.value;
-                    field.onChange(newValue);
-                    console.log('🔔 Push toggle clicked:', newValue);
-                  }}
-                >
-                  <div className="space-y-0.5 flex-1 pointer-events-none">
-                    <FormLabel className="text-base flex items-center gap-2">
-                      <Bell className={`h-4 w-4 ${field.value ? 'text-primary' : 'text-muted-foreground'}`} />
-                      Send Push Notification
-                      {field.value && <span className="text-xs text-primary">(enabled)</span>}
-                    </FormLabel>
-                    <FormDescription>
-                      Also send as push notification to users' devices
+                    <FormDescription className={
+                      field.value.length > 450 ? 'text-destructive' :
+                      field.value.length > 400 ? 'text-warning' :
+                      'text-muted-foreground'
+                    }>
+                      {field.value.length}/500 characters
                     </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        field.onChange(checked);
-                        console.log('🔔 Push switch changed:', checked);
-                      }}
-                      className="pointer-events-auto"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="send_email"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-4 min-h-[80px] cursor-pointer active:bg-accent/50 transition-colors"
-                  onClick={() => {
-                    const newValue = !field.value;
-                    field.onChange(newValue);
-                    console.log('📧 Email toggle clicked:', newValue);
-                  }}
-                >
-                  <div className="space-y-0.5 flex-1 pointer-events-none">
-                    <FormLabel className="text-base flex items-center gap-2">
-                      <Mail className={`h-4 w-4 ${field.value ? 'text-primary' : 'text-muted-foreground'}`} />
-                      Send via Email
-                      {field.value && <span className="text-xs text-primary">(enabled)</span>}
-                    </FormLabel>
-                    <FormDescription>
-                      Send branded announcement emails to users' inboxes
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        field.onChange(checked);
-                        console.log('📧 Email switch changed:', checked);
-                      }}
-                      className="pointer-events-auto"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="target_audience"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Audience</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select audience" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="all">All Users</SelectItem>
+                        <SelectItem value="providers">Providers Only</SelectItem>
+                        <SelectItem value="homeowners">Homeowners Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send Announcement
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="send_push"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4 min-h-[80px] cursor-pointer active:bg-accent/50 transition-colors"
+                    onClick={() => {
+                      if (!isSubmitting) {
+                        const newValue = !field.value;
+                        field.onChange(newValue);
+                        console.log('🔔 Push toggle clicked:', newValue);
+                      }
+                    }}
+                  >
+                    <div className="space-y-0.5 flex-1 pointer-events-none">
+                      <FormLabel className="text-base flex items-center gap-2">
+                        <Bell className={`h-4 w-4 ${field.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                        Send Push Notification
+                        {field.value && <span className="text-xs text-primary">(enabled)</span>}
+                      </FormLabel>
+                      <FormDescription>
+                        Also send as push notification to users' devices
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          console.log('🔔 Push switch changed:', checked);
+                        }}
+                        disabled={isSubmitting}
+                        className="pointer-events-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="send_email"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4 min-h-[80px] cursor-pointer active:bg-accent/50 transition-colors"
+                    onClick={() => {
+                      if (!isSubmitting) {
+                        const newValue = !field.value;
+                        field.onChange(newValue);
+                        console.log('📧 Email toggle clicked:', newValue);
+                      }
+                    }}
+                  >
+                    <div className="space-y-0.5 flex-1 pointer-events-none">
+                      <FormLabel className="text-base flex items-center gap-2">
+                        <Mail className={`h-4 w-4 ${field.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                        Send via Email
+                        {field.value && <span className="text-xs text-primary">(enabled)</span>}
+                      </FormLabel>
+                      <FormDescription>
+                        Send branded announcement emails to users' inboxes
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          console.log('📧 Email switch changed:', checked);
+                        }}
+                        disabled={isSubmitting}
+                        className="pointer-events-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
+        </ScrollArea>
+
+        <DialogFooter className="sticky bottom-0 bg-background border-t px-6 py-4 mt-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={form.handleSubmit(handleFormSubmit)} 
+            disabled={isSubmitting}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Send Announcement
+          </Button>
+        </DialogFooter>
       </DialogContent>
 
       <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
