@@ -9,13 +9,16 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initializeIntercom = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Get current session (this will refresh if expired)
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (!user) {
+        if (!session?.user) {
           // Not authenticated, just boot Intercom without user data
           Intercom({ app_id: 'itubyguk' });
           return;
         }
+        
+        const user = session.user;
 
         // Fetch user profile
         const profileResult = await supabase
