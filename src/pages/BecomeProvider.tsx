@@ -9,6 +9,8 @@ import { Home, Briefcase, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import homebaseLogo from "@/assets/homebase-logo.png";
+import { SEO } from "@/components/SEO";
+import { createFAQSchema } from "@/utils/seo";
 
 const BecomeProvider = () => {
   const navigate = useNavigate();
@@ -105,6 +107,26 @@ const BecomeProvider = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+      <SEO
+        title="Grow Your Service Business with HomeBase | Join as a Provider"
+        description="Join 500+ service providers using HomeBase. Get more clients, automate scheduling, and manage payments. Free trial available. HVAC, plumbing, landscaping, and more."
+        keywords="service provider software, home service business, HVAC software, plumbing software, contractor management"
+        canonical="https://homebaseproapp.com/become-provider"
+        structuredData={createFAQSchema([
+          {
+            question: "Who can become a HomeBase provider?",
+            answer: "Any licensed home service professional including HVAC technicians, plumbers, electricians, landscapers, pool service providers, and more."
+          },
+          {
+            question: "How do I get paid through HomeBase?",
+            answer: "Payments are processed securely through Stripe. Funds are deposited directly to your bank account within 2-3 business days."
+          },
+          {
+            question: "Is there a contract or commitment?",
+            answer: "No long-term contracts required. Start with our free plan and upgrade when you're ready. Cancel anytime."
+          }
+        ])}
+      />
       <Card className="w-full max-w-2xl p-8">
         <div className="flex items-center justify-center gap-2 mb-8">
           <img src={homebaseLogo} alt="HomeBase" className="h-8 w-8" />

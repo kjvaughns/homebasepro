@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import homebaseLogo from "@/assets/homebase-logo.png";
+import { SEO } from "@/components/SEO";
+import { createFAQSchema } from "@/utils/seo";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -49,6 +51,26 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Pricing - HomeBase Plans for Homeowners & Providers"
+        description="Transparent pricing for homeowners and service providers. Free for homeowners. Providers start at $49/month. No hidden fees. 50% off during beta."
+        keywords="home service pricing, provider plans, homeowner free app, service management pricing"
+        canonical="https://homebaseproapp.com/pricing"
+        structuredData={createFAQSchema([
+          {
+            question: "Is HomeBase free for homeowners?",
+            answer: "Yes! HomeBase is 100% free for homeowners. Connect with providers, manage your home, and book services at no cost."
+          },
+          {
+            question: "What's included in the free provider plan?",
+            answer: "Free plan includes up to 5 completed jobs per month with an 8% transaction fee, basic calendar, booking pages, and client management."
+          },
+          {
+            question: "Can I switch plans later?",
+            answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately."
+          }
+        ])}
+      />
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
