@@ -164,12 +164,19 @@ serve(async (req) => {
     // Use centralized fee calculation
     const { getPlanFeePercent } = await import('../_shared/fees.ts');
     const platformFeePercent = org?.transaction_fee_pct ?? getPlanFeePercent(org?.plan);
-    const platformFeeAmount = Math.round(total * 100 * platformFeePercent); // Convert to cents
+    
+    // Calculate all fees
+    const amountCents = Math.round(total * 100);
+    const stripeFee = Math.round(amountCents * 0.029) + 30; // 2.9% + $0.30
+    const platformFeeAmount = Math.round(amountCents * platformFeePercent);
+    const netToProvider = amountCents - stripeFee - platformFeeAmount;
 
-    console.log('💰 Platform fee calculation:', {
-      total,
+    console.log('💰 Fee breakdown:', {
+      total: `$${total.toFixed(2)}`,
+      stripeFee: `$${(stripeFee / 100).toFixed(2)}`,
       platformFeePercent: (platformFeePercent * 100).toFixed(1) + '%',
-      platformFeeAmount
+      platformFeeAmount: `$${(platformFeeAmount / 100).toFixed(2)}`,
+      netToProvider: `$${(netToProvider / 100).toFixed(2)}`
     });
 
     // Create payment link with all line items, application fee, and 30-day expiration
@@ -204,7 +211,7 @@ serve(async (req) => {
     console.log('✅ Payment link created:', paymentLink.id);
     console.log('🔗 Payment URL:', paymentLink.url);
 
-    // Update database with Stripe payment link data and expiration
+    // Update database with Stripe payment link data, expiration, and fee breakdown
     const expiresAtDate = new Date(expiresAt * 1000).toISOString();
     
     await supabaseClient
@@ -214,7 +221,10 @@ serve(async (req) => {
         stripe_hosted_url: paymentLink.url,
         stripe_customer_id: customer.id,
         email_status: 'pending',
-        expires_at: expiresAtDate
+        expires_at: expiresAtDate,
+        stripe_fee_cents: stripeFee,
+        platform_fee_cents: platformFeeAmount,
+        net_to_provider_cents: netToProvider
       })
       .eq('id', invoiceId);
 
