@@ -117,9 +117,23 @@ serve(async (req) => {
           Total: $${(finalPrice || booking.estimated_price_low || 0).toFixed(2)}
         </div>
 
-        <div class="section" style="text-align: center; color: #666; font-size: 0.9em; margin-top: 40px;">
+        <div class="section" style="text-align: center; color: #666; font-size: 0.9em; margin-top: 20px;">
           <p>Thank you for your business!</p>
-          <p>Powered by HomeBase</p>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb; text-align: center;">
+          <p style="color: #6b7280; font-size: 15px; line-height: 1.6; margin-bottom: 15px;">
+            💡 <strong style="color: #1f2937;">Want to manage all your home maintenance in one place?</strong>
+          </p>
+          <p style="margin-bottom: 20px;">
+            <a href="https://homebaseproapp.com" 
+               style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
+              Try HomeBase
+            </a>
+          </p>
+          <p style="color: #9ca3af; font-size: 13px;">
+            Track appointments, manage providers, and never miss maintenance reminders.
+          </p>
         </div>
       </body>
       </html>
