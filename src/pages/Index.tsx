@@ -48,7 +48,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="light min-h-screen bg-background">
       <SEO
         title="HomeBase - Smart Home Management & Service Provider Platform"
         description="Connect with verified service providers or grow your business with HomeBase. AI-powered scheduling, maintenance reminders, and automated operations. Free for homeowners."
