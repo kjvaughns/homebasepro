@@ -59,6 +59,13 @@ const statusConfig: Record<string, {
   label: string;
   actions: Array<{ label: string; action: string; icon: any; variant?: string }>;
 }> = {
+  pending: {
+    color: "bg-muted text-muted-foreground",
+    label: "Pending",
+    actions: [
+      { label: "Confirm", action: "confirmed", icon: CheckCircle }
+    ]
+  },
   lead: {
     color: "bg-muted text-muted-foreground",
     label: "Lead",
@@ -71,7 +78,7 @@ const statusConfig: Record<string, {
     color: "bg-blue-500/20 text-blue-700",
     label: "Confirmed",
     actions: [
-      { label: "Start Job", action: "started", icon: PlayCircle },
+      { label: "En Route", action: "en_route", icon: MapPin },
       { label: "Details", action: "view", icon: FileText, variant: "outline" }
     ]
   },
@@ -123,7 +130,7 @@ const statusConfig: Record<string, {
     color: "bg-secondary text-secondary-foreground",
     label: "In Progress",
     actions: [
-      { label: "Complete", action: "complete", icon: CheckCircle }
+      { label: "Complete", action: "completed", icon: CheckCircle }
     ]
   },
   completed: {

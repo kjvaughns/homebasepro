@@ -263,10 +263,9 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
     
     showSpinner();
     try {
-      if (action === "start") {
-        await handleStatusUpdate(jobId, "start");
-      } else if (action === "complete") {
-        await handleStatusUpdate(jobId, "complete");
+      // Route all status change actions through handleStatusUpdate
+      if (["start", "started", "en_route", "complete", "completed"].includes(action)) {
+        await handleStatusUpdate(jobId, action);
       } else if (action === "auto_invoice") {
         await handleAutoInvoice(jobId);
       }
@@ -340,21 +339,65 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
     try {
       const actionToStatusMap: Record<string, string> = {
         'start': 'in_progress',
+        'started': 'in_progress',
+        'en_route': 'en_route',
         'complete': 'completed',
+        'completed': 'completed',
       };
       
       const newStatus = actionToStatusMap[action] || action;
       
-      // Direct database update
+      // Try to get geolocation for event logging
+      let coords = null;
+      try {
+        if (navigator.geolocation) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          });
+          coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+        }
+      } catch (geoError) {
+        console.log('Geolocation not available or denied');
+      }
+      
+      // Update booking status and location if available
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (coords) {
+        updateData.lat = coords.lat;
+        updateData.lng = coords.lng;
+      }
+      
       const { error } = await supabase
         .from('bookings')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', jobId);
 
       if (error) throw error;
+      
+      // Log job event
+      const eventType = action === 'started' || action === 'start' ? 'started' 
+                      : action === 'en_route' ? 'en_route'
+                      : action === 'complete' || action === 'completed' ? 'completed'
+                      : action;
+      
+      await supabase
+        .from('job_events' as any)
+        .insert({
+          job_id: jobId,
+          event_type: eventType,
+          payload: {
+            at: new Date().toISOString(),
+            source: 'provider',
+            coords: coords || undefined
+          }
+        });
       
       // Send client notification
       try {
