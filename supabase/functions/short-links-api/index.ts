@@ -70,7 +70,10 @@ serve(async (req) => {
 
       // Validate target URL
       const targetUrl = new URL(target_url);
-      if (!ALLOWED_DOMAINS.some(domain => targetUrl.hostname === domain)) {
+      const isAllowedDomain = ALLOWED_DOMAINS.some(domain => targetUrl.hostname === domain) ||
+                              targetUrl.hostname.endsWith('.lovableproject.com');
+      
+      if (!isAllowedDomain) {
         return new Response(
           JSON.stringify({ error: 'Invalid target domain' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
