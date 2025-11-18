@@ -2228,6 +2228,41 @@ export type Database = {
           },
         ]
       }
+      job_completion_tracking: {
+        Row: {
+          completed_jobs_count: number | null
+          created_at: string | null
+          id: string
+          month_year: string
+          provider_org_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_jobs_count?: number | null
+          created_at?: string | null
+          id?: string
+          month_year: string
+          provider_org_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_jobs_count?: number | null
+          created_at?: string | null
+          id?: string
+          month_year?: string
+          provider_org_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_completion_tracking_provider_org_id_fkey"
+            columns: ["provider_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_events: {
         Row: {
           booking_id: string
@@ -4413,8 +4448,12 @@ export type Database = {
       }
       provider_subscriptions: {
         Row: {
+          applied_coupon_id: string | null
+          beta_applied: boolean | null
           created_at: string | null
           current_period_end: string | null
+          discount_amount: number | null
+          discount_percent: number | null
           id: string
           plan: string
           provider_id: string | null
@@ -4425,8 +4464,12 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          applied_coupon_id?: string | null
+          beta_applied?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
           id?: string
           plan?: string
           provider_id?: string | null
@@ -4437,8 +4480,12 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          applied_coupon_id?: string | null
+          beta_applied?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
           id?: string
           plan?: string
           provider_id?: string | null
@@ -6671,6 +6718,10 @@ export type Database = {
         Returns: Json
       }
       can_accept_invite: { Args: { _user_id: string }; Returns: boolean }
+      can_complete_job: {
+        Args: { p_provider_org_id: string }
+        Returns: boolean
+      }
       check_admin_invite: {
         Args: { invite_email: string }
         Returns: {
@@ -6714,6 +6765,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_job_completion: {
+        Args: { p_provider_org_id: string }
+        Returns: number
       }
       increment_referral_count: {
         Args: { ref_code: string }
