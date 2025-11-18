@@ -12,8 +12,10 @@ import { PaymentsSection } from "@/components/provider/settings/PaymentsSection"
 import { IntegrationsSection } from "@/components/provider/settings/IntegrationsSection";
 import { PreferencesSection } from "@/components/provider/settings/PreferencesSection";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GlassCard } from "@/components/ui/glass/GlassCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface Organization {
   id: string;
@@ -270,9 +272,12 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6 pb-24">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Manage your business profile and platform settings</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Settings</h1>
+            <p className="text-muted-foreground">Manage your business profile and platform settings</p>
+          </div>
+          <ThemeToggle />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

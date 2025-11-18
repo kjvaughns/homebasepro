@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
 import { registerServiceWorker } from "@/utils/serviceWorker";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { InstallPromptDialog } from "@/components/pwa/InstallPromptDialog";
@@ -312,10 +313,11 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-          <BrowserRouter>
-            <IntercomProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Toaster />
+          <Sonner />
+            <BrowserRouter>
+              <IntercomProvider>
               <ErrorBoundary>
                 <Routes>
             {/* Public routes */}
@@ -542,6 +544,7 @@ const App = () => {
               />
             </IntercomProvider>
           </BrowserRouter>
+        </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

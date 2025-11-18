@@ -233,15 +233,39 @@ export default function OnboardingProvider() {
 
       if (orgError) throw orgError;
 
+      // Insert services into services table (not provider_services)
       if (formData.services.length > 0) {
-        await supabase.from('provider_services').insert(
+        await supabase.from('services').insert(
           formData.services.map(s => ({
             organization_id: org.id,
             name: s.name,
             description: s.description,
-            base_price_cents: s.base_price_cents,
-            duration_minutes: s.duration_minutes,
-            ai_generated: true
+            category: finalTradeType || 'general',
+            pricing_type: 'flat',
+            default_price: s.base_price_cents,
+            price_min: null,
+            price_max: null,
+            estimated_duration_minutes: s.duration_minutes,
+            duration_min_minutes: null,
+            duration_max_minutes: null,
+            is_active: true,
+            is_recurring: false,
+          }))
+        );
+      }
+
+      // Insert client intake questions
+      if (formData.clientQuestions.length > 0) {
+        await supabase.from('client_intake_questions').insert(
+          formData.clientQuestions.map((q, index) => ({
+            organization_id: org.id,
+            question_text: q.text,
+            question_type: q.type,
+            options: q.options ? { options: q.options } : null,
+            complexity_weight: q.complexity || 1,
+            is_required: q.required || false,
+            sort_order: index,
+            is_active: true,
           }))
         );
       }
@@ -311,19 +335,26 @@ export default function OnboardingProvider() {
           
           console.log('✅ Organization created:', org.id);
 
-          // Create services if any
-          if (formData.services.length > 0) {
-            await supabase.from('provider_services').insert(
-              formData.services.map(s => ({
-                organization_id: org.id,
-                name: s.name,
-                description: s.description,
-                base_price_cents: s.base_price_cents,
-                duration_minutes: s.duration_minutes,
-                ai_generated: true
-              }))
-            );
-          }
+            // Create services if any
+            if (formData.services.length > 0) {
+              await supabase.from('services').insert(
+                formData.services.map(s => ({
+                  organization_id: org.id,
+                  name: s.name,
+                  description: s.description,
+                  category: finalTradeType || 'general',
+                  pricing_type: 'flat',
+                  default_price: s.base_price_cents,
+                  price_min: null,
+                  price_max: null,
+                  estimated_duration_minutes: s.duration_minutes,
+                  duration_min_minutes: null,
+                  duration_max_minutes: null,
+                  is_active: true,
+                  is_recurring: false,
+                }))
+              );
+            }
 
           // Update profile with onboarding progress
           await supabase.from('profiles').update({
