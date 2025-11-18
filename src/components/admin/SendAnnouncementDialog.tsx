@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -30,8 +31,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, Bell, Mail } from "lucide-react";
 import {
   AlertDialog,
@@ -66,7 +68,6 @@ export function SendAnnouncementDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
-  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -121,10 +122,7 @@ export function SendAnnouncementDialog({
         ? ` (${data.emails_sent} emails sent${data.emails_failed ? `, ${data.emails_failed} failed` : ''})` 
         : '';
 
-      toast({
-        title: "Announcement sent",
-        description: `Sent to ${data.recipients} users${emailStats}`,
-      });
+      toast.success(`Announcement sent to ${data.recipients} users${emailStats}`);
 
       form.reset();
       setPendingValues(null);
