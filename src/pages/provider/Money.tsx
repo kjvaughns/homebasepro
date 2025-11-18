@@ -224,10 +224,49 @@ export default function Money() {
           </TabsList>
 
           <TabsContent value="owed" className="space-y-4">
-            {invoices.length === 0 ? <Card><CardContent className="pt-6 text-center text-muted-foreground">No invoices yet. Create your first invoice to get started!</CardContent></Card> : 
-            <div className="space-y-3">{invoices.filter(inv => inv.status !== 'paid').map((invoice: any) => (<Card key={invoice.id} className="hover:bg-accent/5 transition-colors"><CardContent className="p-4"><div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div className="space-y-1 flex-1"><div className="flex items-center gap-2"><h3 className="font-semibold">Invoice #{invoice.invoice_number || invoice.id.slice(0,8)}</h3><Badge variant={invoice.status === 'overdue' ? 'destructive' : 'secondary'}>{invoice.status}</Badge></div><p className="text-sm text-muted-foreground">{invoice.client_name}</p><p className="text-xs text-muted-foreground">Due: {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</p></div><div className="flex flex-col items-end gap-2 w-full sm:w-auto"><p className="text-xl font-bold">${((invoice.amount || 0) / 100).toFixed(2)}</p><div className="flex gap-2 w-full sm:w-auto">{invoice.stripe_hosted_url && (<Button size="sm" variant="outline" onClick={() => copyToClipboard(invoice.stripe_hosted_url, 'Payment link')} className="flex-1 sm:flex-none"><Copy className="h-4 w-4 mr-1" />Copy Link</Button>)}<Button size="sm" variant="default" onClick={async () => {const{error}=await supabase.functions.invoke('mark-invoice-paid',{body:{invoiceId:invoice.id}});if(error){toast({title:"Error",description:error.message,variant:"destructive"});}else{toast({title:"Payment Received",description:"Invoice marked as paid. Revenue updated."});loadData();}}}><DollarSign className="h-4 w-4 mr-1"/>Mark Paid</Button></div></div></div></CardContent></Card>))}</div>}
-              invoices.map(inv => <Card key={inv.id} className="hover:shadow-md transition-shadow"><CardContent className="pt-6"><div className="flex items-start justify-between mb-4"><div className="space-y-1"><p className="font-medium">{inv.client?.name || 'Unknown Client'}</p><p className="text-sm text-muted-foreground">Invoice #{inv.id.slice(0, 8)}</p><p className="text-sm text-muted-foreground">Due: {new Date(inv.due_date).toLocaleDateString()}</p></div><div className="text-right space-y-1"><p className="text-2xl font-bold">{formatCurrency(inv.amount)}</p><Badge variant={inv.status === 'paid' ? 'default' : inv.status === 'pending' ? 'secondary' : 'destructive'}>{inv.status}</Badge></div></div>{inv.stripe_payment_link && <div className="flex gap-2 flex-wrap"><Button size="sm" variant="outline" onClick={() => copyToClipboard(inv.stripe_payment_link, 'Payment link')}><Copy className="h-3 w-3 mr-1" />Copy Link</Button>{inv.status !== 'paid' && <Button size="sm" variant="outline" onClick={() => toast({ title: "Reminder sent", description: "Payment reminder sent to client" })}><Send className="h-3 w-3 mr-1" />Send Reminder</Button>}</div>}</CardContent></Card>)
-            }
+            {invoices.filter(inv => inv.status !== 'paid').length === 0 ? (
+              <Card><CardContent className="pt-6 text-center text-muted-foreground">No unpaid invoices</CardContent></Card>
+            ) : (
+              <div className="space-y-3">
+                {invoices.filter(inv => inv.status !== 'paid').map((invoice: any) => (
+                  <Card key={invoice.id} className="hover:bg-accent/5 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">Invoice #{invoice.invoice_number || invoice.id.slice(0,8)}</h3>
+                            <Badge variant={invoice.status === 'overdue' ? 'destructive' : 'secondary'}>{invoice.status}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{invoice.client_name}</p>
+                          <p className="text-xs text-muted-foreground">Due: {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                          <p className="text-xl font-bold">${((invoice.amount || 0) / 100).toFixed(2)}</p>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            {invoice.stripe_hosted_url && (
+                              <Button size="sm" variant="outline" onClick={() => copyToClipboard(invoice.stripe_hosted_url, 'Payment link')} className="flex-1 sm:flex-none">
+                                <Copy className="h-4 w-4 mr-1" />Copy Link
+                              </Button>
+                            )}
+                            <Button size="sm" variant="default" onClick={async () => {
+                              const {error} = await supabase.functions.invoke('mark-invoice-paid', {body: {invoiceId: invoice.id}});
+                              if (error) {
+                                toast({title: "Error", description: error.message, variant: "destructive"});
+                              } else {
+                                toast({title: "Payment Received", description: "Invoice marked as paid. Revenue updated."});
+                                loadData();
+                              }
+                            }}>
+                              <DollarSign className="h-4 w-4 mr-1"/>Mark Paid
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="received" className="space-y-4">
