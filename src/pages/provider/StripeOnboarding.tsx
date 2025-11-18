@@ -157,58 +157,58 @@ export default function StripeOnboarding() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="max-w-md w-full">
-        <CardHeader className="text-center">
+      <GlassCard className="max-w-md w-full p-8">
+        <div className="text-center space-y-4">
           {status === 'checking' && (
             <>
               <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-              <CardTitle>Checking Status</CardTitle>
-              <CardDescription>Please wait while we verify your account...</CardDescription>
+              <h2 className="text-2xl font-bold">Checking Status</h2>
+              <p className="text-muted-foreground">Please wait while we verify your account...</p>
             </>
           )}
 
           {status === 'success' && (
             <>
               <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-emerald-600" />
-              <CardTitle>All Set!</CardTitle>
-              <CardDescription>
+              <h2 className="text-2xl font-bold">All Set!</h2>
+              <p className="text-muted-foreground">
                 Your Stripe account is connected and ready to accept payments
-              </CardDescription>
+              </p>
             </>
           )}
 
           {status === 'not-started' && (
             <>
               <XCircle className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-              <CardTitle>Stripe Connect Not Setup</CardTitle>
-              <CardDescription>
+              <h2 className="text-2xl font-bold">Stripe Connect Not Setup</h2>
+              <p className="text-muted-foreground">
                 You haven't started setting up Stripe Connect yet. You can do this later from Settings when you're ready to accept payments.
-              </CardDescription>
+              </p>
             </>
           )}
 
           {status === 'incomplete' && (
             <>
               <XCircle className="h-12 w-12 mx-auto mb-4 text-amber-600" />
-              <CardTitle>Onboarding Incomplete</CardTitle>
-              <CardDescription>
+              <h2 className="text-2xl font-bold">Onboarding Incomplete</h2>
+              <p className="text-muted-foreground">
                 You need to complete a few more steps to activate payments
-              </CardDescription>
+              </p>
             </>
           )}
 
           {status === 'error' && (
             <>
               <XCircle className="h-12 w-12 mx-auto mb-4 text-red-600" />
-              <CardTitle>Something Went Wrong</CardTitle>
-              <CardDescription>
+              <h2 className="text-2xl font-bold">Something Went Wrong</h2>
+              <p className="text-muted-foreground">
                 {errorMessage || 'We encountered an error checking your account status'}
-              </CardDescription>
+              </p>
             </>
           )}
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-4">
+        <div className="space-y-4 mt-6">
           {status === 'success' && (
             <div className="space-y-3">
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-lg">
@@ -240,7 +240,7 @@ export default function StripeOnboarding() {
               <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <h4 className="font-semibold text-sm mb-2">Set Up Payments Later</h4>
                 <p className="text-sm text-muted-foreground">
-                  You can access your dashboard now and set up Stripe Connect from Settings {'>'}Payments when you're ready to accept payments from clients.
+                  You can access your dashboard now and set up Stripe Connect from Settings {'>'} Payments when you're ready to accept payments from clients.
                 </p>
               </div>
 
@@ -249,8 +249,12 @@ export default function StripeOnboarding() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
 
-              <Button onClick={() => navigate('/provider/settings?tab=payments')} variant="outline" className="w-full">
-                Set Up Stripe Connect Now
+              <Button
+                onClick={() => navigate('/provider/settings')}
+                variant="outline"
+                className="w-full"
+              >
+                Set Up in Settings
               </Button>
             </div>
           )}
@@ -258,12 +262,10 @@ export default function StripeOnboarding() {
           {status === 'incomplete' && (
             <div className="space-y-3">
               <div className="p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2">Required Information</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Business details</li>
-                  <li>• Bank account information</li>
-                  <li>• Identity verification</li>
-                </ul>
+                <h4 className="font-semibold text-sm mb-2">Complete Your Setup</h4>
+                <p className="text-sm text-muted-foreground">
+                  You're almost done! Click below to continue where you left off.
+                </p>
               </div>
 
               <Button onClick={handleContinueOnboarding} className="w-full" size="lg">
@@ -271,25 +273,40 @@ export default function StripeOnboarding() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
 
-              <Button onClick={() => navigate('/provider/settings')} variant="outline" className="w-full">
-                Back to Settings
+              <Button
+                onClick={() => navigate('/provider/dashboard')}
+                variant="outline"
+                className="w-full"
+              >
+                Do This Later
               </Button>
             </div>
           )}
 
           {status === 'error' && (
             <div className="space-y-3">
-              <Button onClick={checkOnboardingStatus} variant="outline" className="w-full">
+              <Button
+                onClick={() => {
+                  setStatus('checking');
+                  checkOnboardingStatus();
+                }}
+                className="w-full"
+                size="lg"
+              >
                 Try Again
               </Button>
 
-              <Button onClick={() => navigate('/provider/settings')} variant="ghost" className="w-full">
-                Back to Settings
+              <Button
+                onClick={() => navigate('/provider/settings')}
+                variant="outline"
+                className="w-full"
+              >
+                Go to Settings
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
     </div>
   );
 }
