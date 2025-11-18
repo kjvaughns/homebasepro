@@ -13,7 +13,9 @@ const RESERVED_SLUGS = [
 
 const ALLOWED_DOMAINS = [
   'app.homebaseproapp.com',
-  'localhost:8080'
+  'localhost:8080',
+  'localhost:5173',
+  'localhost:3000'
 ];
 
 serve(async (req) => {
