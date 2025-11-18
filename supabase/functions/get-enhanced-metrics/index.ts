@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0?target=deno';
 import { handleCorsPrefilight, successResponse, errorResponse } from "../_shared/http.ts";
 import { stripeGet } from "../_shared/stripe-fetch.ts";
 
