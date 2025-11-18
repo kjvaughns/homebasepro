@@ -247,22 +247,32 @@ export default function Money() {
               <h1 className="text-3xl font-bold">Money</h1>
               <p className="text-xs text-muted-foreground mt-1">Synced {formatDistanceToNow(lastSyncTime, { addSuffix: true })}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {stripeConnected === false && (
-                <Button
-                  onClick={handleConnectStripe}
-                  disabled={connectingStripe}
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {connectingStripe ? "Connecting..." : "Connect Stripe"}
-                </Button>
-              )}
-              <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} className="rounded-full">
-                <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
+            <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} className="rounded-full">
+              <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
+          
+          {stripeConnected === false && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">Connect Stripe to Get Paid</h3>
+                    <p className="text-sm text-muted-foreground">Set up your payment account to start accepting payments from clients</p>
+                  </div>
+                  <Button
+                    onClick={handleConnectStripe}
+                    disabled={connectingStripe}
+                    size="lg"
+                    className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+                  >
+                    <Link2 className="h-4 w-4 mr-2" />
+                    {connectingStripe ? "Connecting..." : "Connect Stripe Account"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           <DropdownMenu><DropdownMenuTrigger asChild><Button size="lg" className="w-full md:w-auto"><Plus className="h-5 w-5 mr-2" />New Invoice / Payment</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56"><DropdownMenuItem onClick={() => setShowInvoiceModal(true)}><Receipt className="h-4 w-4 mr-2" />Send Invoice</DropdownMenuItem><DropdownMenuItem onClick={() => setShowQuickPaymentModal(true)}><Link2 className="h-4 w-4 mr-2" />Create Payment Link</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
         </div>
@@ -297,7 +307,7 @@ export default function Money() {
                             <h3 className="font-semibold">Invoice #{invoice.invoice_number || invoice.id.slice(0,8)}</h3>
                             <Badge variant={invoice.status === 'overdue' ? 'destructive' : 'secondary'}>{invoice.status}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">{invoice.client_name}</p>
+                          <p className="text-sm text-muted-foreground">{invoice.client?.name || 'Unknown Client'}</p>
                           <p className="text-xs text-muted-foreground">Due: {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</p>
                         </div>
                         <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
@@ -308,17 +318,19 @@ export default function Money() {
                                 <Copy className="h-4 w-4 mr-1" />Copy Link
                               </Button>
                             )}
-                            <Button size="sm" variant="default" onClick={async () => {
-                              const {error} = await supabase.functions.invoke('mark-invoice-paid', {body: {invoiceId: invoice.id}});
-                              if (error) {
-                                toast({title: "Error", description: error.message, variant: "destructive"});
-                              } else {
-                                toast({title: "Payment Received", description: "Invoice marked as paid. Revenue updated."});
-                                loadData();
-                              }
-                            }}>
-                              <DollarSign className="h-4 w-4 mr-1"/>Mark Paid
-                            </Button>
+                            {!invoice.stripe_payment_intent_id && (
+                              <Button size="sm" variant="default" onClick={async () => {
+                                const {error} = await supabase.functions.invoke('mark-invoice-paid', {body: {invoiceId: invoice.id}});
+                                if (error) {
+                                  toast({title: "Error", description: error.message, variant: "destructive"});
+                                } else {
+                                  toast({title: "Payment Received", description: "Invoice marked as paid. Revenue updated."});
+                                  loadData();
+                                }
+                              }}>
+                                <DollarSign className="h-4 w-4 mr-1"/>Mark Paid
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>

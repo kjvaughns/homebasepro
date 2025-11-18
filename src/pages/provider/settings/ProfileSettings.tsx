@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
+import { Eye, Sparkles } from "lucide-react";
 
 interface Organization {
   id: string;
@@ -168,6 +169,20 @@ export default function ProfileSettings() {
       <ChangePasswordDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog} />
       
       <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Profile Settings</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage your business profile and account</p>
+          </div>
+          <Button
+            onClick={handlePreviewProfile}
+            variant="outline"
+            size="sm"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview Profile
+          </Button>
+        </div>
         {profile && (
           <Card>
             <CardHeader>
@@ -203,7 +218,19 @@ export default function ProfileSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">Description</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRegenerateDescription}
+                  disabled={regenerating}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {regenerating ? 'Generating...' : 'Regenerate with AI'}
+                </Button>
+              </div>
               <Textarea
                 id="description"
                 value={organization.description || ""}
