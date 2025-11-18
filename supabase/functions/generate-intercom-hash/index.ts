@@ -4,14 +4,14 @@ import { handleCorsPrefilight, successResponse, errorResponse } from '../_shared
 
 const INTERCOM_IDENTITY_VERIFICATION_SECRET = Deno.env.get('INTERCOM_IDENTITY_VERIFICATION_SECRET');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 Deno.serve(async (req) => {
   const corsResponse = handleCorsPrefilight(req);
   if (corsResponse) return corsResponse;
 
   try {
-    // Get authenticated user
+    // Get authenticated user using the JWT from the request
     const authHeader = req.headers.get('Authorization');
     console.log('Auth header present:', !!authHeader);
     
@@ -19,15 +19,14 @@ Deno.serve(async (req) => {
       return errorResponse('NO_AUTH', 'Authorization header required', 401);
     }
 
-    // Create Supabase client with auth header in global config
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        headers: { Authorization: authHeader }
-      }
-    });
-
-    // Call getUser without parameters - it will use the Authorization header
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Create client with service role key to verify the user token
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Extract the JWT token
+    const authToken = authHeader.replace('Bearer ', '');
+    
+    // Verify the user with the service role client
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(authToken);
     
     if (authError || !user) {
       console.error('Auth error details:', authError);
@@ -37,7 +36,7 @@ Deno.serve(async (req) => {
     console.log('User authenticated successfully:', user.id);
 
     // Get user profile data
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('user_type, full_name')
       .eq('user_id', user.id)

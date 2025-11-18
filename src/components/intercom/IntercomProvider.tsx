@@ -69,11 +69,7 @@ export function IntercomProvider({ children }: { children: React.ReactNode }) {
         // Get identity verification JWT token
         let userJwt: string | undefined;
         try {
-          const { data: tokenData } = await supabase.functions.invoke('generate-intercom-hash', {
-            headers: {
-              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-            }
-          });
+          const { data: tokenData } = await supabase.functions.invoke('generate-intercom-hash');
           if (tokenData?.token) {
             userJwt = tokenData.token;
           }
