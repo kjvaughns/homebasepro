@@ -1,5 +1,5 @@
 import { create } from 'https://deno.land/x/djwt@v3.0.2/mod.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.74.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0?target=deno';
 import { handleCorsPrefilight, successResponse, errorResponse } from '../_shared/http.ts';
 
 const INTERCOM_IDENTITY_VERIFICATION_SECRET = Deno.env.get('INTERCOM_IDENTITY_VERIFICATION_SECRET');
