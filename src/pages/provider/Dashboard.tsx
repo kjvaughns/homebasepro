@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard } from "@/components/ui/glass/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SmartToDos } from "@/components/provider/SmartToDos";
 import { EnhancedMoneyCard } from "@/components/provider/EnhancedMoneyCard";
 import { AIInsightCard } from "@/components/provider/AIInsightCard";
-import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist";
 import { SetupChecklist } from "@/components/provider/SetupChecklist";
 import { AIChatModal } from "@/components/ai/AIChatModal";
 import { 
@@ -180,7 +180,7 @@ export default function ProviderDashboard() {
 
             <div className="space-y-6">
               {/* 🎯 Section 1: TODAY'S PRIORITIES */}
-              <Card>
+              <GlassCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     🎯 Today's Priorities
@@ -222,13 +222,13 @@ export default function ProviderDashboard() {
                   </button>
 
                 </CardContent>
-              </Card>
+              </GlassCard>
 
               {/* 💰 Section 2: THIS WEEK'S MONEY */}
               <EnhancedMoneyCard />
 
               {/* 📅 Section 3: UPCOMING SCHEDULE */}
-              <Card>
+              <GlassCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     📅 Upcoming Schedule
@@ -271,7 +271,7 @@ export default function ProviderDashboard() {
                     </Button>
                   </div>
                 </CardContent>
-              </Card>
+              </GlassCard>
 
               {/* Smart To-Dos - Collapsible */}
               <SmartToDos />
@@ -285,8 +285,7 @@ export default function ProviderDashboard() {
                 onAction={() => setShowAIChat(true)}
               />
 
-              {!hasAnyData && <OnboardingChecklist />}
-              {hasAnyData && <SetupChecklist />}
+              <SetupChecklist />
             </div>
           </div>
 
