@@ -17,14 +17,15 @@ Deno.serve(async (req) => {
       return errorResponse('NO_AUTH', 'Authorization header required', 401);
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        headers: { Authorization: authHeader }
-      }
-    });
+    // Extract token from Bearer header
+    const authToken = authHeader.replace('Bearer ', '');
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Pass token explicitly to getUser
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authToken);
     if (authError || !user) {
+      console.error('Auth error:', authError);
       return errorResponse('AUTH_ERROR', 'Invalid authentication', 401);
     }
 
