@@ -115,7 +115,7 @@ export default function TechnicianHome() {
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
-                onClick={() => navigate(`/provider/jobs/${nextJob.id}`)}
+                onClick={() => navigate(`/provider/schedule?job=${nextJob.id}`)}
               >
                 View Details
               </Button>
@@ -153,7 +153,7 @@ export default function TechnicianHome() {
             <Button
               variant="link"
               className="p-0 h-auto"
-              onClick={() => navigate("/provider/my-jobs")}
+              onClick={() => navigate("/provider/schedule")}
             >
               View All
             </Button>
@@ -212,7 +212,7 @@ export default function TechnicianHome() {
           <Button
             variant="outline"
             className="justify-start"
-            onClick={() => navigate("/provider/my-jobs")}
+            onClick={() => navigate("/provider/schedule")}
           >
             <Calendar className="mr-2 h-4 w-4" />
             View Schedule

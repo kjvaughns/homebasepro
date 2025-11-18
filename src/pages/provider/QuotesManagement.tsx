@@ -121,7 +121,7 @@ export default function QuotesManagement() {
             <Button 
               size="sm" 
               variant="outline"
-              onClick={() => navigate(`/provider/jobs`)}
+              onClick={() => navigate(`/provider/schedule`)}
               className="flex-1"
             >
               View Details
@@ -129,7 +129,7 @@ export default function QuotesManagement() {
             {quote.status === 'accepted' && quote.bookings && quote.bookings.length > 0 && (
               <Button 
                 size="sm"
-                onClick={() => navigate('/provider/jobs')}
+                onClick={() => navigate('/provider/schedule')}
                 className="flex-1"
               >
                 Go to Job

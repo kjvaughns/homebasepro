@@ -36,7 +36,7 @@ export function DailySnapshotCard({
         <div className="grid grid-cols-2 gap-3">
           {/* Today's Jobs */}
           <button
-            onClick={() => navigate('/provider/jobs?filter=today')}
+            onClick={() => navigate('/provider/schedule?filter=today')}
             className="flex flex-col gap-2 p-3 rounded-xl bg-background/50 border border-border/50 hover:bg-accent/50 transition-colors text-left"
           >
             <div className="flex items-center gap-2">

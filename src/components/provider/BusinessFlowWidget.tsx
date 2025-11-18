@@ -72,7 +72,7 @@ export function BusinessFlowWidget() {
       icon: Briefcase,
       label: "Create Job",
       count: stats.jobs,
-      action: () => navigate("/provider/jobs"),
+      action: () => navigate("/provider/schedule"),
     },
     {
       icon: FileText,

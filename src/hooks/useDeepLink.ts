@@ -97,7 +97,7 @@ export function useDeepLinkRouter() {
     // Job: homebase://job/:id
     registerDeepLink('job/:id', (params) => {
       trackDeepLinkEvent(`job/${params.id}`, params.source, params.campaign);
-      navigate(`/provider/jobs/${params.id}`);
+      navigate(`/provider/schedule?job=${params.id}`);
     });
 
     // Payment: homebase://payment/:id

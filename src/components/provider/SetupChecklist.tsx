@@ -70,7 +70,7 @@ export function SetupChecklist({ onOpenWizard }: SetupChecklistProps) {
   const items = [
     { key: "stripeConnected", label: "Connect Stripe", action: () => navigate("/provider/settings?tab=payments") },
     { key: "hasClients", label: "Add your first client", action: () => navigate("/provider/clients") },
-    { key: "hasJobs", label: "Create your first job", action: () => navigate("/provider/jobs") },
+    { key: "hasJobs", label: "Create your first job", action: () => navigate("/provider/schedule") },
     { key: "hasInvoices", label: "Send your first invoice", action: () => navigate("/provider/payments") },
   ];
 
