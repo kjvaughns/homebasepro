@@ -13,21 +13,28 @@ Deno.serve(async (req) => {
   try {
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     if (!authHeader) {
       return errorResponse('NO_AUTH', 'Authorization header required', 401);
     }
 
-    // Extract token from Bearer header
-    const authToken = authHeader.replace('Bearer ', '');
-    
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Create Supabase client with auth header in global config
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: authHeader }
+      }
+    });
 
-    // Pass token explicitly to getUser
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authToken);
+    // Call getUser without parameters - it will use the Authorization header
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
     if (authError || !user) {
-      console.error('Auth error:', authError);
-      return errorResponse('AUTH_ERROR', 'Invalid authentication', 401);
+      console.error('Auth error details:', authError);
+      return errorResponse('AUTH_ERROR', authError?.message || 'Invalid authentication', 401);
     }
+    
+    console.log('User authenticated successfully:', user.id);
 
     // Get user profile data
     const { data: profile } = await supabase
