@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/accordion";
 import { MobileMenu } from "@/components/MobileMenu";
 import { ResourcesDropdown } from "@/components/ResourcesDropdown";
+import { SEO } from "@/components/SEO";
+import { organizationSchema, softwareApplicationSchema, createFAQSchema } from "@/utils/seo";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -47,6 +49,33 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="HomeBase - Smart Home Management & Service Provider Platform"
+        description="Connect with verified service providers or grow your business with HomeBase. AI-powered scheduling, maintenance reminders, and automated operations. Free for homeowners."
+        keywords="home maintenance, service providers, HVAC, plumbing, landscaping, home management app, property maintenance, contractor software"
+        canonical="https://homebaseproapp.com"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@graph": [
+            organizationSchema,
+            softwareApplicationSchema,
+            createFAQSchema([
+              {
+                question: "How does HomeBase work?",
+                answer: "HomeBase connects homeowners with verified service providers and handles everything from scheduling to payments. For homeowners, it's simple: tell us what you need, we match you with pros, and you track everything in one app. For providers, HomeBase automates quotes, invoices, scheduling, and client communication—so you can focus on your work."
+              },
+              {
+                question: "Is my data safe?",
+                answer: "Absolutely. We use bank-level encryption and never share your personal information. Your data is protected with the same security standards used by major financial institutions."
+              },
+              {
+                question: "What types of services are available?",
+                answer: "HomeBase connects you with verified providers for HVAC, plumbing, electrical, landscaping, pool care, pest control, and more. We match you based on your specific needs, location, and provider reviews."
+              }
+            ])
+          ]
+        }}
+      />
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-50 backdrop-blur-sm bg-card/95">
         <div className="container mx-auto px-4 py-3 sm:py-4">

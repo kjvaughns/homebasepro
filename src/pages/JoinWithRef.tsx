@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { setReferralCookie, storeReferralInSession } from "@/utils/referralTracking";
 import { useToast } from "@/hooks/use-toast";
 import homebaseLogo from "@/assets/homebase-logo.png";
+import { SEO } from "@/components/SEO";
 
 export default function JoinWithRef() {
   const navigate = useNavigate();
@@ -91,6 +92,14 @@ export default function JoinWithRef() {
 
   return (
     <div className="min-h-screen bg-background">
+      {partner && (
+        <SEO
+          title={`Join HomeBase with ${partner.name} - Get ${partner.discount_offer}`}
+          description={`${partner.name} invites you to join HomeBase. Get ${partner.discount_offer} on your first service. Connect with verified home service providers.`}
+          ogImage={partner.avatar_url || 'https://homebaseproapp.com/og-image.png'}
+          canonical={`https://homebaseproapp.com/join?ref=${searchParams.get('ref')}`}
+        />
+      )}
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://homebaseproapp.com/</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Core Pages -->
+  <url>
+    <loc>https://homebaseproapp.com/pricing</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <url>
+    <loc>https://homebaseproapp.com/become-provider</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Partners & Referral -->
+  <url>
+    <loc>https://homebaseproapp.com/partners</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Auth Pages -->
+  <url>
+    <loc>https://homebaseproapp.com/register</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://homebaseproapp.com/login</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Demo Pages -->
+  <url>
+    <loc>https://homebaseproapp.com/demo/homeowner</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://homebaseproapp.com/demo/provider</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Resources -->
+  <url>
+    <loc>https://homebaseproapp.com/terms</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://homebaseproapp.com/privacy</loc>
+    <lastmod>2025-01-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>

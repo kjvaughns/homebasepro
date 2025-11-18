@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { updateMetaTags } from "@/utils/seo";
 
 export default function ShortLinkRedirect() {
   const { slug } = useParams();
@@ -32,6 +33,15 @@ export default function ShortLinkRedirect() {
       }
 
       setProvider(link.organizations);
+
+      // Update meta tags for social sharing
+      updateMetaTags({
+        title: link.og_title || `Book ${link.organizations.name} on HomeBase`,
+        description: link.og_description || `Schedule service with ${link.organizations.name}. View availability and book instantly.`,
+        ogImage: link.og_image_url || link.organizations.logo_url,
+        ogType: 'website',
+        canonical: `https://homebaseproapp.com/l/${slug}`
+      });
 
       // Build target URL with UTMs if present
       const targetUrl = new URL(link.target_url);
