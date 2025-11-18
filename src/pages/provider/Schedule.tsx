@@ -535,6 +535,40 @@ const [selectedDay, setSelectedDay] = useState<Date>(() => {
         />
       )}
 
+      {/* Date Filter Toggles */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          <Button
+            variant={dateFilter === 'day' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDateFilter('day')}
+          >
+            Today
+          </Button>
+          <Button
+            variant={dateFilter === 'week' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDateFilter('week')}
+          >
+            This Week
+          </Button>
+          <Button
+            variant={dateFilter === 'month' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDateFilter('month')}
+          >
+            This Month
+          </Button>
+          <Button
+            variant={dateFilter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setDateFilter('all')}
+          >
+            All Time
+          </Button>
+        </div>
+      </Card>
+
       <div className="bg-card rounded-lg shadow-sm">
         <Tabs value={tab} onValueChange={(value) => {
           triggerHaptic('light');

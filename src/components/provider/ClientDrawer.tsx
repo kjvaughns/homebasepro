@@ -19,6 +19,8 @@ import {
   Edit,
 } from "lucide-react";
 import { useClientDetail, useClientActivity, useClientStats } from "@/pages/provider/hooks/useClientsData";
+import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import ClientActivityTimeline from "./ClientActivityTimeline";
 import ClientFilesTab from "./ClientFilesTab";
@@ -50,6 +52,8 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [appointmentFilter, setAppointmentFilter] = useState<'all' | 'upcoming' | 'past' | 'completed' | 'cancelled'>('all');
+  const [appointmentSearch, setAppointmentSearch] = useState('');
 
   if (loading) {
     return (
@@ -228,7 +232,7 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
           <div className="p-6">
             <TabsContent value="overview" className="mt-0 space-y-6">
               {/* KPI Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <Card className="p-4">
                   <div className="text-xs font-medium text-muted-foreground mb-1">
                     Lifetime Value
@@ -247,22 +251,10 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
                 </Card>
                 <Card className="p-4">
                   <div className="text-xs font-medium text-muted-foreground mb-1">
-                    Outstanding
+                    Balance Due
                   </div>
                   <div className="text-2xl font-bold text-destructive">
                     ${statsLoading ? "..." : stats.outstandingBalance.toLocaleString()}
-                  </div>
-                </Card>
-                <Card className="p-4">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">
-                    Last Service
-                  </div>
-                  <div className="text-lg font-bold">
-                    {statsLoading
-                      ? "..."
-                      : stats.lastServiceDate
-                      ? new Date(stats.lastServiceDate).toLocaleDateString()
-                      : "Never"}
                   </div>
                 </Card>
               </div>
@@ -370,26 +362,53 @@ export default function ClientDrawer({ clientId, onClose, onUpdate }: ClientDraw
             </TabsContent>
 
             <TabsContent value="activity" className="mt-0">
-              <ClientActivityTimeline
-                timeline={timeline}
-                loading={activityLoading}
-              />
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                  <Button variant={appointmentFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setAppointmentFilter('all')}>All</Button>
+                  <Button variant={appointmentFilter === 'upcoming' ? 'default' : 'outline'} size="sm" onClick={() => setAppointmentFilter('upcoming')}>Upcoming</Button>
+                  <Button variant={appointmentFilter === 'past' ? 'default' : 'outline'} size="sm" onClick={() => setAppointmentFilter('past')}>Past</Button>
+                  <Button variant={appointmentFilter === 'completed' ? 'default' : 'outline'} size="sm" onClick={() => setAppointmentFilter('completed')}>Completed</Button>
+                  <Button variant={appointmentFilter === 'cancelled' ? 'default' : 'outline'} size="sm" onClick={() => setAppointmentFilter('cancelled')}>Cancelled</Button>
+                </div>
+                <Input placeholder="Search by service name..." value={appointmentSearch} onChange={(e) => setAppointmentSearch(e.target.value)} />
+                <ClientActivityTimeline
+                  timeline={timeline?.filter((item: any) => {
+                    if (appointmentFilter !== 'all' && item.type === 'appointment') {
+                      const now = new Date();
+                      const itemDate = new Date(item.date);
+                      if (appointmentFilter === 'upcoming' && itemDate < now) return false;
+                      if (appointmentFilter === 'past' && itemDate >= now) return false;
+                      if (appointmentFilter === 'completed' && item.status !== 'completed') return false;
+                      if (appointmentFilter === 'cancelled' && item.status !== 'cancelled') return false;
+                    }
+                    if (appointmentSearch && item.title) {
+                      return item.title.toLowerCase().includes(appointmentSearch.toLowerCase());
+                    }
+                    return true;
+                  }) || []}
+                  loading={activityLoading}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="files" className="mt-0">
-              <ClientFilesTab
-                clientId={client.id}
-                files={client.files}
-                onUpdate={refetch}
-              />
+              <ClientFilesTab clientId={client.id} files={client.files} onUpdate={refetch} />
             </TabsContent>
 
             <TabsContent value="billing" className="mt-0">
-              <ClientBillingTab
-                client={client}
-                subscriptions={client.subscriptions}
-                payments={client.payments}
-              />
+              <div className="space-y-6">
+                <Card className="p-6 bg-gradient-to-br from-destructive/10 to-destructive/5">
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Outstanding Balance</div>
+                    <div className="text-4xl font-bold text-destructive">${statsLoading ? "..." : stats.outstandingBalance.toLocaleString()}</div>
+                    <div className="text-xs text-muted-foreground">Unpaid invoices</div>
+                  </div>
+                </Card>
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Payment History</h3>
+                  <ClientBillingTab client={client} subscriptions={client.subscriptions} payments={client.payments} />
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="ai" className="mt-0">

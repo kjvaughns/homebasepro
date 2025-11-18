@@ -2,12 +2,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { Mail, Phone, MapPin, Calendar, Clock, DollarSign, Navigation, FileText, Stethoscope } from "lucide-react";
 import { QuoteBuilder } from "./QuoteBuilder";
 import { DiagnosisForm } from "./DiagnosisForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface JobDetailDrawerProps {
   job: any;
@@ -21,6 +23,7 @@ interface JobDetailDrawerProps {
 export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequestReview }: JobDetailDrawerProps) => {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (job && open) {
@@ -49,6 +52,26 @@ export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequest
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from('service_requests')
+        .update({ status: newStatus })
+        .eq('id', job.id);
+
+      if (error) throw error;
+
+      toast.success('Status updated successfully');
+      onClose(); // Close drawer to trigger parent refresh
+    } catch (error: any) {
+      console.error('Error updating status:', error);
+      toast.error(error.message || 'Failed to update status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   if (!job) return null;
   
   const statusConfig: Record<string, string> = {
@@ -69,7 +92,29 @@ export const JobDetailDrawer = ({ job, open, onClose, events, reviews, onRequest
         <SheetHeader className="pb-4">
           <div className="space-y-2">
             <SheetTitle className="text-left text-2xl">{job.service_name}</SheetTitle>
-            <Badge className={statusConfig[job.status]}>{job.status.replace('_', ' ')}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge className={statusConfig[job.status]}>{job.status.replace('_', ' ')}</Badge>
+              <Select
+                value={job.status}
+                onValueChange={handleStatusChange}
+                disabled={updatingStatus}
+              >
+                <SelectTrigger className="w-[180px] h-8">
+                  <SelectValue placeholder="Change status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="service_call">Service Call</SelectItem>
+                  <SelectItem value="quoted">Quoted</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="invoiced">Invoiced</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </SheetHeader>
         

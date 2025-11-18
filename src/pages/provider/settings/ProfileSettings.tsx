@@ -32,6 +32,7 @@ export default function ProfileSettings() {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -65,6 +66,41 @@ export default function ProfileSettings() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRegenerateDescription = async () => {
+    if (!organization) return;
+    
+    setRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-provider-description', {
+        body: {
+          description_prompt: organization.description || '',
+          trade: organization.service_type?.join(', ') || '',
+          current_description: organization.description || ''
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.description) {
+        setOrganization({ ...organization, description: data.description });
+        toast.success('Description generated! Review and save when ready.');
+      }
+    } catch (error: any) {
+      console.error('Error generating description:', error);
+      toast.error(error.message || 'Failed to generate description');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  const handlePreviewProfile = () => {
+    if (!organization) return;
+    
+    // Open preview in new tab - adjust URL as needed
+    const username = organization.name.toLowerCase().replace(/\s+/g, '-');
+    window.open(`/marketplace/provider/${username}?preview=true`, '_blank');
   };
 
   const handleSave = async () => {
