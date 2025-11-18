@@ -36,7 +36,6 @@ import { TutorialProvider } from "@/contexts/TutorialContext";
 import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { JobsMenuSheet } from "@/components/provider/JobsMenuSheet";
 import { TeamMenuSheet } from "@/components/provider/TeamMenuSheet";
 import { FinancialMenuSheet } from "@/components/provider/FinancialMenuSheet";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
@@ -68,7 +67,6 @@ const ProviderLayout = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [jobsSheetOpen, setJobsSheetOpen] = useState(false);
   const [teamSheetOpen, setTeamSheetOpen] = useState(false);
   const [financialSheetOpen, setFinancialSheetOpen] = useState(false);
 
@@ -282,7 +280,6 @@ const ProviderLayout = () => {
         </nav>
 
         {/* Sheet Menus */}
-        <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />
         {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
         <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
 
@@ -401,7 +398,6 @@ const ProviderLayout = () => {
       </div>
 
       {/* Sheet Menus (Desktop) */}
-      <JobsMenuSheet open={jobsSheetOpen} onOpenChange={setJobsSheetOpen} />
       {isOwner && <TeamMenuSheet open={teamSheetOpen} onOpenChange={setTeamSheetOpen} />}
       <FinancialMenuSheet open={financialSheetOpen} onOpenChange={setFinancialSheetOpen} />
       

@@ -72,8 +72,6 @@ import Appointments from "./pages/homeowner/Appointments";
 import AppointmentDetail from "./pages/homeowner/AppointmentDetail";
 import HomeownerSettings from "./pages/homeowner/Settings";
 import HomeownerPaymentSettings from "./pages/homeowner/PaymentSettings";
-import Jobs from "@/pages/provider/Jobs";
-import MyJobs from "@/pages/provider/MyJobs";
 import Services from "@/pages/provider/Services";
 import PartsMaterials from "@/pages/provider/PartsMaterials";
 import ProfileSettings from "@/pages/provider/settings/ProfileSettings";

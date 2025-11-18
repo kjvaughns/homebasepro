@@ -36,7 +36,7 @@ export const NewProviderWelcome = ({ hasAnyData, onOpenWizard }: NewProviderWelc
             <UserPlus className="mr-2 h-4 w-4" />
             Add Clients
           </Button>
-          <Button onClick={() => navigate('/provider/jobs')} variant="outline">
+          <Button onClick={() => navigate('/provider/schedule')} variant="outline">
             <Wrench className="mr-2 h-4 w-4" />
             Create Jobs
           </Button>

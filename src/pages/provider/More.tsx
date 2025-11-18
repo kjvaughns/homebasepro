@@ -13,7 +13,8 @@ import {
   MessageSquare,
   LogOut,
   ArrowRight,
-  User
+  User,
+  Wrench
 } from "lucide-react";
 
 export default function More() {
@@ -62,6 +63,13 @@ export default function More() {
       description: "Manage your personal information",
       href: "/provider/settings",
       color: "text-blue-600"
+    },
+    {
+      icon: Settings,
+      title: "Services",
+      description: "Manage your services, pricing & duration",
+      href: "/provider/services",
+      color: "text-purple-600"
     },
     {
       icon: Settings,
