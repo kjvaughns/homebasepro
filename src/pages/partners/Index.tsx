@@ -18,7 +18,7 @@ export default function PartnersIndex() {
   }, [applied]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="light min-h-screen bg-background">
       {/* Application Success Banner */}
       {(applied || pending) && (
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-b border-green-200 dark:border-green-800">
