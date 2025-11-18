@@ -41,13 +41,16 @@ serve(async (req) => {
     let subject = '';
     
     switch (status) {
-      case 'in_progress':
-      case 'started':
-        message = `Hi ${booking.clients.name}! 👋\n\nWe're on the way! Your technician will arrive shortly for your ${booking.service_name} service.\n\nService Address: ${booking.address}`;
-        subject = 'Your service is starting soon';
+      case 'on_my_way':
+        message = `Good news! Your tech is on the way. They'll arrive in about 15-20 minutes for your ${booking.service_name} service.\n\nService Address: ${booking.address}`;
+        subject = 'Your tech is on the way';
+        break;
+      case 'working':
+        message = `Your tech has arrived and started working on your ${booking.service_name} service.`;
+        subject = 'Work has started';
         break;
       case 'completed':
-        message = `Hi ${booking.clients.name}! ✅\n\nYour ${booking.service_name} service has been completed! Thank you for choosing us.\n\nIf you have any questions or concerns, please don't hesitate to reach out.`;
+        message = `Work completed! Your ${booking.service_name} service is done. You'll receive an invoice shortly.\n\nThank you for choosing us!`;
         subject = 'Service completed';
         break;
       default:
