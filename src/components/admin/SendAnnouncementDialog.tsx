@@ -147,15 +147,15 @@ export function SendAnnouncementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6">
+      <DialogContent className="sm:max-w-[500px] h-[90vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
           <DialogTitle>Send Announcement</DialogTitle>
           <DialogDescription>
             Send a notification to all users or specific user types
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <div className="flex-1 overflow-y-auto px-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pb-4">
               <FormField
@@ -323,9 +323,9 @@ export function SendAnnouncementDialog({
               />
             </form>
           </Form>
-        </ScrollArea>
+        </div>
 
-        <DialogFooter className="sticky bottom-0 bg-background border-t px-6 py-4 mt-0">
+        <DialogFooter className="shrink-0 bg-background border-t px-6 py-4 gap-2">
           <Button
             type="button"
             variant="outline"
