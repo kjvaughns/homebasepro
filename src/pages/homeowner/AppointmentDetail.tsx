@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, Home, MapPin, User, RotateCcw } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Home, MapPin, User, RotateCcw, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { RefundRequestDialog } from "@/components/homeowner/RefundRequestDialog";
+import { PaymentCheckout } from "@/components/homeowner/PaymentCheckout";
 
 export default function AppointmentDetail() {
   const { id } = useParams();
@@ -16,6 +17,7 @@ export default function AppointmentDetail() {
   const [loading, setLoading] = useState(true);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
     loadVisitDetails();
@@ -37,7 +39,43 @@ export default function AppointmentDetail() {
 
   const loadVisitDetails = async () => {
     try {
-      const { data, error } = await supabase
+      // Try loading as booking first (one-time job)
+      const { data: bookingData, error: bookingError } = await supabase
+        .from("bookings")
+        .select(`
+          id,
+          service_name,
+          date_time_start,
+          date_time_end,
+          status,
+          address,
+          notes,
+          estimated_price_low,
+          estimated_price_high,
+          final_price,
+          payment_captured,
+          completion_notes,
+          assigned_team_member_id,
+          provider_org_id,
+          organizations(name, phone, email)
+        `)
+        .eq("id", id)
+        .maybeSingle();
+
+      if (bookingData) {
+        // Normalize booking data to match service_visit structure
+        setVisit({
+          ...bookingData,
+          source: 'booking',
+          scheduled_date: bookingData.date_time_start,
+          technician_name: bookingData.assigned_team_member_id ? 'Assigned Technician' : null,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Fallback to service_visit if not found as booking
+      const { data: visitData, error: visitError } = await supabase
         .from("service_visits")
         .select(`
           *,
@@ -47,11 +85,14 @@ export default function AppointmentDetail() {
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (visitError) throw visitError;
 
-      setVisit(data);
+      setVisit({
+        ...visitData,
+        source: 'service_visit',
+      });
     } catch (error) {
-      console.error("Error loading visit:", error);
+      console.error("Error loading appointment:", error);
       toast({
         title: "Error",
         description: "Failed to load appointment details",
@@ -213,6 +254,44 @@ export default function AppointmentDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Section - Only show for completed bookings that haven't been paid */}
+      {visit.source === 'booking' && visit.status === 'completed' && !visit.payment_captured && visit.final_price && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Required</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Total Amount:</span>
+              <span className="text-2xl font-bold">${(visit.final_price / 100).toFixed(2)}</span>
+            </div>
+            
+            {!showPayment ? (
+              <Button onClick={() => setShowPayment(true)} className="w-full" size="lg">
+                <CreditCard className="mr-2 h-5 w-5" />
+                Pay Now
+              </Button>
+            ) : (
+              <PaymentCheckout
+                jobId={visit.id}
+                providerId={visit.provider_org_id}
+                amount={visit.final_price}
+                description={visit.service_name}
+                onSuccess={async () => {
+                  toast({
+                    title: "Payment successful!",
+                    description: "Thank you for your payment",
+                  });
+                  setShowPayment(false);
+                  await loadVisitDetails();
+                }}
+                onCancel={() => setShowPayment(false)}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Provider Contact */}
       <Card>

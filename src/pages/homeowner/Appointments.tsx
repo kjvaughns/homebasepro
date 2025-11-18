@@ -39,7 +39,8 @@ export default function Appointments() {
       
       setHomeownerName(profile.full_name || "Customer");
 
-      const { data, error } = await supabase
+      // Load service visits (recurring subscriptions)
+      const { data: serviceVisits, error: visitsError } = await supabase
         .from("service_visits")
         .select(`
           *,
@@ -49,9 +50,49 @@ export default function Appointments() {
         .eq("homeowner_id", profile.id)
         .order("scheduled_date", { ascending: false });
 
-      if (error) throw error;
+      if (visitsError) throw visitsError;
 
-      setVisits(data || []);
+      // Load bookings (one-time jobs from providers)
+      const { data: bookings, error: bookingsError } = await supabase
+        .from("bookings")
+        .select(`
+          id,
+          service_name,
+          date_time_start,
+          date_time_end,
+          status,
+          address,
+          notes,
+          estimated_price_low,
+          estimated_price_high,
+          final_price,
+          payment_captured,
+          created_at,
+          provider_org_id,
+          organizations(name, phone, email)
+        `)
+        .eq("homeowner_profile_id", profile.id)
+        .order("date_time_start", { ascending: false });
+
+      if (bookingsError) throw bookingsError;
+
+      // Merge and normalize both data sources
+      const normalizedServiceVisits = (serviceVisits || []).map(v => ({
+        ...v,
+        source: 'service_visit',
+        scheduled_date: v.scheduled_date,
+      }));
+
+      const normalizedBookings = (bookings || []).map(b => ({
+        ...b,
+        source: 'booking',
+        scheduled_date: b.date_time_start,
+      }));
+
+      const allAppointments = [...normalizedServiceVisits, ...normalizedBookings]
+        .sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime());
+
+      setVisits(allAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
       toast({
@@ -66,12 +107,12 @@ export default function Appointments() {
 
   const upcomingVisits = visits.filter(
     (v) => ['confirmed', 'pending'].includes(v.status) && 
-    new Date(v.scheduled_at || v.scheduled_date) >= new Date()
+    new Date(v.scheduled_date) >= new Date()
   );
 
   const pastVisits = visits.filter(
     (v) => v.status === "completed" || 
-    (new Date(v.scheduled_at || v.scheduled_date) < new Date() && v.status !== 'canceled')
+    (new Date(v.scheduled_date) < new Date() && v.status !== 'canceled')
   );
 
   const canceledVisits = visits.filter((v) => v.status === "canceled");

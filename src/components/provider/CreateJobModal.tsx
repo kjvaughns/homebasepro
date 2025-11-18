@@ -472,13 +472,12 @@ export default function CreateJobModal({
       const bookingId = result.booking_id;
       
       // Update additional fields not handled by RPC
+      // Provider-created bookings are auto-confirmed (providers operate independently)
       const { error: updateError } = await supabase
         .from('bookings')
         .update({
           client_id: clientId,
-          status: ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'].includes(formData.status) 
-            ? formData.status 
-            : 'pending',
+          status: 'confirmed', // Auto-confirm all provider-created bookings
           estimated_price_low: quoteAmount,
           estimated_price_high: quoteAmount,
         })
