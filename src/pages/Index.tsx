@@ -105,7 +105,7 @@ const Index = () => {
           <p className="text-center text-sm md:text-base">
             <span className="font-semibold text-primary">✨ BETA LAUNCH</span>
             {" · "}
-            Free for homeowners · Provider plans starting at $29/month
+            Free for homeowners · Provider plans starting at $15/month (50% off during beta)
             {" · "}
             <button 
               onClick={() => navigate("/pricing")} 
