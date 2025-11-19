@@ -21,12 +21,12 @@ export function OnboardingCard({ title, subtitle, children, className = "" }: On
       {(title || subtitle) && (
         <div className="mb-4">
           {title && (
-            <h3 className="text-xl font-bold text-foreground mb-1">
+            <h3 className="text-xl font-bold mb-1" style={{ color: 'hsl(var(--onboarding-text))' }}>
               {title}
             </h3>
           )}
           {subtitle && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm" style={{ color: 'hsl(var(--onboarding-muted))' }}>
               {subtitle}
             </p>
           )}

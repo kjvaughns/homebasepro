@@ -99,10 +99,10 @@ export function EditableServicesList({ services, onChange }: EditableServicesLis
           ) : (
             <>
               <div className="flex-1">
-                <span className="font-semibold text-sm text-foreground">
+                <span className="font-semibold text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>
                   {service.name}
                 </span>
-                <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                <div className="flex gap-2 text-xs mt-1" style={{ color: 'hsl(var(--onboarding-muted))' }}>
                   <span>${(service.base_price_cents / 100).toFixed(0)}</span>
                   <span>•</span>
                   <span>{service.duration_minutes}m</span>

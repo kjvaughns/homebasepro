@@ -69,7 +69,7 @@ export function ClientQABuilder({ tradeType, services, questions, onChange }: Cl
       {questions.length === 0 ? (
         <div className="space-y-4">
           <div className="p-4 rounded-lg" style={{ background: 'hsla(var(--onboarding-card))', border: '1px solid hsla(var(--onboarding-border))' }}>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-sm mb-2" style={{ color: 'hsl(var(--onboarding-muted))' }}>
               AI will generate client intake questions based on your services: {services.map(s => s.name).join(', ')}
             </p>
           </div>

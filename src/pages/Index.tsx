@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Bot, Calendar, Shield, CreditCard, CheckCircle, Users, Star, TrendingUp, Sparkles, Brain, Zap, Award, Lock, Clock, Home, MessageCircle, Handshake, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import homebaseLogo from "@/assets/homebase-logo.png";
 import homeownerMockup from "@/assets/homeowner-dashboard-mobile.png";
 import providerMockup from "@/assets/provider-dashboard-mobile.png";
@@ -19,6 +20,21 @@ import { organizationSchema, softwareApplicationSchema, createFAQSchema } from "
 
 const Index = () => {
   const navigate = useNavigate();
+
+  // Force light mode for this page
+  useEffect(() => {
+    const root = document.documentElement;
+    const wasLight = root.classList.contains('light');
+    const wasDark = root.classList.contains('dark');
+    
+    root.classList.remove('dark');
+    root.classList.add('light');
+    
+    return () => {
+      root.classList.remove('light');
+      if (wasDark) root.classList.add('dark');
+    };
+  }, []);
 
   const faqs = [
     {
