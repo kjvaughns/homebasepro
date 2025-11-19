@@ -11,6 +11,21 @@ export default function PartnersIndex() {
   const applied = searchParams.get('applied') === 'true';
   const pending = searchParams.get('status') === 'pending';
 
+  // Force light mode for this page
+  useEffect(() => {
+    const root = document.documentElement;
+    const wasLight = root.classList.contains('light');
+    const wasDark = root.classList.contains('dark');
+    
+    root.classList.remove('dark');
+    root.classList.add('light');
+    
+    return () => {
+      root.classList.remove('light');
+      if (wasDark) root.classList.add('dark');
+    };
+  }, []);
+
   useEffect(() => {
     if (applied) {
       window.scrollTo({ top: 0, behavior: 'smooth' });

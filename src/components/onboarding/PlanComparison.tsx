@@ -27,18 +27,18 @@ export function PlanComparison({ selected, onSelect }: PlanComparisonProps) {
         
         <div className="space-y-4">
           <div>
-            <h3 className="text-2xl font-bold">Starter</h3>
+            <h3 className="text-2xl font-bold" style={{ color: 'hsl(var(--onboarding-text))' }}>Starter</h3>
             <div className="mt-2">
-              <span className="text-lg line-through text-muted-foreground">$30/mo</span>
+              <span className="text-lg line-through" style={{ color: 'hsl(var(--onboarding-muted))' }}>$30/mo</span>
               <p className="text-4xl font-bold text-primary">$15/mo</p>
               <p className="text-sm text-primary font-medium">Beta: 50% off</p>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">7-day free trial, card required</p>
+            <p className="text-sm mt-2" style={{ color: 'hsl(var(--onboarding-muted))' }}>7-day free trial, card required</p>
           </div>
 
           <div className="space-y-2">
-            <p className="font-semibold text-sm">Perfect for growing businesses:</p>
-            <ul className="space-y-2 text-sm">
+            <p className="font-semibold text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>Perfect for growing businesses:</p>
+            <ul className="space-y-2 text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary mt-0.5" />
                 <span>Unlimited jobs</span>
@@ -77,14 +77,14 @@ export function PlanComparison({ selected, onSelect }: PlanComparisonProps) {
       >
         <div className="space-y-4">
           <div>
-            <h3 className="text-2xl font-bold">Free</h3>
+            <h3 className="text-2xl font-bold" style={{ color: 'hsl(var(--onboarding-text))' }}>Free</h3>
             <p className="text-4xl font-bold text-primary">$0/mo</p>
-            <p className="text-sm text-muted-foreground mt-2">Try before you commit</p>
+            <p className="text-sm mt-2" style={{ color: 'hsl(var(--onboarding-muted))' }}>Try before you commit</p>
           </div>
 
           <div className="space-y-2">
-            <p className="font-semibold text-sm">Great for getting started:</p>
-            <ul className="space-y-2 text-sm">
+            <p className="font-semibold text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>Great for getting started:</p>
+            <ul className="space-y-2 text-sm" style={{ color: 'hsl(var(--onboarding-text))' }}>
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary mt-0.5" />
                 <span>Up to 5 completed jobs/month</span>

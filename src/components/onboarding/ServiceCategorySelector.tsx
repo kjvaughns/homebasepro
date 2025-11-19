@@ -22,10 +22,10 @@ export function ServiceCategorySelector({ value, onChange, tradeType }: ServiceC
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">
+        <h3 className="text-lg font-semibold mb-2" style={{ color: 'hsl(var(--onboarding-text))' }}>
           How do you typically price your services?
         </h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm" style={{ color: 'hsl(var(--onboarding-muted))' }}>
           This helps us provide better pricing guidance for your business
         </p>
       </div>
@@ -51,13 +51,13 @@ export function ServiceCategorySelector({ value, onChange, tradeType }: ServiceC
                   </span>
                 )}
               </div>
-              <h4 className="font-semibold text-foreground mb-2">
+              <h4 className="font-semibold mb-2" style={{ color: 'hsl(var(--onboarding-text))' }}>
                 Service Call + Time & Materials
               </h4>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm" style={{ color: 'hsl(var(--onboarding-muted))' }}>
                 Trip charge + hourly rate. Best for diagnostic work, repairs, and troubleshooting.
               </p>
-              <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+              <ul className="mt-3 space-y-1 text-xs" style={{ color: 'hsl(var(--onboarding-muted))' }}>
                 <li>• HVAC repairs</li>
                 <li>• Plumbing emergencies</li>
                 <li>• Electrical troubleshooting</li>
@@ -84,13 +84,13 @@ export function ServiceCategorySelector({ value, onChange, tradeType }: ServiceC
                   </span>
                 )}
               </div>
-              <h4 className="font-semibold text-foreground mb-2">
+              <h4 className="font-semibold mb-2" style={{ color: 'hsl(var(--onboarding-text))' }}>
                 Fixed-Scope Jobs
               </h4>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm" style={{ color: 'hsl(var(--onboarding-muted))' }}>
                 Per unit, per square foot, or flat rate. Best for predictable, defined projects.
               </p>
-              <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+              <ul className="mt-3 space-y-1 text-xs" style={{ color: 'hsl(var(--onboarding-muted))' }}>
                 <li>• Lawn mowing (per sqft)</li>
                 <li>• Gutter cleaning (per unit)</li>
                 <li>• Pressure washing (per job)</li>
