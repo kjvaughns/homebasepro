@@ -25,7 +25,7 @@ export function UnifiedBookingLinks({
   const [isPublic, setIsPublic] = useState(false);
 
   const baseUrl = window.location.origin;
-  const bookingUrl = `${baseUrl}/homeowner/browse/${organizationId}`;
+  const bookingUrl = `${baseUrl}/p/${organizationSlug}`;
   const shortLinkUrl = shortLink ? `${baseUrl}/l/${shortLink.slug}` : null;
 
   useEffect(() => {

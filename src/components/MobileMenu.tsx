@@ -87,6 +87,15 @@ export const MobileMenu = () => {
           <Button
             variant="ghost"
             className="w-full justify-start h-12 text-base"
+            onClick={() => handleNavigate("/marketplace")}
+          >
+            <Globe className="h-5 w-5 mr-2" />
+            Marketplace
+          </Button>
+
+          <Button
+            variant="ghost"
+            className="w-full justify-start h-12 text-base"
             onClick={() => handleNavigate("/pricing")}
           >
             <DollarSign className="h-5 w-5 mr-2" />

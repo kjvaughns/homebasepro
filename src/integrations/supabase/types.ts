@@ -531,6 +531,7 @@ export type Database = {
       bookings: {
         Row: {
           address: string
+          ai_follow_up_responses: Json | null
           assigned_team_member_id: string | null
           calendar_sync_status: string | null
           cancellation_reason: string | null
@@ -550,6 +551,7 @@ export type Database = {
           home_id: string | null
           homeowner_profile_id: string | null
           id: string
+          intake_responses: Json | null
           invoice_id: string | null
           is_calendar_block: boolean | null
           lat: number | null
@@ -566,6 +568,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          ai_follow_up_responses?: Json | null
           assigned_team_member_id?: string | null
           calendar_sync_status?: string | null
           cancellation_reason?: string | null
@@ -585,6 +588,7 @@ export type Database = {
           home_id?: string | null
           homeowner_profile_id?: string | null
           id?: string
+          intake_responses?: Json | null
           invoice_id?: string | null
           is_calendar_block?: boolean | null
           lat?: number | null
@@ -601,6 +605,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          ai_follow_up_responses?: Json | null
           assigned_team_member_id?: string | null
           calendar_sync_status?: string | null
           cancellation_reason?: string | null
@@ -620,6 +625,7 @@ export type Database = {
           home_id?: string | null
           homeowner_profile_id?: string | null
           id?: string
+          intake_responses?: Json | null
           invoice_id?: string | null
           is_calendar_block?: boolean | null
           lat?: number | null
@@ -2934,6 +2940,8 @@ export type Database = {
           lat: number | null
           lng: number | null
           logo_url: string | null
+          marketplace_published: boolean | null
+          marketplace_published_at: string | null
           name: string
           next_payout_date: string | null
           owner_id: string
@@ -2986,6 +2994,8 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           logo_url?: string | null
+          marketplace_published?: boolean | null
+          marketplace_published_at?: string | null
           name: string
           next_payout_date?: string | null
           owner_id: string
@@ -3038,6 +3048,8 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           logo_url?: string | null
+          marketplace_published?: boolean | null
+          marketplace_published_at?: string | null
           name?: string
           next_payout_date?: string | null
           owner_id?: string
@@ -5815,6 +5827,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_default: boolean | null
+          last_viewed_at: string | null
           og_description: string | null
           og_image_url: string | null
           og_title: string | null
@@ -5826,6 +5839,7 @@ export type Database = {
           utm_campaign: string | null
           utm_medium: string | null
           utm_source: string | null
+          view_count: number | null
         }
         Insert: {
           created_at?: string
@@ -5834,6 +5848,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_default?: boolean | null
+          last_viewed_at?: string | null
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null
@@ -5845,6 +5860,7 @@ export type Database = {
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          view_count?: number | null
         }
         Update: {
           created_at?: string
@@ -5853,6 +5869,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_default?: boolean | null
+          last_viewed_at?: string | null
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null
@@ -5864,6 +5881,7 @@ export type Database = {
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          view_count?: number | null
         }
         Relationships: [
           {
@@ -6834,6 +6852,10 @@ export type Database = {
       }
       increment_referral_count: {
         Args: { ref_code: string }
+        Returns: undefined
+      }
+      increment_short_link_views: {
+        Args: { link_slug: string }
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }

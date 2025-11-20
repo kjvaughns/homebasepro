@@ -39,6 +39,9 @@ import OnboardingProvider from "./pages/OnboardingProvider";
 import HomeownerDashboard from "./pages/homeowner/Dashboard";
 import ProviderDashboard from "./pages/provider/Dashboard";
 import BecomeProvider from "./pages/BecomeProvider";
+import Marketplace from "./pages/Marketplace";
+import PublicProviderProfile from "./pages/PublicProviderProfile";
+import PublicBookingPage from "./pages/PublicBookingPage";
 import Clients from "./pages/provider/Clients";
 import ImportClients from "./pages/provider/ImportClients";
 import ClientDetail from "./pages/provider/ClientDetail";
@@ -346,6 +349,11 @@ const App = () => {
             } />
 
             <Route path="/become-provider" element={<Navigate to="/onboarding/provider" replace />} />
+            
+            {/* Public Marketplace Routes */}
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/p/:slug" element={<PublicProviderProfile />} />
+            <Route path="/book/:slug" element={<PublicBookingPage />} />
             
             {/* Partner/Affiliate Routes */}
             <Route path="/partners" element={<PartnersIndex />} />
