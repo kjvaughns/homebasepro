@@ -504,7 +504,7 @@ export default function ProviderCommunicationBuilder() {
                   </div>
 
                   <div className="space-y-3">
-                    <Button size="lg" className="w-full" onClick={() => navigate("/become-provider")}>
+                    <Button size="lg" className="w-full" onClick={() => navigate("/onboarding/provider")}>
                       Open in HomeBase
                     </Button>
                     <Button
@@ -630,7 +630,7 @@ export default function ProviderCommunicationBuilder() {
                     <p className="text-sm text-muted-foreground mb-3">
                       HomeBase handles scheduling, messaging, and payments automatically
                     </p>
-                    <Button className="w-full" onClick={() => navigate("/become-provider")}>
+                    <Button className="w-full" onClick={() => navigate("/onboarding/provider")}>
                       Open in HomeBase
                     </Button>
                   </div>

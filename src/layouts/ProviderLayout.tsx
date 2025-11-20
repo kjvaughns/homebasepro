@@ -111,7 +111,7 @@ const ProviderLayout = () => {
             description: "Please complete your provider onboarding",
             variant: "destructive",
           });
-          navigate("/become-provider");
+          navigate("/onboarding/provider");
           return;
         }
         // Admin with no org can still access portal, just no Team features

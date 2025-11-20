@@ -95,7 +95,7 @@ export const RoleSwitcher = () => {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => navigate("/become-provider")}
+              onClick={() => navigate("/onboarding/provider")}
               className="text-primary"
             >
               <Plus className="h-4 w-4 mr-2" />

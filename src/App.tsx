@@ -345,7 +345,7 @@ const App = () => {
               </OnboardingRouteGuard>
             } />
 
-            <Route path="/become-provider" element={<BecomeProvider />} />
+            <Route path="/become-provider" element={<Navigate to="/onboarding/provider" replace />} />
             
             {/* Partner/Affiliate Routes */}
             <Route path="/partners" element={<PartnersIndex />} />
