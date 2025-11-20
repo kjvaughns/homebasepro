@@ -221,7 +221,7 @@ export default function Resources() {
               size="lg" 
               variant="outline"
               className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-              onClick={() => navigate("/become-provider")}
+              onClick={() => navigate("/onboarding/provider")}
             >
               For Providers: Get bookings with HomeBase
             </Button>
