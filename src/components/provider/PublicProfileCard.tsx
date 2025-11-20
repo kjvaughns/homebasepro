@@ -23,7 +23,7 @@ export function PublicProfileCard({
   const [loading, setLoading] = useState(true);
 
   const baseUrl = window.location.origin;
-  const bookingUrl = `${baseUrl}/homeowner/browse/${organizationId}`;
+  const bookingUrl = `${baseUrl}/p/${organizationSlug}`;
   const shortLinkUrl = shortLink ? `${baseUrl}/l/${shortLink.slug}` : null;
 
   useEffect(() => {
@@ -116,15 +116,15 @@ export function PublicProfileCard({
             Your Booking Links
           </CardTitle>
           <CardDescription>
-            Share these links with potential customers to book your services
+            Share your public profile link with customers - they can browse your services and book directly
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Full Booking URL */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Full Booking URL</label>
-              <Badge variant="outline">Primary</Badge>
+              <label className="text-sm font-medium">Public Profile URL</label>
+              <Badge variant="outline">Marketplace</Badge>
             </div>
             <div className="flex gap-2">
               <input

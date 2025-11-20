@@ -105,6 +105,14 @@ const Index = () => {
             <div className="hidden md:flex items-center gap-4">
               <ResourcesDropdown />
               <Button 
+                onClick={() => navigate("/marketplace")} 
+                variant="ghost" 
+                size="sm" 
+                className="h-9 text-sm px-4"
+              >
+                Marketplace
+              </Button>
+              <Button 
                 onClick={() => navigate("/pricing")} 
                 variant="ghost" 
                 size="sm" 
