@@ -1,4 +1,4 @@
-import { Menu, Home, DollarSign, Gift, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Menu, Home, DollarSign, Gift, X, ChevronDown, ChevronUp, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
