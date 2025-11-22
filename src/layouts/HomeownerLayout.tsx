@@ -11,7 +11,7 @@ import {
   Building2,
   DollarSign,
   Users,
-  FileText,
+  Heart,
 } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,6 +51,8 @@ import { initPWADetection } from "@/utils/pwaDetection";
     { name: "Explore", href: "/homeowner/browse", icon: Search },
     { name: "My Providers", href: "/homeowner/providers", icon: Users },
     { name: "Appointments", href: "/homeowner/appointments", icon: Calendar },
+    { name: "Subscriptions", href: "/homeowner/subscriptions", icon: DollarSign },
+    { name: "Favorites", href: "/homeowner/favorites", icon: Heart },
     { name: "Settings", href: "/homeowner/settings", icon: Settings },
   ];
 

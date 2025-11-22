@@ -28,6 +28,7 @@ import {
   FileText,
   Calendar,
   GitBranch,
+  Star,
 } from "lucide-react";
 import {
   Sidebar,
@@ -79,17 +80,29 @@ export function ProviderSidebar() {
     setIsTeamMember(!!teamMember && !org);
   };
 
-  const navigationItems = [
+  const primaryNavigation = [
     { to: "/provider/dashboard", title: "Dashboard", icon: Home, showFor: "all" },
     { to: "/provider/schedule", title: "Schedule", icon: Calendar, showFor: "all" },
     { to: "/provider/money", title: "Money", icon: DollarSign, showFor: "all" },
     { to: "/provider/clients", title: "Clients", icon: Users, showFor: "all" },
-    { to: "/provider/more", title: "More", icon: Menu, showFor: "all" },
   ];
 
-  // Simplified navigation - no route groups needed
+  const accountNavigation = [
+    { to: "/provider/services", title: "Services", icon: Wrench, showFor: "all" },
+    { to: "/provider/account/portfolio", title: "Portfolio", icon: LayoutGrid, showFor: "all" },
+    { to: "/provider/account/reviews", title: "Reviews", icon: Star, showFor: "all" },
+    { to: "/provider/account/share-links", title: "Share Links", icon: Share2, showFor: "all" },
+    { to: "/provider/settings", title: "Settings", icon: Settings, showFor: "all" },
+  ];
 
-  const filteredItems = navigationItems.filter(item => {
+  const filteredPrimary = primaryNavigation.filter(item => {
+    if (item.showFor === "all") return true;
+    if (item.showFor === "owner") return isOwner;
+    if (item.showFor === "team") return isTeamMember;
+    return false;
+  });
+
+  const filteredAccount = accountNavigation.filter(item => {
     if (item.showFor === "all") return true;
     if (item.showFor === "owner") return isOwner;
     if (item.showFor === "team") return isTeamMember;
@@ -107,9 +120,36 @@ export function ProviderSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
+          {open && <SidebarGroupLabel>Main</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredItems.map((item) => (
+              {filteredPrimary.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.to}
+                      end
+                      className={({ isActive }) =>
+                        isActive
+                          ? "bg-secondary text-foreground font-medium rounded-lg"
+                          : "text-foreground hover:bg-muted/50 rounded-lg"
+                      }
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {open && <span className="text-sm ml-3">{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          {open && <SidebarGroupLabel>Account</SidebarGroupLabel>}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {filteredAccount.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
